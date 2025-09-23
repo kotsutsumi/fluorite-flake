@@ -1,0 +1,37 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Test files
+test/
+*.test.*
+*.spec.*
+coverage/
+.nyc_output/
+playwright-report/
+
+# Config files
+.husky/
+.serena/
+.gitignore
+.npmignore
+biome.json
+tsconfig.json
+vitest.config.ts
+playwright.config.ts
+
+# Development files
+scripts/
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Misc
+.DS_Store
+*.log
+tmp/
+temp/
