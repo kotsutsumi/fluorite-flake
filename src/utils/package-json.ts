@@ -109,9 +109,6 @@ export async function generatePackageJson(config: ProjectConfig) {
     Object.assign(packageJson.dependencies, getPackageVersions([...PACKAGE_CATEGORIES.auth]));
   }
 
-  // Add UI library dependencies
-  Object.assign(packageJson.dependencies, getPackageVersions(PACKAGE_CATEGORIES.ui.slice(0, 1))); // Just lucide-react for now
-
   // Sort dependencies and devDependencies
   packageJson.dependencies = sortObject(packageJson.dependencies);
   packageJson.devDependencies = sortObject(packageJson.devDependencies);
