@@ -26,6 +26,9 @@ export async function generateNextProject(config: ProjectConfig) {
   // Create Next.js configuration files BEFORE shadcn/ui
   await createNextjsConfig(config);
 
+  // Install dependencies so shadcn/ui can detect the framework
+  await installDependencies(config);
+
   // Setup shadcn/ui and Kibo UI (now after Next.js is properly configured)
   await setupUILibraries(config);
 
@@ -678,4 +681,17 @@ export default function Home() {
 `;
 
   await fs.writeFile(path.join(config.projectPath, 'src/app/page.tsx'), pageContent);
+}
+
+async function installDependencies(config: ProjectConfig) {
+  console.log('  • Installing dependencies...');
+
+  try {
+    await execa(config.packageManager, ['install'], {
+      cwd: config.projectPath,
+      stdio: 'inherit',
+    });
+  } catch (error) {
+    throw new Error(`Failed to install dependencies: ${(error as Error).message}`);
+  }
 }
