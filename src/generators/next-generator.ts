@@ -280,19 +280,38 @@ export function cn(...inputs: ClassValue[]) {
 
   console.log('  • Initializing shadcn/ui (this may take a moment)...');
 
-  // Initialize with base-color neutral to avoid interactive prompts
+  // Create a default components.json first to avoid any prompts
+  const componentsJsonPath = path.join(config.projectPath, 'components.json');
+  const defaultComponentsConfig = {
+    "$schema": "https://ui.shadcn.com/schema.json",
+    "style": "new-york",
+    "rsc": true,
+    "tsx": true,
+    "tailwind": {
+      "config": "tailwind.config.ts",
+      "css": "src/styles/globals.css",
+      "baseColor": "neutral",
+      "cssVariables": true,
+      "prefix": ""
+    },
+    "aliases": {
+      "components": "@/components",
+      "utils": "@/lib/utils",
+      "ui": "@/components/ui",
+      "lib": "@/lib",
+      "hooks": "@/hooks"
+    }
+  };
+
+  await fs.writeJSON(componentsJsonPath, defaultComponentsConfig, { spaces: 2 });
+
+  // Initialize with force and yes to skip ALL prompts
   await runShadcnCommand(
     config,
     runner,
-    ['init', '--template', 'next', '--src-dir', '--force', '--yes', '--base-color', 'neutral'],
+    ['init', '--force', '--yes'],
     'initialize shadcn/ui'
   );
-
-  // After initialization, update components.json to use New York style
-  const componentsJsonPath = path.join(config.projectPath, 'components.json');
-  const componentsConfig = await fs.readJSON(componentsJsonPath);
-  componentsConfig.style = 'new-york';
-  await fs.writeJSON(componentsJsonPath, componentsConfig, { spaces: 2 });
 
   console.log('  • Installing shadcn/ui component collection...');
 
@@ -441,13 +460,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 
 async function setupHusky(config: ProjectConfig) {
-  // First, add the prepare script to package.json
-  const packageJsonPath = path.join(config.projectPath, 'package.json');
-  const packageJson = await fs.readJson(packageJsonPath);
-  packageJson.scripts.prepare = 'husky';
-  await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
-
-  // Initialize husky
+  // Initialize husky (prepare script is already in package.json)
   try {
     await execa(config.packageManager, ['run', 'prepare'], {
       cwd: config.projectPath,

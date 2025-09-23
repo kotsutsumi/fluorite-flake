@@ -37,7 +37,7 @@ export async function generatePackageJson(config: ProjectConfig) {
       'format:check': 'biome format .',
       check: 'biome check .',
       'check:fix': 'biome check --fix .',
-      // prepare script will be added after husky is installed
+      prepare: 'husky',
     },
     dependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.dependencies]),
     devDependencies: getPackageVersions([
@@ -47,6 +47,7 @@ export async function generatePackageJson(config: ProjectConfig) {
       'autoprefixer',
       'postcss',
       '@tailwindcss/postcss',
+      'husky',
     ]),
   };
 
