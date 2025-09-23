@@ -62,8 +62,6 @@ export const PACKAGE_VERSIONS = {
   // Development tools
   vite: '^6.0.0',
   '@vitejs/plugin-react': '^4.3.0',
-  eslint: '^8.57.0',
-  'eslint-config-next': '15.1.3',
   '@biomejs/biome': '^1.9.4',
 
   // Testing
@@ -113,8 +111,6 @@ export const PACKAGE_CATEGORIES = {
       '@types/node',
       '@types/react',
       '@types/react-dom',
-      'eslint',
-      'eslint-config-next',
     ],
   },
   expo: {

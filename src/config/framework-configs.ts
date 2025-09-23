@@ -59,8 +59,6 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
       '@types/node': '^22.0.0',
       '@types/react': '^19.0.0',
       '@types/react-dom': '^19.0.0',
-      eslint: '^8.57.0',
-      'eslint-config-next': '15.1.3',
     },
     requiredDependencies: ['next', 'react', 'react-dom'],
     devDependencies: [
@@ -68,8 +66,6 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
       '@types/node',
       '@types/react',
       '@types/react-dom',
-      'eslint',
-      'eslint-config-next',
     ],
   },
   expo: {

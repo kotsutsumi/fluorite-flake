@@ -265,25 +265,26 @@ async function setupLinters(config: ProjectConfig) {
 }
 
 async function setupUILibraries(config: ProjectConfig) {
+  // Create utils.ts file
+  const utilsContent = `import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+`;
+
+  await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
+
   const runner = getShadcnRunner(config.packageManager);
 
   console.log('  • Initializing shadcn/ui (this may take a moment)...');
 
+  // Use --theme new-york to set the style
   await runShadcnCommand(
     config,
     runner,
-    [
-      'init',
-      '--template',
-      'next',
-      '--src-dir',
-      '--force',
-      '--yes',
-      '--style',
-      'new-york',
-      '--base-color',
-      'neutral',
-    ],
+    ['init', '--template', 'next', '--src-dir', '--theme', 'new-york', '--force', '--yes'],
     'initialize shadcn/ui'
   );
 
@@ -380,16 +381,6 @@ async function setupUILibraries(config: ProjectConfig) {
   await fs.writeJSON(path.join(config.projectPath, 'components.json'), componentsConfig, {
     spaces: 2,
   });
-
-  const utilsContent = `import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-`;
-
-  await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
 }
 
 function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
