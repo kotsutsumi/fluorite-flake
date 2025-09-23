@@ -94,6 +94,16 @@ jobs:
         if: matrix.framework == 'tauri' && matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
+          # Try to install webkit2gtk-4.1 first (Ubuntu 24.04), fallback to 4.0
+          sudo apt-get install -y libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev || \
           sudo apt-get install -y libwebkit2gtk-4.0-dev \
             build-essential \
             curl \
@@ -205,6 +215,17 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
+          # Try to install webkit2gtk-4.1 first (Ubuntu 24.04), fallback to 4.0
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev || \
           sudo apt-get install -y \
             libwebkit2gtk-4.0-dev \
             build-essential \

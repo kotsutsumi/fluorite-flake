@@ -2,6 +2,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { type FullConfig, chromium } from '@playwright/test';
 import * as fs from 'fs-extra';
+import { promises as fsPromises } from 'node:fs';
 
 async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting global E2E test setup...');
@@ -65,7 +66,7 @@ async function globalSetup(_config: FullConfig) {
 
   // Clean up any leftover test directories from previous runs
   console.log('🧹 Cleaning up previous test artifacts...');
-  const tempDirs = await fs.readdir(os.tmpdir());
+  const tempDirs = await fsPromises.readdir(os.tmpdir());
   const fluoriteTestDirs = tempDirs.filter(
     (dir) => dir.startsWith('fluorite-e2e-') || dir.startsWith('fluorite-test-')
   );
