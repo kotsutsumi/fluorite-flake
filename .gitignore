@@ -40,5 +40,6 @@ coverage/
 
 # Misc
 .cache/
+.serena
 tmp/
 temp/

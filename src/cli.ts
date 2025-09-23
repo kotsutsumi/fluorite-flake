@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
-import chalk from 'chalk';
-import ora from 'ora';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import chalk from 'chalk';
+import { Command } from 'commander';
+import ora from 'ora';
+import { createProject } from './commands/create.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -82,6 +83,15 @@ program
     const progressBar = '█'.repeat(7) + '░'.repeat(3);
     console.log(chalk.blue('Progress: ') + chalk.cyan(progressBar) + chalk.gray(' 70%'));
     console.log();
+  });
+
+// Add create command for Next.js boilerplate generator
+program
+  .command('create')
+  .alias('new')
+  .description('Create a new Next.js project with interactive options')
+  .action(async () => {
+    await createProject();
   });
 
 // Parse command line arguments
