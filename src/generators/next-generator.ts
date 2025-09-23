@@ -367,6 +367,33 @@ export function cn(...inputs: ClassValue[]) {
       `install Kibo UI component ${component}`
     );
   }
+
+  // Fix theme-switcher component imports
+  const themeSwitcherPath = path.join(
+    config.projectPath,
+    'src/components/ui/kibo-ui/theme-switcher/index.tsx'
+  );
+
+  if (await fs.pathExists(themeSwitcherPath)) {
+    let content = await fs.readFile(themeSwitcherPath, 'utf-8');
+
+    // Add missing icon imports if not present
+    if (!content.includes('import { Sun, Moon, Monitor }')) {
+      // Find the import section and add the lucide-react import
+      const importMatch = content.match(/^((?:import .+\n)+)/m);
+      if (importMatch) {
+        const imports = importMatch[1];
+        const newImports = `${imports}import { Sun, Moon, Monitor } from 'lucide-react';\n`;
+        content = content.replace(imports, newImports);
+      } else {
+        // If no imports found, add at the beginning
+        content = `import { Sun, Moon, Monitor } from 'lucide-react';\n${content}`;
+      }
+
+      await fs.writeFile(themeSwitcherPath, content);
+      console.log('  • Fixed theme-switcher icon imports');
+    }
+  }
 }
 
 function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
