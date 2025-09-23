@@ -3,9 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import chalk from 'chalk';
 import { Command } from 'commander';
-import ora from 'ora';
 import { createProject } from './commands/create.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,85 +17,31 @@ const program = new Command();
 // Configure the CLI
 program
   .name('fluorite-flake')
-  .description('A beautiful CLI utility with ANSI colors')
+  .description('Multi-framework project generator')
   .version(packageJson.version);
-
-// Add a sample command
-program
-  .command('greet [name]')
-  .description('Greet someone with beautiful colors')
-  .option('-u, --uppercase', 'Display name in uppercase')
-  .option('-c, --color <color>', 'Choose greeting color', 'cyan')
-  .action((name: string | undefined, options) => {
-    const nameToUse = name || 'World';
-    const spinner = ora('Preparing your greeting...').start();
-
-    setTimeout(() => {
-      spinner.succeed('Greeting ready!');
-
-      const displayName = options.uppercase ? nameToUse.toUpperCase() : nameToUse;
-
-      // Get the color function from chalk
-      let colorFn = chalk.cyan;
-      if (options.color && typeof chalk[options.color as keyof typeof chalk] === 'function') {
-        colorFn = chalk[options.color as keyof typeof chalk] as typeof chalk.cyan;
-      }
-
-      console.log();
-      console.log(chalk.bold.magenta('✨ Fluorite CLI ✨'));
-      console.log(colorFn(`Hello, ${displayName}!`));
-      console.log();
-      console.log(chalk.gray('Thanks for using Fluorite CLI'));
-    }, 1000);
-  });
-
-// Add another sample command
-program
-  .command('rainbow <text>')
-  .description('Display text in rainbow colors')
-  .action((text: string) => {
-    const colors = [chalk.red, chalk.yellow, chalk.green, chalk.cyan, chalk.blue, chalk.magenta];
-
-    console.log();
-    const chars = text.split('');
-    const coloredText = chars.map((char, index) => colors[index % colors.length](char)).join('');
-
-    console.log(chalk.bold('🌈 Rainbow Text:'));
-    console.log(coloredText);
-    console.log();
-  });
-
-// Add a status command
-program
-  .command('status')
-  .description('Show system status with colors')
-  .action(() => {
-    console.log();
-    console.log(chalk.bold.white('System Status:'));
-    console.log(chalk.green('✓ System:    ') + chalk.gray('Online'));
-    console.log(chalk.green('✓ Database:  ') + chalk.gray('Connected'));
-    console.log(chalk.yellow('⚠ Cache:     ') + chalk.gray('Limited'));
-    console.log(chalk.red('✗ Analytics: ') + chalk.gray('Offline'));
-    console.log();
-
-    const progressBar = '█'.repeat(7) + '░'.repeat(3);
-    console.log(chalk.blue('Progress: ') + chalk.cyan(progressBar) + chalk.gray(' 70%'));
-    console.log();
-  });
 
 // Add create command for Next.js boilerplate generator
 program
   .command('create')
   .alias('new')
-  .description('Create a new Next.js project with interactive options')
+  .description('Create a new project with interactive options (Next.js, Expo, Tauri, Flutter)')
   .action(async () => {
     await createProject();
   });
 
-// Parse command line arguments
-program.parse(process.argv);
+// Parse command line arguments, accounting for pnpm's `--` forwarding.
+const sanitizedUserArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 
-// Show help if no command is provided
-if (!process.argv.slice(2).length) {
+if (sanitizedUserArgs.length === 0) {
   program.outputHelp();
+  process.exit(0);
 }
+
+const argvToParse = [...process.argv];
+// Drop pnpm's '--' separator so Commander still sees forwarded flags.
+const separatorIndex = argvToParse.indexOf('--');
+if (separatorIndex !== -1) {
+  argvToParse.splice(separatorIndex, 1);
+}
+
+program.parse(argvToParse);

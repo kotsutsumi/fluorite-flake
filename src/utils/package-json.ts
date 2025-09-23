@@ -1,8 +1,19 @@
 import path from 'node:path';
-import fs from 'fs-extra';
+// fs import removed as it's unused
 import type { ProjectConfig } from '../commands/create.js';
+import {
+  PACKAGE_CATEGORIES,
+  getPackageVersion,
+  getPackageVersions,
+} from '../config/package-versions.js';
+import { writeConfigFile } from './file-generation.js';
 
 export async function generatePackageJson(config: ProjectConfig) {
+  // Only generate package.json for Next.js - other frameworks handle this in their own generators
+  if (config.framework !== 'nextjs') {
+    return;
+  }
+
   const packageJson: {
     name: string;
     version: string;
@@ -28,78 +39,80 @@ export async function generatePackageJson(config: ProjectConfig) {
       'check:fix': 'biome check --fix .',
       prepare: 'husky',
     },
-    dependencies: {
-      next: '15.1.3',
-      react: '19.0.0',
-      'react-dom': '19.0.0',
-      '@tailwindcss/postcss': '4.0.0-alpha.33',
-      tailwindcss: '4.0.0-alpha.33',
-      'next-themes': '^0.4.4',
-      jotai: '^2.10.3',
-      clsx: '^2.1.1',
-      'tailwind-merge': '^2.6.0',
-    },
-    devDependencies: {
-      '@types/node': '^22.10.2',
-      '@types/react': '^19.0.2',
-      '@types/react-dom': '^19.0.2',
-      typescript: '^5.7.2',
-      '@biomejs/biome': '^1.9.4',
-      husky: '^9.1.7',
-      postcss: '^8.5.1',
-    },
+    dependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.dependencies]),
+    devDependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.devDependencies]),
   };
 
   // Add database dependencies
   if (config.database === 'turso') {
+    Object.assign(
+      packageJson.dependencies,
+      getPackageVersions([...PACKAGE_CATEGORIES.database.turso])
+    );
     if (config.orm === 'prisma') {
-      packageJson.dependencies['@prisma/client'] = '^6.1.0';
-      packageJson.dependencies['@prisma/adapter-libsql'] = '^6.1.0';
-      packageJson.dependencies['@libsql/client'] = '^0.15.0';
-      packageJson.devDependencies.prisma = '^6.1.0';
-      packageJson.devDependencies['@types/node'] = '^22.10.2';
-      packageJson.devDependencies.tsx = '^4.20.0';
-      packageJson.devDependencies['prisma-dbml-generator'] = '^0.12.0';
+      Object.assign(
+        packageJson.dependencies,
+        getPackageVersions([...PACKAGE_CATEGORIES.database.prisma])
+      );
+      Object.assign(packageJson.devDependencies, getPackageVersions(['prisma', 'tsx']));
     } else if (config.orm === 'drizzle') {
-      packageJson.dependencies['drizzle-orm'] = '^0.38.3';
-      packageJson.dependencies['@libsql/client'] = '^0.15.0';
-      packageJson.devDependencies['drizzle-kit'] = '^0.30.2';
-      packageJson.devDependencies.tsx = '^4.20.0';
+      Object.assign(
+        packageJson.dependencies,
+        getPackageVersions([...PACKAGE_CATEGORIES.database.drizzle])
+      );
+      Object.assign(packageJson.devDependencies, getPackageVersions(['tsx']));
     }
   } else if (config.database === 'supabase') {
-    packageJson.dependencies['@supabase/supabase-js'] = '^2.48.1';
-
+    Object.assign(
+      packageJson.dependencies,
+      getPackageVersions([...PACKAGE_CATEGORIES.database.supabase])
+    );
     if (config.orm === 'prisma') {
-      packageJson.dependencies['@prisma/client'] = '^6.1.0';
-      packageJson.devDependencies.prisma = '^6.1.0';
-      packageJson.devDependencies.tsx = '^4.20.0';
-      packageJson.devDependencies['prisma-dbml-generator'] = '^0.12.0';
+      Object.assign(
+        packageJson.dependencies,
+        getPackageVersions([...PACKAGE_CATEGORIES.database.prisma])
+      );
+      Object.assign(packageJson.devDependencies, getPackageVersions(['prisma', 'tsx']));
     } else if (config.orm === 'drizzle') {
-      packageJson.dependencies['drizzle-orm'] = '^0.38.3';
-      packageJson.dependencies.postgres = '^3.5.0';
-      packageJson.devDependencies['drizzle-kit'] = '^0.30.2';
-      packageJson.devDependencies.tsx = '^4.20.0';
+      Object.assign(
+        packageJson.dependencies,
+        getPackageVersions([...PACKAGE_CATEGORIES.database.drizzle])
+      );
+      Object.assign(packageJson.devDependencies, getPackageVersions(['tsx']));
     }
   }
 
   // Add deployment dependencies
   if (config.deployment) {
-    packageJson.dependencies['@vercel/blob'] = '^0.28.2';
-    packageJson.dependencies['@vercel/analytics'] = '^1.5.0';
-    packageJson.dependencies['@vercel/speed-insights'] = '^1.1.0';
+    packageJson.dependencies['@vercel/analytics'] = getPackageVersion('@vercel/analytics');
+    packageJson.dependencies['@vercel/speed-insights'] =
+      getPackageVersion('@vercel/speed-insights');
   }
 
-  // Add UI library dependencies (shadcn/ui components will be added individually)
-  packageJson.dependencies['@radix-ui/themes'] = '^3.1.7';
-  packageJson.dependencies['lucide-react'] = '^0.468.0';
+  // Add storage dependencies
+  if (config.storage !== 'none') {
+    const storageDeps =
+      PACKAGE_CATEGORIES.storage[config.storage as keyof typeof PACKAGE_CATEGORIES.storage];
+    if (storageDeps) {
+      Object.assign(packageJson.dependencies, getPackageVersions([...storageDeps]));
+    }
+  }
+
+  // Add auth dependencies
+  if (config.auth) {
+    Object.assign(packageJson.dependencies, getPackageVersions([...PACKAGE_CATEGORIES.auth]));
+  }
+
+  // Add UI library dependencies
+  Object.assign(packageJson.dependencies, getPackageVersions(PACKAGE_CATEGORIES.ui.slice(0, 1))); // Just lucide-react for now
 
   // Sort dependencies and devDependencies
   packageJson.dependencies = sortObject(packageJson.dependencies);
   packageJson.devDependencies = sortObject(packageJson.devDependencies);
 
-  // Write package.json
-  await fs.writeJSON(path.join(config.projectPath, 'package.json'), packageJson, {
-    spaces: 2,
+  // Write package.json using the shared utility
+  await writeConfigFile(path.join(config.projectPath, 'package.json'), packageJson, {
+    sortKeys: true,
   });
 }
 

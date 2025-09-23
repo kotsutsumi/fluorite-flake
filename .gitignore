@@ -40,6 +40,8 @@ coverage/
 
 # Misc
 .cache/
-.serena
+.serena/
+test-results/
+playwright-report/
 tmp/
 temp/

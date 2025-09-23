@@ -3,18 +3,27 @@ src/
 *.ts
 !*.d.ts
 
+# Test files
+test/
+*.test.*
+*.spec.*
+coverage/
+.nyc_output/
+playwright-report/
+
 # Config files
 .husky/
+.serena/
 .gitignore
 .npmignore
 biome.json
 tsconfig.json
+vitest.config.ts
+playwright.config.ts
 
 # Development files
-*.test.js
-*.test.d.ts
-coverage/
-.nyc_output/
+scripts/
+.github/
 
 # IDE
 .vscode/

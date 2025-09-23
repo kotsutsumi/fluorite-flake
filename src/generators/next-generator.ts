@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { execa } from 'execa';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create.js';
 import { generatePackageJson } from '../utils/package-json.js';
@@ -93,7 +94,28 @@ async function setupTypeScript(config: ProjectConfig) {
 }
 
 async function setupTailwind(config: ProjectConfig) {
-  // TailwindCSS v4 config
+  const tailwindConfig = `import type { Config } from 'tailwindcss';
+import tailwindcssAnimate from 'tailwindcss-animate';
+
+const config: Config = {
+  darkMode: ['class'],
+  content: [
+    './src/app/**/*.{ts,tsx}',
+    './src/pages/**/*.{ts,tsx}',
+    './src/components/**/*.{ts,tsx}',
+    './src/lib/**/*.{ts,tsx}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [tailwindcssAnimate],
+};
+
+export default config;
+`;
+
+  await fs.writeFile(path.join(config.projectPath, 'tailwind.config.ts'), tailwindConfig);
+
   const tailwindContent = `@import "tailwindcss";
 
 @theme {
@@ -103,7 +125,6 @@ async function setupTailwind(config: ProjectConfig) {
 
   await fs.writeFile(path.join(config.projectPath, 'src/styles/globals.css'), tailwindContent);
 
-  // PostCSS config for TailwindCSS v4
   const postcssConfig = {
     plugins: {
       '@tailwindcss/postcss': {},
@@ -238,7 +259,86 @@ async function setupLinters(config: ProjectConfig) {
 }
 
 async function setupUILibraries(config: ProjectConfig) {
-  // components.json for shadcn/ui
+  const runner = getShadcnRunner(config.packageManager);
+
+  console.log('  • Initializing shadcn/ui (this may take a moment)...');
+
+  await runShadcnCommand(
+    config,
+    runner,
+    ['init', '--template', 'next', '--src-dir', '--force', '--yes', '--base-color', 'neutral'],
+    'initialize shadcn/ui'
+  );
+
+  console.log('  • Installing shadcn/ui component collection...');
+
+  await runShadcnCommand(
+    config,
+    runner,
+    ['add', '--all', '--yes', '--overwrite'],
+    'install shadcn/ui components'
+  );
+
+  console.log('  • Installing Kibo UI component library...');
+
+  const kiboComponents = [
+    'announcement',
+    'avatar-stack',
+    'banner',
+    'calendar',
+    'choicebox',
+    'code-block',
+    'color-picker',
+    'combobox',
+    'comparison',
+    'contribution-graph',
+    'credit-card',
+    'cursor',
+    'deck',
+    'dialog-stack',
+    'dropzone',
+    'editor',
+    'gantt',
+    'glimpse',
+    'image-crop',
+    'image-zoom',
+    'kanban',
+    'kbd',
+    'list',
+    'marquee',
+    'mini-calendar',
+    'pill',
+    'qr-code',
+    'rating',
+    'reel',
+    'relative-time',
+    'sandbox',
+    'shadcn-ui',
+    'snippet',
+    'spinner',
+    'status',
+    'stories',
+    'table',
+    'tags',
+    'theme-switcher',
+    'ticker',
+    'tree',
+    'typescript-config',
+    'typography',
+    'video-player',
+  ];
+
+  for (const component of kiboComponents) {
+    const registryUrl = `https://www.kibo-ui.com/r/${component}.json`;
+    console.log(`    • ${component}`);
+    await runShadcnCommand(
+      config,
+      runner,
+      ['add', registryUrl, '--yes', '--overwrite'],
+      `install Kibo UI component ${component}`
+    );
+  }
+
   const componentsConfig = {
     $schema: 'https://ui.shadcn.com/schema.json',
     style: 'new-york',
@@ -247,7 +347,7 @@ async function setupUILibraries(config: ProjectConfig) {
     tailwind: {
       config: 'tailwind.config.ts',
       css: 'src/styles/globals.css',
-      baseColor: 'zinc',
+      baseColor: 'neutral',
       cssVariables: true,
       prefix: '',
     },
@@ -264,7 +364,6 @@ async function setupUILibraries(config: ProjectConfig) {
     spaces: 2,
   });
 
-  // Create utils.ts
   const utilsContent = `import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -274,6 +373,39 @@ export function cn(...inputs: ClassValue[]) {
 `;
 
   await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
+}
+
+function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
+  switch (packageManager) {
+    case 'npm':
+      return { command: 'npx', args: ['--yes', 'shadcn@latest'] };
+    case 'yarn':
+      return { command: 'yarn', args: ['dlx', 'shadcn@latest'] };
+    case 'bun':
+      return { command: 'bunx', args: ['shadcn@latest'] };
+    default:
+      return { command: 'pnpm', args: ['dlx', 'shadcn@latest'] };
+  }
+}
+
+async function runShadcnCommand(
+  config: ProjectConfig,
+  runner: { command: string; args: string[] },
+  extraArgs: string[],
+  description: string
+) {
+  try {
+    await execa(runner.command, [...runner.args, ...extraArgs], {
+      cwd: config.projectPath,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        CI: 'true',
+      },
+    });
+  } catch (error) {
+    throw new Error(`Failed to ${description}: ${(error as Error).message}`);
+  }
 }
 
 async function setupStateManagement(config: ProjectConfig) {
@@ -379,10 +511,27 @@ export default function RootLayout({
   // Homepage
   const pageContent = `'use client';
 
+import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useAtom } from 'jotai';
 import { countAtom } from '@/lib/store';
-import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Announcement,
+  AnnouncementTag,
+  AnnouncementTitle,
+} from '@/components/ui/kibo-ui/announcement';
+import { ThemeSwitcher } from '@/components/ui/kibo-ui/theme-switcher';
+
+type ThemeOption = 'light' | 'dark' | 'system';
 
 export default function Home() {
   const { theme, setTheme } = useTheme();
@@ -393,41 +542,70 @@ export default function Home() {
     setMounted(true);
   }, []);
 
+  const currentTheme = (theme ?? 'system') as ThemeOption;
+
   if (!mounted) {
     return null;
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-8 text-center">
-          Welcome to ${config.projectName}
-        </h1>
-
-        <div className="flex flex-col items-center gap-8">
-          <div className="flex gap-4 items-center">
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-            >
-              Toggle Theme: {theme}
-            </button>
-
-            <button
-              onClick={() => setCount(count + 1)}
-              className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors"
-            >
-              Count: {count}
-            </button>
-          </div>
-
-          <div className="text-center text-gray-600 dark:text-gray-400">
-            <p>✨ Next.js + TailwindCSS v4 + shadcn/ui + Kibo UI</p>
-            <p>🎨 Theme switching with next-themes</p>
-            <p>⚡ State management with Jotai</p>
-            <p>🔧 Formatted with Biome + Ultracite</p>
-          </div>
-        </div>
+    <main className="min-h-screen bg-background">
+      <div className="container mx-auto flex flex-col gap-10 py-16">
+        <Card className="mx-auto w-full max-w-4xl border-border/60 shadow-sm">
+          <CardHeader className="flex flex-col gap-4">
+            <Badge variant="outline" className="self-start uppercase tracking-wide">
+              fluorite-flake
+            </Badge>
+            <CardTitle className="text-4xl">Your shadcn/ui + Kibo UI starter</CardTitle>
+            <CardDescription>
+              Scaffolded with themeable components, state management, and auth-ready patterns.
+            </CardDescription>
+            <Announcement themed>
+              <AnnouncementTag>New</AnnouncementTag>
+              <AnnouncementTitle>
+                Storage, auth, and deployment tooling lands out of the box.
+              </AnnouncementTitle>
+            </Announcement>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+              <ThemeSwitcher
+                value={currentTheme}
+                onChange={(nextValue) => setTheme(nextValue)}
+              />
+              <div className="flex items-center gap-3">
+                <Button onClick={() => setTheme(currentTheme === 'dark' ? 'light' : 'dark')}>
+                  Toggle theme
+                </Button>
+                <Button variant="secondary" onClick={() => setCount(count + 1)}>
+                  Interactions: {count}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Powered by shadcn/ui components enriched with the Kibo UI collection for product-ready
+                experiences.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-dashed border-border/70 p-4">
+                <p className="font-medium text-foreground">Toolkit</p>
+                <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                  <li>• Tailwind CSS v4 with Biome linting</li>
+                  <li>• Better Auth, Jotai, next-themes integration</li>
+                  <li>• Storage, database, and deployment workflows</li>
+                </ul>
+              </div>
+              <div className="rounded-lg border border-dashed border-border/70 p-4">
+                <p className="font-medium text-foreground">Next Steps</p>
+                <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                  <li>• Update branding in <code>src/app/layout.tsx</code></li>
+                  <li>• Customize components under <code>src/components/ui</code></li>
+                  <li>• Configure environment secrets in <code>.env.local</code></li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

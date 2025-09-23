@@ -143,6 +143,8 @@ echo "   supabase link --project-ref [project-id]"
 }
 
 async function setupPrisma(config: ProjectConfig) {
+  await fs.ensureDir(path.join(config.projectPath, 'prisma'));
+
   // Prisma schema
   let datasourceProvider = 'sqlite';
   let datasourceUrl = 'file:./dev.db';
@@ -155,36 +157,123 @@ async function setupPrisma(config: ProjectConfig) {
     datasourceUrl = 'env("DATABASE_URL")';
   }
 
-  const schemaContent = `// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+  const schemaContent = `// This Prisma schema is tailored for Better Auth with organization support.
+// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"${config.database === 'turso' ? '\n  previewFeatures = ["driverAdapters"]' : ''}
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "../dbml"
+}
+
 datasource db {
   provider = "${datasourceProvider}"
-  url      = ${datasourceUrl}
+  url      = "${datasourceUrl}"
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  name          String?
+  image         String?
+  role          String   @default("user")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Member[]
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Account {
+  id                     String   @id @default(cuid())
+  userId                 String
+  accountId              String
+  providerId             String
+  accessToken            String?
+  refreshToken           String?
+  idToken                String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  scope                  String?
+  password               String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  expiresAt    DateTime
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  userId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id          String   @id @default(cuid())
+  identifier  String
+  value       String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     Member[]
+  invitations Invitation[]
+
+  @@index([name])
+}
+
+model Member {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String   @default("user")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+}
+
+model Invitation {
+  id             String   @id @default(cuid())
+  organizationId String
+  email          String
+  role           String?
+  status         String   @default("pending")
+  expiresAt      DateTime
+  inviterId      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
 }
 `;
 
@@ -192,61 +281,137 @@ model Post {
 
   // Seed file
   const seedContent = `import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean existing data
-  await prisma.post.deleteMany();
+  await prisma.invitation.deleteMany();
+  await prisma.member.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.account.deleteMany();
+  await prisma.organization.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create users
-  const alice = await prisma.user.create({
+  const [adminPassword, orgAdminPassword, userPassword, betaPassword] = await Promise.all([
+    bcrypt.hash('Admin123!', 12),
+    bcrypt.hash('OrgAdmin123!', 12),
+    bcrypt.hash('User123!', 12),
+    bcrypt.hash('BetaUser123!', 12),
+  ]);
+
+  const admin = await prisma.user.create({
     data: {
-      email: 'alice@example.com',
-      name: 'Alice',
-      posts: {
+      email: 'admin@example.com',
+      name: 'Admin User',
+      role: 'admin',
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'admin@example.com',
+          password: adminPassword,
+        },
+      },
+    },
+  });
+
+  const orgAdmin = await prisma.user.create({
+    data: {
+      email: 'orgadmin@example.com',
+      name: 'Organization Admin',
+      role: 'org_admin',
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'orgadmin@example.com',
+          password: orgAdminPassword,
+        },
+      },
+    },
+  });
+
+  const standardUser = await prisma.user.create({
+    data: {
+      email: 'user@example.com',
+      name: 'General User',
+      role: 'user',
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'user@example.com',
+          password: userPassword,
+        },
+      },
+    },
+  });
+
+  const betaUser = await prisma.user.create({
+    data: {
+      email: 'beta.user@example.com',
+      name: 'Beta Team Member',
+      role: 'user',
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'beta.user@example.com',
+          password: betaPassword,
+        },
+      },
+    },
+  });
+
+  const acme = await prisma.organization.create({
+    data: {
+      name: 'Acme Incorporated',
+      slug: 'acme-inc',
+      metadata: { industry: 'SaaS', plan: 'enterprise' },
+      members: {
         create: [
-          {
-            title: 'Hello World',
-            content: 'This is my first post',
-            published: true,
-          },
-          {
-            title: 'Second Post',
-            content: 'This is my second post',
-            published: false,
-          },
+          { role: 'admin', user: { connect: { id: admin.id } } },
+          { role: 'org_admin', user: { connect: { id: orgAdmin.id } } },
+          { role: 'user', user: { connect: { id: standardUser.id } } },
         ],
       },
     },
   });
 
-  const bob = await prisma.user.create({
+  const beta = await prisma.organization.create({
     data: {
-      email: 'bob@example.com',
-      name: 'Bob',
-      posts: {
+      name: 'Beta Labs',
+      slug: 'beta-labs',
+      metadata: { industry: 'Biotech', plan: 'growth' },
+      members: {
         create: [
-          {
-            title: 'My Journey',
-            content: 'Started learning Next.js today',
-            published: true,
-          },
+          { role: 'org_admin', user: { connect: { id: admin.id } } },
+          { role: 'user', user: { connect: { id: betaUser.id } } },
         ],
       },
     },
   });
 
-  console.log('✅ Seed data created:', { alice, bob });
+  await prisma.invitation.create({
+    data: {
+      email: 'invitee@example.com',
+      organizationId: acme.id,
+      role: 'user',
+      status: 'pending',
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
+      inviterId: admin.id,
+    },
+  });
+
+  console.log('✅ Seed data created for Better Auth scenarios:');
+  console.log('  • admin@example.com / Admin123!');
+  console.log('  • orgadmin@example.com / OrgAdmin123!');
+  console.log('  • user@example.com / User123!');
 }
 
 main()
   .then(async () => {
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
-    console.error(e);
+  .catch(async (error) => {
+    console.error('❌ Failed to seed database', error);
     await prisma.$disconnect();
     process.exit(1);
   });
@@ -303,7 +468,7 @@ export default defineConfig({
   schema: './src/db/schema.ts',
   out: './drizzle',
   dbCredentials: {
-    ${config.database === 'supabase' ? 'url: process.env.DATABASE_URL!' : 'url: "./sqlite.db"'}
+    ${config.database === 'supabase' || config.database === 'turso' ? 'url: process.env.DATABASE_URL!' : 'url: "./sqlite.db"'}
   },
 });
 `;
@@ -346,6 +511,74 @@ export const postsRelations = relations(posts, ({ one }) => ({
 
   await fs.ensureDir(path.join(config.projectPath, 'src/db'));
   await fs.writeFile(path.join(config.projectPath, 'src/db/schema.ts'), schemaContent);
+
+  // Seed script
+  const drizzleSeedContent = `import { db } from './index';
+import { users, posts } from './schema';
+
+async function seed() {
+  await db.delete(posts);
+  await db.delete(users);
+
+  await db.insert(users).values([
+    {
+      id: 1,
+      email: 'alice@example.com',
+      name: 'Alice',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 2,
+      email: 'bob@example.com',
+      name: 'Bob',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]);
+
+  await db.insert(posts).values([
+    {
+      id: 1,
+      title: 'Hello World',
+      content: 'This is my first post',
+      published: true,
+      authorId: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 2,
+      title: 'Second Post',
+      content: 'This is my second post',
+      published: false,
+      authorId: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 3,
+      title: 'My Journey',
+      content: 'Started learning Next.js today',
+      published: true,
+      authorId: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]);
+}
+
+seed()
+  .then(() => {
+    console.log('✅ Seed data created');
+  })
+  .catch((error) => {
+    console.error('❌ Failed to seed database', error);
+    process.exit(1);
+  });
+`;
+
+  await fs.writeFile(path.join(config.projectPath, 'src/db/seed.ts'), drizzleSeedContent);
 
   // Drizzle client
   let drizzleClientContent = '';

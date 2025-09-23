@@ -3,6 +3,13 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create.js';
 
 export async function setupDeployment(config: ProjectConfig) {
+  // Flutter has its own deployment configuration, skip JavaScript-specific setup
+  if (config.framework === 'flutter') {
+    // Flutter deployment is handled through platform-specific configurations
+    // (Android Gradle, iOS Xcode, etc.) which are already set up in the Flutter generator
+    return;
+  }
+
   // Create Vercel configuration
   await createVercelConfig(config);
 
@@ -11,11 +18,6 @@ export async function setupDeployment(config: ProjectConfig) {
 
   // Create deployment script
   await createDeploymentScript(config);
-
-  // Setup Vercel Blob if needed
-  if (config.database !== 'none') {
-    await setupVercelBlob(config);
-  }
 }
 
 async function createVercelConfig(config: ProjectConfig) {
@@ -55,6 +57,11 @@ async function createVercelConfig(config: ProjectConfig) {
     };
   }
 
+  vercelConfig.env = {
+    ...vercelConfig.env,
+    ...getStorageEnvPlaceholders(config.storage),
+  };
+
   await fs.writeJSON(path.join(config.projectPath, 'vercel.json'), vercelConfig, { spaces: 2 });
 }
 
@@ -77,7 +84,61 @@ async function addDeploymentScripts(config: ProjectConfig) {
   await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }
 
+function getStorageEnvPlaceholders(storage: ProjectConfig['storage']): Record<string, string> {
+  switch (storage) {
+    case 'vercel-blob':
+      return {
+        BLOB_READ_WRITE_TOKEN: '@blob_read_write_token',
+      };
+    case 'aws-s3':
+      return {
+        AWS_REGION: '@aws_region',
+        AWS_ACCESS_KEY_ID: '@aws_access_key_id',
+        AWS_SECRET_ACCESS_KEY: '@aws_secret_access_key',
+        S3_BUCKET_NAME: '@s3_bucket_name',
+      };
+    case 'cloudflare-r2':
+      return {
+        R2_ACCOUNT_ID: '@r2_account_id',
+        R2_ACCESS_KEY_ID: '@r2_access_key_id',
+        R2_SECRET_ACCESS_KEY: '@r2_secret_access_key',
+        R2_BUCKET_NAME: '@r2_bucket_name',
+        R2_PUBLIC_URL: '@r2_public_url',
+      };
+    case 'supabase-storage':
+      return {
+        NEXT_PUBLIC_SUPABASE_URL: '@supabase_url',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: '@supabase_anon_key',
+        SUPABASE_SERVICE_ROLE_KEY: '@supabase_service_role_key',
+        SUPABASE_STORAGE_BUCKET: '@supabase_storage_bucket',
+      };
+    default:
+      return {};
+  }
+}
+
+function getStorageEnvVars(storage: ProjectConfig['storage']): string[] {
+  return Object.keys(getStorageEnvPlaceholders(storage));
+}
+
 async function createDeploymentScript(config: ProjectConfig) {
+  const envVars = new Set<string>(getStorageEnvVars(config.storage));
+
+  if (config.database === 'turso') {
+    envVars.add('TURSO_DATABASE_URL');
+    envVars.add('TURSO_AUTH_TOKEN');
+    envVars.add('DATABASE_URL');
+  } else if (config.database === 'supabase') {
+    envVars.add('NEXT_PUBLIC_SUPABASE_URL');
+    envVars.add('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    envVars.add('SUPABASE_SERVICE_ROLE_KEY');
+    envVars.add('DATABASE_URL');
+  }
+
+  const envCommands = Array.from(envVars)
+    .map((envVar) => `vercel env add ${envVar}`)
+    .join('\n');
+
   const deployScriptContent = `#!/usr/bin/env bash
 set -e
 
@@ -101,29 +162,11 @@ vercel link --yes
 echo "🔐 Setting environment variables..."
 
 ${
-  config.database === 'turso'
-    ? `
-# Turso environment variables
-vercel env add TURSO_DATABASE_URL
-vercel env add TURSO_AUTH_TOKEN
-vercel env add DATABASE_URL
+  envCommands
+    ? `${envCommands}
 `
     : ''
-}
-
-${
-  config.database === 'supabase'
-    ? `
-# Supabase environment variables
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
-vercel env add SUPABASE_SERVICE_ROLE_KEY
-vercel env add DATABASE_URL
-`
-    : ''
-}
-
-${
+}${
   config.database !== 'none' && config.orm === 'prisma'
     ? `
 # Run database migrations
@@ -192,156 +235,4 @@ echo "✅ Deployment destroyed!"
   const destroyScriptPath = path.join(config.projectPath, 'scripts', 'destroy-deployment.sh');
   await fs.writeFile(destroyScriptPath, destroyScriptContent);
   await fs.chmod(destroyScriptPath, '755');
-}
-
-async function setupVercelBlob(config: ProjectConfig) {
-  // Add Vercel Blob environment variables
-  const envContent = `
-# Vercel Blob Storage
-BLOB_READ_WRITE_TOKEN="[your-blob-token]"
-`;
-
-  const envPath = path.join(config.projectPath, '.env.local');
-  const existingEnv = await fs.readFile(envPath, 'utf-8').catch(() => '');
-  await fs.writeFile(envPath, existingEnv + envContent);
-
-  // Create blob utility
-  const blobUtilContent = `import { put, del, list } from '@vercel/blob';
-
-export async function uploadFile(file: File, pathname?: string) {
-  const blob = await put(pathname || file.name, file, {
-    access: 'public',
-  });
-
-  return blob;
-}
-
-export async function deleteFile(url: string) {
-  await del(url);
-}
-
-export async function listFiles(options?: { limit?: number; prefix?: string }) {
-  const { blobs } = await list(options);
-  return blobs;
-}
-
-export async function uploadFromBuffer(
-  buffer: Buffer,
-  filename: string,
-  contentType?: string
-) {
-  const blob = await put(filename, buffer, {
-    access: 'public',
-    contentType,
-  });
-
-  return blob;
-}
-`;
-
-  await fs.writeFile(path.join(config.projectPath, 'src/lib/blob.ts'), blobUtilContent);
-
-  // Create file upload API route
-  const uploadRouteContent = `import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
-
-export async function POST(request: NextRequest) {
-  try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
-    }
-
-    const blob = await put(file.name, file, {
-      access: 'public',
-    });
-
-    return NextResponse.json(blob);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Upload failed' },
-      { status: 500 }
-    );
-  }
-}
-`;
-
-  await fs.ensureDir(path.join(config.projectPath, 'src/app/api/upload'));
-  await fs.writeFile(
-    path.join(config.projectPath, 'src/app/api/upload/route.ts'),
-    uploadRouteContent
-  );
-
-  // Create file upload component
-  const uploadComponentContent = `'use client';
-
-import { useState } from 'react';
-import { uploadFile } from '@/lib/blob';
-
-export function FileUpload() {
-  const [uploading, setUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-
-      const blob = await response.json();
-      setUploadedUrl(blob.url);
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <div className="p-4 border rounded-lg">
-      <input
-        type="file"
-        onChange={handleUpload}
-        disabled={uploading}
-        className="mb-2"
-      />
-      {uploading && <p>Uploading...</p>}
-      {uploadedUrl && (
-        <div>
-          <p className="text-sm text-gray-600">Uploaded to:</p>
-          <a
-            href={uploadedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline text-sm break-all"
-          >
-            {uploadedUrl}
-          </a>
-        </div>
-      )}
-    </div>
-  );
-}
-`;
-
-  await fs.writeFile(
-    path.join(config.projectPath, 'src/components/file-upload.tsx'),
-    uploadComponentContent
-  );
 }
