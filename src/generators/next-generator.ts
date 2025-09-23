@@ -382,6 +382,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
+  // React 19 compatibility: add force flags for all package managers
   switch (packageManager) {
     case 'npm':
       return { command: 'npx', args: ['--yes', 'shadcn@latest'] };
@@ -390,7 +391,8 @@ function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
     case 'bun':
       return { command: 'bunx', args: ['shadcn@latest'] };
     default:
-      return { command: 'pnpm', args: ['dlx', 'shadcn@latest'] };
+      // Add --force for React 19 compatibility with pnpm
+      return { command: 'pnpm', args: ['dlx', '--force', 'shadcn@latest'] };
   }
 }
 
@@ -407,6 +409,9 @@ async function runShadcnCommand(
       env: {
         ...process.env,
         CI: 'true',
+        // Set package manager flags for React 19 compatibility
+        npm_config_force: 'true',
+        npm_config_legacy_peer_deps: 'true',
       },
     });
   } catch (error) {
