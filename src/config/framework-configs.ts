@@ -55,7 +55,7 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
       react: '19.0.0',
       'react-dom': '19.0.0',
       typescript: '^5.6.0',
-      tailwindcss: '^4.1.3',
+      tailwindcss: '^4',
       '@types/node': '^22.0.0',
       '@types/react': '^19.0.0',
       '@types/react-dom': '^19.0.0',

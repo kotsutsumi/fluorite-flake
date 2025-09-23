@@ -48,6 +48,7 @@ export async function generatePackageJson(config: ProjectConfig) {
     devDependencies: getPackageVersions([
       ...PACKAGE_CATEGORIES.nextjs.devDependencies,
       'tailwindcss',
+      '@tailwindcss/postcss',
       'tailwindcss-animate',
       'husky',
       '@biomejs/biome',

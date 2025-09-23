@@ -19,7 +19,8 @@ export const PACKAGE_VERSIONS = {
   '@types/bcryptjs': '^2.4.6',
 
   // Styling
-  tailwindcss: '^4.1.3',
+  tailwindcss: '^4',
+  '@tailwindcss/postcss': '^4',
   'tailwindcss-animate': '^1.0.7',
 
   // Database and ORM

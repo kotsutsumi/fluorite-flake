@@ -90,36 +90,45 @@ async function setupTypeScript(config: ProjectConfig) {
 }
 
 async function setupTailwind(config: ProjectConfig) {
-  const tailwindConfig = `import type { Config } from 'tailwindcss';
-import tailwindcssAnimate from 'tailwindcss-animate';
-
-const config: Config = {
-  darkMode: ['class'],
-  content: [
-    './src/app/**/*.{ts,tsx}',
-    './src/pages/**/*.{ts,tsx}',
-    './src/components/**/*.{ts,tsx}',
-    './src/lib/**/*.{ts,tsx}',
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [tailwindcssAnimate],
+  // Tailwind CSS v4 uses PostCSS config instead of tailwind.config.ts
+  const postcssConfig = `const config = {
+  plugins: ["@tailwindcss/postcss"],
 };
 
 export default config;
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'tailwind.config.ts'), tailwindConfig);
+  await fs.writeFile(path.join(config.projectPath, 'postcss.config.mjs'), postcssConfig);
 
   const tailwindContent = `@import "tailwindcss";
 
-@theme {
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/styles/globals.css'), tailwindContent);
+  await fs.writeFile(path.join(config.projectPath, 'src/app/globals.css'), tailwindContent);
 
   // PostCSS not needed with Next.js 15.5+ and Tailwind CSS v4
 }
@@ -265,8 +274,7 @@ export function cn(...inputs: ClassValue[]) {
     rsc: true,
     tsx: true,
     tailwind: {
-      config: 'tailwind.config.ts',
-      css: 'src/styles/globals.css',
+      css: 'src/app/globals.css',
       baseColor: 'neutral',
       cssVariables: true,
       prefix: '',
@@ -548,8 +556,7 @@ export function cn(...inputs: ClassValue[]) {
     rsc: true,
     tsx: true,
     tailwind: {
-      config: 'tailwind.config.ts',
-      css: 'src/styles/globals.css',
+      css: 'src/app/globals.css',
       baseColor: 'neutral',
       cssVariables: true,
       prefix: '',
@@ -853,7 +860,7 @@ async function createInitialPages(config: ProjectConfig) {
   const layoutContent = `import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Providers } from '@/components/providers';
-import '@/styles/globals.css';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
