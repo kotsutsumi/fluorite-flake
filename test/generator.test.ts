@@ -81,7 +81,6 @@ const nextjsConfigurations = [
     storage: 'none',
     auth: false,
   },
-
 ];
 
 const expoConfigurations = [
@@ -207,13 +206,22 @@ describe('Fluorite-Flake Multi-Framework Generator Tests', () => {
 
           // Framework-specific verifications
           switch (config.framework) {
-            case 'nextjs':
+            case 'nextjs': {
               expect(await fs.pathExists(path.join(projectPath, 'package.json'))).toBe(true);
               expect(await fs.pathExists(path.join(projectPath, 'tsconfig.json'))).toBe(true);
               expect(await fs.pathExists(path.join(projectPath, 'next.config.mjs'))).toBe(true);
-              expect(await fs.pathExists(path.join(projectPath, 'src/app/page.tsx'))).toBe(true);
+              const rootPagePath = path.join(projectPath, 'src/app/page.tsx');
+              if (config.auth) {
+                expect(await fs.pathExists(rootPagePath)).toBe(false);
+                expect(await fs.pathExists(path.join(projectPath, 'src/app/(app)/page.tsx'))).toBe(
+                  true
+                );
+              } else {
+                expect(await fs.pathExists(rootPagePath)).toBe(true);
+              }
               expect(await fs.pathExists(path.join(projectPath, 'src/app/layout.tsx'))).toBe(true);
               break;
+            }
 
             case 'expo':
               expect(await fs.pathExists(path.join(projectPath, 'package.json'))).toBe(true);
@@ -709,7 +717,6 @@ async function generateProject(
     packageManager: 'pnpm' as const,
     mode: 'minimal' as const,
   };
-
 
   // Import the appropriate generator based on framework
   switch (config.framework) {

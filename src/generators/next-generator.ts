@@ -635,6 +635,37 @@ export function cn(...inputs: ClassValue[]) {
       `install Kibo UI component ${component}`
     );
   }
+
+  // Fix Kibo UI theme-switcher bug: icon names don't match imports
+  const themeSwitcherPath = path.join(
+    config.projectPath,
+    'src/components/ui/kibo-ui/theme-switcher/index.tsx'
+  );
+
+  if (await fs.pathExists(themeSwitcherPath)) {
+    let content = await fs.readFile(themeSwitcherPath, 'utf-8');
+
+    // The Kibo UI component imports Sun, Moon, Monitor but tries to use SunIcon, MoonIcon, MonitorIcon
+    // We need to fix the icon references to match the imports
+    const replacements = [
+      { from: 'icon: SunIcon', to: 'icon: Sun' },
+      { from: 'icon: MoonIcon', to: 'icon: Moon' },
+      { from: 'icon: MonitorIcon', to: 'icon: Monitor' },
+    ];
+
+    let modified = false;
+    for (const { from, to } of replacements) {
+      if (content.includes(from)) {
+        content = content.replace(new RegExp(from, 'g'), to);
+        modified = true;
+      }
+    }
+
+    if (modified) {
+      await fs.writeFile(themeSwitcherPath, content);
+      console.log('  • Fixed Kibo UI theme-switcher icon names');
+    }
+  }
 }
 
 function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {

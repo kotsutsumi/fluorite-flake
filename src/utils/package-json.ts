@@ -68,10 +68,7 @@ export async function generatePackageJson(config: ProjectConfig) {
       Object.assign(packageJson.devDependencies, getPackageVersions(['prisma', 'tsx']));
     } else if (config.orm === 'drizzle') {
       Object.assign(packageJson.dependencies, getPackageVersions(['drizzle-orm']));
-      Object.assign(
-        packageJson.devDependencies,
-        getPackageVersions(['drizzle-kit', 'tsx'])
-      );
+      Object.assign(packageJson.devDependencies, getPackageVersions(['drizzle-kit', 'tsx']));
     }
   } else if (config.database === 'supabase') {
     Object.assign(
@@ -86,10 +83,7 @@ export async function generatePackageJson(config: ProjectConfig) {
       Object.assign(packageJson.devDependencies, getPackageVersions(['prisma', 'tsx']));
     } else if (config.orm === 'drizzle') {
       Object.assign(packageJson.dependencies, getPackageVersions(['drizzle-orm']));
-      Object.assign(
-        packageJson.devDependencies,
-        getPackageVersions(['drizzle-kit', 'tsx'])
-      );
+      Object.assign(packageJson.devDependencies, getPackageVersions(['drizzle-kit', 'tsx']));
     }
   }
 

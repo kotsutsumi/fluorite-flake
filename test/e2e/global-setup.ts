@@ -1,8 +1,8 @@
+import { promises as fsPromises } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { type FullConfig, chromium } from '@playwright/test';
 import * as fs from 'fs-extra';
-import { promises as fsPromises } from 'node:fs';
 
 async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting global E2E test setup...');
