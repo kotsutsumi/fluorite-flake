@@ -652,12 +652,11 @@ export function cn(...inputs: ClassValue[]) {
   if (await fs.pathExists(themeSwitcherPath)) {
     let content = await fs.readFile(themeSwitcherPath, 'utf-8');
 
-    // The Kibo UI component imports Sun, Moon, Monitor but tries to use SunIcon, MoonIcon, MonitorIcon
+    // The Kibo UI component imports SunIcon, MoonIcon from @radix-ui/react-icons but uses Sun, Moon
     // We need to fix the icon references to match the imports
     const replacements = [
-      { from: 'icon: SunIcon', to: 'icon: Sun' },
-      { from: 'icon: MoonIcon', to: 'icon: Moon' },
-      { from: 'icon: MonitorIcon', to: 'icon: Monitor' },
+      { from: 'icon: Sun,', to: 'icon: SunIcon,' },
+      { from: 'icon: Moon,', to: 'icon: MoonIcon,' },
     ];
 
     let modified = false;
