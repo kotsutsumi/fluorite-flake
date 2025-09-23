@@ -278,40 +278,34 @@ export function cn(...inputs: ClassValue[]) {
 
   const runner = getShadcnRunner(config.packageManager);
 
-  console.log('  • Initializing shadcn/ui (this may take a moment)...');
+  console.log('  • Setting up shadcn/ui configuration...');
 
-  // Create a default components.json first to avoid any prompts
+  // Create components.json manually instead of using init to avoid ALL prompts
   const componentsJsonPath = path.join(config.projectPath, 'components.json');
-  const defaultComponentsConfig = {
-    "$schema": "https://ui.shadcn.com/schema.json",
-    "style": "new-york",
-    "rsc": true,
-    "tsx": true,
-    "tailwind": {
-      "config": "tailwind.config.ts",
-      "css": "src/styles/globals.css",
-      "baseColor": "neutral",
-      "cssVariables": true,
-      "prefix": ""
+  const componentsConfig = {
+    $schema: 'https://ui.shadcn.com/schema.json',
+    style: 'new-york',
+    rsc: true,
+    tsx: true,
+    tailwind: {
+      config: 'tailwind.config.ts',
+      css: 'src/styles/globals.css',
+      baseColor: 'neutral',
+      cssVariables: true,
+      prefix: '',
     },
-    "aliases": {
-      "components": "@/components",
-      "utils": "@/lib/utils",
-      "ui": "@/components/ui",
-      "lib": "@/lib",
-      "hooks": "@/hooks"
-    }
+    aliases: {
+      components: '@/components',
+      utils: '@/lib/utils',
+      ui: '@/components/ui',
+      lib: '@/lib',
+      hooks: '@/hooks',
+    },
   };
 
-  await fs.writeJSON(componentsJsonPath, defaultComponentsConfig, { spaces: 2 });
+  await fs.writeJSON(componentsJsonPath, componentsConfig, { spaces: 2 });
 
-  // Initialize with force and yes to skip ALL prompts
-  await runShadcnCommand(
-    config,
-    runner,
-    ['init', '--force', '--yes'],
-    'initialize shadcn/ui'
-  );
+  // Skip init completely - we've already created all necessary files
 
   console.log('  • Installing shadcn/ui component collection...');
 
