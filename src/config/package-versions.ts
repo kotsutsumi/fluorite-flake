@@ -44,6 +44,10 @@ export const PACKAGE_VERSIONS = {
   '@vercel/analytics': '^1.5.0',
   '@vercel/speed-insights': '^1.1.0',
 
+  // State Management & Themes
+  jotai: '^2.10.4',
+  'next-themes': '^0.4.4',
+
   // UI Components
   'lucide-react': '^0.460.0',
   '@radix-ui/react-dialog': '^1.1.2',

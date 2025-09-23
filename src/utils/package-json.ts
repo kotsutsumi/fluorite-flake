@@ -39,12 +39,18 @@ export async function generatePackageJson(config: ProjectConfig) {
       'check:fix': 'biome check --fix .',
       prepare: 'husky',
     },
-    dependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.dependencies]),
+    dependencies: getPackageVersions([
+      ...PACKAGE_CATEGORIES.nextjs.dependencies,
+      ...PACKAGE_CATEGORIES.ui,
+      'jotai',
+      'next-themes',
+    ]),
     devDependencies: getPackageVersions([
       ...PACKAGE_CATEGORIES.nextjs.devDependencies,
       'tailwindcss',
       'tailwindcss-animate',
       'husky',
+      '@biomejs/biome',
     ]),
   };
 
