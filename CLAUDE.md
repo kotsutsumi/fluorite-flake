@@ -57,6 +57,11 @@ pnpm publish         # Manual publish to npm (auto-runs build via prepublishOnly
 - **Biome**: Handles both formatting and linting with strict rules
 - **TypeScript**: Strict mode enabled with all strict checks
 - **Husky**: Pre-commit hooks run format, lint, and build automatically
+- **Best Practices**:
+  - Proper TypeScript typing (no `any` types)
+  - Functional programming patterns (`for...of` over `forEach`)
+  - Structured error handling and validation
+  - Consistent code formatting and organization
 
 ### Publishing Configuration
 - Package publishes only `dist/`, `README.md`, and `LICENSE` files
@@ -117,10 +122,15 @@ The generator supports 14 different configuration combinations, all thoroughly t
 project-name/
 ├── src/
 │   ├── app/              # Next.js App Router pages
+│   │   └── api/         # API routes (auth, upload endpoints)
 │   ├── components/       # React components
 │   │   ├── ui/          # shadcn/ui components
-│   │   └── auth/        # Auth components (if selected)
+│   │   ├── auth/        # Auth components (if selected)
+│   │   └── file-upload.tsx # File upload component (if deployment selected)
 │   ├── lib/             # Utility functions and configurations
+│   │   ├── auth.ts      # Better Auth server config (if selected)
+│   │   ├── blob.ts      # Vercel Blob client (if deployment selected)
+│   │   └── store.ts     # Jotai state management
 │   ├── hooks/           # Custom React hooks
 │   └── styles/          # Global styles and Tailwind CSS
 ├── prisma/              # Prisma schema (if selected)
@@ -161,6 +171,33 @@ interface ProjectConfig {
   packageManager: 'npm' | 'pnpm' | 'yarn';
 }
 ```
+
+## Generated Project Features
+
+### Database Integration
+- **Turso**: SQLite at the edge with libSQL adapter
+  - Prisma with driver adapters preview feature
+  - Drizzle with libSQL client
+- **Supabase**: PostgreSQL with built-in auth
+  - Direct database connection
+  - Supabase client SDK integration
+
+### Authentication (Better Auth)
+- Session-based authentication
+- Sign in/Sign up forms
+- Protected routes
+- User management
+- Database schema integration
+
+### Vercel Deployment Features
+- **Vercel Blob Storage**: File upload system
+  - Pre-configured upload API endpoint (`/api/upload`)
+  - React file upload component
+  - Blob client configuration
+- **Deployment Scripts**:
+  - `scripts/deploy.sh`: Automated deployment with environment setup
+  - `scripts/destroy-deployment.sh`: Clean teardown of deployments
+- **Environment Management**: Automatic env variable configuration
 
 ## Testing Infrastructure
 
@@ -224,3 +261,11 @@ Husky runs automatically on commit:
 2. Lint with Biome
 3. Build TypeScript
 4. Run tests (optional)
+
+### Code Quality Standards
+When contributing, ensure your code follows these standards:
+- **TypeScript**: Use proper typing, avoid `any` types
+- **Performance**: Use `for...of` loops instead of `forEach` for better performance
+- **Error Handling**: Implement comprehensive error handling with meaningful messages
+- **Testing**: Add tests for new features covering all configuration combinations
+- **Documentation**: Update documentation for new features and configuration options
