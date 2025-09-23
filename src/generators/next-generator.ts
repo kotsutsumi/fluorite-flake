@@ -700,6 +700,33 @@ export function cn(...inputs: ClassValue[]) {
     );
   }
 
+  // Fix Kibo UI import paths: @repo/shadcn-ui/ -> @/
+  console.log('  • Fixing Kibo UI import paths...');
+  const kiboUiDir = path.join(config.projectPath, 'src/components/ui/kibo-ui');
+
+  if (await fs.pathExists(kiboUiDir)) {
+    const files = await fs.readdir(kiboUiDir, { recursive: true });
+    let fixedCount = 0;
+
+    for (const file of files) {
+      if (typeof file === 'string' && (file.endsWith('.tsx') || file.endsWith('.ts'))) {
+        const filePath = path.join(kiboUiDir, file);
+        let content = await fs.readFile(filePath, 'utf-8');
+
+        // Replace @repo/shadcn-ui/ with @/
+        if (content.includes('@repo/shadcn-ui/')) {
+          content = content.replace(/@repo\/shadcn-ui\//g, '@/');
+          await fs.writeFile(filePath, content);
+          fixedCount++;
+        }
+      }
+    }
+
+    if (fixedCount > 0) {
+      console.log(`  • Fixed import paths in ${fixedCount} Kibo UI files`);
+    }
+  }
+
   // Fix Kibo UI theme-switcher bug: icon names don't match imports
   const themeSwitcherPath = path.join(
     config.projectPath,
