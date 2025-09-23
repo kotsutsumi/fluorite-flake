@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Run format check
+echo "📝 Checking formatting..."
+pnpm run format
+
+# Run lint
+echo "🔎 Running linter..."
+pnpm run lint
+
+# Run build
+echo "🔨 Building project..."
+pnpm run build
+
+echo "✅ Pre-commit checks completed!"

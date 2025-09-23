@@ -1,0 +1,28 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Config files
+.husky/
+.gitignore
+.npmignore
+biome.json
+tsconfig.json
+
+# Development files
+*.test.js
+*.test.d.ts
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Misc
+.DS_Store
+*.log
+tmp/
+temp/
