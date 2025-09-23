@@ -106,12 +106,7 @@ export function getPackageVersions(packages: string[]): Record<string, string> {
 export const PACKAGE_CATEGORIES = {
   nextjs: {
     dependencies: ['next', 'react', 'react-dom'],
-    devDependencies: [
-      'typescript',
-      '@types/node',
-      '@types/react',
-      '@types/react-dom',
-    ],
+    devDependencies: ['typescript', '@types/node', '@types/react', '@types/react-dom'],
   },
   expo: {
     dependencies: ['expo', 'react', 'react-native', 'expo-router', '@expo/vector-icons'],

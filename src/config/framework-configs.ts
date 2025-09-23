@@ -61,12 +61,7 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
       '@types/react-dom': '^19.0.0',
     },
     requiredDependencies: ['next', 'react', 'react-dom'],
-    devDependencies: [
-      'typescript',
-      '@types/node',
-      '@types/react',
-      '@types/react-dom',
-    ],
+    devDependencies: ['typescript', '@types/node', '@types/react', '@types/react-dom'],
   },
   expo: {
     name: 'expo',

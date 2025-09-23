@@ -280,13 +280,19 @@ export function cn(...inputs: ClassValue[]) {
 
   console.log('  • Initializing shadcn/ui (this may take a moment)...');
 
-  // Use --theme new-york to set the style
+  // Initialize with base-color neutral to avoid interactive prompts
   await runShadcnCommand(
     config,
     runner,
-    ['init', '--template', 'next', '--src-dir', '--theme', 'new-york', '--force', '--yes'],
+    ['init', '--template', 'next', '--src-dir', '--force', '--yes', '--base-color', 'neutral'],
     'initialize shadcn/ui'
   );
+
+  // After initialization, update components.json to use New York style
+  const componentsJsonPath = path.join(config.projectPath, 'components.json');
+  const componentsConfig = await fs.readJSON(componentsJsonPath);
+  componentsConfig.style = 'new-york';
+  await fs.writeJSON(componentsJsonPath, componentsConfig, { spaces: 2 });
 
   console.log('  • Installing shadcn/ui component collection...');
 
@@ -356,31 +362,6 @@ export function cn(...inputs: ClassValue[]) {
       `install Kibo UI component ${component}`
     );
   }
-
-  const componentsConfig = {
-    $schema: 'https://ui.shadcn.com/schema.json',
-    style: 'new-york',
-    rsc: true,
-    tsx: true,
-    tailwind: {
-      config: 'tailwind.config.ts',
-      css: 'src/styles/globals.css',
-      baseColor: 'neutral',
-      cssVariables: true,
-      prefix: '',
-    },
-    aliases: {
-      components: '@/components',
-      utils: '@/lib/utils',
-      ui: '@/components/ui',
-      lib: '@/lib',
-      hooks: '@/hooks',
-    },
-  };
-
-  await fs.writeJSON(path.join(config.projectPath, 'components.json'), componentsConfig, {
-    spaces: 2,
-  });
 }
 
 function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
