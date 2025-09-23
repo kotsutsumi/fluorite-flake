@@ -131,15 +131,7 @@ export default config;
 
   await fs.writeFile(path.join(config.projectPath, 'src/styles/globals.css'), tailwindContent);
 
-  const postcssConfig = {
-    plugins: {
-      '@tailwindcss/postcss': {},
-    },
-  };
-
-  await fs.writeJSON(path.join(config.projectPath, 'postcss.config.json'), postcssConfig, {
-    spaces: 2,
-  });
+  // PostCSS not needed with Next.js 15.5+ and Tailwind CSS v4
 }
 
 async function setupLinters(config: ProjectConfig) {

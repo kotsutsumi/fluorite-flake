@@ -44,9 +44,6 @@ export async function generatePackageJson(config: ProjectConfig) {
       ...PACKAGE_CATEGORIES.nextjs.devDependencies,
       'tailwindcss',
       'tailwindcss-animate',
-      'autoprefixer',
-      'postcss',
-      '@tailwindcss/postcss',
       'husky',
     ]),
   };

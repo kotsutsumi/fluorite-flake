@@ -51,11 +51,11 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
     supportedOrms: ['prisma', 'drizzle'],
     supportedStorage: ['none', 'vercel-blob', 'cloudflare-r2', 'aws-s3', 'supabase-storage'],
     versions: {
-      next: '15.1.3',
+      next: '15.5.4',
       react: '19.0.0',
       'react-dom': '19.0.0',
       typescript: '^5.6.0',
-      tailwindcss: '^3.4.15',
+      tailwindcss: '^4.1.3',
       '@types/node': '^22.0.0',
       '@types/react': '^19.0.0',
       '@types/react-dom': '^19.0.0',
