@@ -382,7 +382,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
-  // React 19 compatibility: add force flags for all package managers
+  // React 19 compatibility: use environment variables for pnpm
   switch (packageManager) {
     case 'npm':
       return { command: 'npx', args: ['--yes', 'shadcn@latest'] };
@@ -391,8 +391,8 @@ function getShadcnRunner(packageManager: ProjectConfig['packageManager']) {
     case 'bun':
       return { command: 'bunx', args: ['shadcn@latest'] };
     default:
-      // Add --force for React 19 compatibility with pnpm
-      return { command: 'pnpm', args: ['dlx', '--force', 'shadcn@latest'] };
+      // For pnpm, we'll use environment variables in runShadcnCommand to handle React 19
+      return { command: 'pnpm', args: ['dlx', 'shadcn@latest'] };
   }
 }
 
@@ -458,6 +458,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 
 async function setupHusky(config: ProjectConfig) {
+  // First, add the prepare script to package.json
+  const packageJsonPath = path.join(config.projectPath, 'package.json');
+  const packageJson = await fs.readJson(packageJsonPath);
+  packageJson.scripts.prepare = 'husky';
+  await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+
+  // Initialize husky
+  try {
+    await execa(config.packageManager, ['run', 'prepare'], {
+      cwd: config.projectPath,
+      stdio: 'inherit',
+    });
+  } catch (_error) {
+    // If husky init fails, it's not critical - continue with setup
+    console.log('  • Note: Husky initialization will complete on next install');
+  }
+
   // Create .husky directory
   const huskyDir = path.join(config.projectPath, '.husky');
   await fs.ensureDir(huskyDir);

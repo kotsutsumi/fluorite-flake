@@ -37,7 +37,7 @@ export async function generatePackageJson(config: ProjectConfig) {
       'format:check': 'biome format .',
       check: 'biome check .',
       'check:fix': 'biome check --fix .',
-      prepare: 'husky',
+      // prepare script will be added after husky is installed
     },
     dependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.dependencies]),
     devDependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.devDependencies]),
