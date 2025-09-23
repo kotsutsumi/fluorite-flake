@@ -4,7 +4,7 @@
 # Workflow:
 #   pnpm build
 #   pnpm pack --pack-destination /tmp
-#   pnpm add -g /tmp/fluorite-flake-<version>.tgz
+#   npm install -g /tmp/fluorite-flake-<version>.tgz
 #   fluorite-flake --help
 
 set -euo pipefail
@@ -20,96 +20,44 @@ require_command() {
   fi
 }
 
-trim_quotes() {
-  local value="$1"
-  value="${value%\"}"
-  value="${value#\"}"
-  value="${value%\'}"
-  value="${value#\'}"
-  printf '%s\n' "$value"
-}
-
-existing_global_store() {
-  local root modules_yaml store_line resolved
-  root=$(pnpm root -g 2>/dev/null || true)
-  if [[ -z "$root" ]]; then
-    return
-  fi
-
-  modules_yaml="$root/.modules.yaml"
-  if [[ ! -f "$modules_yaml" ]]; then
-    return
-  fi
-
-  store_line=$(grep -E '^[[:space:]]*storeDir:' "$modules_yaml" | head -n1 | sed -E 's/^[[:space:]]*storeDir:[[:space:]]*//')
-  store_line="$(trim_quotes "$store_line")"
-  if [[ -z "$store_line" ]]; then
-    return
-  fi
-
-  if [[ "$store_line" != /* ]]; then
-    resolved=$(node -pe "const path=require('path'); console.log(path.resolve(process.argv[1], process.argv[2]));" "$root" "$store_line")
-  else
-    resolved="$store_line"
-  fi
-
-  if [[ -d "$resolved" ]]; then
-    printf '%s\n' "$resolved"
-  fi
-}
-
 require_command pnpm
+require_command npm
 require_command node
 
 PACKAGE_NAME="$(node -pe "require('./package.json').name")"
 PACKAGE_VERSION="$(node -pe "require('./package.json').version")"
 PACKAGE_TGZ="/tmp/${PACKAGE_NAME}-${PACKAGE_VERSION}.tgz"
 
-DEFAULT_STORE="$(pnpm store path 2>/dev/null || true)"
-LEGACY_STORE="$(existing_global_store || true)"
-
-if [[ -n "$LEGACY_STORE" && -n "$DEFAULT_STORE" && "$LEGACY_STORE" != "$DEFAULT_STORE" ]]; then
-  export PNPM_STORE_DIR="$LEGACY_STORE"
-  echo "🏪 Aligning pnpm store with existing global installs: $PNPM_STORE_DIR"
-elif [[ -n "$LEGACY_STORE" ]]; then
-  export PNPM_STORE_DIR="$LEGACY_STORE"
-  echo "🏪 Using pnpm store: $PNPM_STORE_DIR"
-elif [[ -n "$DEFAULT_STORE" ]]; then
-  export PNPM_STORE_DIR="$DEFAULT_STORE"
-  echo "🏪 Using pnpm store: $PNPM_STORE_DIR"
-fi
-
-echo "🧹 Ensuring clean installation..."
-if pnpm list -g --depth -1 --color=never | grep -qE "^${PACKAGE_NAME}[[:space:]]"; then
-  echo "📦 Found existing $PACKAGE_NAME installation, removing..."
-  pnpm remove -g "$PACKAGE_NAME" || echo "⚠️  Failed to remove existing installation; continuing"
-else
-  echo "✅ No existing global installation found"
-fi
-
+# Remove any stale archive from previous runs
 if [[ -f "$PACKAGE_TGZ" ]]; then
   echo "♻️  Removing existing package archive: $PACKAGE_TGZ"
   rm -f "$PACKAGE_TGZ"
 fi
 
+# Uninstall existing global installation (npm manages its own global prefix)
+echo "🧹 Ensuring clean npm installation..."
+if npm list -g --depth=0 "$PACKAGE_NAME" >/dev/null 2>&1; then
+  echo "📦 Found existing $PACKAGE_NAME installation via npm, removing..."
+  npm uninstall -g "$PACKAGE_NAME"
+else
+  echo "✅ No npm global installation found"
+fi
+
+# Build and pack using pnpm (project default)
 echo "Building ${PACKAGE_NAME}@${PACKAGE_VERSION}..."
 pnpm build
 
 echo "Packing to /tmp..."
-pnpm pack --pack-destination /tmp
+pnpm pack --pack-destination /tmp >/dev/null
 
-echo "📦 Installing ${PACKAGE_TGZ} globally..."
-if ! pnpm add -g "$PACKAGE_TGZ"; then
-  echo "❌ Global installation failed."
-  echo "💡 Try syncing your pnpm store manually:"
-  echo "   pnpm remove -g $PACKAGE_NAME"
-  if [[ -n "$LEGACY_STORE" ]]; then
-    echo "   PNPM_STORE_DIR=$LEGACY_STORE pnpm add -g \"$PACKAGE_TGZ\""
-  else
-    echo "   pnpm add -g \"$PACKAGE_TGZ\""
-  fi
+if [[ ! -f "$PACKAGE_TGZ" ]]; then
+  echo "Error: expected tarball not found at $PACKAGE_TGZ" >&2
   exit 1
 fi
+
+# Install the tarball globally with npm to avoid pnpm store mismatch issues
+echo "📦 Installing ${PACKAGE_TGZ} globally with npm..."
+npm install -g "$PACKAGE_TGZ"
 
 echo "Running ${PACKAGE_NAME} --help to verify installation..."
 "$PACKAGE_NAME" --help

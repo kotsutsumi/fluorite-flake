@@ -23,7 +23,10 @@ export async function generateNextProject(config: ProjectConfig) {
   // Setup Biome and Ultracite
   await setupLinters(config);
 
-  // Setup shadcn/ui and Kibo UI
+  // Create Next.js configuration files BEFORE shadcn/ui
+  await createNextjsConfig(config);
+
+  // Setup shadcn/ui and Kibo UI (now after Next.js is properly configured)
   await setupUILibraries(config);
 
   // Setup Jotai and next-themes
@@ -32,7 +35,7 @@ export async function generateNextProject(config: ProjectConfig) {
   // Setup Husky
   await setupHusky(config);
 
-  // Create initial pages
+  // Create initial pages and remaining files
   await createInitialPages(config);
 }
 
@@ -477,6 +480,68 @@ echo "✅ Pre-commit checks completed!"
   await fs.chmod(preCommitPath, '755');
 }
 
+async function createNextjsConfig(config: ProjectConfig) {
+  // Next.js config
+  const nextConfigContent = `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    // Enable experimental features as needed
+  },
+};
+
+export default nextConfig;
+`;
+
+  await fs.writeFile(path.join(config.projectPath, 'next.config.mjs'), nextConfigContent);
+
+  // Environment variables
+  const envContent = `# Environment variables
+NODE_ENV=development
+`;
+
+  await fs.writeFile(path.join(config.projectPath, '.env.local'), envContent);
+
+  // Gitignore
+  const gitignoreContent = `# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+`;
+
+  await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
+}
+
 async function createInitialPages(config: ProjectConfig) {
   // Layout
   const layoutContent = `import type { Metadata } from 'next';
@@ -613,64 +678,4 @@ export default function Home() {
 `;
 
   await fs.writeFile(path.join(config.projectPath, 'src/app/page.tsx'), pageContent);
-
-  // Next.js config
-  const nextConfigContent = `/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  experimental: {
-    // Enable experimental features as needed
-  },
-};
-
-export default nextConfig;
-`;
-
-  await fs.writeFile(path.join(config.projectPath, 'next.config.mjs'), nextConfigContent);
-
-  // Environment variables
-  const envContent = `# Environment variables
-NODE_ENV=development
-`;
-
-  await fs.writeFile(path.join(config.projectPath, '.env.local'), envContent);
-
-  // Gitignore
-  const gitignoreContent = `# Dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-
-# Production
-/build
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
-.env*.local
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-`;
-
-  await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
 }
