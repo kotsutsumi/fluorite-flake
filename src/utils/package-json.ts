@@ -40,7 +40,14 @@ export async function generatePackageJson(config: ProjectConfig) {
       // prepare script will be added after husky is installed
     },
     dependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.dependencies]),
-    devDependencies: getPackageVersions([...PACKAGE_CATEGORIES.nextjs.devDependencies]),
+    devDependencies: getPackageVersions([
+      ...PACKAGE_CATEGORIES.nextjs.devDependencies,
+      'tailwindcss',
+      'tailwindcss-animate',
+      'autoprefixer',
+      'postcss',
+      '@tailwindcss/postcss',
+    ]),
   };
 
   // Add database dependencies

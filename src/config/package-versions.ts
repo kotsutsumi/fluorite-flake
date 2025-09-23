@@ -21,6 +21,10 @@ export const PACKAGE_VERSIONS = {
   // Styling
   tailwindcss: '^3.4.15',
   '@tailwindcss/typography': '^0.5.15',
+  'tailwindcss-animate': '^1.0.7',
+  autoprefixer: '^10.4.20',
+  postcss: '^8.5.0',
+  '@tailwindcss/postcss': '4.0.0-beta.6',
 
   // Database and ORM
   prisma: '^5.22.0',
