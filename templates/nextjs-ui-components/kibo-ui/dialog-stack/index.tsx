@@ -1,7 +1,7 @@
 'use client';
 
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import { Portal } from 'radix-ui';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import type {
   ButtonHTMLAttributes,
   Dispatch,
@@ -212,7 +212,7 @@ export const DialogStackBody = ({ children, className, ...props }: DialogStackBo
         setTotalDialogs,
       }}
     >
-      <Portal.Root>
+      <DialogPrimitive.Portal>
         <div
           className={cn(
             'pointer-events-none fixed inset-0 z-50 mx-auto flex w-full max-w-lg flex-col items-center justify-center',
@@ -235,7 +235,7 @@ export const DialogStackBody = ({ children, className, ...props }: DialogStackBo
             })}
           </div>
         </div>
-      </Portal.Root>
+      </DialogPrimitive.Portal>
     </DialogStackContext.Provider>
   );
 };

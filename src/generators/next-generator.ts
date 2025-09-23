@@ -24,6 +24,7 @@ export async function generateNextProject(config: ProjectConfig) {
   }
 
   await setupStateManagement(config);
+  await setupHooks(config);
 
   if (!isMinimal) {
     await setupHusky(config);
@@ -614,6 +615,21 @@ export function cn(...inputs: ClassValue[]) {
   await fs.copy(templatesPath, targetPath, { overwrite: true });
 
   console.log('  • Installed verified UI components');
+}
+
+async function setupHooks(config: ProjectConfig) {
+  // Copy pre-verified hooks from templates
+  const hooksTemplatePath = path.join(
+    path.dirname(new URL(import.meta.url).pathname),
+    '../../templates/nextjs-hooks'
+  );
+  const targetHooksPath = path.join(config.projectPath, 'src/hooks');
+  await fs.ensureDir(targetHooksPath);
+
+  // Check if hooks template exists and has files
+  if (await fs.pathExists(hooksTemplatePath)) {
+    await fs.copy(hooksTemplatePath, targetHooksPath, { overwrite: true });
+  }
 }
 
 async function setupStateManagement(config: ProjectConfig) {
