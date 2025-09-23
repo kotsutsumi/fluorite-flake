@@ -272,7 +272,18 @@ async function setupUILibraries(config: ProjectConfig) {
   await runShadcnCommand(
     config,
     runner,
-    ['init', '--template', 'next', '--src-dir', '--force', '--yes', '--base-color', 'neutral'],
+    [
+      'init',
+      '--template',
+      'next',
+      '--src-dir',
+      '--force',
+      '--yes',
+      '--style',
+      'new-york',
+      '--base-color',
+      'neutral',
+    ],
     'initialize shadcn/ui'
   );
 
