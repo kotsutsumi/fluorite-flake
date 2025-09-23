@@ -710,6 +710,19 @@ export type { ButtonProps }
 
   await fs.writeFile(buttonPath, buttonContent);
 
+  // Run biome fix to clean up linting issues in shadcn/ui components
+  console.log('  • Fixing linting issues in shadcn/ui components...');
+  try {
+    await execa(config.packageManager, ['run', 'lint:fix'], {
+      cwd: config.projectPath,
+      stdio: 'pipe',
+    });
+    console.log('  • Fixed linting issues');
+  } catch (_error) {
+    // If lint:fix fails, it's not critical - continue with setup
+    console.log('  • Note: Some linting issues may need manual fixing');
+  }
+
   console.log('  • Installing Kibo UI component library...');
 
   const kiboComponents = [
@@ -879,10 +892,11 @@ export const themeAtom = atom<'light' | 'dark'>('light');
   // Providers
   const providersContent = `'use client';
 
+import type { ReactNode } from 'react';
 import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'next-themes';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <JotaiProvider>
       <ThemeProvider
@@ -1011,6 +1025,7 @@ next-env.d.ts
 async function createInitialPages(config: ProjectConfig) {
   // Layout
   const layoutContent = `import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import './globals.css';
@@ -1025,7 +1040,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
