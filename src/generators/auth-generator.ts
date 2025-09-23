@@ -70,7 +70,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 };
 `;
 
-  await fs.writeFile(path.join(libDir, 'roles.ts'), rolesContent);
+  await fs.outputFile(path.join(libDir, 'roles.ts'), rolesContent);
 
   const authContent = `import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -119,7 +119,7 @@ export const auth = betterAuth({
 });
 `;
 
-  await fs.writeFile(path.join(libDir, 'auth.ts'), authContent);
+  await fs.outputFile(path.join(libDir, 'auth.ts'), authContent);
 
   const authClientContent = `'use client';
 
@@ -140,7 +140,7 @@ export const {
 } = authClient;
 `;
 
-  await fs.writeFile(path.join(libDir, 'auth-client.ts'), authClientContent);
+  await fs.outputFile(path.join(libDir, 'auth-client.ts'), authClientContent);
 
   const authServerContent = `import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -200,7 +200,7 @@ export function roleLabel(role: AppRole) {
 }
 `;
 
-  await fs.writeFile(path.join(libDir, 'auth-server.ts'), authServerContent);
+  await fs.outputFile(path.join(libDir, 'auth-server.ts'), authServerContent);
 
   const slugUtilContent = `export function toSlug(input: string) {
   const normalized = input
@@ -217,7 +217,7 @@ export function roleLabel(role: AppRole) {
 }
 `;
 
-  await fs.writeFile(path.join(libDir, 'to-slug.ts'), slugUtilContent);
+  await fs.outputFile(path.join(libDir, 'to-slug.ts'), slugUtilContent);
 
   await appendEnv(
     config,
@@ -258,7 +258,7 @@ export const config = {
 };
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'middleware.ts'), middlewareContent);
+  await fs.outputFile(path.join(config.projectPath, 'middleware.ts'), middlewareContent);
 }
 
 async function writeAuthApiRoute(config: ProjectConfig) {
@@ -270,7 +270,7 @@ async function writeAuthApiRoute(config: ProjectConfig) {
 export const { GET, POST } = auth.handler;
 `;
 
-  await fs.writeFile(path.join(authApiDir, 'route.ts'), authApiContent);
+  await fs.outputFile(path.join(authApiDir, 'route.ts'), authApiContent);
 }
 
 async function writeDashboardScaffolding(config: ProjectConfig) {
@@ -311,7 +311,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 }
 `;
 
-  await fs.writeFile(path.join(groupDir, 'layout.tsx'), appLayoutContent);
+  await fs.outputFile(path.join(groupDir, 'layout.tsx'), appLayoutContent);
 
   const sidebarContent = `'use client';
 
@@ -404,7 +404,7 @@ function roleLabel(role: AppRole) {
 }
 `;
 
-  await fs.writeFile(path.join(componentsDir, 'sidebar.tsx'), sidebarContent);
+  await fs.outputFile(path.join(componentsDir, 'sidebar.tsx'), sidebarContent);
 
   const headerContent = `'use client';
 
@@ -463,7 +463,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 }
 `;
 
-  await fs.writeFile(path.join(componentsDir, 'dashboard-header.tsx'), headerContent);
+  await fs.outputFile(path.join(componentsDir, 'dashboard-header.tsx'), headerContent);
 
   const dashboardPageContent = `import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -547,7 +547,7 @@ export default async function DashboardPage() {
 }
 `;
 
-  await fs.writeFile(path.join(groupDir, 'page.tsx'), dashboardPageContent);
+  await fs.outputFile(path.join(groupDir, 'page.tsx'), dashboardPageContent);
 
   const organizationsPageContent = `import { redirect } from 'next/navigation';
 import prisma from '@/lib/db';
@@ -589,7 +589,7 @@ export default async function OrganizationsPage() {
 }
 `;
 
-  await fs.writeFile(path.join(groupDir, 'organizations/page.tsx'), organizationsPageContent);
+  await fs.outputFile(path.join(groupDir, 'organizations/page.tsx'), organizationsPageContent);
 
   const organizationsClientContent = `'use client';
 
@@ -822,7 +822,7 @@ export function OrganizationsClient({ initialOrganizations }: OrganizationsClien
 }
 `;
 
-  await fs.writeFile(
+  await fs.outputFile(
     path.join(componentsDir, 'organizations-client.tsx'),
     organizationsClientContent
   );
@@ -889,7 +889,7 @@ export default async function UsersPage() {
 }
 `;
 
-  await fs.writeFile(path.join(groupDir, 'users/page.tsx'), usersPageContent);
+  await fs.outputFile(path.join(groupDir, 'users/page.tsx'), usersPageContent);
 
   const usersClientContentLines = [
     "'use client';",
@@ -1190,7 +1190,7 @@ export default async function UsersPage() {
   ];
   const usersClientContent = usersClientContentLines.join('\n');
 
-  await fs.writeFile(path.join(componentsDir, 'users-client.tsx'), usersClientContent);
+  await fs.outputFile(path.join(componentsDir, 'users-client.tsx'), usersClientContent);
 
   const profilePageContent = `import prisma from '@/lib/db';
 import { requireSession } from '@/lib/auth-server';
@@ -1221,7 +1221,7 @@ export default async function ProfilePage() {
 }
 `;
 
-  await fs.writeFile(path.join(groupDir, 'profile/page.tsx'), profilePageContent);
+  await fs.outputFile(path.join(groupDir, 'profile/page.tsx'), profilePageContent);
 
   const profileFormContent = `'use client';
 
@@ -1415,7 +1415,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 }
 `;
 
-  await fs.writeFile(path.join(componentsDir, 'profile-form.tsx'), profileFormContent);
+  await fs.outputFile(path.join(componentsDir, 'profile-form.tsx'), profileFormContent);
 
   const loginPageContent = `'use client';
 
@@ -1538,7 +1538,7 @@ export default function LoginPage() {
 `;
 
   await fs.ensureDir(path.join(appDir, 'login'));
-  await fs.writeFile(path.join(appDir, 'login/page.tsx'), loginPageContent);
+  await fs.outputFile(path.join(appDir, 'login/page.tsx'), loginPageContent);
 }
 
 async function writeApiRoutes(config: ProjectConfig) {
@@ -1630,7 +1630,7 @@ export async function POST(request: Request) {
 }
 `;
 
-  await fs.writeFile(path.join(dir, 'route.ts'), collectionRoute);
+  await fs.outputFile(path.join(dir, 'route.ts'), collectionRoute);
 
   const singleRoute = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -1710,7 +1710,7 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
 }
 `;
 
-  await fs.writeFile(path.join(organizationIdDir, 'route.ts'), singleRoute);
+  await fs.outputFile(path.join(organizationIdDir, 'route.ts'), singleRoute);
 }
 
 async function writeUsersApi(config: ProjectConfig) {
@@ -1854,7 +1854,7 @@ export async function POST(request: Request) {
 }
 `;
 
-  await fs.writeFile(path.join(dir, 'route.ts'), collectionRoute);
+  await fs.outputFile(path.join(dir, 'route.ts'), collectionRoute);
 
   const singleRoute = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -2000,7 +2000,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 }
 `;
 
-  await fs.writeFile(path.join(userIdDir, 'route.ts'), singleRoute);
+  await fs.outputFile(path.join(userIdDir, 'route.ts'), singleRoute);
 }
 
 async function writeProfileApi(config: ProjectConfig) {
@@ -2092,7 +2092,7 @@ export async function PUT(request: Request) {
 }
 `;
 
-  await fs.writeFile(path.join(dir, 'route.ts'), routeContent);
+  await fs.outputFile(path.join(dir, 'route.ts'), routeContent);
 }
 
 async function writeProfileUploadHelper(config: ProjectConfig) {
@@ -2101,7 +2101,7 @@ async function writeProfileUploadHelper(config: ProjectConfig) {
   if (config.storage === 'none') {
     const uploadsDir = path.join(config.projectPath, 'public/uploads');
     await fs.ensureDir(uploadsDir);
-    await fs.writeFile(path.join(uploadsDir, '.gitkeep'), '');
+    await fs.outputFile(path.join(uploadsDir, '.gitkeep'), '');
 
     const helperLines = [
       "import path from 'node:path';",
@@ -2120,12 +2120,12 @@ async function writeProfileUploadHelper(config: ProjectConfig) {
       "  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';",
       '  const filename = `${userId}-${Date.now()}.${extension}`;',
       '  const storagePath = path.join(uploadsDir, filename);',
-      '  await fs.writeFile(storagePath, buffer);',
+      '  await fs.outputFile(storagePath, buffer);',
       '  return `/uploads/${filename}`;',
       '}',
     ];
 
-    await fs.writeFile(helperPath, helperLines.join('\n'));
+    await fs.outputFile(helperPath, helperLines.join('\n'));
   } else {
     const helperLines = [
       "import { uploadBuffer } from '@/lib/storage';",
@@ -2139,7 +2139,7 @@ async function writeProfileUploadHelper(config: ProjectConfig) {
       '}',
     ];
 
-    await fs.writeFile(helperPath, helperLines.join('\n'));
+    await fs.outputFile(helperPath, helperLines.join('\n'));
   }
 }
 
@@ -2166,5 +2166,5 @@ async function appendEnv(config: ProjectConfig, block: string) {
 
   const newline = existing.endsWith('\n') || existing.length === 0 ? '' : '\n';
   const updated = `${existing}${newline}${linesMissing.join('\n')}\n`;
-  await fs.writeFile(envPath, updated);
+  await fs.outputFile(envPath, updated);
 }

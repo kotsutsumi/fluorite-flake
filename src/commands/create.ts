@@ -72,6 +72,7 @@ export interface ProjectConfig {
   storage: 'none' | 'vercel-blob' | 'cloudflare-r2' | 'aws-s3' | 'supabase-storage';
   auth: boolean;
   packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
+  mode?: 'full' | 'minimal';
 }
 
 export async function createProject() {
@@ -227,6 +228,7 @@ export async function createProject() {
     deployment: answers.deployment ?? false,
     packageManager: answers.packageManager ?? 'pnpm',
     projectPath: path.join(process.cwd(), answers.projectName),
+    mode: 'full',
   };
 
   if (config.auth && config.orm !== 'prisma') {

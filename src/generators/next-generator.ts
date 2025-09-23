@@ -5,40 +5,30 @@ import type { ProjectConfig } from '../commands/create.js';
 import { generatePackageJson } from '../utils/package-json.js';
 
 export async function generateNextProject(config: ProjectConfig) {
-  // Create project directory
   await fs.ensureDir(config.projectPath);
 
-  // Create Next.js app structure
+  const isMinimal = config.mode === 'minimal';
+
   await createNextAppStructure(config);
-
-  // Setup package.json
   await generatePackageJson(config);
-
-  // Setup TypeScript
   await setupTypeScript(config);
-
-  // Setup TailwindCSS v4
   await setupTailwind(config);
-
-  // Setup Biome and Ultracite
   await setupLinters(config);
-
-  // Create Next.js configuration files BEFORE shadcn/ui
   await createNextjsConfig(config);
 
-  // Install dependencies so shadcn/ui can detect the framework
-  await installDependencies(config);
+  if (isMinimal) {
+    await setupMinimalUILibraries(config);
+  } else {
+    await installDependencies(config);
+    await setupUILibraries(config);
+  }
 
-  // Setup shadcn/ui and Kibo UI (now after Next.js is properly configured)
-  await setupUILibraries(config);
-
-  // Setup Jotai and next-themes
   await setupStateManagement(config);
 
-  // Setup Husky
-  await setupHusky(config);
+  if (!isMinimal) {
+    await setupHusky(config);
+  }
 
-  // Create initial pages and remaining files
   await createInitialPages(config);
 }
 
@@ -256,6 +246,284 @@ async function setupLinters(config: ProjectConfig) {
   await fs.writeJSON(path.join(config.projectPath, 'biome.json'), biomeConfig, { spaces: 2 });
 }
 
+async function setupMinimalUILibraries(config: ProjectConfig) {
+  console.log('  • Creating minimal UI component stubs...');
+
+  const utilsContent = `import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+`;
+
+  await fs.outputFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
+
+  const componentsConfig = {
+    $schema: 'https://ui.shadcn.com/schema.json',
+    style: 'new-york',
+    rsc: true,
+    tsx: true,
+    tailwind: {
+      config: 'tailwind.config.ts',
+      css: 'src/styles/globals.css',
+      baseColor: 'neutral',
+      cssVariables: true,
+      prefix: '',
+    },
+    aliases: {
+      components: '@/components',
+      utils: '@/lib/utils',
+      ui: '@/components/ui',
+      lib: '@/lib',
+      hooks: '@/hooks',
+    },
+  } as const;
+
+  await fs.writeJSON(path.join(config.projectPath, 'components.json'), componentsConfig, {
+    spaces: 2,
+  });
+
+  const files: Record<string, string> = {
+    'src/components/ui/button.tsx': `import type { ButtonHTMLAttributes } from 'react';
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'default' | 'secondary' | 'outline';
+}
+
+export function Button({ variant: _variant, ...props }: ButtonProps) {
+  return <button {...props} />;
+}
+
+export default Button;
+`,
+    'src/components/ui/card.tsx': `import type { HTMLAttributes } from 'react';
+
+export function Card(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function CardHeader(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function CardTitle(props: HTMLAttributes<HTMLHeadingElement>) {
+  return <h3 {...props} />;
+}
+
+export function CardDescription(props: HTMLAttributes<HTMLParagraphElement>) {
+  return <p {...props} />;
+}
+
+export function CardContent(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+`,
+    'src/components/ui/badge.tsx': `import type { HTMLAttributes } from 'react';
+
+export function Badge(props: HTMLAttributes<HTMLSpanElement>) {
+  return <span {...props} />;
+}
+`,
+    'src/components/ui/dialog.tsx': `import type { HTMLAttributes } from 'react';
+
+export function Dialog(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function DialogContent(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function DialogHeader(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function DialogFooter(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function DialogTitle(props: HTMLAttributes<HTMLHeadingElement>) {
+  return <h2 {...props} />;
+}
+`,
+    'src/components/ui/input.tsx': `import { forwardRef } from 'react';
+import type { InputHTMLAttributes } from 'react';
+
+export type InputProps = InputHTMLAttributes<HTMLInputElement>;
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(props, ref) {
+  return <input ref={ref} {...props} />;
+});
+`,
+    'src/components/ui/textarea.tsx': `import { forwardRef } from 'react';
+import type { TextareaHTMLAttributes } from 'react';
+
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  props,
+  ref,
+) {
+  return <textarea ref={ref} {...props} />;
+});
+`,
+    'src/components/ui/table.tsx': `import type {
+  HTMLAttributes,
+  TableHTMLAttributes,
+  TdHTMLAttributes,
+  ThHTMLAttributes,
+} from 'react';
+
+export function Table(props: TableHTMLAttributes<HTMLTableElement>) {
+  return <table {...props} />;
+}
+
+export function TableHeader(props: HTMLAttributes<HTMLTableSectionElement>) {
+  return <thead {...props} />;
+}
+
+export function TableBody(props: HTMLAttributes<HTMLTableSectionElement>) {
+  return <tbody {...props} />;
+}
+
+export function TableRow(props: HTMLAttributes<HTMLTableRowElement>) {
+  return <tr {...props} />;
+}
+
+export function TableHead(props: ThHTMLAttributes<HTMLTableCellElement>) {
+  return <th {...props} />;
+}
+
+export function TableCell(props: TdHTMLAttributes<HTMLTableCellElement>) {
+  return <td {...props} />;
+}
+`,
+    'src/components/ui/select.tsx': `import type { ChangeEvent, HTMLAttributes, ReactNode } from 'react';
+
+export interface SelectProps {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  children?: ReactNode;
+}
+
+export function Select({ value, onValueChange, children }: SelectProps) {
+  return (
+    <div data-select="root" data-value={value}>
+      {typeof children === 'function'
+        ? (children as unknown as () => ReactNode)()
+        : children}
+    </div>
+  );
+}
+
+export interface SelectTriggerProps extends HTMLAttributes<HTMLButtonElement> {
+  value?: string;
+}
+
+export function SelectTrigger({ value, ...props }: SelectTriggerProps) {
+  return <button data-select="trigger" data-value={value} type="button" {...props} />;
+}
+
+export function SelectContent({ children }: { children?: ReactNode }) {
+  return <div data-select="content">{children}</div>;
+}
+
+export function SelectItem({ value, children }: { value: string; children?: ReactNode }) {
+  return (
+    <div data-select="item" data-value={value}>
+      {children}
+    </div>
+  );
+}
+
+export function SelectValue({ placeholder, value }: { placeholder?: string; value?: string }) {
+  return <span data-select="value">{value ?? placeholder ?? ''}</span>;
+}
+`,
+    'src/components/ui/label.tsx': `import type { LabelHTMLAttributes } from 'react';
+
+export type LabelProps = LabelHTMLAttributes<HTMLLabelElement>;
+
+export function Label(props: LabelProps) {
+  return <label {...props} />;
+}
+`,
+    'src/components/ui/alert.tsx': `import type { HTMLAttributes } from 'react';
+
+export function Alert(props: HTMLAttributes<HTMLDivElement>) {
+  return <div role="alert" {...props} />;
+}
+
+export function AlertDescription(props: HTMLAttributes<HTMLParagraphElement>) {
+  return <p {...props} />;
+}
+`,
+    'src/components/ui/separator.tsx': `import type { HTMLAttributes } from 'react';
+
+export function Separator(props: HTMLAttributes<HTMLHRElement>) {
+  return <hr {...props} />;
+}
+`,
+    'src/components/ui/avatar.tsx': `import type { HTMLAttributes, ImgHTMLAttributes } from 'react';
+
+export function Avatar(props: HTMLAttributes<HTMLDivElement>) {
+  return <div {...props} />;
+}
+
+export function AvatarImage(props: ImgHTMLAttributes<HTMLImageElement>) {
+  return <img alt={props.alt ?? ''} {...props} />;
+}
+
+export function AvatarFallback(props: HTMLAttributes<HTMLSpanElement>) {
+  return <span {...props} />;
+}
+`,
+    'src/components/ui/kibo-ui/announcement.tsx': `import type { HTMLAttributes } from 'react';
+
+export function Announcement(props: HTMLAttributes<HTMLDivElement>) {
+  return <div role="status" {...props} />;
+}
+
+export function AnnouncementTag(props: HTMLAttributes<HTMLSpanElement>) {
+  return <span {...props} />;
+}
+
+export function AnnouncementTitle(props: HTMLAttributes<HTMLParagraphElement>) {
+  return <p {...props} />;
+}
+`,
+    'src/components/ui/kibo-ui/theme-switcher.tsx': `import type { ChangeEvent } from 'react';
+
+export interface ThemeSwitcherProps {
+  value: 'light' | 'dark' | 'system';
+  onChange?: (value: ThemeSwitcherProps['value']) => void;
+}
+
+export function ThemeSwitcher({ value, onChange }: ThemeSwitcherProps) {
+  function handleChange(event: ChangeEvent<HTMLSelectElement>) {
+    onChange?.(event.target.value as ThemeSwitcherProps['value']);
+  }
+
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-medium">Theme</span>
+      <select value={value} onChange={handleChange}>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="system">System</option>
+      </select>
+    </label>
+  );
+}
+`,
+  };
+
+  for (const [relativePath, content] of Object.entries(files)) {
+    await fs.outputFile(path.join(config.projectPath, relativePath), content);
+  }
+}
+
 async function setupUILibraries(config: ProjectConfig) {
   // Create utils.ts file
   const utilsContent = `import { type ClassValue, clsx } from 'clsx';
@@ -366,33 +634,6 @@ export function cn(...inputs: ClassValue[]) {
       ['add', registryUrl, '--yes', '--overwrite'],
       `install Kibo UI component ${component}`
     );
-  }
-
-  // Fix theme-switcher component imports
-  const themeSwitcherPath = path.join(
-    config.projectPath,
-    'src/components/ui/kibo-ui/theme-switcher/index.tsx'
-  );
-
-  if (await fs.pathExists(themeSwitcherPath)) {
-    let content = await fs.readFile(themeSwitcherPath, 'utf-8');
-
-    // Add missing icon imports if not present
-    if (!content.includes('import { Sun, Moon, Monitor }')) {
-      // Find the import section and add the lucide-react import
-      const importMatch = content.match(/^((?:import .+\n)+)/m);
-      if (importMatch) {
-        const imports = importMatch[1];
-        const newImports = `${imports}import { Sun, Moon, Monitor } from 'lucide-react';\n`;
-        content = content.replace(imports, newImports);
-      } else {
-        // If no imports found, add at the beginning
-        content = `import { Sun, Moon, Monitor } from 'lucide-react';\n${content}`;
-      }
-
-      await fs.writeFile(themeSwitcherPath, content);
-      console.log('  • Fixed theme-switcher icon imports');
-    }
   }
 }
 

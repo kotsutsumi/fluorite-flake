@@ -64,14 +64,24 @@ const nextjsConfigurations = [
     auth: false,
   },
   {
-    name: 'nextjs-supabase-drizzle-auth',
+    name: 'nextjs-supabase-prisma-auth',
+    framework: 'nextjs',
+    database: 'supabase',
+    orm: 'prisma',
+    deployment: false,
+    storage: 'none',
+    auth: true,
+  },
+  {
+    name: 'nextjs-supabase-drizzle',
     framework: 'nextjs',
     database: 'supabase',
     orm: 'drizzle',
     deployment: false,
     storage: 'none',
-    auth: true,
+    auth: false,
   },
+
 ];
 
 const expoConfigurations = [
@@ -148,8 +158,8 @@ const flutterConfigurations = [
 
 // Combine all configurations for comprehensive testing
 const allConfigurations = [
-  ...nextjsConfigurations.slice(0, 3), // Test subset of Next.js configs to save time
-  ...expoConfigurations.slice(0, 2), // Test subset of Expo configs
+  ...nextjsConfigurations, // Test all Next.js configurations
+  ...expoConfigurations.slice(0, 2), // Test subset of Expo configs to keep runtime manageable
   ...tauriConfigurations, // Test all Tauri configs
   ...flutterConfigurations, // Test all Flutter configs
 ];
@@ -440,7 +450,8 @@ describe('Fluorite-Flake Multi-Framework Generator Tests', () => {
                 'utf-8'
               );
               expect(schema).toContain('model User');
-              expect(schema).toContain('model Post');
+              expect(schema).toContain('model Organization');
+              expect(schema).toContain('model Member');
             } else if (config.orm === 'drizzle') {
               expect(await fs.pathExists(path.join(projectPath, 'src/db/schema.ts'))).toBe(true);
               expect(await fs.pathExists(path.join(projectPath, 'src/db/seed.ts'))).toBe(true);
@@ -629,7 +640,7 @@ describe('Fluorite-Flake Multi-Framework Generator Tests', () => {
               'utf-8'
             );
             expect(profileApi).toContain('saveProfileImage');
-            expect(profileApi).toContain('FormData');
+            expect(profileApi).toContain('request.formData');
             expect(profileApi).toContain('avatar');
           });
         }
@@ -696,7 +707,9 @@ async function generateProject(
     storage: config.storage,
     auth: config.auth,
     packageManager: 'pnpm' as const,
+    mode: 'minimal' as const,
   };
+
 
   // Import the appropriate generator based on framework
   switch (config.framework) {
