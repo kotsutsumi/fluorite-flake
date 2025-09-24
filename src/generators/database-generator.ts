@@ -347,7 +347,9 @@ model Verification {
   updatedAt   DateTime @updatedAt
 
   @@index([identifier])
-}${config.auth ? `
+}${
+    config.auth
+      ? `
 
 model Organization {
   id         String       @id @default(cuid())
@@ -386,7 +388,9 @@ model Invitation {
 
   @@index([email])
   @@index([organizationId])
-}` : ''}
+}`
+      : ''
+  }
 `;
 
   await fs.writeFile(path.join(config.projectPath, 'prisma/schema.prisma'), schemaContent);
@@ -399,10 +403,14 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Clean up existing data
-  await prisma.post.deleteMany();${config.auth ? `
+  await prisma.post.deleteMany();${
+    config.auth
+      ? `
   await prisma.invitation.deleteMany();
   await prisma.member.deleteMany();
-  await prisma.organization.deleteMany();` : ''}
+  await prisma.organization.deleteMany();`
+      : ''
+  }
   await prisma.session.deleteMany();
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
