@@ -625,8 +625,8 @@ if (isLocal) {
 } else {
   // Cloud deployment - use Turso adapter
   const libsql = createClient({
-    url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!,
+    url: process.env.TURSO_DATABASE_URL || '',
+    authToken: process.env.TURSO_AUTH_TOKEN || '',
   });
 
   const adapter = new PrismaLibSQL(libsql);
@@ -1017,7 +1017,7 @@ export async function POST(request: NextRequest) {
   // Create database demo component
   const demoComponentContent = `'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1048,12 +1048,14 @@ export default function DatabaseDemo() {
     authorEmail: 'demo@example.com',
   });
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch('/api/posts');
-      if (!response.ok) throw new Error('Failed to fetch posts');
+      if (!response.ok) {
+        throw new Error('Failed to fetch posts');
+      }
       const data = await response.json();
       setPosts(data);
     } catch (err) {
@@ -1061,11 +1063,11 @@ export default function DatabaseDemo() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1075,7 +1077,9 @@ export default function DatabaseDemo() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (!response.ok) throw new Error('Failed to create post');
+      if (!response.ok) {
+        throw new Error('Failed to create post');
+      }
 
       setFormData({ title: '', content: '', authorEmail: 'demo@example.com' });
       setShowForm(false);
