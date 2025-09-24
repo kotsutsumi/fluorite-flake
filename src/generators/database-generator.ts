@@ -415,7 +415,7 @@ async function main() {
     await prisma.session.deleteMany();
     await prisma.account.deleteMany();
     await prisma.user.deleteMany();
-  } catch (error) {
+  } catch (_error) {
     // Ignore errors during cleanup (tables might not exist yet)
     console.log('Database cleanup skipped (fresh database)');
   }
