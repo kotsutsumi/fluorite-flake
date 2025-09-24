@@ -402,18 +402,23 @@ ${config.auth ? "import bcrypt from 'bcryptjs';" : ''}
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean up existing data
-  await prisma.post.deleteMany();${
-    config.auth
-      ? `
-  await prisma.invitation.deleteMany();
-  await prisma.member.deleteMany();
-  await prisma.organization.deleteMany();`
-      : ''
+  // Clean up existing data (handle empty database gracefully)
+  try {
+    await prisma.post.deleteMany();${
+      config.auth
+        ? `
+    await prisma.invitation.deleteMany();
+    await prisma.member.deleteMany();
+    await prisma.organization.deleteMany();`
+        : ''
+    }
+    await prisma.session.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.user.deleteMany();
+  } catch (error) {
+    // Ignore errors during cleanup (tables might not exist yet)
+    console.log('Database cleanup skipped (fresh database)');
   }
-  await prisma.session.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.user.deleteMany();
 
   ${
     config.auth
