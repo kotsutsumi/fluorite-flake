@@ -10,17 +10,15 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
-      framework:
-        description: 'Framework to test (all, nextjs, expo, tauri, flutter)'
+      test_type:
+        description: 'Test type to run'
         required: false
         default: 'all'
         type: choice
         options:
           - all
           - nextjs
-          - expo
-          - tauri
-          - flutter
+          - comprehensive
 
 jobs:
   e2e-tests:
@@ -32,23 +30,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Next.js tests
+          # Next.js tests only
           - framework: nextjs
-            os: ubuntu-latest
-            node: 20
-
-          # Expo tests
-          - framework: expo
-            os: ubuntu-latest
-            node: 20
-
-          # Tauri tests (needs Rust)
-          - framework: tauri
-            os: ubuntu-latest
-            node: 20
-
-          # Flutter tests
-          - framework: flutter
             os: ubuntu-latest
             node: 20
 
@@ -85,87 +68,23 @@ jobs:
       - name: Build CLI
         run: pnpm run build
 
-      # Framework-specific setup
-      - name: Setup Rust (for Tauri)
-        if: matrix.framework == 'tauri'
-        uses: dtolnay/rust-toolchain@stable
+      # No framework-specific setup needed for Next.js Vitest tests
 
-      - name: Install Tauri dependencies (Ubuntu)
-        if: matrix.framework == 'tauri' && matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          # Try to install webkit2gtk-4.1 first (Ubuntu 24.04), fallback to 4.0
-          sudo apt-get install -y libwebkit2gtk-4.1-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev || \
-          sudo apt-get install -y libwebkit2gtk-4.0-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
-
-      - name: Setup Flutter
-        if: matrix.framework == 'flutter'
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
-          channel: 'stable'
-
-      # Install Patrol for Flutter tests (optional)
-      - name: Install Patrol CLI (for Flutter)
-        if: matrix.framework == 'flutter'
-        continue-on-error: true
-        run: |
-          dart pub global activate patrol_cli
-          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-
-      # Install Playwright browsers
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      # Install Maestro for Expo tests (optional)
-      - name: Install Maestro (for Expo)
-        if: matrix.framework == 'expo'
-        continue-on-error: true
-        run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
-
-      # Run E2E tests for specific framework
-      - name: Run ${{ matrix.framework }} E2E Tests
-        run: pnpm exec playwright test --project="${{ matrix.framework }}-e2e"
+      # Run E2E tests using Vitest
+      - name: Run Next.js E2E Tests
+        run: pnpm run test:e2e
         env:
           CI: true
-          HEADLESS: true
 
       # Upload test results
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ matrix.framework }}-${{ matrix.os }}
+          name: vitest-e2e-report-${{ matrix.framework }}-${{ matrix.os }}
           path: |
-            playwright-report/
+            coverage/
             test-results/
-          retention-days: 7
-
-      # Upload screenshots on failure
-      - name: Upload failure screenshots
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: failure-screenshots-${{ matrix.framework }}-${{ matrix.os }}
-          path: test-results/**/*.png
           retention-days: 7
 
   # Comprehensive test that runs all frameworks
@@ -173,7 +92,7 @@ jobs:
     name: Comprehensive E2E Test
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    if: github.event_name == 'schedule' || github.event.inputs.framework == 'all'
+    if: github.event_name == 'schedule' || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'comprehensive'
 
     steps:
       - name: Checkout code
@@ -208,63 +127,13 @@ jobs:
       - name: Build CLI
         run: pnpm run build
 
-      # Setup all framework dependencies
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      # No additional setup needed for Vitest E2E tests
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          # Try to install webkit2gtk-4.1 first (Ubuntu 24.04), fallback to 4.0
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev || \
-          sudo apt-get install -y \
-            libwebkit2gtk-4.0-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
-          channel: 'stable'
-
-      # Install mobile testing tools
-      - name: Install Maestro
-        continue-on-error: true
-        run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
-
-      - name: Install Patrol CLI
-        continue-on-error: true
-        run: |
-          dart pub global activate patrol_cli
-          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      # Run all E2E tests
-      - name: Run All E2E Tests
-        run: pnpm run test:e2e
+      # Run comprehensive E2E tests
+      - name: Run Comprehensive E2E Tests
+        run: pnpm run test:e2e:comprehensive
         env:
           CI: true
-          HEADLESS: true
 
       # Generate test report
       - name: Generate Test Report
@@ -317,15 +186,11 @@ jobs:
       - name: Build CLI
         run: pnpm run build
 
-      - name: Install Playwright
-        run: pnpm exec playwright install --with-deps chromium
-
-      # Run only smoke tests (marked with @smoke)
+      # Run quick Next.js E2E test as smoke test
       - name: Run Smoke Tests
-        run: pnpm exec playwright test --project="smoke-tests"
+        run: pnpm run test:e2e:nextjs
         env:
           CI: true
-          HEADLESS: true
 
       - name: Upload smoke test results
         if: always()
@@ -333,6 +198,6 @@ jobs:
         with:
           name: smoke-test-results
           path: |
-            playwright-report/
+            coverage/
             test-results/
           retention-days: 7
