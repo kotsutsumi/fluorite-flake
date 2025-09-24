@@ -458,8 +458,13 @@ describe('Fluorite-Flake Multi-Framework Generator Tests', () => {
                 'utf-8'
               );
               expect(schema).toContain('model User');
-              expect(schema).toContain('model Organization');
-              expect(schema).toContain('model Member');
+              expect(schema).toContain('model Post');
+              // Organization and Member models are only added when auth is enabled
+              if (config.auth) {
+                expect(schema).toContain('model Organization');
+                expect(schema).toContain('model Member');
+                expect(schema).toContain('model Invitation');
+              }
             } else if (config.orm === 'drizzle') {
               expect(await fs.pathExists(path.join(projectPath, 'src/db/schema.ts'))).toBe(true);
               expect(await fs.pathExists(path.join(projectPath, 'src/db/seed.ts'))).toBe(true);
@@ -598,12 +603,12 @@ describe('Fluorite-Flake Multi-Framework Generator Tests', () => {
               expect(schema).toContain('role          String   @default("user")');
 
               const seedFile = await fs.readFile(path.join(projectPath, 'prisma/seed.ts'), 'utf-8');
-              expect(seedFile).toContain('admin@example.com');
-              expect(seedFile).toContain('orgadmin@example.com');
-              expect(seedFile).toContain('user@example.com');
-              expect(seedFile).toContain('Admin123!');
-              expect(seedFile).toContain('OrgAdmin123!');
-              expect(seedFile).toContain('User123!');
+              expect(seedFile).toContain('alice@example.com');
+              expect(seedFile).toContain('bob@example.com');
+              expect(seedFile).toContain('charlie@example.com');
+              expect(seedFile).toContain('Demo123!');
+              expect(seedFile).toContain('Tech Corp');
+              expect(seedFile).toContain('Startup Inc');
             }
           });
 

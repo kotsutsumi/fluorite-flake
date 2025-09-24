@@ -287,7 +287,7 @@ model User {
   updatedAt     DateTime @updatedAt
   posts         Post[]
   accounts      Account[]
-  sessions      Session[]
+  sessions      Session[]${config.auth ? '\n  memberships   Member[]' : ''}
 }
 
 model Post {
@@ -347,7 +347,46 @@ model Verification {
   updatedAt   DateTime @updatedAt
 
   @@index([identifier])
+}${config.auth ? `
+
+model Organization {
+  id         String       @id @default(cuid())
+  name       String
+  slug       String       @unique
+  metadata   Json?
+  createdAt  DateTime     @default(now())
+  members    Member[]
+  invitations Invitation[]
 }
+
+model Member {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  email          String
+  role           String
+  status         String       @default("pending")
+  organizationId String
+  invitedBy      String?
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([organizationId])
+}` : ''}
 `;
 
   await fs.writeFile(path.join(config.projectPath, 'prisma/schema.prisma'), schemaContent);
@@ -360,7 +399,10 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Clean up existing data
-  await prisma.post.deleteMany();
+  await prisma.post.deleteMany();${config.auth ? `
+  await prisma.invitation.deleteMany();
+  await prisma.member.deleteMany();
+  await prisma.organization.deleteMany();` : ''}
   await prisma.session.deleteMany();
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
@@ -477,6 +519,50 @@ async function main() {
     ],
   });
 
+  ${
+    config.auth
+      ? `
+  // Create organizations and memberships
+  const techCorp = await prisma.organization.create({
+    data: {
+      name: 'Tech Corp',
+      slug: 'tech-corp',
+      metadata: { industry: 'Technology' },
+    },
+  });
+
+  const startupInc = await prisma.organization.create({
+    data: {
+      name: 'Startup Inc',
+      slug: 'startup-inc',
+      metadata: { industry: 'Software' },
+    },
+  });
+
+  // Create memberships
+  await prisma.member.createMany({
+    data: [
+      { userId: alice.id, organizationId: techCorp.id, role: 'owner' },
+      { userId: bob.id, organizationId: techCorp.id, role: 'member' },
+      { userId: bob.id, organizationId: startupInc.id, role: 'owner' },
+      { userId: charlie.id, organizationId: startupInc.id, role: 'member' },
+    ],
+  });
+
+  // Create an invitation
+  await prisma.invitation.create({
+    data: {
+      email: 'dave@example.com',
+      role: 'member',
+      organizationId: techCorp.id,
+      invitedBy: alice.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    },
+  });
+  `
+      : ''
+  }
+
   console.log('✅ Database seeded successfully!');
   console.log('');
   console.log('📊 Created:');
@@ -485,11 +571,14 @@ async function main() {
   ${
     config.auth
       ? `
+  console.log('   - 2 organizations');
+  console.log('   - 4 memberships');
+  console.log('   - 1 invitation');
   console.log('');
   console.log('🔐 Login credentials:');
-  console.log('   - alice@example.com / Demo123!');
-  console.log('   - bob@example.com / Demo123!');
-  console.log('   - charlie@example.com / Demo123!');
+  console.log('   - alice@example.com / Demo123! (owner of Tech Corp)');
+  console.log('   - bob@example.com / Demo123! (member of Tech Corp, owner of Startup Inc)');
+  console.log('   - charlie@example.com / Demo123! (member of Startup Inc)');
   `
       : ''
   }
