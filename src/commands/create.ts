@@ -14,6 +14,19 @@ import { setupStorage } from '../generators/storage-generator.js';
 import { generateTauriProject } from '../generators/tauri-generator.js';
 
 // Helper functions
+function isConfigComplete(config: Partial<ProjectConfig>): boolean {
+  // Check all required fields are present
+  return !!(
+    config.projectName &&
+    config.framework &&
+    config.database !== undefined &&
+    config.deployment !== undefined &&
+    config.storage !== undefined &&
+    config.auth !== undefined &&
+    config.packageManager
+  );
+}
+
 function getDeploymentText(framework: string): string {
   switch (framework) {
     case 'nextjs':
@@ -40,197 +53,9 @@ function getAuthText(framework: string): string {
   }
 }
 
-// Framework project generator dispatcher
-async function generateFrameworkProject(config: ProjectConfig) {
-  switch (config.framework) {
-    case 'nextjs':
-      await generateNextProject(config);
-      break;
-    case 'expo':
-      await generateExpoProject(config);
-      break;
-    case 'tauri':
-      await generateTauriProject(config);
-      break;
-    case 'flutter':
-      await generateFlutterProject(config);
-      break;
-    default:
-      throw new Error(`Unsupported framework: ${config.framework}`);
-  }
-}
-
-// Note: All framework generators are now imported from their respective generator files
-
-export interface ProjectConfig {
-  projectName: string;
-  projectPath: string;
-  framework: 'nextjs' | 'expo' | 'tauri' | 'flutter';
-  database: 'none' | 'turso' | 'supabase';
-  orm?: 'prisma' | 'drizzle';
-  deployment: boolean;
-  storage: 'none' | 'vercel-blob' | 'cloudflare-r2' | 'aws-s3' | 'supabase-storage';
-  auth: boolean;
-  packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
-  mode?: 'full' | 'minimal';
-}
-
-export async function createProject() {
-  console.log(chalk.bold.magenta('\n✨ Multi-Framework Project Generator ✨\n'));
-
-  // Interactive prompts
-  const answers = await prompts([
-    {
-      type: 'select',
-      name: 'framework',
-      message: 'Select framework:',
-      choices: [
-        { title: 'Next.js (React web framework)', value: 'nextjs' },
-        { title: 'Expo (React Native for mobile)', value: 'expo' },
-        { title: 'Tauri (Rust + web frontend desktop)', value: 'tauri' },
-        { title: 'Flutter (Cross-platform mobile/desktop)', value: 'flutter' },
-      ],
-      initial: 0,
-    },
-    {
-      type: 'text',
-      name: 'projectName',
-      message: 'Project name:',
-      initial: (prev: string) => {
-        switch (prev) {
-          case 'nextjs':
-            return 'my-next-app';
-          case 'expo':
-            return 'my-expo-app';
-          case 'tauri':
-            return 'my-tauri-app';
-          case 'flutter':
-            return 'my-flutter-app';
-          default:
-            return 'my-app';
-        }
-      },
-      validate: (value: string) => {
-        if (!value || value.trim() === '') {
-          return 'Project name is required';
-        }
-        if (!/^[a-z0-9-_]+$/.test(value)) {
-          return 'Project name can only contain lowercase letters, numbers, hyphens, and underscores';
-        }
-        return true;
-      },
-    },
-    {
-      type: (_prev, values) => (['nextjs', 'expo'].includes(values.framework) ? 'select' : null),
-      name: 'database',
-      message: 'Select database:',
-      choices: [
-        { title: 'None', value: 'none' },
-        { title: 'Turso (SQLite edge database)', value: 'turso' },
-        { title: 'Supabase (PostgreSQL)', value: 'supabase' },
-      ],
-      initial: 0,
-    },
-    {
-      type: (_prev, values) => (values.database && values.database !== 'none' ? 'select' : null),
-      name: 'orm',
-      message: 'Select ORM:',
-      choices: [
-        { title: 'Prisma', value: 'prisma' },
-        { title: 'Drizzle', value: 'drizzle' },
-      ],
-      initial: 0,
-    },
-    {
-      type: (_prev, values) => {
-        switch (values.framework) {
-          case 'nextjs':
-            return 'confirm';
-          case 'tauri':
-            return 'confirm';
-          case 'flutter':
-            return 'confirm';
-          default:
-            return null;
-        }
-      },
-      name: 'deployment',
-      message: (_prev, values) => {
-        switch (values.framework) {
-          case 'nextjs':
-            return 'Setup Vercel deployment?';
-          case 'tauri':
-            return 'Setup GitHub Releases for desktop distribution?';
-          case 'flutter':
-            return 'Setup store distribution (Play Store/App Store)?';
-          default:
-            return 'Setup deployment?';
-        }
-      },
-      initial: false,
-    },
-    {
-      type: (_prev, values) => (['nextjs', 'expo'].includes(values.framework) ? 'select' : null),
-      name: 'storage',
-      message: 'Select storage provider:',
-      choices: [
-        { title: 'None', value: 'none' },
-        { title: 'Vercel Blob', value: 'vercel-blob' },
-        { title: 'Cloudflare R2', value: 'cloudflare-r2' },
-        { title: 'AWS S3', value: 'aws-s3' },
-        { title: 'Supabase Storage', value: 'supabase-storage' },
-      ],
-      initial: 0,
-    },
-    {
-      type: (_prev, values) =>
-        values.framework === 'nextjs' && values.database !== 'none' && values.orm === 'prisma'
-          ? 'confirm'
-          : null,
-      name: 'auth',
-      message: (_prev, values) => {
-        switch (values.framework) {
-          case 'nextjs':
-            return 'Add authentication (Better Auth)?';
-          case 'expo':
-            return 'Add authentication (Expo Auth Session)?';
-          default:
-            return 'Add authentication?';
-        }
-      },
-      initial: false,
-    },
-    {
-      type: (_prev, values) => (values.framework !== 'flutter' ? 'select' : null),
-      name: 'packageManager',
-      message: 'Select package manager:',
-      choices: [
-        { title: 'pnpm', value: 'pnpm' },
-        { title: 'npm', value: 'npm' },
-        { title: 'yarn', value: 'yarn' },
-        { title: 'bun', value: 'bun' },
-      ],
-      initial: 0,
-    },
-  ]);
-
-  // Check if user cancelled
-  if (!answers.projectName) {
-    console.log(chalk.yellow('\n✖ Project creation cancelled'));
-    process.exit(0);
-  }
-
-  const config: ProjectConfig = {
-    ...answers,
-    database: answers.database ?? 'none',
-    storage: (answers.storage ?? 'none') as ProjectConfig['storage'],
-    auth: answers.auth ?? false,
-    deployment: answers.deployment ?? false,
-    packageManager: answers.packageManager ?? 'pnpm',
-    projectPath: path.join(process.cwd(), answers.projectName),
-    mode: 'full',
-  };
-
+// Main project generation logic
+async function runProjectGeneration(config: ProjectConfig) {
+  // Validate auth requirements
   if (config.auth && config.orm !== 'prisma') {
     console.log(
       chalk.yellow(
@@ -238,12 +63,6 @@ export async function createProject() {
       )
     );
     config.auth = false;
-  }
-
-  // Check if project directory exists
-  if (await fs.pathExists(config.projectPath)) {
-    console.log(chalk.red(`\n✖ Directory ${config.projectName} already exists`));
-    process.exit(1);
   }
 
   console.log(chalk.cyan('\n📦 Creating project with the following configuration:'));
@@ -404,6 +223,236 @@ export async function createProject() {
     if (await fs.pathExists(config.projectPath)) {
       await fs.remove(config.projectPath);
     }
+    throw error;
+  }
+}
+
+// Framework project generator dispatcher
+async function generateFrameworkProject(config: ProjectConfig) {
+  switch (config.framework) {
+    case 'nextjs':
+      await generateNextProject(config);
+      break;
+    case 'expo':
+      await generateExpoProject(config);
+      break;
+    case 'tauri':
+      await generateTauriProject(config);
+      break;
+    case 'flutter':
+      await generateFlutterProject(config);
+      break;
+    default:
+      throw new Error(`Unsupported framework: ${config.framework}`);
+  }
+}
+
+// Note: All framework generators are now imported from their respective generator files
+
+export interface ProjectConfig {
+  projectName: string;
+  projectPath: string;
+  framework: 'nextjs' | 'expo' | 'tauri' | 'flutter';
+  database: 'none' | 'turso' | 'supabase';
+  orm?: 'prisma' | 'drizzle';
+  deployment: boolean;
+  storage: 'none' | 'vercel-blob' | 'cloudflare-r2' | 'aws-s3' | 'supabase-storage';
+  auth: boolean;
+  packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
+  mode?: 'full' | 'minimal';
+}
+
+export async function createProject(providedConfig?: Partial<ProjectConfig>) {
+  // If config is fully provided (for testing), skip interactive mode
+  if (providedConfig && isConfigComplete(providedConfig)) {
+    const config = { ...providedConfig } as ProjectConfig;
+
+    // Ensure projectPath is set - only if not already provided
+    if (!config.projectPath) {
+      config.projectPath = path.join(process.cwd(), config.projectName);
+    }
+
+    // Debug logging for E2E tests
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`[DEBUG] Creating project at: ${config.projectPath}`);
+    }
+
+    // Check if project directory exists
+    if (await fs.pathExists(config.projectPath)) {
+      throw new Error(`Directory ${config.projectPath} already exists`);
+    }
+
+    // Run generation directly
+    await runProjectGeneration(config);
+    return;
+  }
+
+  console.log(chalk.bold.magenta('\n✨ Multi-Framework Project Generator ✨\n'));
+
+  // Interactive prompts
+  const answers = await prompts([
+    {
+      type: 'select',
+      name: 'framework',
+      message: 'Select framework:',
+      choices: [
+        { title: 'Next.js (React web framework)', value: 'nextjs' },
+        { title: 'Expo (React Native for mobile)', value: 'expo' },
+        { title: 'Tauri (Rust + web frontend desktop)', value: 'tauri' },
+        { title: 'Flutter (Cross-platform mobile/desktop)', value: 'flutter' },
+      ],
+      initial: 0,
+    },
+    {
+      type: 'text',
+      name: 'projectName',
+      message: 'Project name:',
+      initial: (prev: string) => {
+        switch (prev) {
+          case 'nextjs':
+            return 'my-next-app';
+          case 'expo':
+            return 'my-expo-app';
+          case 'tauri':
+            return 'my-tauri-app';
+          case 'flutter':
+            return 'my-flutter-app';
+          default:
+            return 'my-app';
+        }
+      },
+      validate: (value: string) => {
+        if (!value || value.trim() === '') {
+          return 'Project name is required';
+        }
+        if (!/^[a-z0-9-_]+$/.test(value)) {
+          return 'Project name can only contain lowercase letters, numbers, hyphens, and underscores';
+        }
+        return true;
+      },
+    },
+    {
+      type: (_prev, values) => (['nextjs', 'expo'].includes(values.framework) ? 'select' : null),
+      name: 'database',
+      message: 'Select database:',
+      choices: [
+        { title: 'None', value: 'none' },
+        { title: 'Turso (SQLite edge database)', value: 'turso' },
+        { title: 'Supabase (PostgreSQL)', value: 'supabase' },
+      ],
+      initial: 0,
+    },
+    {
+      type: (_prev, values) => (values.database && values.database !== 'none' ? 'select' : null),
+      name: 'orm',
+      message: 'Select ORM:',
+      choices: [
+        { title: 'Prisma', value: 'prisma' },
+        { title: 'Drizzle', value: 'drizzle' },
+      ],
+      initial: 0,
+    },
+    {
+      type: (_prev, values) => {
+        switch (values.framework) {
+          case 'nextjs':
+            return 'confirm';
+          case 'tauri':
+            return 'confirm';
+          case 'flutter':
+            return 'confirm';
+          default:
+            return null;
+        }
+      },
+      name: 'deployment',
+      message: (_prev, values) => {
+        switch (values.framework) {
+          case 'nextjs':
+            return 'Setup Vercel deployment?';
+          case 'tauri':
+            return 'Setup GitHub Releases for desktop distribution?';
+          case 'flutter':
+            return 'Setup store distribution (Play Store/App Store)?';
+          default:
+            return 'Setup deployment?';
+        }
+      },
+      initial: false,
+    },
+    {
+      type: (_prev, values) => (['nextjs', 'expo'].includes(values.framework) ? 'select' : null),
+      name: 'storage',
+      message: 'Select storage provider:',
+      choices: [
+        { title: 'None', value: 'none' },
+        { title: 'Vercel Blob', value: 'vercel-blob' },
+        { title: 'Cloudflare R2', value: 'cloudflare-r2' },
+        { title: 'AWS S3', value: 'aws-s3' },
+        { title: 'Supabase Storage', value: 'supabase-storage' },
+      ],
+      initial: 0,
+    },
+    {
+      type: (_prev, values) =>
+        values.framework === 'nextjs' && values.database !== 'none' && values.orm === 'prisma'
+          ? 'confirm'
+          : null,
+      name: 'auth',
+      message: (_prev, values) => {
+        switch (values.framework) {
+          case 'nextjs':
+            return 'Add authentication (Better Auth)?';
+          case 'expo':
+            return 'Add authentication (Expo Auth Session)?';
+          default:
+            return 'Add authentication?';
+        }
+      },
+      initial: false,
+    },
+    {
+      type: (_prev, values) => (values.framework !== 'flutter' ? 'select' : null),
+      name: 'packageManager',
+      message: 'Select package manager:',
+      choices: [
+        { title: 'pnpm', value: 'pnpm' },
+        { title: 'npm', value: 'npm' },
+        { title: 'yarn', value: 'yarn' },
+        { title: 'bun', value: 'bun' },
+      ],
+      initial: 0,
+    },
+  ]);
+
+  // Check if user cancelled
+  if (!answers.projectName) {
+    console.log(chalk.yellow('\n✖ Project creation cancelled'));
+    process.exit(0);
+  }
+
+  const config: ProjectConfig = {
+    ...answers,
+    database: answers.database ?? 'none',
+    storage: (answers.storage ?? 'none') as ProjectConfig['storage'],
+    auth: answers.auth ?? false,
+    deployment: answers.deployment ?? false,
+    packageManager: answers.packageManager ?? 'pnpm',
+    projectPath: path.join(process.cwd(), answers.projectName),
+    mode: 'full',
+  };
+
+  // Check if project directory exists
+  if (await fs.pathExists(config.projectPath)) {
+    console.log(chalk.red(`\n✖ Directory ${config.projectName} already exists`));
+    process.exit(1);
+  }
+
+  try {
+    // Run the common generation logic
+    await runProjectGeneration(config);
+  } catch (error) {
+    console.error(chalk.red('\n✖ Error creating project:'), error);
     process.exit(1);
   }
 }

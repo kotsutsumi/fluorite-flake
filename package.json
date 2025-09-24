@@ -16,14 +16,12 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:nextjs": "playwright test --project=nextjs-e2e",
-    "test:e2e:expo": "playwright test --project=expo-e2e",
-    "test:e2e:tauri": "playwright test --project=tauri-e2e",
-    "test:e2e:flutter": "playwright test --project=flutter-e2e",
-    "test:e2e:smoke": "playwright test --project=smoke-tests",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
+    "test:unit": "vitest run test/generator.test.ts",
+    "test:e2e": "vitest run test/e2e-*.test.ts",
+    "test:e2e:nextjs": "vitest run test/e2e-nextjs.test.ts",
+    "test:e2e:comprehensive": "vitest run test/e2e-comprehensive.test.ts",
+    "test:e2e:watch": "vitest watch test/e2e-*.test.ts",
+    "test:e2e:ci": "pnpm run build && vitest run test/e2e-*.test.ts --reporter=verbose",
     "test:all": "pnpm run build && vitest run --no-coverage",
     "test:local": "./scripts/test-local.sh",
     "install:local": "./scripts/install-local.sh",
@@ -33,13 +31,7 @@
     "prepare": "husky",
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
-  "keywords": [
-    "cli",
-    "utility",
-    "ansi",
-    "colors",
-    "terminal"
-  ],
+  "keywords": ["cli", "utility", "ansi", "colors", "terminal"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -67,12 +59,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "files": [
-    "dist",
-    "templates",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "templates", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   }

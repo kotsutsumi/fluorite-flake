@@ -226,7 +226,7 @@ export const PACKAGE_CATEGORIES = {
   database: {
     prisma: ['prisma', '@prisma/client'],
     drizzle: ['drizzle-orm', 'drizzle-kit'],
-    turso: ['@libsql/client'],
+    turso: ['@libsql/client', '@prisma/adapter-libsql'],
     supabase: ['@supabase/supabase-js'],
   },
   auth: ['better-auth', 'bcryptjs', 'zod', '@types/bcryptjs'],

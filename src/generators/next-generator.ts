@@ -807,7 +807,7 @@ export default function RootLayout({
 
   await fs.writeFile(path.join(config.projectPath, 'src/app/layout.tsx'), layoutContent);
 
-  // Homepage
+  // Homepage with optional database demo
   const pageContent = `'use client';
 
 import { useEffect, useState } from 'react';
@@ -828,7 +828,9 @@ import {
   AnnouncementTag,
   AnnouncementTitle,
 } from '@/components/ui/kibo-ui/announcement';
-import { ThemeSwitcher } from '@/components/ui/kibo-ui/theme-switcher';
+import { ThemeSwitcher } from '@/components/ui/kibo-ui/theme-switcher';${
+    config.database !== 'none' ? "\nimport DatabaseDemo from '@/components/database-demo';" : ''
+  }
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -904,7 +906,13 @@ export default function Home() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>${
+          config.database !== 'none'
+            ? `
+
+        <DatabaseDemo />`
+            : ''
+        }
       </div>
     </main>
   );
