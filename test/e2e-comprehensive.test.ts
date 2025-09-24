@@ -143,11 +143,7 @@ describe('Comprehensive E2E Tests', () => {
           'should run pnpm format and fix formatting',
           async () => {
             // Create a file with formatting issues
-            await createTestFileWithIssues(
-              projectPath,
-              'test-format.ts',
-              'format'
-            );
+            await createTestFileWithIssues(projectPath, 'test-format.ts', 'format');
 
             // Run format
             const result = await runPackageManagerCommand(
