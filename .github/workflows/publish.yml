@@ -38,13 +38,31 @@ jobs:
         with:
           diff-search: true
 
-      - name: Publish to npm
+      - name: Check if version already exists on npm
         if: steps.version.outputs.changed == 'true'
+        id: npm-check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "fluorite-flake@$VERSION" version 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version $VERSION already exists on npm"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version $VERSION not found on npm, can publish"
+          fi
+
+      - name: Publish to npm
+        if: steps.version.outputs.changed == 'true' && steps.npm-check.outputs.exists == 'false'
         run: |
           npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip publish (version exists)
+        if: steps.version.outputs.changed == 'true' && steps.npm-check.outputs.exists == 'true'
+        run: |
+          echo "⚠️ Version $(node -p "require('./package.json').version") already published to npm, skipping publish step"
 
       - name: Create GitHub Release
         if: steps.version.outputs.changed == 'true'
