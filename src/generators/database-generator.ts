@@ -1275,6 +1275,15 @@ async function addDatabaseScripts(config: ProjectConfig) {
   }
 
   await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+
+  // Add .npmrc for pnpm to properly handle Prisma
+  if (config.packageManager === 'pnpm' && config.orm === 'prisma') {
+    const npmrcContent = `# Allow pnpm to properly handle Prisma client generation
+public-hoist-pattern[]=@prisma/client
+public-hoist-pattern[]=prisma
+`;
+    await fs.writeFile(path.join(config.projectPath, '.npmrc'), npmrcContent);
+  }
 }
 
 async function addPostInstallScript(config: ProjectConfig) {
@@ -1330,6 +1339,11 @@ echo "🚀 Initializing Turso database..."
 
 INIT_SUCCESS=true
 
+DEV_DB_URL="file:./prisma/dev.db"
+export DATABASE_URL="$DEV_DB_URL"
+export TURSO_DATABASE_URL="$DEV_DB_URL"
+export TURSO_AUTH_TOKEN=""
+
 mkdir -p prisma
 touch prisma/dev.db
 
@@ -1360,7 +1374,7 @@ if [ "$INIT_SUCCESS" = true ]; then
   if OUTPUT=$(${prismaSeedCommand} 2>&1); then
     echo "  ✅ Database seeded"
   else
-    echo "  ⚠️  Database seeding failed:"
+    echo "  ⚠️  Database seeding failed"
     echo "$OUTPUT" | sed 's/^/      /'
     echo ""
   fi
@@ -1374,6 +1388,7 @@ else
   echo "    ${prismaGenerateCommand}"
   echo "    ${prismaPushCommand}"
   echo "    ${prismaSeedCommand}"
+  exit 1
 fi
 `;
 
