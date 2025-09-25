@@ -1280,10 +1280,20 @@ async function addPostInstallScript(config: ProjectConfig) {
   const packageJsonPath = path.join(config.projectPath, 'package.json');
   const packageJson = await fs.readJSON(packageJsonPath);
 
-  // Add post-install script to initialize database
+  // Add post-install script to initialize database and ensure dev starts with a seeded schema
+  const scripts = packageJson.scripts ?? {};
+  const hasInitHook =
+    typeof scripts.predev === 'string' && scripts.predev.includes('scripts/init-turso-db.sh');
+  const normalizedPredev = !scripts.predev
+    ? 'bash scripts/init-turso-db.sh'
+    : hasInitHook
+      ? scripts.predev
+      : `bash scripts/init-turso-db.sh && ${scripts.predev}`;
+
   packageJson.scripts = {
-    ...packageJson.scripts,
+    ...scripts,
     postinstall: 'bash scripts/init-turso-db.sh',
+    predev: normalizedPredev,
   };
 
   await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });

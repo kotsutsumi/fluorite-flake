@@ -29,9 +29,122 @@ export async function setupStorage(config: ProjectConfig) {
 }
 
 async function setupVercelBlob(config: ProjectConfig) {
+  // Create a script to automatically retrieve and set the Vercel Blob token
+  const setupBlobScript = `#!/bin/bash
+# Setup Vercel Blob Storage with automatic token retrieval
+
+set -e
+
+echo "🔧 Setting up Vercel Blob Storage..."
+
+# Check if Vercel CLI is installed
+if ! command -v vercel &> /dev/null; then
+  echo "❌ Vercel CLI is not installed. Please install it first:"
+  echo "   npm i -g vercel"
+  exit 1
+fi
+
+# Check if we're in a Vercel project
+if [ ! -f ".vercel/project.json" ]; then
+  echo "📦 Linking to Vercel project..."
+  vercel link
+fi
+
+# Get project info
+PROJECT_ID=$(cat .vercel/project.json | grep '"projectId"' | cut -d'"' -f4)
+
+if [ -z "$PROJECT_ID" ]; then
+  echo "❌ Failed to get project ID. Please run 'vercel link' first."
+  exit 1
+fi
+
+echo "🔍 Project ID: $PROJECT_ID"
+echo "📡 Retrieving Blob store information..."
+
+# Try to get existing blob stores
+BLOB_STORES=$(vercel blob ls 2>/dev/null || echo "")
+
+if [ -z "$BLOB_STORES" ] || [[ "$BLOB_STORES" == *"No stores"* ]]; then
+  echo "📦 Creating new Blob store..."
+  STORE_NAME="blob-$(date +%s)"
+  vercel blob add $STORE_NAME
+  echo "✅ Created new Blob store: $STORE_NAME"
+else
+  echo "✅ Using existing Blob store"
+fi
+
+# Get the token
+echo "🔑 Retrieving Blob token..."
+TOKEN=$(vercel env pull .env.blob.temp 2>/dev/null && grep BLOB_READ_WRITE_TOKEN .env.blob.temp | cut -d'=' -f2 || echo "")
+
+# Clean up temp file
+rm -f .env.blob.temp
+
+if [ -z "$TOKEN" ]; then
+  echo "⚠️ Could not automatically retrieve token. Setting up token in Vercel..."
+
+  # Create the blob store and get token via Vercel dashboard
+  echo ""
+  echo "📌 Please follow these steps:"
+  echo "   1. Go to: https://vercel.com/dashboard/stores"
+  echo "   2. Select your Blob store or create a new one"
+  echo "   3. Copy the Read/Write token"
+  echo "   4. Run: vercel env add BLOB_READ_WRITE_TOKEN"
+  echo "   5. Paste the token when prompted"
+  echo ""
+  echo "Waiting for manual token setup..."
+  vercel env add BLOB_READ_WRITE_TOKEN
+
+  # Pull the newly added env var
+  vercel env pull .env.local
+  TOKEN=$(grep BLOB_READ_WRITE_TOKEN .env.local | cut -d'=' -f2 || echo "")
+fi
+
+# Update .env.local with the token
+if [ -n "$TOKEN" ]; then
+  # Remove existing BLOB_READ_WRITE_TOKEN if present
+  if [ -f ".env.local" ]; then
+    grep -v "BLOB_READ_WRITE_TOKEN" .env.local > .env.local.tmp || true
+    mv .env.local.tmp .env.local
+  fi
+
+  # Add the token
+  echo "BLOB_READ_WRITE_TOKEN=$TOKEN" >> .env.local
+  echo "✅ Blob token configured in .env.local"
+
+  # Also set it in Vercel environment
+  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN production --force 2>/dev/null || true
+  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN preview --force 2>/dev/null || true
+  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN development --force 2>/dev/null || true
+
+  echo "✅ Blob token configured in Vercel environment"
+else
+  echo "❌ Failed to retrieve or set Blob token"
+  exit 1
+fi
+
+echo ""
+echo "🎉 Vercel Blob Storage setup complete!"
+echo "   Token is configured in:"
+echo "   - .env.local (for local development)"
+echo "   - Vercel environment (for deployments)"
+echo ""
+echo "📝 You can now use Blob storage in your application"
+`;
+
+  // Write the setup script
+  const scriptsDir = path.join(config.projectPath, 'scripts');
+  await fs.ensureDir(scriptsDir);
+  await fs.writeFile(
+    path.join(scriptsDir, 'setup-vercel-blob.sh'),
+    setupBlobScript,
+    { mode: 0o755 }
+  );
+
+  // Add a minimal placeholder to .env.local
   await appendEnv(
     config.projectPath,
-    `\n# Vercel Blob Storage\nBLOB_READ_WRITE_TOKEN="[your-blob-token]"\n`
+    `\n# Vercel Blob Storage\n# Run 'npm run setup:blob' to automatically configure the token\nBLOB_READ_WRITE_TOKEN=""\n`
   );
 
   const storageContent = `import { put, del, list } from '@vercel/blob';
@@ -56,6 +169,60 @@ export async function listFiles(options?: { limit?: number; prefix?: string }) {
 `;
 
   await writeStorageLib(config, storageContent);
+
+  // Add setup script to package.json
+  const packageJsonPath = path.join(config.projectPath, 'package.json');
+  const packageJson = await fs.readJSON(packageJsonPath);
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    'setup:blob': 'bash scripts/setup-vercel-blob.sh',
+    'setup:storage': 'bash scripts/setup-vercel-blob.sh',
+    'check:blob': 'tsx scripts/check-blob-config.ts',
+  };
+  await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+
+  // Create a helper script for checking blob configuration
+  const checkBlobScript = `import { list } from '@vercel/blob';
+
+async function checkBlobConfiguration() {
+  try {
+    console.log('🔍 Checking Vercel Blob configuration...');
+
+    // Try to list blobs to verify the token works
+    const result = await list({ limit: 1 });
+
+    console.log('✅ Vercel Blob is configured correctly!');
+    console.log(\`   Found \${result.blobs.length} blob(s) in storage\`);
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ Vercel Blob configuration error:');
+
+    if (error.message?.includes('BLOB_READ_WRITE_TOKEN')) {
+      console.error('   Token is not set or invalid');
+      console.error('   Run: npm run setup:blob');
+    } else {
+      console.error('  ', error.message);
+    }
+
+    return false;
+  }
+}
+
+// Run check if this file is executed directly
+if (require.main === module) {
+  checkBlobConfiguration().then(success => {
+    process.exit(success ? 0 : 1);
+  });
+}
+
+export { checkBlobConfiguration };
+`;
+
+  await fs.writeFile(
+    path.join(config.projectPath, 'scripts', 'check-blob-config.ts'),
+    checkBlobScript
+  );
 }
 
 async function setupAwsS3(config: ProjectConfig) {

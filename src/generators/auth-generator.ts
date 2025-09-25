@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create.js';
 // Unused imports removed for cleanup
@@ -32,7 +33,7 @@ async function addAuthDependencies(config: ProjectConfig) {
   packageJson.dependencies = packageJson.dependencies ?? {};
 
   if (!packageJson.dependencies['better-auth']) {
-    packageJson.dependencies['better-auth'] = '^1.3.14';
+    packageJson.dependencies['better-auth'] = '^1.2.3';
   }
 
   if (!packageJson.dependencies.zod) {
@@ -74,6 +75,8 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 
   await fs.outputFile(path.join(libDir, 'roles.ts'), rolesContent);
 
+  const authSecret = randomBytes(32).toString('hex');
+
   const authContent = `import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { organization } from 'better-auth/plugins/organization';
@@ -84,6 +87,8 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: '${provider}',
   }),
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -139,16 +144,63 @@ export const {
 
   await fs.outputFile(path.join(libDir, 'auth-client.ts'), authClientContent);
 
-  const authServerContent = `import { headers } from 'next/headers';
+  const authServerContent = `import { headers, cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/db';
 import { auth } from './auth';
 import { APP_ROLES, type AppRole } from './roles';
 
+
 export async function getSession() {
-  return auth.api.getSession({
-    headers: await headers(),
-  });
+  try {
+    console.log('🔍 getSession: Starting session check');
+
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session');
+
+    console.log('🍪 Session cookie exists:', !!sessionCookie?.value);
+
+    if (!sessionCookie?.value) {
+      console.log('❌ No session cookie found');
+      return null;
+    }
+
+    // Verify session exists in database and hasn't expired
+    const session = await prisma.session.findUnique({
+      where: {
+        token: sessionCookie.value,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    console.log('🗄️ Database session found:', !!session);
+
+    if (!session) {
+      console.log('❌ Session not found in database');
+      return null;
+    }
+
+    if (session.expiresAt < new Date()) {
+      console.log('⏰ Session expired, cleaning up');
+      // Clean up expired session
+      await prisma.session.delete({
+        where: { id: session.id },
+      });
+      return null;
+    }
+
+    console.log('✅ Valid session found for user:', session.user.email);
+
+    return {
+      user: session.user,
+      session,
+    };
+  } catch (error) {
+    console.error('💥 Session verification error:', error);
+    return null;
+  }
 }
 
 export async function requireSession() {
@@ -219,7 +271,7 @@ export function roleLabel(role: AppRole) {
   await appendEnv(
     config,
     `# Authentication
-BETTER_AUTH_SECRET="[generate-a-32-character-secret]"
+BETTER_AUTH_SECRET="${authSecret}"
 BETTER_AUTH_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 `
@@ -232,26 +284,43 @@ import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/api/auth'];
 
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some((publicPath) => pathname === publicPath || pathname.startsWith(publicPath + '/'));
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((publicPath) => pathname === publicPath || pathname.startsWith(publicPath + '/'));
-  const sessionToken = request.cookies.get('better-auth.session_token');
 
-  if (!sessionToken && !isPublic) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname === '/favicon.ico' ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
   }
 
-  if (sessionToken && pathname === '/login') {
+  const sessionCookie =
+    request.cookies.get('better-auth.session_token') ?? request.cookies.get('session');
+  const hasSession = Boolean(sessionCookie?.value);
+
+  if (hasSession && pathname === '/login') {
     return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  if (!hasSession && !isPublicPath(pathname)) {
+    const loginUrl = new URL('/login', request.url);
+    if (pathname !== '/') {
+      loginUrl.searchParams.set('redirect', pathname);
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|uploads/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
 `;
 
@@ -264,7 +333,7 @@ async function writeAuthApiRoute(config: ProjectConfig) {
 
   const authApiContent = `import { auth } from '@/lib/auth';
 
-export const { GET, POST } = auth.handler;
+export const { GET, POST, PUT, PATCH, DELETE, OPTIONS } = auth.handler;
 `;
 
   await fs.outputFile(path.join(authApiDir, 'route.ts'), authApiContent);
@@ -406,8 +475,8 @@ function roleLabel(role: AppRole) {
   const headerContent = `'use client';
 
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
-import { signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { ROLE_LABELS, type AppRole } from '@/lib/roles';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -423,6 +492,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const initials = user.name
     ? user.name
         .split(' ')
@@ -434,7 +504,25 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 
   const handleSignOut = () => {
     startTransition(async () => {
-      await signOut();
+      try {
+        console.log('🚪 Starting custom logout process');
+        const response = await fetch('/api/auth/sign-out', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          console.log('✅ Logout successful, redirecting to login');
+          router.push('/login');
+          router.refresh(); // Force refresh to clear any cached data
+        } else {
+          console.error('❌ Logout failed:', response.status);
+        }
+      } catch (error) {
+        console.error('💥 Logout error:', error);
+      }
     });
   };
 
@@ -1499,17 +1587,28 @@ export default function LoginPage() {
 
     startTransition(async () => {
       try {
-        const result = await signIn.emailAndPassword({
-          email,
-          password,
-          redirectTo,
+        // カスタムAPIエンドポイントを直接呼び出す
+        const response = await fetch('/api/auth/sign-in/email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            email,
+            password,
+          }),
         });
 
-        if (result.error) {
-          throw new Error(result.error.message || 'ログインに失敗しました');
+        const result = await response.json();
+
+        if (!response.ok || result.error) {
+          throw new Error(result.error?.message || 'ログインに失敗しました');
         }
 
+        // ログイン成功後、リダイレクト
         router.push(redirectTo);
+        router.refresh(); // ルーターキャッシュを更新
       } catch (err: unknown) {
         setStatus({ type: 'error', message: getErrorMessage(err) || 'ログインに失敗しました' });
       }
@@ -1578,9 +1677,171 @@ async function writeApiRoutes(config: ProjectConfig) {
   const apiDir = path.join(config.projectPath, 'src/app/api');
   await fs.ensureDir(apiDir);
 
+  await writeCustomAuthApi(config);
   await writeOrganizationsApi(config);
   await writeUsersApi(config);
   await writeProfileApi(config);
+}
+
+async function writeCustomAuthApi(config: ProjectConfig) {
+  // Create custom sign-in API route for better login handling
+  const signInDir = path.join(config.projectPath, 'src/app/api/auth/sign-in/email');
+  const signOutDir = path.join(config.projectPath, 'src/app/api/auth/sign-out');
+  await fs.ensureDir(signInDir);
+  await fs.ensureDir(signOutDir);
+
+  const signInRouteContent = `import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { cookies } from 'next/headers';
+import prisma from '@/lib/db';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { email, password } = body;
+
+    console.log('Login attempt for:', email);
+    console.log('Password provided:', !!password);
+
+    // Find user in database with their account
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        accounts: {
+          where: {
+            providerId: 'email-password'
+          }
+        }
+      }
+    });
+
+    console.log('User found:', !!user);
+    console.log('Accounts found:', user?.accounts?.length || 0);
+
+    if (!user || !user.accounts[0]) {
+      console.error('User not found or no accounts:', {
+        userExists: !!user,
+        accountsLength: user?.accounts?.length || 0
+      });
+      return NextResponse.json({
+        error: { message: 'Invalid credentials' }
+      }, { status: 401 });
+    }
+
+    // Verify password from the account
+    const account = user.accounts[0];
+    console.log('Account password exists:', !!account.password);
+    console.log('Account password length:', account.password?.length || 0);
+
+    const isValidPassword = await bcrypt.compare(password, account.password || '');
+    console.log('Password verification result:', isValidPassword);
+
+    if (!isValidPassword) {
+      console.error('Password verification failed for user:', email);
+      console.error('Provided password:', password);
+      console.error('Stored hash:', account.password);
+      return NextResponse.json({
+        error: { message: 'Invalid credentials' }
+      }, { status: 401 });
+    }
+
+    // Create session
+    const sessionToken = randomUUID();
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    // Store session in database
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        token: sessionToken,
+        expiresAt: expires,
+        ipAddress: request.ip || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      }
+    });
+
+    // Return success response with cookie in headers
+    const response = NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        role: user.role
+      },
+      session: {
+        id: session.id,
+        userId: user.id,
+        token: sessionToken,
+        expiresAt: expires.toISOString()
+      }
+    });
+
+    // Set cookie in response headers
+    console.log('Setting session cookie:', sessionToken);
+    response.cookies.set('session', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: expires,
+      path: '/'
+    });
+
+    console.log('Cookie settings:', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: expires.toISOString(),
+      path: '/'
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json({
+      error: { message: 'Login failed' }
+    }, { status: 500 });
+  }
+}`;
+
+  await fs.outputFile(path.join(signInDir, 'route.ts'), signInRouteContent);
+
+  const signOutRouteContent = `import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import prisma from '@/lib/db';
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session');
+
+    if (sessionCookie?.value) {
+      // Delete session from database
+      await prisma.session.deleteMany({
+        where: {
+          token: sessionCookie.value
+        }
+      });
+    }
+
+    // Create response and clear cookie
+    const response = NextResponse.json({ success: true });
+    response.cookies.delete('session');
+
+    return response;
+  } catch (error) {
+    console.error('Logout error:', error);
+    return NextResponse.json({
+      error: { message: 'Logout failed' }
+    }, { status: 500 });
+  }
+}`;
+
+  await fs.outputFile(path.join(signOutDir, 'route.ts'), signOutRouteContent);
 }
 
 async function writeOrganizationsApi(config: ProjectConfig) {
@@ -2179,7 +2440,11 @@ async function writeProfileUploadHelper(config: ProjectConfig) {
 }
 
 async function appendEnv(config: ProjectConfig, block: string) {
-  const envPath = path.join(config.projectPath, '.env.local');
+  await appendEnvFile(path.join(config.projectPath, '.env.local'), block);
+  await appendEnvFile(path.join(config.projectPath, '.env'), block);
+}
+
+async function appendEnvFile(envPath: string, block: string) {
   let existing = '';
 
   try {
