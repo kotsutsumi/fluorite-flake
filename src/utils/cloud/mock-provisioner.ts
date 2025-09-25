@@ -36,7 +36,9 @@ function createMockSupabaseRecords(slug: string): SupabaseDatabaseRecord[] {
     return {
       env,
       projectRef,
-      databaseUrl: `https://${projectRef}.supabase.co`,
+      databaseUrl: `postgresql://postgres:mock-password@db.${projectRef}.supabase.co:5432/postgres`,
+      dbPassword: 'mock-password',
+      apiUrl: `https://${projectRef}.supabase.co`,
       anonKey: `mock-anon-key-${randomUUID()}`,
       serviceRoleKey: `mock-service-key-${randomUUID()}`,
     };
@@ -90,6 +92,7 @@ export class MockProvisioner implements CloudProvisioner {
         isPublic: false,
         projectRef: 'mock-project-ref',
         serviceRoleKey: `mock-service-key-${randomUUID()}`,
+        anonKey: `mock-anon-key-${randomUUID()}`,
         url: `https://${projectSlug}.supabase.co/storage/v1`,
       };
     }

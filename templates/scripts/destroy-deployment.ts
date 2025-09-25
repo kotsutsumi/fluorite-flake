@@ -245,55 +245,42 @@ async function deleteSupabaseStorage(record: CloudProvisioningRecord) {
   }
 
   try {
-    // Check if supabase CLI is available
     await run('supabase', ['--version'], process.env);
   } catch {
-    console.warn('\n⚠️  Skipping Supabase Storage cleanup because Supabase CLI is not installed.');
-    return;
-  }
-
-  // Check if logged in
-  try {
-    await run('supabase', ['projects', 'list'], process.env);
-  } catch {
-    console.warn('\n⚠️  Skipping Supabase Storage cleanup because you are not logged in.');
-    console.log('   Run "supabase login" to authenticate.');
-    return;
-  }
-
-  if (storage.projectRef && storage.serviceRoleKey) {
-    try {
-      // Try to delete bucket using Management API
-      const projectUrl = `https://${storage.projectRef}.supabase.co`;
-      await run(
-        'curl',
-        [
-          '-X',
-          'DELETE',
-          `${projectUrl}/storage/v1/bucket/${storage.bucketId || storage.bucketName}`,
-          '-H',
-          `Authorization: Bearer ${storage.serviceRoleKey}`,
-        ],
-        process.env
-      );
-      console.log(`🗑️  Removed Supabase storage bucket ${storage.bucketName}`);
-    } catch {
-      console.log('\n⚠️  Supabase Storage cleanup:');
-      console.log(
-        `   Storage bucket '${storage.bucketName}' needs to be deleted manually in the Supabase dashboard.`
-      );
-      console.log(`   Project: ${storage.projectRef}`);
-      console.log(`   URL: https://app.supabase.com/project/${storage.projectRef}/storage`);
-    }
-  } else {
-    console.log('\n⚠️  Supabase Storage cleanup:');
-    console.log(
-      `   Storage bucket '${storage.bucketName}' needs to be deleted manually in the Supabase dashboard.`
+    console.warn(
+      '\n⚠️  Supabase CLI がインストールされていないため、Storage バケットの削除をスキップしました。'
     );
-    if (storage.projectRef) {
-      console.log(`   Project: ${storage.projectRef}`);
-      console.log(`   URL: https://app.supabase.com/project/${storage.projectRef}/storage`);
-    }
+    return;
+  }
+
+  if (!storage.projectRef) {
+    console.warn('\n⚠️  Supabase Storage の projectRef が不明なため、自動削除できません。');
+    console.log(`   バケット ${storage.bucketName} をダッシュボードから削除してください。`);
+    return;
+  }
+
+  try {
+    await run(
+      'supabase',
+      [
+        'storage',
+        'buckets',
+        'delete',
+        storage.bucketName,
+        '--project-ref',
+        storage.projectRef,
+        '--non-interactive',
+      ],
+      process.env
+    );
+    console.log(`🗑️  Removed Supabase storage bucket ${storage.bucketName}`);
+  } catch (error) {
+    console.warn(
+      `⚠️  Failed to delete Supabase storage bucket ${storage.bucketName}: ${String(error)}`
+    );
+    console.log(
+      `   手動で https://app.supabase.com/project/${storage.projectRef}/storage から削除してください。`
+    );
   }
 }
 
@@ -381,29 +368,29 @@ async function deleteSupabaseDatabase(record: CloudProvisioningRecord) {
   }
 
   try {
-    // Check if supabase CLI is available
     await run('supabase', ['--version'], process.env);
   } catch {
-    console.warn('\n⚠️  Skipping Supabase database cleanup because Supabase CLI is not installed.');
+    console.warn(
+      '\n⚠️  Supabase CLI がインストールされていないため、Supabase プロジェクトの削除をスキップしました。'
+    );
     return;
   }
 
-  // Check if logged in
-  try {
-    await run('supabase', ['projects', 'list'], process.env);
-  } catch {
-    console.warn('\n⚠️  Skipping Supabase database cleanup because you are not logged in.');
-    console.log('   Run "supabase login" to authenticate.');
-    return;
-  }
-
-  console.log('\n⚠️  Supabase project cleanup:');
-  console.log('   Supabase projects need to be deleted manually via the dashboard.');
-  console.log('   Projects to delete:');
   for (const db of supabase.databases) {
-    console.log(`   - Project Ref: ${db.projectRef} (Environment: ${db.env})`);
+    try {
+      await run(
+        'supabase',
+        ['projects', 'delete', db.projectRef, '--non-interactive', '--confirm', 'y'],
+        process.env
+      );
+      console.log(`🗑️  Removed Supabase project ${db.projectRef}`);
+    } catch (error) {
+      console.warn(`⚠️  Failed to delete Supabase project ${db.projectRef}: ${String(error)}`);
+      console.log(
+        `   手動で https://app.supabase.com/project/${db.projectRef}/settings/general から削除してください。`
+      );
+    }
   }
-  console.log('   Visit: https://app.supabase.com/projects');
 }
 
 async function cleanupFiles(projectRoot: string) {

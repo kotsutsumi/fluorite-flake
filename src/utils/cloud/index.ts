@@ -18,18 +18,18 @@ const AUTO_PROVISION_ENABLED = ['true', '1', 'on'].includes(
 );
 
 function shouldProvision(config: ProjectConfig): boolean {
-  // Enable provisioning for any cloud storage or database that requires it
-  const needsProvisioning =
-    config.database === 'turso' ||
-    config.database === 'supabase' ||
-    (config.storage !== 'none' && config.storage !== undefined);
+  if (!AUTO_PROVISION_ENABLED || config.framework !== 'nextjs') {
+    return false;
+  }
 
-  return (
-    AUTO_PROVISION_ENABLED &&
-    config.framework === 'nextjs' &&
-    needsProvisioning &&
-    config.deployment === true
-  );
+  const wantsDatabase = config.database === 'turso' || config.database === 'supabase';
+  const wantsStorage =
+    config.storage === 'vercel-blob' ||
+    config.storage === 'cloudflare-r2' ||
+    config.storage === 'aws-s3' ||
+    config.storage === 'supabase-storage';
+
+  return wantsDatabase || wantsStorage || config.deployment === true;
 }
 
 export function isProvisioningEligible(config: ProjectConfig): boolean {
@@ -105,7 +105,9 @@ async function applyEnvUpdates(config: ProjectConfig, record: CloudProvisioningR
     }
 
     result.DATABASE_URL = database.databaseUrl;
-    result.NEXT_PUBLIC_SUPABASE_URL = `https://${database.projectRef}.supabase.co`;
+    result.SUPABASE_DB_PASSWORD = database.dbPassword ?? '';
+    result.NEXT_PUBLIC_SUPABASE_URL =
+      database.apiUrl ?? `https://${database.projectRef}.supabase.co`;
     result.NEXT_PUBLIC_SUPABASE_ANON_KEY = database.anonKey;
     result.SUPABASE_SERVICE_ROLE_KEY = database.serviceRoleKey;
 
@@ -115,7 +117,7 @@ async function applyEnvUpdates(config: ProjectConfig, record: CloudProvisioningR
   const storageEnvs = () => {
     const envs: Record<string, string> = {};
 
-    if (record.vercelBlob) {
+    if (record.vercelBlob?.readWriteToken) {
       envs.BLOB_READ_WRITE_TOKEN = record.vercelBlob.readWriteToken;
     }
 
@@ -132,12 +134,16 @@ async function applyEnvUpdates(config: ProjectConfig, record: CloudProvisioningR
       }
       if (record.cloudflareR2.endpoint) {
         envs.R2_ENDPOINT = record.cloudflareR2.endpoint;
+        envs.R2_PUBLIC_URL = `${record.cloudflareR2.endpoint.replace(/\/$/, '')}/${record.cloudflareR2.bucketName}`;
       }
     }
 
     if (record.awsS3) {
-      envs.AWS_S3_BUCKET = record.awsS3.bucketName;
+      envs.S3_BUCKET_NAME = record.awsS3.bucketName;
       envs.AWS_REGION = record.awsS3.region;
+      if (record.awsS3.publicUrl) {
+        envs.AWS_S3_PUBLIC_URL = record.awsS3.publicUrl;
+      }
       if (record.awsS3.accessKeyId) {
         envs.AWS_ACCESS_KEY_ID = record.awsS3.accessKeyId;
       }
@@ -150,6 +156,12 @@ async function applyEnvUpdates(config: ProjectConfig, record: CloudProvisioningR
       envs.SUPABASE_STORAGE_BUCKET = record.supabaseStorage.bucketName;
       if (record.supabaseStorage.url) {
         envs.SUPABASE_STORAGE_URL = record.supabaseStorage.url;
+      }
+      if (record.supabaseStorage.serviceRoleKey) {
+        envs.SUPABASE_STORAGE_SERVICE_ROLE_KEY = record.supabaseStorage.serviceRoleKey;
+      }
+      if (record.supabaseStorage.anonKey) {
+        envs.SUPABASE_STORAGE_ANON_KEY = record.supabaseStorage.anonKey;
       }
     }
 

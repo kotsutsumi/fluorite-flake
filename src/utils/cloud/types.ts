@@ -40,11 +40,12 @@ export interface CloudflareR2Record {
 }
 
 export interface SupabaseStorageRecord {
-  projectRef?: string;
   bucketName: string;
   bucketId: string;
   isPublic: boolean;
+  projectRef?: string;
   serviceRoleKey?: string;
+  anonKey?: string;
   url?: string;
 }
 
@@ -60,6 +61,8 @@ export interface SupabaseDatabaseRecord {
   env: ProvisionedDatabaseEnv;
   projectRef: string;
   databaseUrl: string;
+  dbPassword?: string;
+  apiUrl?: string;
   anonKey: string;
   serviceRoleKey: string;
 }
