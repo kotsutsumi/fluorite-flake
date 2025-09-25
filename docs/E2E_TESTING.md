@@ -1,180 +1,210 @@
-# E2E Testing Documentation
+# Fluorite-flake E2Eテスト仕様書
 
-## Overview
+## 概要
 
-The fluorite-flake project includes comprehensive End-to-End (E2E) tests to verify that generated projects are fully functional and all included scripts work correctly.
+Fluorite-flakeのE2E（End-to-End）テストは、プロジェクトジェネレーターによって生成されたアプリケーションが、実際に正しく動作することを保証するために設計されています。
 
-## Test Structure
+## テストの目的
 
-### Test Files
-- `test/e2e-nextjs.test.ts` - Tests for Next.js project generation
-- `test/e2e-comprehensive.test.ts` - Comprehensive test suite covering multiple patterns
-- `test/e2e-utils.ts` - Utility functions for E2E testing
+1. **即座に開発開始可能であることの保証**
+   - 生成されたプロジェクトが追加設定なしですぐに開発を開始できる
+   - `npm run dev` / `pnpm run dev` で即座に起動できる
 
-### Test Patterns
+2. **ワンコマンドデプロイの保証**
+   - Vercelへのデプロイがコマンド1つで実行可能
+   - 各種データベース・ストレージサービスとの統合が正しく設定されている
 
-#### Next.js Pattern 1: Basic Configuration
-- **Framework**: Next.js
-- **Database**: None
-- **Deployment**: No
-- **Storage**: None
-- **Package Manager**: pnpm
-- **Auth**: No
+3. **多様な設定での動作保証**
+   - すべての組み合わせ（フレームワーク、データベース、ORM、ストレージ、認証）で正常に動作
 
-This pattern tests the most basic Next.js setup to ensure core functionality works.
+## テスト環境
 
-#### Next.js Pattern 2: With Turso Database
-- Includes database configuration with Turso (SQLite at the edge)
-- Tests Prisma/Drizzle ORM integration
-- Verifies database initialization scripts
+### 実行要件
+- Node.js 20.0.0以上
+- Playwright（自動インストール）
+- npm（pnpmのworkspace問題を回避するため）
 
-#### Next.js Pattern 3: With Vercel Deployment
-- Tests deployment configuration
-- Verifies deployment scripts are created
-
-## What the Tests Verify
-
-### 1. Project Generation
-- Project is created in the correct directory
-- All expected files and directories are present
-- Project structure matches framework requirements
-
-### 2. Package.json Scripts
-All generated scripts are present and have correct commands:
-- `dev` - Development server
-- `build` - Production build
-- `start` - Production server
-- `lint` - Linting with Biome
-- `lint:fix` - Auto-fix linting issues
-- `format` - Format code with Biome
-- `format:check` - Check formatting
-- `check` - Combined lint and format check
-- `check:fix` - Fix all issues
-
-### 3. Script Execution
-Each script is tested to ensure it runs correctly:
-- **lint**: Runs and reports issues
-- **lint:fix**: Attempts to fix issues (may fail for unsafe fixes)
-- **format**: Formats code successfully
-- **format:check**: Checks formatting
-- **build**: Creates production build
-- **check**: Runs combined checks
-- **check:fix**: Fixes most issues
-
-### 4. Build Output
-- TypeScript configuration is valid
-- Next.js configuration is correct
-- Biome configuration is properly set up
-- Build artifacts are created (`.next` directory)
-
-### 5. Project Structure
-Verifies correct directory structure:
-```
-src/
-  app/        # Next.js App Router
-  components/ # React components
-    ui/       # UI components
-  lib/        # Utilities
-  hooks/      # Custom hooks
-  styles/     # CSS files
-public/       # Static assets
-```
-
-## Running the Tests
-
-### Run All E2E Tests
+### 実行コマンド
 ```bash
-pnpm run test:e2e
+# E2Eテストの実行（CI外で手動実行のみ）
+pnpm test:e2e
 ```
 
-### Run Next.js E2E Tests Only
-```bash
-pnpm run test:e2e:nextjs
-```
+## Next.js E2Eテストストーリー
 
-### Run Comprehensive E2E Tests
-```bash
-pnpm run test:e2e:comprehensive
-```
+### 1. 基本的なNext.jsプロジェクト生成
+**設定**:
+- Framework: Next.js
+- Database: なし
+- Storage: なし
+- Deployment: なし
+- Auth: なし
+- Package Manager: npm
 
-### Run with Watch Mode
-```bash
-pnpm run test:e2e:watch
-```
+**検証項目**:
+- ✅ package.jsonが正しく生成される
+- ✅ next.config.mjsが存在する
+- ✅ tsconfig.jsonが正しく設定される
+- ✅ src/app/page.tsxが存在する
+- ✅ src/app/layout.tsxが存在する
+- ✅ src/app/globals.cssが存在する
+- ✅ postcss.config.mjsが存在する
+- ✅ `npm run build` が成功する
+- ✅ `npm run dev` でサーバーが起動する
+- ✅ http://localhost:3000 でアプリケーションにアクセスできる
 
-### CI/CD Testing
-```bash
-pnpm run test:e2e:ci
-```
+### 2. Turso + Prismaを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: Turso
+- ORM: Prisma
+- Storage: なし
+- Deployment: あり（Vercel）
+- Auth: あり（Better Auth）
+- Package Manager: npm
 
-## Test Implementation Details
+**検証項目**:
+- ✅ prisma/schema.prismaが生成される
+- ✅ Better Auth用のスキーマが含まれる
+- ✅ 環境変数の設定でTursoに接続可能
+- ✅ /login, /register ページが存在する
+- ✅ vercel.jsonが生成される
 
-### Non-Interactive Mode
-The `createProject` function supports both interactive and non-interactive modes:
-- **Interactive**: Prompts user for configuration choices
-- **Non-Interactive**: Accepts complete configuration object for testing
+### 3. Turso + Drizzleを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: Turso
+- ORM: Drizzle
+- Storage: なし
+- Deployment: なし
+- Auth: あり（Better Auth）
+- Package Manager: npm
 
-```typescript
-// Non-interactive mode for testing
-await createProject({
-  projectName: 'test-project',
-  projectPath: '/path/to/project',
-  framework: 'nextjs',
-  database: 'none',
-  deployment: false,
-  storage: 'none',
-  auth: false,
-  packageManager: 'pnpm'
-});
-```
+**検証項目**:
+- ✅ drizzle.config.tsが生成される
+- ✅ src/lib/db/schema.tsが存在する
+- ✅ Better Auth用のテーブル定義が含まれる
+- ✅ 認証ページが正しく表示される
 
-### Test Utilities
+### 4. Supabase + Prismaを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: Supabase
+- ORM: Prisma
+- Storage: Supabase Storage
+- Deployment: あり（Vercel）
+- Auth: あり（Better Auth）
+- Package Manager: npm
 
-The `test/e2e-utils.ts` file provides helper functions:
+**検証項目**:
+- ✅ Supabaseクライアントが設定される
+- ✅ ストレージ用のアップロードAPIが存在する
+- ✅ /api/upload ルートが動作する
 
-- `createTestDirectory()` - Creates temporary test directory
-- `cleanupTestDirectory()` - Cleans up after tests
-- `runCommand()` - Executes shell commands
-- `runPackageManagerCommand()` - Runs package manager commands
-- `verifyProjectStructure()` - Checks expected files exist
-- `verifyPackageScripts()` - Validates package.json scripts
-- `createTestFileWithIssues()` - Creates files with linting/formatting issues for testing
-- `verifyBuildOutput()` - Checks build artifacts
+### 5. Supabase + Drizzleを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: Supabase
+- ORM: Drizzle
+- Storage: なし
+- Deployment: なし
+- Auth: あり（Better Auth）
+- Package Manager: npm
 
-### Test Timeouts
+**検証項目**:
+- ✅ Drizzle用のSupabase接続が設定される
+- ✅ 認証システムが正しく統合される
 
-Different operations have appropriate timeouts:
-- **E2E_TIMEOUT**: 5 minutes for build operations
-- **COMMAND_TIMEOUT**: 1 minute for regular commands
+### 6. Vercel Blobストレージを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: なし
+- Storage: Vercel Blob
+- Deployment: あり（Vercel）
+- Auth: なし
+- Package Manager: npm
 
-### Error Handling
+**検証項目**:
+- ✅ Vercel Blob用のクライアントが設定される
+- ✅ ファイルアップロードコンポーネントが存在する
+- ✅ /api/upload エンドポイントが存在する
 
-Tests handle various scenarios:
-- Commands that may exit with non-zero codes (linting with issues)
-- Unsafe fixes that require manual intervention
-- Build processes that take longer time
+### 7. AWS S3ストレージを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: なし
+- Storage: AWS S3
+- Deployment: なし
+- Auth: なし
+- Package Manager: npm
 
-## Key Learnings
+**検証項目**:
+- ✅ AWS S3クライアントが設定される
+- ✅ S3アップロード用の環境変数が定義される
 
-### 1. Configuration Scope
-Test configuration must be created within test functions, not at describe level, to ensure variables like `projectPath` are properly initialized after `beforeAll` hooks run.
+### 8. Cloudflare R2ストレージを使用したNext.js
+**設定**:
+- Framework: Next.js
+- Database: なし
+- Storage: Cloudflare R2
+- Deployment: なし
+- Auth: なし
+- Package Manager: npm
 
-### 2. Command Exit Codes
-Some commands like `lint:fix` and `check:fix` may exit with non-zero codes when they find issues they can't automatically fix (like unused variables requiring `--unsafe` flag). Tests should use `reject: false` option with execa to handle these cases.
+**検証項目**:
+- ✅ R2クライアントが設定される
+- ✅ R2用の環境変数が定義される
 
-### 3. Project Path Resolution
-The `createProject` function must preserve the provided `projectPath` and not override it with current working directory paths.
+## 既知の問題と制限
 
-### 4. Biome Commands
-- `biome lint --fix` - Fixes safe linting issues
-- `biome check --fix` - Fixes both linting and formatting issues
-- Some issues require `--unsafe` flag which tests don't use
+### 1. pnpm workspace問題
+- `/Users/sware/`にpackage.jsonが存在する場合、pnpmがworkspaceとして認識してしまう
+- 回避策：E2Eテストではnpmをパッケージマネージャーとして使用
 
-## Future Improvements
+### 2. Badge コンポーネントのTypeScript型エラー
+- UIコンポーネントライブラリのBadgeコンポーネントがvariantプロパティを正しく型定義していない
+- 修正済み：variantプロパティを使用せず、classNameで直接スタイリング
 
-1. Add E2E tests for other frameworks (Expo, Tauri, Flutter)
-2. Test database integration patterns
-3. Test deployment workflows
-4. Add performance benchmarks
-5. Test with different package managers (npm, yarn, bun)
-6. Add visual regression testing for generated UI components
+### 3. テンプレートディレクトリ
+- UIコンポーネントは`dist/templates/`から自動的にコピーされる
+- TypeScriptコンパイル時に自動的に生成される
+
+## 今後の改善点
+
+1. **CI/CD統合**
+   - 現在E2EテストはCIに含まれていない
+   - 将来的にはGitHub Actions等での自動実行を検討
+
+2. **他フレームワークのサポート**
+   - Expo（React Native）のE2Eテスト追加
+   - TauriデスクトップアプリのE2Eテスト追加
+   - FlutterアプリのE2Eテスト追加
+
+3. **パフォーマンステスト**
+   - ビルド時間の測定
+   - 起動時間の測定
+   - Lighthouseスコアの自動チェック
+
+4. **デプロイメントテスト**
+   - Vercelへの実際のデプロイテスト
+   - プレビューデプロイメントの検証
+
+## テスト実行時の注意事項
+
+1. テスト実行前に必ず`pnpm build`を実行してCLIをビルドする
+2. テストは`.temp-e2e`ディレクトリにプロジェクトを生成する（自動的にクリーンアップされる）
+3. npm installの完了には時間がかかる（約1-2分/プロジェクト）
+4. ポート3000が使用されていないことを確認する
+
+## 貢献ガイドライン
+
+新しいE2Eテストケースを追加する場合：
+
+1. `test/e2e/nextjs.spec.ts`の`testConfigs`配列に新しい設定を追加
+2. 必要に応じて`verifyProjectStructure`関数を更新
+3. 特定の機能に対する追加の検証ロジックを実装
+4. このドキュメントに新しいテストストーリーを追加
+
+## まとめ
+
+Fluorite-flakeのE2Eテストは、生成されたプロジェクトが「すぐに開発を始められる」という核心的な価値を保証するために設計されています。すべてのテストケースは、実際のユーザーワークフローを模倣し、生成されたコードの品質と使いやすさを確保します。

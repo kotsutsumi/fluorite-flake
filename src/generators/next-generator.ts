@@ -391,9 +391,30 @@ export function CardContent(props: HTMLAttributes<HTMLDivElement>) {
 }
 `,
         'src/components/ui/badge.tsx': `import type { HTMLAttributes } from 'react';
+import { clsx } from 'clsx';
 
-export function Badge(props: HTMLAttributes<HTMLSpanElement>) {
-  return <span {...props} />;
+interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+  variant?: 'default' | 'secondary' | 'outline' | 'destructive';
+}
+
+export function Badge({ variant = 'default', className, ...props }: BadgeProps) {
+  const variants = {
+    default: 'bg-primary text-primary-foreground',
+    secondary: 'bg-secondary text-secondary-foreground',
+    outline: 'border border-input bg-background',
+    destructive: 'bg-destructive text-destructive-foreground',
+  };
+
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold transition-colors',
+        variants[variant],
+        className
+      )}
+      {...props}
+    />
+  );
 }
 `,
         'src/components/ui/dialog.tsx': `import type { HTMLAttributes } from 'react';
@@ -1088,7 +1109,7 @@ export default function Home() {
       <div className="container mx-auto flex flex-col gap-10 py-16">
         <Card className="mx-auto w-full max-w-4xl border-border/60 shadow-sm">
           <CardHeader className="flex flex-col gap-4">
-            <Badge variant="outline" className="self-start uppercase tracking-wide">
+            <Badge className="self-start uppercase tracking-wide border border-input bg-background">
               fluorite-flake
             </Badge>
             <CardTitle className="text-4xl">Your shadcn/ui + Kibo UI starter</CardTitle>

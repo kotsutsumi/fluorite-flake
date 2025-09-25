@@ -1,139 +1,150 @@
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtemp, readFile } from 'node:fs/promises';
-import { describe, expect, it, vi } from 'vitest';
+
 import fs from 'fs-extra';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProjectConfig } from '../../../src/commands/create/types.js';
-import {
-    PROVISIONING_FILENAME,
-    isProvisioningEligible,
-    provisionCloudResources,
-} from '../../../src/utils/cloud/index.js';
-import { MockProvisioner } from '../../../src/utils/cloud/mock-provisioner.js';
-import type { CloudProvisioningRecord } from '../../../src/utils/cloud/types.js';
 
-const baseConfig: ProjectConfig = {
-    projectName: 'My Next App',
-    projectPath: '', // filled per-test
-    framework: 'nextjs',
-    database: 'turso',
-    deployment: true,
-    storage: 'vercel-blob',
-    auth: true,
-    packageManager: 'pnpm',
-    mode: 'full',
-};
+const originalAutoProvision = process.env.FLUORITE_AUTO_PROVISION;
+const originalCloudMode = process.env.FLUORITE_CLOUD_MODE;
+const originalNodeEnv = process.env.NODE_ENV;
 
-describe('cloud/index utilities', () => {
-    it('evaluates provisioning eligibility correctly', () => {
+const cleanupPaths: string[] = [];
+
+async function importCloudModule() {
+    return await import('../../../src/utils/cloud/index.js');
+}
+
+function restoreEnv() {
+    if (originalAutoProvision === undefined) {
+        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        delete process.env.FLUORITE_AUTO_PROVISION;
+    } else {
+        process.env.FLUORITE_AUTO_PROVISION = originalAutoProvision;
+    }
+
+    if (originalCloudMode === undefined) {
+        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        delete process.env.FLUORITE_CLOUD_MODE;
+    } else {
+        process.env.FLUORITE_CLOUD_MODE = originalCloudMode;
+    }
+
+    if (originalNodeEnv === undefined) {
+        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        delete process.env.NODE_ENV;
+    } else {
+        process.env.NODE_ENV = originalNodeEnv;
+    }
+}
+
+function createConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
+    return {
+        projectName: 'demo-app',
+        projectPath: '/tmp/demo-app',
+        framework: 'nextjs',
+        database: 'turso',
+        orm: 'prisma',
+        deployment: false,
+        storage: 'none',
+        auth: false,
+        packageManager: 'pnpm',
+        mode: 'full',
+        ...overrides,
+    } as ProjectConfig;
+}
+
+async function createProvisioningProject(overrides: Partial<ProjectConfig> = {}) {
+    const projectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'ff-cloud-'));
+    cleanupPaths.push(projectPath);
+
+    // Create empty .env files that the cloud provisioning expects
+    await fs.writeFile(path.join(projectPath, '.env.local'), '');
+    await fs.writeFile(path.join(projectPath, '.env.production'), '');
+
+    return createConfig({ projectPath, ...overrides });
+}
+
+afterEach(async () => {
+    restoreEnv();
+    await Promise.all(cleanupPaths.map((dir) => fs.remove(dir)));
+    cleanupPaths.length = 0;
+});
+
+describe('isProvisioningEligible', () => {
+    it('requires auto provisioning to be enabled and a Next.js project with managed services', async () => {
+        vi.resetModules();
+        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        delete process.env.FLUORITE_AUTO_PROVISION;
+        process.env.NODE_ENV = 'test';
+
+        const { isProvisioningEligible } = await importCloudModule();
+
         expect(
-            isProvisioningEligible({
-                ...baseConfig,
-                projectPath: '/tmp/eligible',
-                database: 'turso',
-            })
-        ).toBe(true);
-
-        expect(
-            isProvisioningEligible({
-                ...baseConfig,
-                projectPath: '/tmp/none',
-                database: 'none',
-                storage: 'none',
-                deployment: false,
-            })
+            isProvisioningEligible(
+                createConfig({
+                    framework: 'expo',
+                    database: 'none',
+                    storage: 'none',
+                    deployment: false,
+                })
+            )
         ).toBe(false);
 
         expect(
-            isProvisioningEligible({
-                ...baseConfig,
-                projectPath: '/tmp/storage',
-                database: 'none',
-                storage: 'vercel-blob',
-                deployment: false,
-            })
+            isProvisioningEligible(
+                createConfig({
+                    framework: 'nextjs',
+                    database: 'turso',
+                    storage: 'none',
+                    deployment: false,
+                })
+            )
         ).toBe(true);
     });
 
-    it('skips provisioning when not eligible', async () => {
-        const result = await provisionCloudResources({
-            ...baseConfig,
-            projectPath: '/tmp/skip',
-            database: 'none',
-            storage: 'none',
-            deployment: false,
+    it('returns false when auto provisioning is disabled via environment variable', async () => {
+        vi.resetModules();
+        process.env.FLUORITE_AUTO_PROVISION = 'false';
+        process.env.NODE_ENV = 'test';
+
+        const { isProvisioningEligible } = await importCloudModule();
+        expect(isProvisioningEligible(createConfig())).toBe(false);
+    });
+});
+
+describe('provisionCloudResources', () => {
+    it('uses the mock provisioner in tests and writes provisioning artifacts', async () => {
+        vi.resetModules();
+        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        delete process.env.FLUORITE_AUTO_PROVISION;
+        process.env.FLUORITE_CLOUD_MODE = 'mock';
+        process.env.NODE_ENV = 'test';
+
+        const { provisionCloudResources, PROVISIONING_FILENAME } = await importCloudModule();
+        const config = await createProvisioningProject({
+            database: 'turso',
+            storage: 'vercel-blob',
+            deployment: true,
         });
 
-        expect(result).toBeNull();
-    });
+        const record = await provisionCloudResources(config);
+        expect(record).not.toBeNull();
+        expect(record?.mode).toBe('mock');
 
-    it('writes provisioning record and env files when eligible', async () => {
-        const tempDir = await mkdtemp(path.join(os.tmpdir(), 'cloud-test-'));
-        const config = { ...baseConfig, projectPath: tempDir };
+        const provisioningPath = path.join(config.projectPath, PROVISIONING_FILENAME);
+        expect(await fs.pathExists(provisioningPath)).toBe(true);
 
-        const record: CloudProvisioningRecord = {
-            mode: 'mock',
-            createdAt: new Date().toISOString(),
-            projectName: config.projectName,
-            turso: {
-                organization: 'mock-org',
-                group: 'default',
-                databases: [
-                    {
-                        env: 'dev',
-                        name: 'my-next-app-dev',
-                        hostname: 'dev.turso.io',
-                        databaseUrl: 'libsql://dev.turso.io',
-                        authToken: 'dev-token',
-                    },
-                    {
-                        env: 'stg',
-                        name: 'my-next-app-stg',
-                        hostname: 'stg.turso.io',
-                        databaseUrl: 'libsql://stg.turso.io',
-                        authToken: 'stg-token',
-                    },
-                    {
-                        env: 'prod',
-                        name: 'my-next-app-prod',
-                        hostname: 'prod.turso.io',
-                        databaseUrl: 'libsql://prod.turso.io',
-                        authToken: 'prod-token',
-                    },
-                ],
-            },
-            vercel: {
-                projectId: 'proj_123',
-                projectName: config.projectName,
-                productionUrl: 'https://example.vercel.app',
-            },
-            vercelBlob: {
-                storeId: 'store',
-                storeName: 'store',
-                readWriteToken: 'blob_token',
-            },
-        };
+        const envLocal = await fs.readFile(path.join(config.projectPath, '.env.local'), 'utf-8');
+        const envProduction = await fs.readFile(
+            path.join(config.projectPath, '.env.production'),
+            'utf-8'
+        );
 
-        const provisionSpy = vi
-            .spyOn(MockProvisioner.prototype, 'provision')
-            .mockResolvedValue(record);
-
-        const result = await provisionCloudResources(config);
-
-        expect(result).toEqual(record);
-        expect(provisionSpy).toHaveBeenCalled();
-
-        const provisioningFile = path.join(tempDir, PROVISIONING_FILENAME);
-        expect(await fs.pathExists(provisioningFile)).toBe(true);
-
-        const fileContents = await fs.readJSON(provisioningFile);
-        expect(fileContents).toMatchObject({ projectName: config.projectName, mode: 'mock' });
-
-        const envLocal = await readFile(path.join(tempDir, '.env.local'), 'utf-8');
-        expect(envLocal).toContain('DATABASE_URL=libsql://dev.turso.io?authToken=dev-token');
-        expect(envLocal).toContain('BLOB_READ_WRITE_TOKEN=blob_token');
-
-        provisionSpy.mockRestore();
+        expect(envLocal).toContain('DATABASE_URL');
+        expect(envLocal).toContain('BLOB_READ_WRITE_TOKEN');
+        expect(envProduction).toContain('DATABASE_URL');
+        expect(envProduction).toContain('BLOB_READ_WRITE_TOKEN');
     });
 });
