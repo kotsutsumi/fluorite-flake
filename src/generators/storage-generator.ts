@@ -135,11 +135,9 @@ echo "📝 You can now use Blob storage in your application"
   // Write the setup script
   const scriptsDir = path.join(config.projectPath, 'scripts');
   await fs.ensureDir(scriptsDir);
-  await fs.writeFile(
-    path.join(scriptsDir, 'setup-vercel-blob.sh'),
-    setupBlobScript,
-    { mode: 0o755 }
-  );
+  await fs.writeFile(path.join(scriptsDir, 'setup-vercel-blob.sh'), setupBlobScript, {
+    mode: 0o755,
+  });
 
   // Add a minimal placeholder to .env.local
   await appendEnv(

@@ -231,8 +231,14 @@ async function runProjectGeneration(config: ProjectConfig) {
       console.log(chalk.cyan('\nStorage tips:'));
       switch (config.storage) {
         case 'vercel-blob':
-          console.log(chalk.gray('  Run: ') + chalk.yellow(`${config.packageManager} run setup:blob`) + chalk.gray(' to automatically configure Blob token'));
-          console.log(chalk.gray('  Or manually set BLOB_READ_WRITE_TOKEN in Vercel env or .env.local'));
+          console.log(
+            chalk.gray('  Run: ') +
+              chalk.yellow(`${config.packageManager} run setup:blob`) +
+              chalk.gray(' to automatically configure Blob token')
+          );
+          console.log(
+            chalk.gray('  Or manually set BLOB_READ_WRITE_TOKEN in Vercel env or .env.local')
+          );
           break;
         case 'aws-s3':
           console.log(

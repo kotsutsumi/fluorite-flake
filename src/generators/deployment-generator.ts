@@ -198,7 +198,9 @@ else
     exit 1
 fi
 
-${config.storage === 'vercel-blob' ? `# Setup Vercel Blob Storage automatically
+${
+  config.storage === 'vercel-blob'
+    ? `# Setup Vercel Blob Storage automatically
 if [ ! -f ".env.local" ] || ! grep -q "BLOB_READ_WRITE_TOKEN=" .env.local || [ -z "$(grep BLOB_READ_WRITE_TOKEN= .env.local | cut -d'=' -f2)" ]; then
     echo ""
     echo "🔑 Setting up Vercel Blob Storage..."
@@ -215,7 +217,9 @@ if [ ! -f ".env.local" ] || ! grep -q "BLOB_READ_WRITE_TOKEN=" .env.local || [ -
         fi
     fi
 fi
-` : ''}
+`
+    : ''
+}
 
 # Load environment variables from file and set them in Vercel
 if [ -f "\$ENV_FILE" ]; then
