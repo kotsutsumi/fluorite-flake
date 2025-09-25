@@ -142,11 +142,20 @@ async function runProjectGeneration(config: ProjectConfig) {
     // Step 6: Install dependencies (skip for Flutter as it uses pub)
     if (config.framework !== 'flutter') {
       spinner = ora('Installing dependencies...').start();
-      await execa(config.packageManager, ['install'], {
-        cwd: config.projectPath,
-        stdio: 'pipe',
-      });
-      spinner.succeed('Dependencies installed');
+      try {
+        await execa(config.packageManager, ['install'], {
+          cwd: config.projectPath,
+          stdio: 'pipe',
+          timeout: 180000, // 3 minute timeout
+        });
+        spinner.succeed('Dependencies installed');
+      } catch (error) {
+        spinner.fail('Failed to install dependencies');
+        console.error('\nError:', (error as Error).message);
+        console.log('\nYou can manually install dependencies by running:');
+        console.log(`  cd ${config.projectName}`);
+        console.log(`  ${config.packageManager} install`);
+      }
     } else {
       spinner = ora('Installing Flutter dependencies...').start();
       await execa('flutter', ['pub', 'get'], {

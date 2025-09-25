@@ -615,6 +615,11 @@ main()
     const tursoClientContent = `import { PrismaClient } from '@prisma/client';
 import { PrismaLibSQL } from '@prisma/adapter-libsql';
 import { createClient } from '@libsql/client';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Determine if we're using local or cloud database
 const isLocal = !process.env.TURSO_DATABASE_URL ||
@@ -623,9 +628,18 @@ const isLocal = !process.env.TURSO_DATABASE_URL ||
 let prisma: PrismaClient;
 
 if (isLocal) {
-  // Local development - use standard Prisma client
+  // Local development - use standard Prisma client with explicit database path
+  // This ensures the database file is found correctly
+  const dbPath = path.resolve(process.cwd(), 'prisma', 'dev.db');
+  process.env.DATABASE_URL = \`file:\${dbPath}\`;
+
   prisma = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 } else {
   // Cloud deployment - use Turso adapter
@@ -1339,13 +1353,16 @@ echo "🚀 Initializing Turso database..."
 
 INIT_SUCCESS=true
 
-DEV_DB_URL="file:./prisma/dev.db"
+# Use absolute path for database
+PROJECT_ROOT=$(pwd)
+DEV_DB_PATH="$PROJECT_ROOT/prisma/dev.db"
+DEV_DB_URL="file:$DEV_DB_PATH"
 export DATABASE_URL="$DEV_DB_URL"
 export TURSO_DATABASE_URL="$DEV_DB_URL"
 export TURSO_AUTH_TOKEN=""
 
 mkdir -p prisma
-touch prisma/dev.db
+touch "$DEV_DB_PATH"
 
 echo "  • Generating Prisma client..."
 if OUTPUT=$(${prismaGenerateCommand} 2>&1); then
