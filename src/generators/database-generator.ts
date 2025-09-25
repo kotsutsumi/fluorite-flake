@@ -268,7 +268,7 @@ async function setupPrismaWithPost(config: ProjectConfig) {
   const schemaContent = `// Prisma schema with Post model for demonstration
 
 generator client {
-  provider = "prisma-client-js"${config.database === 'turso' ? '\n  previewFeatures = ["driverAdapters"]' : ''}
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -613,47 +613,12 @@ main()
   // Database client for Turso
   if (config.database === 'turso') {
     const tursoClientContent = `import { PrismaClient } from '@prisma/client';
-import { PrismaLibSQL } from '@prisma/adapter-libsql';
-import { createClient } from '@libsql/client';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Determine if we're using local or cloud database
-const isLocal = !process.env.TURSO_DATABASE_URL ||
-                process.env.TURSO_DATABASE_URL.startsWith('file:');
-
-let prisma: PrismaClient;
-
-if (isLocal) {
-  // Local development - use standard Prisma client with explicit database path
-  // This ensures the database file is found correctly
-  const dbPath = path.resolve(process.cwd(), 'prisma', 'dev.db');
-  process.env.DATABASE_URL = \`file:\${dbPath}\`;
-
-  prisma = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  });
-} else {
-  // Cloud deployment - use Turso adapter
-  const libsql = createClient({
-    url: process.env.TURSO_DATABASE_URL || '',
-    authToken: process.env.TURSO_AUTH_TOKEN || '',
-  });
-
-  const adapter = new PrismaLibSQL(libsql);
-  prisma = new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
-}
+// For local development with Turso (SQLite), we use the standard Prisma client
+// No adapters needed for local SQLite files
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
 export default prisma;
 `;
@@ -1363,6 +1328,16 @@ export TURSO_AUTH_TOKEN=""
 
 mkdir -p prisma
 touch "$DEV_DB_PATH"
+
+# For pnpm, ensure Prisma client is properly linked
+if [ -f "pnpm-lock.yaml" ]; then
+  echo "  • Ensuring Prisma client is properly linked for pnpm..."
+  if [ -d "node_modules/.prisma" ]; then
+    rm -rf "node_modules/@prisma/client/node_modules/.prisma" 2>/dev/null || true
+    mkdir -p "node_modules/@prisma/client/node_modules"
+    cp -r "node_modules/.prisma" "node_modules/@prisma/client/node_modules/.prisma" 2>/dev/null || true
+  fi
+fi
 
 echo "  • Generating Prisma client..."
 if OUTPUT=$(${prismaGenerateCommand} 2>&1); then
