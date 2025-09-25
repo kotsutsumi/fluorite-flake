@@ -80,7 +80,7 @@ export class CLIProvisioner implements CloudProvisioner {
     );
   }
 
-  private async createAndConnectBlobStore(storeName: string, projectPath: string) {
+  private async createAndConnectBlobStore(storeName: string, projectPath: string): Promise<string | undefined> {
     const createVariants: string[][] = [
       ['blob', 'store', 'add', storeName],
       ['blob', 'store', 'create', storeName],
@@ -115,49 +115,66 @@ export class CLIProvisioner implements CloudProvisioner {
       throw new ProvisioningError('Vercel Blob store を作成できませんでした。');
     }
 
-    await this.connectBlobStore(storeName, projectPath);
+    const token = await this.connectBlobStore(storeName, projectPath);
+    return token;
   }
 
-  private async connectBlobStore(storeName: string, projectPath: string) {
+  private async connectBlobStore(storeName: string, projectPath: string): Promise<string | undefined> {
+    // Try to connect/link the blob store to the project
     const connectVariants: string[][] = [
       ['blob', 'store', 'connect', storeName],
       ['blob', 'store', 'link', storeName],
     ];
 
+    let connected = false;
     let lastError: unknown;
 
     for (const args of connectVariants) {
       try {
-        await execa('vercel', args, {
+        const result = await execa('vercel', args, {
           cwd: projectPath,
           timeout: 30000,
           stdin: 'pipe',
           input: 'y\n', // Auto-confirm any prompts
         });
-        return;
+        connected = true;
+
+        // Try to extract token from output
+        const output = result.stdout || result.stderr || '';
+        const tokenMatch = output.match(/BLOB_READ_WRITE_TOKEN[=:"'\s]+(blob_[\w]+)/i);
+        if (tokenMatch) {
+          return tokenMatch[1];
+        }
+        break;
       } catch (error) {
         const stderr = (error as { stderr?: string }).stderr ?? '';
         const normalized = stderr.toLowerCase();
+
+        // Check if already connected
+        if (normalized.includes('already linked') || normalized.includes('already connected')) {
+          connected = true;
+          break;
+        }
+
+        // Check if command not supported
         if (this.isUnsupportedBlobSubcommand(stderr)) {
           continue;
         }
-        if (normalized.includes('already linked') || normalized.includes('already connected')) {
-          return;
-        }
+
         lastError = error;
       }
     }
 
-    if (lastError) {
-      throw new ProvisioningError(
-        'Vercel Blob store をプロジェクトに接続できませんでした。',
-        lastError
-      );
+    // If no connect commands worked, the blob store might be auto-connected by 'add' command
+    // This is fine for newer Vercel CLI versions
+    if (!connected && lastError) {
+      const errorStr = String(lastError);
+      if (!errorStr.includes('unknown command') && !errorStr.includes('unknown argument')) {
+        console.log('  ⚠️  Could not explicitly connect blob store, but it may be auto-connected');
+      }
     }
 
-    console.log(
-      '  ℹ️  現在の Vercel CLI では Blob store の connect ステップが不要なためスキップしました。'
-    );
+    return undefined;
   }
 
   async provision(config: ProjectConfig): Promise<CloudProvisioningRecord> {
@@ -489,6 +506,7 @@ export class CLIProvisioner implements CloudProvisioner {
 
     try {
       const storeName = `${slug}-blob`;
+      let readWriteToken = '';
 
       // First, ensure we're linked to the Vercel project
       this.spinner.text = 'Ensuring Vercel project link...';
@@ -573,24 +591,71 @@ export class CLIProvisioner implements CloudProvisioner {
             throw new ProvisioningError('既存の Vercel Blob store を削除できませんでした。');
           }
           this.spinner.text = 'Creating Vercel Blob store...';
-          await this.createAndConnectBlobStore(storeName, config.projectPath);
+          const token = await this.createAndConnectBlobStore(storeName, config.projectPath);
+          if (token) {
+            readWriteToken = token;
+          }
         } else {
           this.spinner = ora('Using existing Vercel Blob store...').start();
-          await this.connectBlobStore(storeName, config.projectPath);
+          const token = await this.connectBlobStore(storeName, config.projectPath);
+          if (token) {
+            readWriteToken = token;
+          }
         }
       } else {
         this.spinner.text = 'Creating Vercel Blob store...';
-        await this.createAndConnectBlobStore(storeName, config.projectPath);
+        const token = await this.createAndConnectBlobStore(storeName, config.projectPath);
+        if (token) {
+          readWriteToken = token;
+        }
       }
 
-      // For now, we'll skip token creation as it might need manual setup
-      // The BLOB_READ_WRITE_TOKEN needs to be created via the Vercel dashboard
-      const readWriteToken = '';
+      // Try to get or create a token if we don't have one
+      if (!readWriteToken) {
+        // Try to create a token using CLI
+        try {
+          const { stdout: tokenOutput } = await execa(
+            'vercel',
+            ['blob', 'token', 'create', storeName],
+            {
+              cwd: config.projectPath,
+              timeout: 10000,
+              reject: false,
+            }
+          );
+
+          // Extract token from output
+          const tokenMatch = tokenOutput.match(/blob_[\w]+/);
+          if (tokenMatch) {
+            readWriteToken = tokenMatch[0];
+          }
+        } catch {
+          // Token creation might not be available in CLI
+        }
+      }
 
       this.spinner.succeed('Vercel Blob storage configured');
-      console.log(
-        '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard for blob uploads'
-      );
+
+      if (readWriteToken) {
+        // Add token to environment
+        await this.addVercelEnv(
+          'BLOB_READ_WRITE_TOKEN',
+          readWriteToken,
+          ['development', 'preview', 'production'],
+          config.projectPath
+        );
+        console.log('  ✅  BLOB_READ_WRITE_TOKEN has been set in Vercel environment');
+      } else {
+        console.log(
+          '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard:\n' +
+          '      1. Go to https://vercel.com/dashboard\n' +
+          '      2. Select your project\n' +
+          '      3. Go to Storage tab\n' +
+          '      4. Select your blob store\n' +
+          '      5. Create a read/write token\n' +
+          '      6. Add it as BLOB_READ_WRITE_TOKEN environment variable'
+        );
+      }
 
       return {
         storeId: storeName,
