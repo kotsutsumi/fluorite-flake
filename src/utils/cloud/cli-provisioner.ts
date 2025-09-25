@@ -193,14 +193,10 @@ export class CLIProvisioner implements CloudProvisioner {
 
       // Create blob store (without --project flag since we're in the project directory)
       this.spinner.text = 'Creating Vercel Blob store...';
-      await execa(
-        'vercel',
-        ['blob', 'create', storeName, '--yes'],
-        {
-          cwd: config.projectPath,
-          reject: false, // Don't reject if store already exists
-        }
-      );
+      await execa('vercel', ['blob', 'create', storeName, '--yes'], {
+        cwd: config.projectPath,
+        reject: false, // Don't reject if store already exists
+      });
 
       // The store is automatically connected when created from within a project directory
       this.spinner.text = 'Verifying Blob store connection...';
@@ -233,55 +229,25 @@ export class CLIProvisioner implements CloudProvisioner {
           db.env === 'prod' ? 'production' : db.env === 'stg' ? 'preview' : 'development';
 
         // Set DATABASE_URL (no --project flag when running from project directory)
-        await execa(
-          'vercel',
-          [
-            'env',
-            'add',
-            'DATABASE_URL',
-            target,
-            '--yes'
-          ],
-          {
-            cwd: config.projectPath,
-            input: `${db.databaseUrl}?authToken=${db.authToken}`,
-            reject: false,
-          }
-        );
+        await execa('vercel', ['env', 'add', 'DATABASE_URL', target, '--yes'], {
+          cwd: config.projectPath,
+          input: `${db.databaseUrl}?authToken=${db.authToken}`,
+          reject: false,
+        });
 
         // Set TURSO_DATABASE_URL
-        await execa(
-          'vercel',
-          [
-            'env',
-            'add',
-            'TURSO_DATABASE_URL',
-            target,
-            '--yes'
-          ],
-          {
-            cwd: config.projectPath,
-            input: db.databaseUrl,
-            reject: false,
-          }
-        );
+        await execa('vercel', ['env', 'add', 'TURSO_DATABASE_URL', target, '--yes'], {
+          cwd: config.projectPath,
+          input: db.databaseUrl,
+          reject: false,
+        });
 
         // Set TURSO_AUTH_TOKEN
-        await execa(
-          'vercel',
-          [
-            'env',
-            'add',
-            'TURSO_AUTH_TOKEN',
-            target,
-            '--yes'
-          ],
-          {
-            cwd: config.projectPath,
-            input: db.authToken,
-            reject: false,
-          }
-        );
+        await execa('vercel', ['env', 'add', 'TURSO_AUTH_TOKEN', target, '--yes'], {
+          cwd: config.projectPath,
+          input: db.authToken,
+          reject: false,
+        });
       }
 
       // The BLOB_READ_WRITE_TOKEN is automatically set when connecting the store
