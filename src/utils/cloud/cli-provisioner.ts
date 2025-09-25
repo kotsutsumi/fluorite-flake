@@ -145,10 +145,15 @@ export class CLIProvisioner implements CloudProvisioner {
     }
 
     if (lastError) {
-      throw new ProvisioningError('Vercel Blob store をプロジェクトに接続できませんでした。', lastError);
+      throw new ProvisioningError(
+        'Vercel Blob store をプロジェクトに接続できませんでした。',
+        lastError
+      );
     }
 
-    console.log('  ℹ️  現在の Vercel CLI では Blob store の connect ステップが不要なためスキップしました。');
+    console.log(
+      '  ℹ️  現在の Vercel CLI では Blob store の connect ステップが不要なためスキップしました。'
+    );
   }
 
   async provision(config: ProjectConfig): Promise<CloudProvisioningRecord> {
