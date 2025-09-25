@@ -31,6 +31,23 @@ export interface VercelBlobRecord {
   readWriteToken: string;
 }
 
+export interface CloudflareR2Record {
+  bucketName: string;
+  accountId?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  endpoint?: string;
+}
+
+export interface SupabaseStorageRecord {
+  projectRef?: string;
+  bucketName: string;
+  bucketId: string;
+  isPublic: boolean;
+  serviceRoleKey?: string;
+  url?: string;
+}
+
 export interface CloudProvisioningRecord {
   mode: CloudMode;
   createdAt: string;
@@ -38,6 +55,8 @@ export interface CloudProvisioningRecord {
   turso?: TursoProvisioningRecord;
   vercel?: VercelProjectRecord;
   vercelBlob?: VercelBlobRecord;
+  cloudflareR2?: CloudflareR2Record;
+  supabaseStorage?: SupabaseStorageRecord;
 }
 
 export interface CloudProvisioner {

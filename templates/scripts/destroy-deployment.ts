@@ -25,11 +25,22 @@ interface VercelBlobRecord {
   storeName: string;
 }
 
+interface CloudflareR2Record {
+  bucketName: string;
+}
+
+interface SupabaseStorageRecord {
+  bucketName: string;
+  projectRef?: string;
+}
+
 interface CloudProvisioningRecord {
   mode: 'mock' | 'real';
   turso?: TursoProvisioningRecord;
   vercel?: VercelProjectRecord;
   vercelBlob?: VercelBlobRecord;
+  cloudflareR2?: CloudflareR2Record;
+  supabaseStorage?: SupabaseStorageRecord;
 }
 
 async function fileExists(targetPath: string) {
@@ -87,16 +98,14 @@ async function deleteTurso(record: CloudProvisioningRecord) {
     return;
   }
 
-  // Check if logged in
+  // Check if logged in - turso auth status exits with non-zero when not logged in
   try {
-    const authStatus = await run('turso', ['auth', 'status'], process.env);
-    if (!authStatus.includes('Logged in')) {
-      console.warn('\n⚠️  Skipping Turso cleanup because you are not logged in to Turso.');
-      console.log('   Run "turso auth login" to log in.');
-      return;
-    }
+    await run('turso', ['auth', 'status'], process.env);
+    // If we got here, we're logged in (command succeeded)
   } catch {
-    console.warn('\n⚠️  Skipping Turso cleanup - could not check auth status.');
+    // Command failed, which means not logged in
+    console.warn('\n⚠️  Skipping Turso cleanup because you are not logged in to Turso.');
+    console.log('   Run "turso auth login" to log in.');
     return;
   }
 
@@ -165,10 +174,8 @@ async function deleteVercelBlob(record: CloudProvisioningRecord) {
   }
 
   try {
-    const args = ['storage', 'rm', store.storeName, '--yes'];
-    if (record.vercel?.projectName) {
-      args.push('--project', record.vercel.projectName);
-    }
+    // Use vercel blob store remove to delete the store
+    const args = ['blob', 'store', 'remove', store.storeName];
     if (record.vercel?.teamId) {
       args.push('--scope', record.vercel.teamId);
     }
@@ -177,6 +184,62 @@ async function deleteVercelBlob(record: CloudProvisioningRecord) {
     console.log(`🗑️  Removed Vercel Blob store ${store.storeName}`);
   } catch (error) {
     console.warn(`⚠️  Failed to remove Vercel Blob store ${store.storeName}: ${String(error)}`);
+  }
+}
+
+async function deleteCloudflareR2(record: CloudProvisioningRecord) {
+  const r2 = record.cloudflareR2;
+  if (!r2) {
+    return;
+  }
+
+  try {
+    // Check if wrangler CLI is available
+    await run('wrangler', ['--version'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Cloudflare R2 cleanup because Wrangler CLI is not installed.');
+    console.log('   Install it with: npm install -g wrangler');
+    return;
+  }
+
+  // Check if logged in
+  try {
+    await run('wrangler', ['whoami'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Cloudflare R2 cleanup because you are not logged in.');
+    console.log('   Run "wrangler login" to log in.');
+    return;
+  }
+
+  try {
+    await run('wrangler', ['r2', 'bucket', 'delete', r2.bucketName], process.env);
+    console.log(`🗑️  Removed Cloudflare R2 bucket ${r2.bucketName}`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to delete Cloudflare R2 bucket ${r2.bucketName}: ${String(error)}`);
+  }
+}
+
+async function deleteSupabaseStorage(record: CloudProvisioningRecord) {
+  const storage = record.supabaseStorage;
+  if (!storage) {
+    return;
+  }
+
+  try {
+    // Check if supabase CLI is available
+    await run('supabase', ['--version'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Supabase Storage cleanup because Supabase CLI is not installed.');
+    return;
+  }
+
+  // Note: Supabase storage buckets need to be deleted via the dashboard
+  console.log('\n⚠️  Supabase Storage cleanup:');
+  console.log(
+    `   Storage bucket '${storage.bucketName}' needs to be deleted manually in the Supabase dashboard.`
+  );
+  if (storage.projectRef) {
+    console.log(`   Project: ${storage.projectRef}`);
   }
 }
 
@@ -207,6 +270,8 @@ async function main() {
   if (record.mode === 'mock') {
     console.log('   • Detected mock provisioning. Cleaning local artifacts only.');
   } else {
+    await deleteCloudflareR2(record);
+    await deleteSupabaseStorage(record);
     await deleteVercelBlob(record);
     await deleteVercelProject(record);
     await deleteTurso(record);

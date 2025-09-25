@@ -1,5 +1,6 @@
 import { execa } from 'execa';
 import ora, { type Ora } from 'ora';
+import prompts from 'prompts';
 import type { ProjectConfig } from '../../commands/create.js';
 import { slugify } from '../slugify.js';
 import { ProvisioningError } from './errors.js';
@@ -10,6 +11,8 @@ import type {
   TursoDatabaseRecord,
   VercelBlobRecord,
   VercelProjectRecord,
+  CloudflareR2Record,
+  SupabaseStorageRecord,
 } from './types.js';
 
 const DB_ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
@@ -22,15 +25,36 @@ export class CLIProvisioner implements CloudProvisioner {
     const slug = slugify(config.projectName);
 
     // Check if CLIs are available
-    await this.checkCLITools();
+    await this.checkCLITools(config);
 
-    // Provision resources
-    const turso = await this.provisionTurso(slug, config);
-    const vercel = await this.provisionVercel(config);
-    const vercelBlob = await this.provisionVercelBlob(vercel, slug, config);
+    // Provision database resources
+    const turso = config.database === 'turso' ? await this.provisionTurso(slug, config) : undefined;
+
+    // Provision deployment resources
+    const vercel = config.deployment ? await this.provisionVercel(config) : undefined;
+
+    // Provision storage resources based on selection
+    let vercelBlob: VercelBlobRecord | undefined;
+    let cloudflareR2: CloudflareR2Record | undefined;
+    let supabaseStorage: SupabaseStorageRecord | undefined;
+
+    if (config.storage === 'vercel-blob' && vercel) {
+      vercelBlob = await this.provisionVercelBlob(vercel, slug, config);
+    } else if (config.storage === 'cloudflare-r2') {
+      cloudflareR2 = await this.provisionCloudflareR2(slug, config);
+    } else if (config.storage === 'supabase-storage') {
+      supabaseStorage = await this.provisionSupabaseStorage(slug, config);
+    }
 
     // Configure environment variables
-    await this.configureEnvironment(vercel, turso, vercelBlob, config);
+    await this.configureEnvironment(
+      vercel,
+      turso,
+      vercelBlob,
+      cloudflareR2,
+      supabaseStorage,
+      config
+    );
 
     return {
       mode: this.mode,
@@ -39,26 +63,54 @@ export class CLIProvisioner implements CloudProvisioner {
       turso,
       vercel,
       vercelBlob,
+      cloudflareR2,
+      supabaseStorage,
     };
   }
 
-  private async checkCLITools() {
-    // Check Turso CLI
-    try {
-      await execa('turso', ['--version']);
-    } catch {
-      throw new ProvisioningError(
-        'Turso CLI is required. Please install it with: curl -sSfL https://get.tur.so/install.sh | bash'
-      );
+  private async checkCLITools(config: ProjectConfig) {
+    // Check Turso CLI if using Turso database
+    if (config.database === 'turso') {
+      try {
+        await execa('turso', ['--version']);
+      } catch {
+        throw new ProvisioningError(
+          'Turso CLI is required. Please install it with: curl -sSfL https://get.tur.so/install.sh | bash'
+        );
+      }
     }
 
-    // Check Vercel CLI
-    try {
-      await execa('vercel', ['--version']);
-    } catch {
-      throw new ProvisioningError(
-        'Vercel CLI is required. Please install it with: npm install -g vercel'
-      );
+    // Check Vercel CLI if using Vercel deployment or Vercel Blob
+    if (config.deployment || config.storage === 'vercel-blob') {
+      try {
+        await execa('vercel', ['--version']);
+      } catch {
+        throw new ProvisioningError(
+          'Vercel CLI is required. Please install it with: npm install -g vercel'
+        );
+      }
+    }
+
+    // Check Wrangler CLI if using Cloudflare R2
+    if (config.storage === 'cloudflare-r2') {
+      try {
+        await execa('wrangler', ['--version']);
+      } catch {
+        throw new ProvisioningError(
+          'Wrangler CLI is required for Cloudflare R2. Please install it with: npm install -g wrangler'
+        );
+      }
+    }
+
+    // Check Supabase CLI if using Supabase database or storage
+    if (config.database === 'supabase' || config.storage === 'supabase-storage') {
+      try {
+        await execa('supabase', ['--version']);
+      } catch {
+        throw new ProvisioningError(
+          'Supabase CLI is required. Please install it from: https://supabase.com/docs/guides/cli'
+        );
+      }
     }
   }
 
@@ -86,17 +138,44 @@ export class CLIProvisioner implements CloudProvisioner {
       for (const env of DB_ENVIRONMENTS) {
         // Turso only accepts lowercase letters, numbers, and dashes (no underscores)
         const dbName = `${slug}-${env}`;
-        this.spinner.text = `Creating database ${dbName}...`;
 
-        // Create database
+        // Check if database already exists
+        let databaseExists = false;
         try {
-          await execa('turso', ['db', 'create', dbName]);
-        } catch (error) {
-          // Database might already exist
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          if (!errorMessage.includes('already exists')) {
-            throw error;
+          await execa('turso', ['db', 'show', dbName]);
+          databaseExists = true;
+        } catch {
+          // Database doesn't exist
+        }
+
+        if (databaseExists) {
+          this.spinner.stop();
+          const { action } = await prompts({
+            type: 'select',
+            name: 'action',
+            message: `Turso database '${dbName}' already exists. What would you like to do?`,
+            choices: [
+              { title: 'Use existing database', value: 'use' },
+              { title: 'Delete and recreate', value: 'recreate' },
+              { title: 'Cancel', value: 'cancel' },
+            ],
+          });
+
+          if (action === 'cancel') {
+            throw new ProvisioningError('User cancelled provisioning');
           }
+
+          if (action === 'recreate') {
+            this.spinner = ora(`Deleting existing database ${dbName}...`).start();
+            await execa('turso', ['db', 'destroy', dbName, '--yes']);
+            this.spinner.text = `Creating database ${dbName}...`;
+            await execa('turso', ['db', 'create', dbName]);
+          } else {
+            this.spinner = ora(`Using existing database ${dbName}...`).start();
+          }
+        } else {
+          this.spinner.text = `Creating database ${dbName}...`;
+          await execa('turso', ['db', 'create', dbName]);
         }
 
         // Get database URL
@@ -146,14 +225,60 @@ export class CLIProvisioner implements CloudProvisioner {
         await execa('vercel', ['login'], { stdio: 'inherit' });
       }
 
-      // Link or create project
-      this.spinner.text = 'Creating Vercel project...';
+      // Check if project already exists
+      let projectExists = false;
+      try {
+        const { stdout: listOutput } = await execa('vercel', ['ls'], {
+          cwd: config.projectPath,
+        });
+        if (listOutput.includes(config.projectName)) {
+          projectExists = true;
+        }
+      } catch {
+        // Error checking projects, continue
+      }
 
-      // Create project using vercel link command
-      await execa('vercel', ['link', '--yes', '--project', config.projectName], {
-        cwd: config.projectPath,
-        reject: false,
-      });
+      if (projectExists) {
+        this.spinner.stop();
+        const { action } = await prompts({
+          type: 'select',
+          name: 'action',
+          message: `Vercel project '${config.projectName}' already exists. What would you like to do?`,
+          choices: [
+            { title: 'Use existing project', value: 'use' },
+            { title: 'Delete and recreate', value: 'recreate' },
+            { title: 'Cancel', value: 'cancel' },
+          ],
+        });
+
+        if (action === 'cancel') {
+          throw new ProvisioningError('User cancelled provisioning');
+        }
+
+        if (action === 'recreate') {
+          this.spinner = ora(`Deleting existing project ${config.projectName}...`).start();
+          await execa('vercel', ['remove', config.projectName, '--yes'], {
+            cwd: config.projectPath,
+          });
+          this.spinner.text = 'Creating Vercel project...';
+          await execa('vercel', ['link', '--yes', '--project', config.projectName], {
+            cwd: config.projectPath,
+            reject: false,
+          });
+        } else {
+          this.spinner = ora('Using existing Vercel project...').start();
+          await execa('vercel', ['link', '--yes', '--project', config.projectName], {
+            cwd: config.projectPath,
+            reject: false,
+          });
+        }
+      } else {
+        this.spinner.text = 'Creating Vercel project...';
+        await execa('vercel', ['link', '--yes', '--project', config.projectName], {
+          cwd: config.projectPath,
+          reject: false,
+        });
+      }
 
       // Get project info
       const { stdout: projectInfo } = await execa('vercel', ['project'], {
@@ -191,22 +316,75 @@ export class CLIProvisioner implements CloudProvisioner {
     try {
       const storeName = `${slug}-blob`;
 
-      // Create blob store (without --project flag since we're in the project directory)
-      this.spinner.text = 'Creating Vercel Blob store...';
-      await execa('vercel', ['blob', 'create', storeName, '--yes'], {
+      // First, ensure we're linked to the Vercel project
+      this.spinner.text = 'Ensuring Vercel project link...';
+      await execa('vercel', ['link', '--yes'], {
         cwd: config.projectPath,
-        reject: false, // Don't reject if store already exists
+        reject: false,
       });
 
-      // The store is automatically connected when created from within a project directory
-      this.spinner.text = 'Verifying Blob store connection...';
+      // Check if blob store already exists
+      let storeExists = false;
+      try {
+        const { stdout: storeList } = await execa('vercel', ['blob', 'store', 'list'], {
+          cwd: config.projectPath,
+        });
+        if (storeList.includes(storeName)) {
+          storeExists = true;
+        }
+      } catch {
+        // Error checking stores, continue
+      }
+
+      if (storeExists) {
+        this.spinner.stop();
+        const { action } = await prompts({
+          type: 'select',
+          name: 'action',
+          message: `Vercel Blob store '${storeName}' already exists. What would you like to do?`,
+          choices: [
+            { title: 'Use existing store', value: 'use' },
+            { title: 'Delete and recreate', value: 'recreate' },
+            { title: 'Cancel', value: 'cancel' },
+          ],
+        });
+
+        if (action === 'cancel') {
+          throw new ProvisioningError('User cancelled provisioning');
+        }
+
+        if (action === 'recreate') {
+          this.spinner = ora(`Deleting existing blob store ${storeName}...`).start();
+          await execa('vercel', ['blob', 'store', 'remove', storeName], {
+            cwd: config.projectPath,
+          });
+          this.spinner.text = 'Creating Vercel Blob store...';
+          await execa('vercel', ['blob', 'store', 'add', storeName], {
+            cwd: config.projectPath,
+          });
+        } else {
+          this.spinner = ora('Using existing Vercel Blob store...').start();
+        }
+      } else {
+        this.spinner.text = 'Creating Vercel Blob store...';
+        await execa('vercel', ['blob', 'store', 'add', storeName], {
+          cwd: config.projectPath,
+        });
+      }
+
+      // For now, we'll skip token creation as it might need manual setup
+      // The BLOB_READ_WRITE_TOKEN needs to be created via the Vercel dashboard
+      const readWriteToken = '';
 
       this.spinner.succeed('Vercel Blob storage configured');
+      console.log(
+        '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard for blob uploads'
+      );
 
       return {
         storeId: storeName,
         storeName,
-        readWriteToken: '', // Will be set via environment variables
+        readWriteToken,
       };
     } catch (error) {
       this.spinner?.fail('Failed to provision Vercel Blob storage');
@@ -214,44 +392,178 @@ export class CLIProvisioner implements CloudProvisioner {
     }
   }
 
+  private async provisionCloudflareR2(
+    slug: string,
+    _config: ProjectConfig
+  ): Promise<CloudflareR2Record> {
+    this.spinner = ora('Setting up Cloudflare R2 storage...').start();
+
+    try {
+      const bucketName = `${slug}-r2`;
+
+      // Check if logged in to Cloudflare
+      try {
+        await execa('wrangler', ['whoami']);
+      } catch {
+        this.spinner.text = 'Logging in to Cloudflare...';
+        await execa('wrangler', ['login'], { stdio: 'inherit' });
+      }
+
+      // Check if bucket already exists
+      let bucketExists = false;
+      try {
+        const { stdout: listOutput } = await execa('wrangler', ['r2', 'bucket', 'list']);
+        if (listOutput.includes(bucketName)) {
+          bucketExists = true;
+        }
+      } catch {
+        // Error checking buckets, continue
+      }
+
+      if (bucketExists) {
+        this.spinner.stop();
+        const { action } = await prompts({
+          type: 'select',
+          name: 'action',
+          message: `Cloudflare R2 bucket '${bucketName}' already exists. What would you like to do?`,
+          choices: [
+            { title: 'Use existing bucket', value: 'use' },
+            { title: 'Delete and recreate', value: 'recreate' },
+            { title: 'Cancel', value: 'cancel' },
+          ],
+        });
+
+        if (action === 'cancel') {
+          throw new ProvisioningError('User cancelled provisioning');
+        }
+
+        if (action === 'recreate') {
+          this.spinner = ora(`Deleting existing R2 bucket ${bucketName}...`).start();
+          await execa('wrangler', ['r2', 'bucket', 'delete', bucketName]);
+          this.spinner.text = 'Creating Cloudflare R2 bucket...';
+          await execa('wrangler', ['r2', 'bucket', 'create', bucketName]);
+        } else {
+          this.spinner = ora('Using existing Cloudflare R2 bucket...').start();
+        }
+      } else {
+        this.spinner.text = 'Creating Cloudflare R2 bucket...';
+        await execa('wrangler', ['r2', 'bucket', 'create', bucketName]);
+      }
+
+      this.spinner.succeed('Cloudflare R2 storage configured');
+      console.log('  ℹ️  Note: Create R2 API credentials in Cloudflare dashboard for access');
+
+      return {
+        bucketName,
+        // These need to be configured manually in Cloudflare dashboard
+        accountId: '',
+        accessKeyId: '',
+        secretAccessKey: '',
+        endpoint: '',
+      };
+    } catch (error) {
+      this.spinner?.fail('Failed to provision Cloudflare R2 storage');
+      throw new ProvisioningError('Failed to provision Cloudflare R2 storage', error);
+    }
+  }
+
+  private async provisionSupabaseStorage(
+    slug: string,
+    _config: ProjectConfig
+  ): Promise<SupabaseStorageRecord> {
+    this.spinner = ora('Setting up Supabase storage...').start();
+
+    try {
+      const bucketName = `${slug}-storage`;
+      const bucketId = bucketName;
+
+      // Check if logged in to Supabase
+      try {
+        // Supabase CLI doesn't have a direct whoami command, we'll check if we can list projects
+        await execa('supabase', ['projects', 'list']);
+      } catch {
+        this.spinner.text = 'Logging in to Supabase...';
+        await execa('supabase', ['login'], { stdio: 'inherit' });
+      }
+
+      // Note: Supabase buckets need to be created via the API or dashboard
+      // The CLI doesn't have direct bucket creation commands
+      this.spinner.succeed('Supabase storage configuration prepared');
+      console.log('  ℹ️  Note: Create storage bucket in Supabase dashboard:');
+      console.log(`     - Bucket name: ${bucketName}`);
+      console.log('     - Configure public/private access as needed');
+      console.log('     - Get service role key from project settings');
+
+      return {
+        bucketName,
+        bucketId,
+        isPublic: false,
+        // These need to be configured manually
+        projectRef: '',
+        serviceRoleKey: '',
+        url: '',
+      };
+    } catch (error) {
+      this.spinner?.fail('Failed to prepare Supabase storage configuration');
+      throw new ProvisioningError('Failed to prepare Supabase storage configuration', error);
+    }
+  }
+
   private async configureEnvironment(
-    _vercel: VercelProjectRecord,
-    turso: { databases: TursoDatabaseRecord[] },
-    _vercelBlob: VercelBlobRecord,
+    _vercel: VercelProjectRecord | undefined,
+    turso: { databases: TursoDatabaseRecord[] } | undefined,
+    vercelBlob: VercelBlobRecord | undefined,
+    _cloudflareR2: CloudflareR2Record | undefined,
+    _supabaseStorage: SupabaseStorageRecord | undefined,
     config: ProjectConfig
   ) {
     this.spinner = ora('Configuring environment variables...').start();
 
     try {
-      // Set environment variables for each environment
-      for (const db of turso.databases) {
-        const target =
-          db.env === 'prod' ? 'production' : db.env === 'stg' ? 'preview' : 'development';
+      // Set environment variables for each Turso database environment
+      if (turso?.databases) {
+        for (const db of turso.databases) {
+          const target =
+            db.env === 'prod' ? 'production' : db.env === 'stg' ? 'preview' : 'development';
 
-        // Set DATABASE_URL (no --project flag when running from project directory)
-        await execa('vercel', ['env', 'add', 'DATABASE_URL', target, '--yes'], {
-          cwd: config.projectPath,
-          input: `${db.databaseUrl}?authToken=${db.authToken}`,
-          reject: false,
-        });
+          // Set DATABASE_URL (no --project flag when running from project directory)
+          await execa('vercel', ['env', 'add', 'DATABASE_URL', target, '--yes'], {
+            cwd: config.projectPath,
+            input: `${db.databaseUrl}?authToken=${db.authToken}`,
+            reject: false,
+          });
 
-        // Set TURSO_DATABASE_URL
-        await execa('vercel', ['env', 'add', 'TURSO_DATABASE_URL', target, '--yes'], {
-          cwd: config.projectPath,
-          input: db.databaseUrl,
-          reject: false,
-        });
+          // Set TURSO_DATABASE_URL
+          await execa('vercel', ['env', 'add', 'TURSO_DATABASE_URL', target, '--yes'], {
+            cwd: config.projectPath,
+            input: db.databaseUrl,
+            reject: false,
+          });
 
-        // Set TURSO_AUTH_TOKEN
-        await execa('vercel', ['env', 'add', 'TURSO_AUTH_TOKEN', target, '--yes'], {
-          cwd: config.projectPath,
-          input: db.authToken,
-          reject: false,
-        });
+          // Set TURSO_AUTH_TOKEN
+          await execa('vercel', ['env', 'add', 'TURSO_AUTH_TOKEN', target, '--yes'], {
+            cwd: config.projectPath,
+            input: db.authToken,
+            reject: false,
+          });
+        }
       }
 
-      // The BLOB_READ_WRITE_TOKEN is automatically set when connecting the store
-      // No need to manually set it
+      // Set BLOB_READ_WRITE_TOKEN if we have it
+      if (vercelBlob?.readWriteToken) {
+        await execa(
+          'vercel',
+          ['env', 'add', 'BLOB_READ_WRITE_TOKEN', 'development', 'preview', 'production', '--yes'],
+          {
+            cwd: config.projectPath,
+            input: vercelBlob.readWriteToken,
+            reject: false,
+          }
+        );
+      }
+
+      // Note: Cloudflare R2 and Supabase Storage environment variables
+      // need to be configured manually via their respective dashboards
 
       this.spinner.succeed('Environment variables configured');
     } catch (error) {
