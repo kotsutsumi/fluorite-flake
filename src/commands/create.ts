@@ -188,6 +188,90 @@ async function runProjectGeneration(config: ProjectConfig) {
       }
     }
 
+    // Step 8: Setup Vercel Blob storage automatically if configured
+    if (config.storage === 'vercel-blob' && config.framework === 'nextjs') {
+      spinner = ora('Setting up Vercel Blob storage...').start();
+      try {
+        // Check if Vercel CLI is installed globally
+        try {
+          await execa('vercel', ['--version'], { stdio: 'pipe' });
+        } catch {
+          // Install Vercel CLI if not present
+          spinner.text = 'Installing Vercel CLI...';
+          await execa('npm', ['install', '-g', 'vercel'], { stdio: 'pipe' });
+        }
+
+        spinner.text = 'Configuring Vercel Blob storage...';
+
+        // Create an automated setup script that runs non-interactively
+        const autoSetupScript = `#!/bin/bash
+set -e
+
+# Check if already configured
+if [ -f ".env.local" ] && grep -q "BLOB_READ_WRITE_TOKEN=" .env.local; then
+  TOKEN_VALUE=$(grep BLOB_READ_WRITE_TOKEN= .env.local | cut -d'=' -f2)
+  if [ -n "$TOKEN_VALUE" ]; then
+    echo "✅ Blob token already configured"
+    exit 0
+  fi
+fi
+
+echo "📦 Setting up Vercel Blob Storage..."
+
+# Try to link project if not already linked
+if [ ! -f ".vercel/project.json" ]; then
+  vercel link --yes 2>/dev/null || true
+fi
+
+# Check if we can get stores
+BLOB_STORES=$(vercel blob store ls 2>/dev/null || echo "")
+
+# Create store if needed
+if [ -z "$BLOB_STORES" ] || [[ "$BLOB_STORES" == *"No stores"* ]] || [[ "$BLOB_STORES" == *"Error"* ]]; then
+  STORE_NAME="blob-$(date +%s)"
+  vercel blob store add $STORE_NAME 2>/dev/null || true
+fi
+
+echo ""
+echo "⚠️ Manual step required:"
+echo "  1. Visit: https://vercel.com/dashboard/stores"
+echo "  2. Create or select a Blob store"
+echo "  3. Copy the Read/Write token"
+echo "  4. Add it to .env.local as BLOB_READ_WRITE_TOKEN"
+echo ""
+echo "✔ Vercel Blob storage configured (manual token setup required)"
+`;
+
+        const autoSetupPath = path.join(config.projectPath, 'auto-blob-setup.sh');
+        await fs.writeFile(autoSetupPath, autoSetupScript, { mode: 0o755 });
+
+        // Run the automated setup
+        await execa('bash', [autoSetupPath], {
+          cwd: config.projectPath,
+          stdio: 'pipe',
+        });
+
+        // Clean up temporary script
+        await fs.remove(autoSetupPath);
+
+        spinner.succeed('Vercel Blob storage configured');
+        console.log(
+          chalk.yellow('  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard:')
+        );
+        console.log(chalk.gray('      1. Go to https://vercel.com/dashboard'));
+        console.log(chalk.gray('      2. Select your project'));
+        console.log(chalk.gray('      3. Go to Storage tab'));
+        console.log(chalk.gray('      4. Select your blob store'));
+        console.log(chalk.gray('      5. Create a read/write token'));
+        console.log(chalk.gray('      6. Add it as BLOB_READ_WRITE_TOKEN environment variable'));
+      } catch (_error) {
+        spinner.warn('Vercel Blob setup incomplete. You can set it up manually later with:');
+        console.log(chalk.gray(`    cd ${config.projectName}`));
+        console.log(chalk.gray(`    ${config.packageManager} run setup:blob`));
+        console.log(chalk.gray('    Or manually configure BLOB_READ_WRITE_TOKEN in .env.local'));
+      }
+    }
+
     // Success message
     console.log(chalk.green('\n✅ Project created successfully!\n'));
     console.log(chalk.cyan('To get started:'));

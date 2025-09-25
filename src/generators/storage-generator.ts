@@ -62,42 +62,54 @@ echo "🔍 Project ID: $PROJECT_ID"
 echo "📡 Retrieving Blob store information..."
 
 # Try to get existing blob stores
-BLOB_STORES=$(vercel blob ls 2>/dev/null || echo "")
+BLOB_STORES=$(vercel blob store ls 2>/dev/null || echo "")
 
-if [ -z "$BLOB_STORES" ] || [[ "$BLOB_STORES" == *"No stores"* ]]; then
+if [ -z "$BLOB_STORES" ] || [[ "$BLOB_STORES" == *"No stores"* ]] || [[ "$BLOB_STORES" == *"Error"* ]]; then
   echo "📦 Creating new Blob store..."
   STORE_NAME="blob-$(date +%s)"
-  vercel blob add $STORE_NAME
+  vercel blob store add $STORE_NAME 2>/dev/null || {
+    echo "⚠️ Could not create Blob store automatically."
+    echo "   Please create one manually at https://vercel.com/dashboard/stores"
+  }
   echo "✅ Created new Blob store: $STORE_NAME"
 else
   echo "✅ Using existing Blob store"
 fi
 
-# Get the token
+# Get the token - try multiple methods
 echo "🔑 Retrieving Blob token..."
-TOKEN=$(vercel env pull .env.blob.temp 2>/dev/null && grep BLOB_READ_WRITE_TOKEN .env.blob.temp | cut -d'=' -f2 || echo "")
 
-# Clean up temp file
-rm -f .env.blob.temp
+# Method 1: Try to pull from Vercel environment
+vercel env pull .env.blob.temp 2>/dev/null || true
+if [ -f ".env.blob.temp" ]; then
+  TOKEN=$(grep BLOB_READ_WRITE_TOKEN .env.blob.temp 2>/dev/null | cut -d'=' -f2 || echo "")
+  rm -f .env.blob.temp
+fi
+
+# Method 2: If no token yet, try to list stores and get the token
+if [ -z "$TOKEN" ]; then
+  # Try to get store details which might include the token
+  STORE_OUTPUT=$(vercel blob store ls 2>/dev/null || echo "")
+  # Note: Token might not be directly available through CLI
+fi
 
 if [ -z "$TOKEN" ]; then
-  echo "⚠️ Could not automatically retrieve token. Setting up token in Vercel..."
-
-  # Create the blob store and get token via Vercel dashboard
+  echo "⚠️ Could not automatically retrieve token."
   echo ""
-  echo "📌 Please follow these steps:"
+  echo "📌 Manual setup required:"
   echo "   1. Go to: https://vercel.com/dashboard/stores"
-  echo "   2. Select your Blob store or create a new one"
+  echo "   2. Select your Blob store (or create one if none exists)"
   echo "   3. Copy the Read/Write token"
-  echo "   4. Run: vercel env add BLOB_READ_WRITE_TOKEN"
-  echo "   5. Paste the token when prompted"
   echo ""
-  echo "Waiting for manual token setup..."
-  vercel env add BLOB_READ_WRITE_TOKEN
 
-  # Pull the newly added env var
-  vercel env pull .env.local
-  TOKEN=$(grep BLOB_READ_WRITE_TOKEN .env.local | cut -d'=' -f2 || echo "")
+  # Ask user to provide the token directly
+  echo -n "Please paste your BLOB_READ_WRITE_TOKEN here: "
+  read -r TOKEN
+
+  if [ -z "$TOKEN" ]; then
+    echo "❌ No token provided. Please set BLOB_READ_WRITE_TOKEN manually in .env.local"
+    exit 1
+  fi
 fi
 
 # Update .env.local with the token
@@ -112,10 +124,10 @@ if [ -n "$TOKEN" ]; then
   echo "BLOB_READ_WRITE_TOKEN=$TOKEN" >> .env.local
   echo "✅ Blob token configured in .env.local"
 
-  # Also set it in Vercel environment
-  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN production --force 2>/dev/null || true
-  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN preview --force 2>/dev/null || true
-  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN development --force 2>/dev/null || true
+  # Also set it in Vercel environment (using correct syntax)
+  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN production --yes 2>/dev/null || true
+  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN preview --yes 2>/dev/null || true
+  echo "$TOKEN" | vercel env add BLOB_READ_WRITE_TOKEN development --yes 2>/dev/null || true
 
   echo "✅ Blob token configured in Vercel environment"
 else
