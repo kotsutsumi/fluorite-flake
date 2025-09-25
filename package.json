@@ -1,6 +1,6 @@
 {
   "name": "fluorite-flake",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Boilerplate generator CLI for Fluorite — quickly scaffold Next.js, Expo, and Tauri projects and more.",
   "main": "dist/index.js",
   "type": "module",
@@ -31,7 +31,13 @@
     "prepare": "husky",
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
-  "keywords": ["cli", "utility", "ansi", "colors", "terminal"],
+  "keywords": [
+    "cli",
+    "utility",
+    "ansi",
+    "colors",
+    "terminal"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -59,7 +65,12 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "files": ["dist", "templates", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   }
