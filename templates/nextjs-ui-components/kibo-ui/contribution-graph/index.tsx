@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import type { Day as WeekDay } from 'date-fns';
 import {
   differenceInCalendarDays,
@@ -14,14 +15,13 @@ import {
 } from 'date-fns';
 import {
   type CSSProperties,
-  createContext,
   Fragment,
   type HTMLAttributes,
   type ReactNode,
+  createContext,
   useContext,
   useMemo,
 } from 'react';
-import { cn } from '@/lib/utils';
 
 export type Activity = {
   date: string;

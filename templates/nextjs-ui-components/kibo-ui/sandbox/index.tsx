@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import type {
   CodeEditorProps,
   PreviewProps,
@@ -16,7 +17,6 @@ import {
 } from '@codesandbox/sandpack-react';
 import type { ButtonHTMLAttributes, ComponentProps, HTMLAttributes, ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
 
 export type SandboxProviderProps = SandpackProviderProps;
 

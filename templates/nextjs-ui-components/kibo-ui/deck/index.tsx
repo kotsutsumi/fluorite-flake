@@ -1,18 +1,18 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import { motion, type PanInfo, useMotionValue, useTransform } from 'motion/react';
+import { type PanInfo, motion, useMotionValue, useTransform } from 'motion/react';
 import {
   Children,
-  cloneElement,
   type HTMLAttributes,
   type ReactElement,
+  cloneElement,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
-import { cn } from '@/lib/utils';
 
 export type DeckProps = HTMLAttributes<HTMLDivElement>;
 

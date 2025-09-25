@@ -1,6 +1,6 @@
+import { cn } from '@/lib/utils';
 import { type ComponentProps, Fragment, type ReactNode } from 'react';
 import type { Key } from 'ts-key-enum';
-import { cn } from '@/lib/utils';
 
 const DefaultKbdSeparator = ({ className, children = '+', ...props }: ComponentProps<'span'>) => (
   <span className={cn('text-muted-foreground/50', className)} {...props}>

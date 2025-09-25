@@ -1,16 +1,16 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createProject } from '../src/commands/create.js';
 import {
-  createTestDirectory,
+  type CommandResult,
   cleanupTestDirectory,
+  createTestDirectory,
+  createTestFileWithIssues,
   runCommand,
   runPackageManagerCommand,
-  verifyProjectStructure,
   verifyPackageScripts,
-  createTestFileWithIssues,
-  type CommandResult,
+  verifyProjectStructure,
 } from './e2e-utils.js';
 
 /**

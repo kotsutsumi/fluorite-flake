@@ -1,9 +1,9 @@
 'use client';
 
-import type { HTMLAttributes, ReactNode } from 'react';
-import { createContext, memo, useContext, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import type { HTMLAttributes, ReactNode } from 'react';
+import { createContext, memo, useContext, useMemo } from 'react';
 
 type TickerContextValue = {
   formatter: Intl.NumberFormat;

@@ -1,13 +1,13 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createProject } from '../src/commands/create.js';
 import {
   cleanupTestDirectory,
   createTestDirectory,
   runPackageManagerCommand,
-  verifyProjectStructure,
   verifyPackageScripts,
+  verifyProjectStructure,
 } from './e2e-utils.js';
 
 const E2E_TIMEOUT = 300000; // 5 minutes for install/build operations

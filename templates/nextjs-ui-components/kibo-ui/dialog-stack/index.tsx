@@ -1,7 +1,8 @@
 'use client';
 
-import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { cn } from '@/lib/utils';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import type {
   ButtonHTMLAttributes,
   Dispatch,
@@ -20,7 +21,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { cn } from '@/lib/utils';
 
 type DialogStackContextType = {
   activeIndex: number;

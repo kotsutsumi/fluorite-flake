@@ -1,5 +1,9 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -11,10 +15,6 @@ import type {
   VideoHTMLAttributes,
 } from 'react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 
 // Explicit type for reel items
 export type ReelItem = {

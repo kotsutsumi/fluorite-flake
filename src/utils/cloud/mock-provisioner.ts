@@ -1,16 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { slugify } from '../slugify.js';
 import type { ProjectConfig } from '../../commands/create.js';
+import { slugify } from '../slugify.js';
 import type {
+  AwsS3Record,
   CloudProvisioner,
   CloudProvisioningRecord,
-  ProvisionedDatabaseEnv,
-  TursoDatabaseRecord,
-  SupabaseDatabaseRecord,
-  VercelBlobRecord,
   CloudflareR2Record,
+  ProvisionedDatabaseEnv,
+  SupabaseDatabaseRecord,
   SupabaseStorageRecord,
-  AwsS3Record,
+  TursoDatabaseRecord,
+  VercelBlobRecord,
 } from './types.js';
 
 const ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];

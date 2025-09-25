@@ -1,16 +1,16 @@
 'use client';
 
-import { CheckIcon, CopyIcon } from 'lucide-react';
-import {
-  type ComponentProps,
-  cloneElement,
-  type HTMLAttributes,
-  type ReactElement,
-  useState,
-} from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { CheckIcon, CopyIcon } from 'lucide-react';
+import {
+  type ComponentProps,
+  type HTMLAttributes,
+  type ReactElement,
+  cloneElement,
+  useState,
+} from 'react';
 
 export type SnippetProps = ComponentProps<typeof Tabs>;
 

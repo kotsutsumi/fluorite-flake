@@ -11,8 +11,8 @@ import { generateExpoProject } from '../generators/expo-generator.js';
 import { generateFlutterProject } from '../generators/flutter-generator.js';
 import { generateNextProject } from '../generators/next-generator.js';
 import { setupStorage } from '../generators/storage-generator.js';
-import { provisionCloudResources, isProvisioningEligible } from '../utils/cloud/index.js';
 import { generateTauriProject } from '../generators/tauri-generator.js';
+import { isProvisioningEligible, provisionCloudResources } from '../utils/cloud/index.js';
 
 // Helper functions
 function isConfigComplete(config: Partial<ProjectConfig>): boolean {

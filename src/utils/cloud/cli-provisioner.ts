@@ -5,17 +5,17 @@ import type { ProjectConfig } from '../../commands/create.js';
 import { slugify } from '../slugify.js';
 import { ProvisioningError } from './errors.js';
 import type {
+  AwsS3Record,
   CloudProvisioner,
   CloudProvisioningRecord,
+  CloudflareR2Record,
   ProvisionedDatabaseEnv,
-  TursoDatabaseRecord,
   SupabaseDatabaseRecord,
   SupabaseProvisioningRecord,
+  SupabaseStorageRecord,
+  TursoDatabaseRecord,
   VercelBlobRecord,
   VercelProjectRecord,
-  CloudflareR2Record,
-  SupabaseStorageRecord,
-  AwsS3Record,
 } from './types.js';
 
 const DB_ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
@@ -757,7 +757,7 @@ export class CLIProvisioner implements CloudProvisioner {
             console.log(`     Project: ${projectName}`);
             throw new ProvisioningError('Manual deletion required via Supabase dashboard');
           }
-            this.spinner = ora(`Using existing project ${projectName}...`).start();
+          this.spinner = ora(`Using existing project ${projectName}...`).start();
         } else {
           this.spinner.text = `Creating Supabase project ${projectName}...`;
 

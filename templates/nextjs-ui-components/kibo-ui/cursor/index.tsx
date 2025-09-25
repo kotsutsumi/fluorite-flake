@@ -1,5 +1,5 @@
-import { Children, type HTMLAttributes, type SVGProps } from 'react';
 import { cn } from '@/lib/utils';
+import { Children, type HTMLAttributes, type SVGProps } from 'react';
 
 export type CursorProps = HTMLAttributes<HTMLSpanElement>;
 

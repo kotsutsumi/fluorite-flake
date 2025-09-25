@@ -1,8 +1,8 @@
 'use client';
 
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
 import type { ComponentProps } from 'react';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 export type GlimpseProps = ComponentProps<typeof HoverCard>;
 

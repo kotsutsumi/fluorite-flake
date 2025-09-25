@@ -1,11 +1,11 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Monitor } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
-import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 
 const themes = [
   {

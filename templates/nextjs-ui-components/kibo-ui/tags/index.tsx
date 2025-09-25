@@ -1,16 +1,5 @@
 'use client';
 
-import { XIcon } from 'lucide-react';
-import {
-  type ComponentProps,
-  createContext,
-  type MouseEventHandler,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +12,17 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { XIcon } from 'lucide-react';
+import {
+  type ComponentProps,
+  type MouseEventHandler,
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 type TagsContextType = {
   value?: string;

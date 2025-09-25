@@ -1,20 +1,5 @@
 'use client';
 
-import Color from 'color';
-import { PipetteIcon } from 'lucide-react';
-import * as SliderPrimitive from '@radix-ui/react-slider';
-import {
-  type ComponentProps,
-  createContext,
-  type HTMLAttributes,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,6 +10,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import * as SliderPrimitive from '@radix-ui/react-slider';
+import Color from 'color';
+import { PipetteIcon } from 'lucide-react';
+import {
+  type ComponentProps,
+  type HTMLAttributes,
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 interface ColorPickerContextValue {
   hue: number;

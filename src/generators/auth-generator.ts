@@ -21,6 +21,8 @@ export async function setupAuth(config: ProjectConfig) {
   await writeDashboardScaffolding(config);
   await writeApiRoutes(config);
   await writeProfileUploadHelper(config);
+  await writeHelperFunctions(config);
+  await updateSeedFileForAuth(config);
 }
 
 async function addAuthDependencies(config: ProjectConfig) {
@@ -469,12 +471,12 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 import { Badge } from '@/components/ui/badge';
 import { requireSession, getAccessibleOrganizationIds } from '@/lib/auth-server';
 import prisma from '@/lib/db';
-import { APP_ROLES } from '@/lib/roles';
+import { APP_ROLES, type AppRole } from '@/lib/roles';
 
 export default async function DashboardPage() {
   const session = await requireSession();
   const role = (session.user?.role as string) ?? APP_ROLES.USER;
-  const organizationIds = await getAccessibleOrganizationIds(session.user.id, role as UserRole);
+  const organizationIds = await getAccessibleOrganizationIds(session.user.id, role as AppRole);
 
   const [organizations, memberCount, pendingInvites] = await Promise.all([
     prisma.organization.findMany({
@@ -601,6 +603,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as any).message);
+  }
+  return 'An unknown error occurred';
+}
 
 interface OrganizationMember {
   id: string;
@@ -841,7 +852,7 @@ export default async function UsersPage() {
     redirect('/');
   }
 
-  const organizationIds = await getAccessibleOrganizationIds(session.user.id, role as UserRole);
+  const organizationIds = await getAccessibleOrganizationIds(session.user.id, role as AppRole);
 
   const [organizations, users] = await Promise.all([
     prisma.organization.findMany({
@@ -905,6 +916,15 @@ export default async function UsersPage() {
     "import { Badge } from '@/components/ui/badge';",
     "import { APP_ROLES, ROLE_LABELS } from '@/lib/roles';",
     "import { Trash2, UserPlus } from 'lucide-react';",
+    '',
+    'function getErrorMessage(error: unknown): string {',
+    '  if (error instanceof Error) return error.message;',
+    "  if (typeof error === 'string') return error;",
+    "  if (error && typeof error === 'object' && 'message' in error) {",
+    '    return String((error as any).message);',
+    '  }',
+    "  return 'An unknown error occurred';",
+    '}',
     '',
     'interface OrganizationOption {',
     '  id: string;',
@@ -1234,6 +1254,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ROLE_LABELS } from '@/lib/roles';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as any).message);
+  }
+  return 'An unknown error occurred';
+}
+
 interface MembershipInfo {
   id: string;
   role: string;
@@ -1427,6 +1456,15 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { signIn } from '@/lib/auth-client';
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as any).message);
+  }
+  return 'An unknown error occurred';
+}
 
 const TEST_ACCOUNTS = [
   { label: '管理ユーザー', email: 'admin@example.com', password: 'Admin123!' },
@@ -2167,4 +2205,300 @@ async function appendEnv(config: ProjectConfig, block: string) {
   const newline = existing.endsWith('\n') || existing.length === 0 ? '' : '\n';
   const updated = `${existing}${newline}${linesMissing.join('\n')}\n`;
   await fs.outputFile(envPath, updated);
+}
+
+async function writeHelperFunctions(config: ProjectConfig) {
+  // Write error helper function
+  const errorHelperContent = `export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as any).message);
+  }
+  return 'An unknown error occurred';
+}
+`;
+
+  const helperPath = path.join(config.projectPath, 'src/lib/error-helper.ts');
+  await fs.outputFile(helperPath, errorHelperContent);
+}
+
+async function updateSeedFileForAuth(config: ProjectConfig) {
+  // Update the seed file with proper auth test users
+  const seedContent = `import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { APP_ROLES } from '../src/lib/roles';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Clean up existing data (handle empty database gracefully)
+  try {
+    await prisma.post.deleteMany();
+    await prisma.invitation.deleteMany();
+    await prisma.member.deleteMany();
+    await prisma.organization.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.user.deleteMany();
+  } catch (_error) {
+    console.log('Database cleanup skipped (fresh database)');
+  }
+
+  // Create passwords for test users
+  const adminPassword = await bcrypt.hash('Admin123!', 12);
+  const orgAdminPassword = await bcrypt.hash('OrgAdmin123!', 12);
+  const userPassword = await bcrypt.hash('User123!', 12);
+
+  // Create test organizations
+  const techCorp = await prisma.organization.create({
+    data: {
+      name: 'Tech Corp',  // Changed to match test expectations
+      slug: 'tech-corp',
+      metadata: {
+        industry: 'Technology',
+        size: 'Enterprise',
+      },
+    },
+  });
+
+  const startupInc = await prisma.organization.create({
+    data: {
+      name: 'Startup Inc',
+      slug: 'startup-inc',
+      metadata: {
+        industry: 'SaaS',
+        size: 'Startup',
+      },
+    },
+  });
+
+  // Create admin user (full system access)
+  const admin = await prisma.user.create({
+    data: {
+      email: 'admin@example.com',
+      name: '管理者ユーザー',
+      emailVerified: true,
+      role: APP_ROLES.ADMIN,
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'admin@example.com',
+          password: adminPassword,
+        },
+      },
+      memberships: {
+        create: [
+          {
+            organizationId: techCorp.id,
+            role: APP_ROLES.ADMIN,
+          },
+          {
+            organizationId: startupInc.id,
+            role: APP_ROLES.ADMIN,
+          },
+        ],
+      },
+    },
+  });
+
+  // Create org admin user (manages specific organizations)
+  const orgAdmin = await prisma.user.create({
+    data: {
+      email: 'orgadmin@example.com',
+      name: '組織管理者',
+      emailVerified: true,
+      role: APP_ROLES.ORG_ADMIN,
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'orgadmin@example.com',
+          password: orgAdminPassword,
+        },
+      },
+      memberships: {
+        create: {
+          organizationId: techCorp.id,
+          role: APP_ROLES.ORG_ADMIN,
+        },
+      },
+    },
+  });
+
+  // Create regular user
+  const user = await prisma.user.create({
+    data: {
+      email: 'user@example.com',
+      name: '一般ユーザー',
+      emailVerified: true,
+      role: APP_ROLES.USER,
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'user@example.com',
+          password: userPassword,
+        },
+      },
+      memberships: {
+        create: {
+          organizationId: techCorp.id,
+          role: APP_ROLES.USER,
+        },
+      },
+    },
+  });
+
+  // Create additional test users (for backward compatibility)
+  const alice = await prisma.user.create({
+    data: {
+      email: 'alice@example.com',
+      name: 'Alice Johnson',
+      emailVerified: true,
+      role: APP_ROLES.USER,
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'alice@example.com',
+          password: await bcrypt.hash('Demo123!', 12),
+        },
+      },
+      memberships: {
+        create: {
+          organizationId: startupInc.id,
+          role: APP_ROLES.USER,
+        },
+      },
+    },
+  });
+
+  const bob = await prisma.user.create({
+    data: {
+      email: 'bob@example.com',
+      name: 'Bob Smith',
+      emailVerified: true,
+      role: APP_ROLES.USER,
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'bob@example.com',
+          password: await bcrypt.hash('Demo123!', 12),
+        },
+      },
+      memberships: {
+        create: {
+          organizationId: startupInc.id,
+          role: APP_ROLES.ORG_ADMIN,
+        },
+      },
+    },
+  });
+
+  const charlie = await prisma.user.create({
+    data: {
+      email: 'charlie@example.com',
+      name: 'Charlie Brown',
+      emailVerified: false,
+      role: APP_ROLES.USER,
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'charlie@example.com',
+          password: await bcrypt.hash('Demo123!', 12),
+        },
+      },
+    },
+  });
+
+  // Create demo posts
+  await prisma.post.createMany({
+    data: [
+      {
+        title: 'Getting Started with Better Auth',
+        content: 'Better Auth provides a comprehensive authentication solution with role-based access control, organizations, and more.',
+        published: true,
+        authorId: admin.id,
+      },
+      {
+        title: 'Organization Management Best Practices',
+        content: 'Learn how to effectively manage multiple organizations with role-based permissions.',
+        published: true,
+        authorId: orgAdmin.id,
+      },
+      {
+        title: 'User Onboarding Guide',
+        content: 'A step-by-step guide to onboarding new users to your platform.',
+        published: true,
+        authorId: user.id,
+      },
+      {
+        title: 'Draft: Security Considerations',
+        content: 'This post about security is still being written...',
+        published: false,
+        authorId: alice.id,
+      },
+      {
+        title: 'Team Collaboration Features',
+        content: 'Explore the collaboration features available within organizations.',
+        published: true,
+        authorId: bob.id,
+      },
+      {
+        title: 'Testing Authentication Features',
+        content: 'This post demonstrates the authentication and authorization features.',
+        published: true,
+        authorId: charlie.id,
+      },
+    ],
+  });
+
+  // Create pending invitations
+  await prisma.invitation.createMany({
+    data: [
+      {
+        email: 'pending@example.com',
+        role: APP_ROLES.USER,
+        status: 'pending',
+        organizationId: techCorp.id,
+        invitedBy: admin.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      },
+      {
+        email: 'another@example.com',
+        role: APP_ROLES.ORG_ADMIN,
+        status: 'pending',
+        organizationId: startupInc.id,
+        invitedBy: orgAdmin.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    ],
+  });
+
+  console.log('✅ Database seeded successfully!');
+  console.log('');
+  console.log('📊 Created:');
+  console.log('   - 2 organizations (Tech Corp, Startup Inc)');
+  console.log('   - 6 users with different roles');
+  console.log('   - 6 posts (5 published, 1 draft)');
+  console.log('   - 2 pending invitations');
+  console.log('');
+  console.log('🔐 Test Accounts:');
+  console.log('   Admin:       admin@example.com / Admin123!');
+  console.log('   Org Admin:   orgadmin@example.com / OrgAdmin123!');
+  console.log('   User:        user@example.com / User123!');
+  console.log('   Demo Users:  alice@example.com, bob@example.com / Demo123!');
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error('❌ Seeding failed:', error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
+`;
+
+  const seedPath = path.join(config.projectPath, 'prisma/seed.ts');
+  await fs.outputFile(seedPath, seedContent);
 }

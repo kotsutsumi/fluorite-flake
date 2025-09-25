@@ -1,18 +1,18 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import path from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createProject } from '../src/commands/create.js';
 import {
-  createTestDirectory,
-  cleanupTestDirectory,
-  runPackageManagerCommand,
-  verifyProjectStructure,
-  verifyPackageScripts,
-  createTestFileWithIssues,
-  verifyBuildOutput,
-  TEST_CONFIGS,
+  type CommandResult,
   EXPECTED_FILES,
   EXPECTED_SCRIPTS,
-  type CommandResult,
+  TEST_CONFIGS,
+  cleanupTestDirectory,
+  createTestDirectory,
+  createTestFileWithIssues,
+  runPackageManagerCommand,
+  verifyBuildOutput,
+  verifyPackageScripts,
+  verifyProjectStructure,
 } from './e2e-utils.js';
 
 /**

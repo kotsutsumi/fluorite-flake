@@ -1,7 +1,7 @@
+import os from 'node:os';
+import path from 'node:path';
 import { execa } from 'execa';
 import fs from 'fs-extra';
-import path from 'node:path';
-import os from 'node:os';
 import type { ProjectConfig } from '../src/commands/create.js';
 
 /**

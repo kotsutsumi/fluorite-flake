@@ -1,18 +1,18 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { GripVerticalIcon } from 'lucide-react';
 import { type MotionValue, motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import {
   type ComponentProps,
-  createContext,
   type HTMLAttributes,
   type MouseEventHandler,
   type ReactNode,
   type TouchEventHandler,
+  createContext,
   useContext,
   useState,
 } from 'react';
-import { cn } from '@/lib/utils';
 
 type ImageComparisonContextType = {
   sliderPosition: number;

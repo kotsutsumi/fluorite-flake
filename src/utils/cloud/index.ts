@@ -2,9 +2,9 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../../commands/create.js';
 import { upsertEnvFile } from '../env-file.js';
-import { MockProvisioner } from './mock-provisioner.js';
 import { CLIProvisioner } from './cli-provisioner.js';
-import type { CloudProvisioningRecord, CloudProvisioner, TursoDatabaseRecord } from './types.js';
+import { MockProvisioner } from './mock-provisioner.js';
+import type { CloudProvisioner, CloudProvisioningRecord, TursoDatabaseRecord } from './types.js';
 
 export const PROVISIONING_FILENAME = 'fluorite-cloud.json';
 
