@@ -1281,7 +1281,6 @@ async function addPostInstallScript(config: ProjectConfig) {
   const packageJsonPath = path.join(config.projectPath, 'package.json');
   const packageJson = await fs.readJSON(packageJsonPath);
 
-  // Add post-install script to initialize database and ensure dev starts with a seeded schema
   const scripts = packageJson.scripts ?? {};
   const hasInitHook =
     typeof scripts.predev === 'string' && scripts.predev.includes('scripts/init-turso-db.sh');
@@ -1291,30 +1290,53 @@ async function addPostInstallScript(config: ProjectConfig) {
       ? scripts.predev
       : `bash scripts/init-turso-db.sh && ${scripts.predev}`;
 
+  const alreadyWrapped =
+    typeof scripts.dev === 'string' && scripts.dev.includes('scripts/dev.mjs');
+  const fallbackDev = scripts['dev:next'] ?? 'next dev';
+  const originalDev = alreadyWrapped ? fallbackDev : scripts.dev ?? fallbackDev;
+
   packageJson.scripts = {
     ...scripts,
     postinstall: 'bash scripts/init-turso-db.sh',
     predev: normalizedPredev,
+    dev: 'node scripts/dev.mjs',
+    'dev:next': originalDev,
   };
+
 
   await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
-  // Create initialization script
-  const initScriptContent = `#!/usr/bin/env bash
+  const prismaGenerateCommand =
+    config.packageManager === 'pnpm'
+      ? 'pnpm exec prisma generate'
+      : config.packageManager === 'yarn'
+        ? 'yarn prisma generate'
+        : 'npx --yes prisma generate';
+  const prismaPushCommand =
+    config.packageManager === 'pnpm'
+      ? 'pnpm exec prisma db push --force-reset'
+      : config.packageManager === 'yarn'
+        ? 'yarn prisma db push --force-reset'
+        : 'npx --yes prisma db push --force-reset';
+  const prismaSeedCommand =
+    config.packageManager === 'pnpm'
+      ? 'pnpm exec prisma db seed'
+      : config.packageManager === 'yarn'
+        ? 'yarn prisma db seed'
+        : 'npx --yes prisma db seed';
 
-# Always run database initialization to ensure tables exist
+  const initScriptContent = `#!/usr/bin/env bash
+set -euo pipefail
+
 echo "🚀 Initializing Turso database..."
 
-# Flag to track if initialization was successful
 INIT_SUCCESS=true
 
-# Create database directory and file
 mkdir -p prisma
 touch prisma/dev.db
 
-# Generate Prisma client
 echo "  • Generating Prisma client..."
-if OUTPUT=$(${config.packageManager} run db:generate 2>&1); then
+if OUTPUT=$(${prismaGenerateCommand} 2>&1); then
   echo "  ✅ Prisma client generated"
 else
   echo "  ⚠️  Prisma client generation failed:"
@@ -1323,10 +1345,9 @@ else
   INIT_SUCCESS=false
 fi
 
-# Push schema to database (always force to ensure tables exist)
 if [ "$INIT_SUCCESS" = true ]; then
   echo "  • Pushing schema to database..."
-  if OUTPUT=$(${config.packageManager} run db:push:force 2>&1); then
+  if OUTPUT=$(${prismaPushCommand} 2>&1); then
     echo "  ✅ Schema pushed to database"
   else
     echo "  ⚠️  Schema push failed:"
@@ -1336,34 +1357,82 @@ if [ "$INIT_SUCCESS" = true ]; then
   fi
 fi
 
-# Seed database
 if [ "$INIT_SUCCESS" = true ]; then
   echo "  • Seeding database..."
-  if OUTPUT=$(${config.packageManager} run db:seed 2>&1); then
+  if OUTPUT=$(${prismaSeedCommand} 2>&1); then
     echo "  ✅ Database seeded"
   else
     echo "  ⚠️  Database seeding failed:"
     echo "$OUTPUT" | sed 's/^/      /'
     echo ""
-    # Don't fail on seed errors - database is still usable
   fi
 fi
 
-# Check if initialization was successful
 if [ "$INIT_SUCCESS" = true ]; then
   echo "✅ Turso database initialization complete!"
 else
   echo ""
   echo "⚠️  Database initialization incomplete. Run the following after fixing any issues:"
-  echo "    ${config.packageManager} run db:generate"
-  echo "    ${config.packageManager} run db:push:force"
-  echo "    ${config.packageManager} run db:seed"
-  exit 0  # Don't fail - allow dev server to start anyway
+  echo "    ${prismaGenerateCommand}"
+  echo "    ${prismaPushCommand}"
+  echo "    ${prismaSeedCommand}"
 fi
 `;
 
-  const scriptPath = path.join(config.projectPath, 'scripts', 'init-turso-db.sh');
-  await fs.ensureDir(path.dirname(scriptPath));
-  await fs.writeFile(scriptPath, initScriptContent);
-  await fs.chmod(scriptPath, '755');
+  const scriptsDir = path.join(config.projectPath, 'scripts');
+  await fs.ensureDir(scriptsDir);
+  const initScriptPath = path.join(scriptsDir, 'init-turso-db.sh');
+  await fs.writeFile(initScriptPath, initScriptContent);
+  await fs.chmod(initScriptPath, '755');
+
+  const devBootstrapContent = `#!/usr/bin/env node
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+
+const __filename = fileURLToPath(import.meta.url);
+const scriptDir = path.dirname(__filename);
+const projectRoot = path.resolve(scriptDir, '..');
+
+function run(command, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, {
+      stdio: 'inherit',
+      shell: true,
+      ...options,
+    });
+
+    child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error('Command failed: ' + command))));
+  });
 }
+
+async function ensureDatabase() {
+  const initScript = path.join(scriptDir, 'init-turso-db.sh');
+  try {
+    await fs.access(initScript);
+    await run('bash "' + initScript + '"', { cwd: projectRoot });
+  } catch {
+    // Optional for non-Turso setups
+  }
+}
+
+const extraArgs = process.argv.slice(2);
+
+try {
+  await ensureDatabase();
+
+  const pkg = JSON.parse(await fs.readFile(path.join(projectRoot, 'package.json'), 'utf-8'));
+  const baseCommand = pkg.scripts?.['dev:next'] ?? 'next dev';
+  const command = [baseCommand, ...extraArgs].filter(Boolean).join(' ');
+
+  await run(command, { cwd: projectRoot });
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+`;
+
+  await fs.writeFile(path.join(scriptsDir, 'dev.mjs'), devBootstrapContent);
+}
+
