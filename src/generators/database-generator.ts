@@ -1290,10 +1290,9 @@ async function addPostInstallScript(config: ProjectConfig) {
       ? scripts.predev
       : `bash scripts/init-turso-db.sh && ${scripts.predev}`;
 
-  const alreadyWrapped =
-    typeof scripts.dev === 'string' && scripts.dev.includes('scripts/dev.mjs');
+  const alreadyWrapped = typeof scripts.dev === 'string' && scripts.dev.includes('scripts/dev.mjs');
   const fallbackDev = scripts['dev:next'] ?? 'next dev';
-  const originalDev = alreadyWrapped ? fallbackDev : scripts.dev ?? fallbackDev;
+  const originalDev = alreadyWrapped ? fallbackDev : (scripts.dev ?? fallbackDev);
 
   packageJson.scripts = {
     ...scripts,
@@ -1302,7 +1301,6 @@ async function addPostInstallScript(config: ProjectConfig) {
     dev: 'node scripts/dev.mjs',
     'dev:next': originalDev,
   };
-
 
   await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -1435,4 +1433,3 @@ try {
 
   await fs.writeFile(path.join(scriptsDir, 'dev.mjs'), devBootstrapContent);
 }
-
