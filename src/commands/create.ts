@@ -156,6 +156,38 @@ async function runProjectGeneration(config: ProjectConfig) {
       spinner.succeed('Flutter dependencies installed');
     }
 
+    // Step 7: Initialize database if configured
+    if (config.database !== 'none' && config.orm === 'prisma' && config.framework !== 'flutter') {
+      spinner = ora('Setting up database...').start();
+      try {
+        // Generate Prisma client
+        await execa(config.packageManager, ['run', 'db:generate'], {
+          cwd: config.projectPath,
+          stdio: 'pipe',
+        });
+
+        // Push schema to database
+        await execa(config.packageManager, ['run', 'db:push'], {
+          cwd: config.projectPath,
+          stdio: 'pipe',
+        });
+
+        // Seed database
+        await execa(config.packageManager, ['run', 'db:seed'], {
+          cwd: config.projectPath,
+          stdio: 'pipe',
+        });
+
+        spinner.succeed('Database initialized and seeded');
+      } catch (_error) {
+        spinner.warn('Database setup incomplete. You can run it manually later with:');
+        console.log(chalk.gray(`    cd ${config.projectName}`));
+        console.log(chalk.gray(`    ${config.packageManager} run db:generate`));
+        console.log(chalk.gray(`    ${config.packageManager} run db:push`));
+        console.log(chalk.gray(`    ${config.packageManager} run db:seed`));
+      }
+    }
+
     // Success message
     console.log(chalk.green('\n✅ Project created successfully!\n'));
     console.log(chalk.cyan('To get started:'));

@@ -76,7 +76,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 
   const authContent = `import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { organization, defaultRoles } from 'better-auth/plugins/organization';
+import { organization } from 'better-auth/plugins/organization';
 import prisma from '@/lib/db';
 import { APP_ROLES } from './roles';
 
@@ -108,11 +108,6 @@ export const auth = betterAuth({
   plugins: [
     organization({
       allowUserToCreateOrganization: false,
-      roles: {
-        admin: defaultRoles.admin,
-        org_admin: defaultRoles.owner,
-        user: defaultRoles.member,
-      },
     }),
   ],
   trustedOrigins: process.env.VERCEL_URL
