@@ -82,8 +82,8 @@ export class CLIProvisioner implements CloudProvisioner {
 
   private async createAndConnectBlobStore(storeName: string, projectPath: string) {
     const createVariants: string[][] = [
-      ['blob', 'store', 'add', storeName, '--yes'],
-      ['blob', 'store', 'create', storeName, '--yes'],
+      ['blob', 'store', 'add', storeName],
+      ['blob', 'store', 'create', storeName],
     ];
 
     let created = false;
@@ -93,7 +93,7 @@ export class CLIProvisioner implements CloudProvisioner {
           cwd: projectPath,
           timeout: 30000,
           stdin: 'pipe',
-          input: 'y\n', // Fallback for prompts if --yes doesn't work
+          input: 'y\n', // Auto-confirm any prompts
         });
         created = true;
         break;
@@ -120,8 +120,8 @@ export class CLIProvisioner implements CloudProvisioner {
 
   private async connectBlobStore(storeName: string, projectPath: string) {
     const connectVariants: string[][] = [
-      ['blob', 'store', 'connect', storeName, '--yes'],
-      ['blob', 'store', 'link', storeName, '--yes'],
+      ['blob', 'store', 'connect', storeName],
+      ['blob', 'store', 'link', storeName],
     ];
 
     let lastError: unknown;
@@ -132,7 +132,7 @@ export class CLIProvisioner implements CloudProvisioner {
           cwd: projectPath,
           timeout: 30000,
           stdin: 'pipe',
-          input: 'y\n', // Fallback for prompts if --yes doesn't work
+          input: 'y\n', // Auto-confirm any prompts
         });
         return;
       } catch (error) {
@@ -327,9 +327,8 @@ export class CLIProvisioner implements CloudProvisioner {
           }
 
           if (action === 'recreate') {
-            this.spinner = ora(`Deleting existing database ${dbName}...`).start();
+            this.spinner = ora(`Recreating database ${dbName}...`).start();
             await execa('turso', ['db', 'destroy', dbName, '--yes']);
-            this.spinner.text = `Creating database ${dbName}...`;
             await execa('turso', ['db', 'create', dbName]);
           } else {
             this.spinner = ora(`Using existing database ${dbName}...`).start();
