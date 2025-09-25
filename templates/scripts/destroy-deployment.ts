@@ -31,7 +31,9 @@ interface CloudflareR2Record {
 
 interface SupabaseStorageRecord {
   bucketName: string;
+  bucketId?: string;
   projectRef?: string;
+  serviceRoleKey?: string;
 }
 
 interface AwsS3Record {
@@ -50,6 +52,7 @@ interface SupabaseProvisioningRecord {
 
 interface CloudProvisioningRecord {
   mode: 'mock' | 'real';
+  projectName?: string;
   turso?: TursoProvisioningRecord;
   supabase?: SupabaseProvisioningRecord;
   vercel?: VercelProjectRecord;
@@ -249,13 +252,48 @@ async function deleteSupabaseStorage(record: CloudProvisioningRecord) {
     return;
   }
 
-  // Note: Supabase storage buckets need to be deleted via the dashboard
-  console.log('\n⚠️  Supabase Storage cleanup:');
-  console.log(
-    `   Storage bucket '${storage.bucketName}' needs to be deleted manually in the Supabase dashboard.`
-  );
-  if (storage.projectRef) {
-    console.log(`   Project: ${storage.projectRef}`);
+  // Check if logged in
+  try {
+    await run('supabase', ['projects', 'list'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Supabase Storage cleanup because you are not logged in.');
+    console.log('   Run "supabase login" to authenticate.');
+    return;
+  }
+
+  if (storage.projectRef && storage.serviceRoleKey) {
+    try {
+      // Try to delete bucket using Management API
+      const projectUrl = `https://${storage.projectRef}.supabase.co`;
+      await run(
+        'curl',
+        [
+          '-X',
+          'DELETE',
+          `${projectUrl}/storage/v1/bucket/${storage.bucketId || storage.bucketName}`,
+          '-H',
+          `Authorization: Bearer ${storage.serviceRoleKey}`,
+        ],
+        process.env
+      );
+      console.log(`🗑️  Removed Supabase storage bucket ${storage.bucketName}`);
+    } catch {
+      console.log('\n⚠️  Supabase Storage cleanup:');
+      console.log(
+        `   Storage bucket '${storage.bucketName}' needs to be deleted manually in the Supabase dashboard.`
+      );
+      console.log(`   Project: ${storage.projectRef}`);
+      console.log(`   URL: https://app.supabase.com/project/${storage.projectRef}/storage`);
+    }
+  } else {
+    console.log('\n⚠️  Supabase Storage cleanup:');
+    console.log(
+      `   Storage bucket '${storage.bucketName}' needs to be deleted manually in the Supabase dashboard.`
+    );
+    if (storage.projectRef) {
+      console.log(`   Project: ${storage.projectRef}`);
+      console.log(`   URL: https://app.supabase.com/project/${storage.projectRef}/storage`);
+    }
   }
 }
 
@@ -287,6 +325,50 @@ async function deleteAwsS3(record: CloudProvisioningRecord) {
     // Force delete the bucket and all its contents
     await run('aws', ['s3', 'rb', `s3://${s3.bucketName}`, '--force'], process.env);
     console.log(`🗑️  Removed AWS S3 bucket ${s3.bucketName}`);
+
+    // Try to delete the IAM user and policy if they exist
+    if (record.projectName) {
+      const slug = record.projectName.toLowerCase().replace(/\s+/g, '-');
+      const iamUserName = `${slug}-s3-user`;
+      const policyName = `${slug}-s3-policy`;
+
+      try {
+        // Delete access keys first
+        const keysOutput = await run(
+          'aws',
+          ['iam', 'list-access-keys', '--user-name', iamUserName, '--output', 'json'],
+          process.env
+        );
+        const keysData = JSON.parse(keysOutput);
+        for (const key of keysData.AccessKeyMetadata || []) {
+          await run(
+            'aws',
+            [
+              'iam',
+              'delete-access-key',
+              '--user-name',
+              iamUserName,
+              '--access-key-id',
+              key.AccessKeyId,
+            ],
+            process.env
+          );
+        }
+
+        // Delete user policy
+        await run(
+          'aws',
+          ['iam', 'delete-user-policy', '--user-name', iamUserName, '--policy-name', policyName],
+          process.env
+        );
+
+        // Delete the user
+        await run('aws', ['iam', 'delete-user', '--user-name', iamUserName], process.env);
+        console.log(`🗑️  Removed IAM user ${iamUserName}`);
+      } catch {
+        // IAM user might not exist or already deleted
+      }
+    }
   } catch (error) {
     console.warn(`⚠️  Failed to delete S3 bucket ${s3.bucketName}: ${String(error)}`);
   }

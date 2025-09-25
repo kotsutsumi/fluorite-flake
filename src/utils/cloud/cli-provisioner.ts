@@ -529,16 +529,38 @@ export class CLIProvisioner implements CloudProvisioner {
         await execa('wrangler', ['r2', 'bucket', 'create', bucketName]);
       }
 
+      // Get account ID
+      this.spinner.text = 'Getting Cloudflare account information...';
+      let accountId = '';
+      try {
+        const { stdout } = await execa('wrangler', ['whoami']);
+        const accountMatch = stdout.match(/Account ID:\s*([\w-]+)/);
+        if (accountMatch) {
+          accountId = accountMatch[1];
+        }
+      } catch {
+        console.log('\n  ⚠️  Could not retrieve account ID automatically');
+      }
+
       this.spinner.succeed('Cloudflare R2 storage configured');
-      console.log('  ℹ️  Note: Create R2 API credentials in Cloudflare dashboard for access');
+      console.log(`  ℹ️  Bucket created: ${bucketName}`);
+      if (accountId) {
+        console.log(`     Account ID: ${accountId}`);
+      }
+      console.log('\n  ⚠️  R2 API credentials must be created manually:');
+      console.log('     1. Go to Cloudflare Dashboard > R2 > Manage R2 API tokens');
+      console.log('     2. Create a new API token with read/write permissions');
+      console.log('     3. Save the Access Key ID and Secret Access Key');
+      console.log(
+        `     4. Endpoint: https://${accountId || '<account-id>'}.r2.cloudflarestorage.com`
+      );
 
       return {
         bucketName,
-        // These need to be configured manually in Cloudflare dashboard
-        accountId: '',
+        accountId,
         accessKeyId: '',
         secretAccessKey: '',
-        endpoint: '',
+        endpoint: accountId ? `https://${accountId}.r2.cloudflarestorage.com` : '',
       };
     } catch (error) {
       this.spinner?.fail('Failed to provision Cloudflare R2 storage');
@@ -558,33 +580,110 @@ export class CLIProvisioner implements CloudProvisioner {
 
       // Check if logged in to Supabase
       try {
-        // Supabase CLI doesn't have a direct whoami command, we'll check if we can list projects
         await execa('supabase', ['projects', 'list']);
       } catch {
         this.spinner.text = 'Logging in to Supabase...';
         await execa('supabase', ['login'], { stdio: 'inherit' });
       }
 
-      // Note: Supabase buckets need to be created via the API or dashboard
-      // The CLI doesn't have direct bucket creation commands
-      this.spinner.succeed('Supabase storage configuration prepared');
-      console.log('  ℹ️  Note: Create storage bucket in Supabase dashboard:');
-      console.log(`     - Bucket name: ${bucketName}`);
-      console.log('     - Configure public/private access as needed');
-      console.log('     - Get service role key from project settings');
+      // Get project reference
+      this.spinner.stop();
+      const { projectRef } = await prompts({
+        type: 'text',
+        name: 'projectRef',
+        message: 'Enter your Supabase project reference (e.g., abcdefghijklmnop):',
+        validate: (value) => value.length > 0 || 'Project reference is required',
+      });
+
+      if (!projectRef) {
+        throw new ProvisioningError('Supabase project reference is required');
+      }
+
+      this.spinner = ora('Configuring Supabase storage...').start();
+
+      const projectUrl = `https://${projectRef}.supabase.co`;
+      let serviceRoleKey = '';
+
+      // Try to get API keys
+      try {
+        const { stdout } = await execa('supabase', [
+          'projects',
+          'api-keys',
+          '--project-ref',
+          projectRef,
+        ]);
+
+        // Parse service role key from output
+        const lines = stdout.split('\n');
+        for (const line of lines) {
+          if (line.includes('service_role')) {
+            const parts = line.split('|').map((p) => p.trim());
+            if (parts.length >= 3) {
+              serviceRoleKey = parts[2];
+            }
+          }
+        }
+      } catch {
+        // Keys not available via CLI
+      }
+
+      // Create storage bucket using Management API if we have the service key
+      if (serviceRoleKey) {
+        try {
+          // Use curl to create bucket via Supabase Management API
+          await execa('curl', [
+            '-X',
+            'POST',
+            `${projectUrl}/storage/v1/bucket`,
+            '-H',
+            `Authorization: Bearer ${serviceRoleKey}`,
+            '-H',
+            'Content-Type: application/json',
+            '-d',
+            JSON.stringify({
+              id: bucketId,
+              name: bucketName,
+              public: false,
+            }),
+          ]);
+          this.spinner.succeed(`Created storage bucket: ${bucketName}`);
+        } catch (error) {
+          if (error && typeof error === 'object' && 'stdout' in error) {
+            const errorOutput = (error as { stdout?: string }).stdout;
+            if (errorOutput?.includes('already exists')) {
+              console.log(`\n  ℹ️  Storage bucket ${bucketName} already exists`);
+            } else {
+              console.log('\n  ⚠️  Could not create bucket automatically.');
+            }
+          } else {
+            console.log('\n  ⚠️  Could not create bucket automatically.');
+          }
+        }
+      }
+
+      if (!serviceRoleKey) {
+        console.log('\n  ℹ️  Please complete setup manually:');
+        console.log(`     1. Go to https://app.supabase.com/project/${projectRef}/storage`);
+        console.log(`     2. Create bucket: ${bucketName}`);
+        console.log('     3. Get service role key from Settings > API');
+      }
+
+      this.spinner.succeed('Supabase storage configuration complete');
+      console.log(`  ℹ️  Bucket: ${bucketName}`);
+      console.log(`     Project: ${projectRef}`);
+      console.log(`     Storage URL: ${projectUrl}/storage/v1`);
 
       return {
         bucketName,
         bucketId,
         isPublic: false,
-        // These need to be configured manually
-        projectRef: '',
-        serviceRoleKey: '',
-        url: '',
+        projectRef,
+        serviceRoleKey,
+        url: `${projectUrl}/storage/v1`,
       };
     } catch (error) {
-      this.spinner?.fail('Failed to prepare Supabase storage configuration');
-      throw new ProvisioningError('Failed to prepare Supabase storage configuration', error);
+      this.spinner?.fail('Failed to provision Supabase storage');
+      throw new ProvisioningError('Failed to provision Supabase storage', error);
     }
   }
 
@@ -676,16 +775,100 @@ export class CLIProvisioner implements CloudProvisioner {
         );
       }
 
+      // Get AWS credentials from AWS CLI config
+      this.spinner.text = 'Retrieving AWS credentials...';
+      let accessKeyId = '';
+      let secretAccessKey = '';
+
+      try {
+        // Get credentials from AWS CLI configuration
+        const { stdout: configOutput } = await execa('aws', [
+          'configure',
+          'get',
+          'aws_access_key_id',
+        ]);
+        accessKeyId = configOutput.trim();
+        const { stdout: secretOutput } = await execa('aws', [
+          'configure',
+          'get',
+          'aws_secret_access_key',
+        ]);
+        secretAccessKey = secretOutput.trim();
+      } catch {
+        console.log('\n  ⚠️  Could not retrieve AWS credentials from CLI config');
+        console.log('     Credentials will need to be set as environment variables');
+      }
+
+      // Create an IAM user for this bucket (optional)
+      const iamUserName = `${slug}-s3-user`;
+      if (!accessKeyId || !secretAccessKey) {
+        this.spinner.text = 'Creating IAM user for S3 access...';
+        try {
+          // Create IAM user
+          await execa('aws', ['iam', 'create-user', '--user-name', iamUserName]);
+
+          // Attach S3 policy to user
+          const policyDocument = {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Action: ['s3:*'],
+                Resource: [`arn:aws:s3:::${bucketName}`, `arn:aws:s3:::${bucketName}/*`],
+              },
+            ],
+          };
+
+          const policyName = `${slug}-s3-policy`;
+          await execa('aws', [
+            'iam',
+            'put-user-policy',
+            '--user-name',
+            iamUserName,
+            '--policy-name',
+            policyName,
+            '--policy-document',
+            JSON.stringify(policyDocument),
+          ]);
+
+          // Create access key for user
+          const { stdout: keyOutput } = await execa('aws', [
+            'iam',
+            'create-access-key',
+            '--user-name',
+            iamUserName,
+            '--output',
+            'json',
+          ]);
+
+          const keyData = JSON.parse(keyOutput);
+          if (keyData.AccessKey) {
+            accessKeyId = keyData.AccessKey.AccessKeyId;
+            secretAccessKey = keyData.AccessKey.SecretAccessKey;
+            console.log(`\n  ✅ Created IAM user: ${iamUserName}`);
+            console.log('     Access keys have been generated for this user');
+          }
+        } catch (_error) {
+          console.log(`\n  ⚠️  Could not create IAM user ${iamUserName}`);
+          console.log('     You may need to create access keys manually');
+        }
+      }
+
       this.spinner.succeed('AWS S3 storage configured');
-      console.log(`  ℹ️  Note: S3 bucket created: ${bucketName}`);
-      console.log('     Configure AWS credentials as environment variables for deployment');
+      console.log(`  ℹ️  Bucket created: ${bucketName}`);
+      console.log(`     Region: ${region}`);
+      console.log(`     Public URL: https://${bucketName}.s3.${region}.amazonaws.com`);
+      if (accessKeyId) {
+        console.log('     ✅ AWS credentials configured');
+      } else {
+        console.log('     ⚠️  Set AWS credentials as environment variables for deployment');
+      }
 
       return {
         bucketName,
         region,
-        // These are already configured via AWS CLI
-        accessKeyId: '',
-        secretAccessKey: '',
+        accessKeyId,
+        secretAccessKey,
         publicUrl: `https://${bucketName}.s3.${region}.amazonaws.com`,
       };
     } catch (error) {
@@ -760,6 +943,7 @@ export class CLIProvisioner implements CloudProvisioner {
           this.spinner = ora(`Using existing project ${projectName}...`).start();
         } else {
           this.spinner.text = `Creating Supabase project ${projectName}...`;
+          const dbPassword = generatePassword();
 
           // Create new project
           const { stdout: createOutput } = await execa('supabase', [
@@ -767,7 +951,7 @@ export class CLIProvisioner implements CloudProvisioner {
             'create',
             projectName,
             '--db-password',
-            generatePassword(),
+            dbPassword,
             '--region',
             'us-east-1',
             '--plan',
@@ -778,20 +962,54 @@ export class CLIProvisioner implements CloudProvisioner {
           const refMatch = createOutput.match(/Project ID: (\w+)/);
           if (refMatch) {
             projectRef = refMatch[1];
+          } else {
+            // Try alternative patterns
+            const altMatch = createOutput.match(/([a-z]{20})/);
+            if (altMatch) {
+              projectRef = altMatch[1];
+            }
           }
         }
 
         // Get project API keys and URL
         this.spinner.text = 'Getting project credentials...';
-        const { stdout: apiKeys } = await execa('supabase', ['projects', 'api-keys', projectRef]);
+        let anonKey = '';
+        let serviceRoleKey = '';
 
-        // Extract keys from output
-        const anonKeyMatch = apiKeys.match(/anon key: ([\w.-]+)/);
-        const serviceKeyMatch = apiKeys.match(/service_role key: ([\w.-]+)/);
+        try {
+          const { stdout: apiKeys } = await execa('supabase', [
+            'projects',
+            'api-keys',
+            '--project-ref',
+            projectRef,
+          ]);
 
-        const anonKey = anonKeyMatch ? anonKeyMatch[1] : '';
-        const serviceRoleKey = serviceKeyMatch ? serviceKeyMatch[1] : '';
-        const databaseUrl = `https://${projectRef}.supabase.co`;
+          // Parse API keys from tabular output
+          const lines = apiKeys.split('\n');
+          for (const line of lines) {
+            if (line.includes('anon')) {
+              const parts = line.split('|').map((p) => p.trim());
+              if (parts.length >= 3) {
+                anonKey = parts[2];
+              }
+            }
+            if (line.includes('service_role')) {
+              const parts = line.split('|').map((p) => p.trim());
+              if (parts.length >= 3) {
+                serviceRoleKey = parts[2];
+              }
+            }
+          }
+        } catch {
+          console.log('\n  ⚠️  Could not retrieve API keys automatically');
+          console.log(
+            `     Get them from: https://app.supabase.com/project/${projectRef}/settings/api`
+          );
+        }
+
+        // Build the actual database URL with password
+        const dbPassword = projectExists ? '[YOUR-PASSWORD]' : generatePassword();
+        const databaseUrl = `postgresql://postgres:${dbPassword}@db.${projectRef}.supabase.co:5432/postgres`;
 
         databases.push({
           env,
