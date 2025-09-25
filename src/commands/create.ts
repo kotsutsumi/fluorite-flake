@@ -160,19 +160,28 @@ async function runProjectGeneration(config: ProjectConfig) {
     if (config.database !== 'none' && config.orm === 'prisma' && config.framework !== 'flutter') {
       spinner = ora('Setting up database...').start();
       try {
+        // For Turso, ensure database file exists
+        if (config.database === 'turso') {
+          await fs.ensureDir(path.join(config.projectPath, 'prisma'));
+          await fs.ensureFile(path.join(config.projectPath, 'prisma', 'dev.db'));
+        }
+
         // Generate Prisma client
+        spinner.text = 'Generating Prisma client...';
         await execa(config.packageManager, ['run', 'db:generate'], {
           cwd: config.projectPath,
           stdio: 'pipe',
         });
 
-        // Push schema to database
-        await execa(config.packageManager, ['run', 'db:push'], {
+        // Push schema to database with force reset for initial setup
+        spinner.text = 'Creating database tables...';
+        await execa(config.packageManager, ['run', 'db:push', '--force-reset'], {
           cwd: config.projectPath,
           stdio: 'pipe',
         });
 
         // Seed database
+        spinner.text = 'Seeding database with sample data...';
         await execa(config.packageManager, ['run', 'db:seed'], {
           cwd: config.projectPath,
           stdio: 'pipe',
@@ -183,7 +192,7 @@ async function runProjectGeneration(config: ProjectConfig) {
         spinner.warn('Database setup incomplete. You can run it manually later with:');
         console.log(chalk.gray(`    cd ${config.projectName}`));
         console.log(chalk.gray(`    ${config.packageManager} run db:generate`));
-        console.log(chalk.gray(`    ${config.packageManager} run db:push`));
+        console.log(chalk.gray(`    ${config.packageManager} run db:push --force-reset`));
         console.log(chalk.gray(`    ${config.packageManager} run db:seed`));
       }
     }

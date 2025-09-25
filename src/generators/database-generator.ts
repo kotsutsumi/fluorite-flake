@@ -1301,65 +1301,63 @@ async function addPostInstallScript(config: ProjectConfig) {
   // Create initialization script
   const initScriptContent = `#!/usr/bin/env bash
 
-# Only run if we're not in CI and this is first install
-if [ -z "$CI" ] && [ ! -f ".turso-initialized" ]; then
-  echo "🚀 Initializing Turso database..."
+# Always run database initialization to ensure tables exist
+echo "🚀 Initializing Turso database..."
 
-  # Flag to track if initialization was successful
-  INIT_SUCCESS=true
+# Flag to track if initialization was successful
+INIT_SUCCESS=true
 
-  # Create database directory and file
-  mkdir -p prisma
-  touch prisma/dev.db
+# Create database directory and file
+mkdir -p prisma
+touch prisma/dev.db
 
-  # Generate Prisma client
-  echo "  • Generating Prisma client..."
-  if OUTPUT=$(${config.packageManager} run db:generate 2>&1); then
-    echo "  ✅ Prisma client generated"
+# Generate Prisma client
+echo "  • Generating Prisma client..."
+if OUTPUT=$(${config.packageManager} run db:generate 2>&1); then
+  echo "  ✅ Prisma client generated"
+else
+  echo "  ⚠️  Prisma client generation failed:"
+  echo "$OUTPUT" | sed 's/^/      /'
+  echo ""
+  INIT_SUCCESS=false
+fi
+
+# Push schema to database (always force to ensure tables exist)
+if [ "$INIT_SUCCESS" = true ]; then
+  echo "  • Pushing schema to database..."
+  if OUTPUT=$(${config.packageManager} run db:push --force-reset 2>&1); then
+    echo "  ✅ Schema pushed to database"
   else
-    echo "  ⚠️  Prisma client generation failed:"
+    echo "  ⚠️  Schema push failed:"
     echo "$OUTPUT" | sed 's/^/      /'
     echo ""
     INIT_SUCCESS=false
   fi
+fi
 
-  # Push schema to database
-  if [ "$INIT_SUCCESS" = true ]; then
-    echo "  • Pushing schema to database..."
-    if OUTPUT=$(${config.packageManager} run db:push 2>&1); then
-      echo "  ✅ Schema pushed to database"
-    else
-      echo "  ⚠️  Schema push failed:"
-      echo "$OUTPUT" | sed 's/^/      /'
-      echo ""
-      INIT_SUCCESS=false
-    fi
-  fi
-
-  # Seed database
-  if [ "$INIT_SUCCESS" = true ]; then
-    echo "  • Seeding database..."
-    if OUTPUT=$(${config.packageManager} run db:seed 2>&1); then
-      echo "  ✅ Database seeded"
-    else
-      echo "  ⚠️  Database seeding failed:"
-      echo "$OUTPUT" | sed 's/^/      /'
-      echo ""
-      INIT_SUCCESS=false
-    fi
-  fi
-
-  # Only mark as initialized if all steps succeeded
-  if [ "$INIT_SUCCESS" = true ]; then
-    touch .turso-initialized
-    echo "✅ Turso database initialization complete!"
+# Seed database
+if [ "$INIT_SUCCESS" = true ]; then
+  echo "  • Seeding database..."
+  if OUTPUT=$(${config.packageManager} run db:seed 2>&1); then
+    echo "  ✅ Database seeded"
   else
+    echo "  ⚠️  Database seeding failed:"
+    echo "$OUTPUT" | sed 's/^/      /'
     echo ""
-    echo "⚠️  Database initialization incomplete. Run the following after fixing any issues:"
-    echo "    ${config.packageManager} run db:generate"
-    echo "    ${config.packageManager} run db:push"
-    echo "    ${config.packageManager} run db:seed"
+    # Don't fail on seed errors - database is still usable
   fi
+fi
+
+# Check if initialization was successful
+if [ "$INIT_SUCCESS" = true ]; then
+  echo "✅ Turso database initialization complete!"
+else
+  echo ""
+  echo "⚠️  Database initialization incomplete. Run the following after fixing any issues:"
+  echo "    ${config.packageManager} run db:generate"
+  echo "    ${config.packageManager} run db:push"
+  echo "    ${config.packageManager} run db:seed"
+  exit 0  # Don't fail - allow dev server to start anyway
 fi
 `;
 
