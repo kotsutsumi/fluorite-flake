@@ -9,10 +9,13 @@ import type {
   CloudProvisioningRecord,
   ProvisionedDatabaseEnv,
   TursoDatabaseRecord,
+  SupabaseDatabaseRecord,
+  SupabaseProvisioningRecord,
   VercelBlobRecord,
   VercelProjectRecord,
   CloudflareR2Record,
   SupabaseStorageRecord,
+  AwsS3Record,
 } from './types.js';
 
 const DB_ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
@@ -29,6 +32,10 @@ export class CLIProvisioner implements CloudProvisioner {
 
     // Provision database resources
     const turso = config.database === 'turso' ? await this.provisionTurso(slug, config) : undefined;
+    const supabase =
+      config.database === 'supabase'
+        ? await this.provisionSupabaseDatabase(slug, config)
+        : undefined;
 
     // Provision deployment resources
     const vercel = config.deployment ? await this.provisionVercel(config) : undefined;
@@ -36,12 +43,15 @@ export class CLIProvisioner implements CloudProvisioner {
     // Provision storage resources based on selection
     let vercelBlob: VercelBlobRecord | undefined;
     let cloudflareR2: CloudflareR2Record | undefined;
+    let awsS3: AwsS3Record | undefined;
     let supabaseStorage: SupabaseStorageRecord | undefined;
 
     if (config.storage === 'vercel-blob' && vercel) {
       vercelBlob = await this.provisionVercelBlob(vercel, slug, config);
     } else if (config.storage === 'cloudflare-r2') {
       cloudflareR2 = await this.provisionCloudflareR2(slug, config);
+    } else if (config.storage === 'aws-s3') {
+      awsS3 = await this.provisionAwsS3(slug, config);
     } else if (config.storage === 'supabase-storage') {
       supabaseStorage = await this.provisionSupabaseStorage(slug, config);
     }
@@ -50,8 +60,10 @@ export class CLIProvisioner implements CloudProvisioner {
     await this.configureEnvironment(
       vercel,
       turso,
+      supabase,
       vercelBlob,
       cloudflareR2,
+      awsS3,
       supabaseStorage,
       config
     );
@@ -61,9 +73,11 @@ export class CLIProvisioner implements CloudProvisioner {
       createdAt: new Date().toISOString(),
       projectName: config.projectName,
       turso,
+      supabase,
       vercel,
       vercelBlob,
       cloudflareR2,
+      awsS3,
       supabaseStorage,
     };
   }
@@ -76,6 +90,17 @@ export class CLIProvisioner implements CloudProvisioner {
       } catch {
         throw new ProvisioningError(
           'Turso CLI is required. Please install it with: curl -sSfL https://get.tur.so/install.sh | bash'
+        );
+      }
+    }
+
+    // Check AWS CLI if using S3 storage
+    if (config.storage === 'aws-s3') {
+      try {
+        await execa('aws', ['--version']);
+      } catch {
+        throw new ProvisioningError(
+          'AWS CLI is required for S3. Please install it from: https://aws.amazon.com/cli/'
         );
       }
     }
@@ -563,11 +588,241 @@ export class CLIProvisioner implements CloudProvisioner {
     }
   }
 
+  private async provisionAwsS3(slug: string, _config: ProjectConfig): Promise<AwsS3Record> {
+    this.spinner = ora('Setting up AWS S3 storage...').start();
+
+    try {
+      const bucketName = `${slug}-s3-bucket`;
+      const region = process.env.AWS_REGION || 'us-east-1';
+
+      // Check if logged in to AWS
+      try {
+        await execa('aws', ['sts', 'get-caller-identity']);
+      } catch {
+        this.spinner.text = 'Configuring AWS CLI...';
+        console.log('\n  ℹ️  Please configure AWS CLI with: aws configure');
+        console.log('     You need an AWS Access Key ID and Secret Access Key');
+        throw new ProvisioningError('AWS CLI not configured. Please run: aws configure');
+      }
+
+      // Check if bucket already exists
+      let bucketExists = false;
+      try {
+        await execa('aws', ['s3api', 'head-bucket', '--bucket', bucketName]);
+        bucketExists = true;
+      } catch {
+        // Bucket doesn't exist, which is fine
+      }
+
+      if (bucketExists) {
+        this.spinner.stop();
+        const { action } = await prompts({
+          type: 'select',
+          name: 'action',
+          message: `AWS S3 bucket '${bucketName}' already exists. What would you like to do?`,
+          choices: [
+            { title: 'Use existing bucket', value: 'use' },
+            { title: 'Delete and recreate', value: 'recreate' },
+            { title: 'Cancel', value: 'cancel' },
+          ],
+        });
+
+        if (action === 'cancel') {
+          throw new ProvisioningError('User cancelled provisioning');
+        }
+
+        if (action === 'recreate') {
+          this.spinner = ora(`Deleting existing S3 bucket ${bucketName}...`).start();
+          // Force delete bucket and all contents
+          await execa('aws', ['s3', 'rb', `s3://${bucketName}`, '--force']);
+          this.spinner.text = 'Creating S3 bucket...';
+          await execa('aws', ['s3', 'mb', `s3://${bucketName}`, '--region', region]);
+        } else {
+          this.spinner = ora('Using existing S3 bucket...').start();
+        }
+      } else {
+        this.spinner.text = 'Creating S3 bucket...';
+        await execa('aws', ['s3', 'mb', `s3://${bucketName}`, '--region', region]);
+      }
+
+      // Set bucket policy for public read access (optional)
+      this.spinner.text = 'Configuring bucket permissions...';
+      const policy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'PublicReadGetObject',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: 's3:GetObject',
+            Resource: `arn:aws:s3:::${bucketName}/*`,
+          },
+        ],
+      };
+
+      try {
+        await execa('aws', [
+          's3api',
+          'put-bucket-policy',
+          '--bucket',
+          bucketName,
+          '--policy',
+          JSON.stringify(policy),
+        ]);
+      } catch {
+        // Policy setting might fail, but that's okay
+        console.log(
+          '\n  ⚠️  Could not set public read policy. You may need to configure this manually.'
+        );
+      }
+
+      this.spinner.succeed('AWS S3 storage configured');
+      console.log(`  ℹ️  Note: S3 bucket created: ${bucketName}`);
+      console.log('     Configure AWS credentials as environment variables for deployment');
+
+      return {
+        bucketName,
+        region,
+        // These are already configured via AWS CLI
+        accessKeyId: '',
+        secretAccessKey: '',
+        publicUrl: `https://${bucketName}.s3.${region}.amazonaws.com`,
+      };
+    } catch (error) {
+      this.spinner?.fail('Failed to provision AWS S3 storage');
+      throw new ProvisioningError('Failed to provision AWS S3 storage', error);
+    }
+  }
+
+  private async provisionSupabaseDatabase(
+    slug: string,
+    config: ProjectConfig
+  ): Promise<SupabaseProvisioningRecord> {
+    this.spinner = ora('Setting up Supabase database...').start();
+
+    try {
+      // Check if logged in to Supabase
+      try {
+        await execa('supabase', ['projects', 'list']);
+      } catch {
+        this.spinner.text = 'Logging in to Supabase...';
+        await execa('supabase', ['login'], { stdio: 'inherit' });
+      }
+
+      const databases: SupabaseDatabaseRecord[] = [];
+
+      // For Supabase, we typically use one project with different schemas/environments
+      // But for consistency with Turso pattern, we'll create separate projects for each env
+      for (const env of DB_ENVIRONMENTS) {
+        const projectName = `${slug}-${env}`;
+
+        // Check if project exists
+        let projectExists = false;
+        let projectRef = '';
+        try {
+          const { stdout: projectsList } = await execa('supabase', ['projects', 'list']);
+          if (projectsList.includes(projectName)) {
+            projectExists = true;
+            // Extract project ref from the list
+            const match = projectsList.match(new RegExp(`(\\w{20})\\s+\\|\\s+${projectName}`));
+            if (match) {
+              projectRef = match[1];
+            }
+          }
+        } catch {
+          // Project doesn't exist
+        }
+
+        if (projectExists) {
+          this.spinner.stop();
+          const { action } = await prompts({
+            type: 'select',
+            name: 'action',
+            message: `Supabase project '${projectName}' already exists. What would you like to do?`,
+            choices: [
+              { title: 'Use existing project', value: 'use' },
+              { title: 'Delete and recreate', value: 'recreate' },
+              { title: 'Cancel', value: 'cancel' },
+            ],
+          });
+
+          if (action === 'cancel') {
+            throw new ProvisioningError('User cancelled provisioning');
+          }
+
+          if (action === 'recreate') {
+            this.spinner = ora(`Deleting existing project ${projectName}...`).start();
+            // Note: Supabase CLI doesn't have a delete command, need to use dashboard
+            console.log('\n  ⚠️  Please delete the project manually from Supabase dashboard');
+            console.log(`     Project: ${projectName}`);
+            throw new ProvisioningError('Manual deletion required via Supabase dashboard');
+          }
+            this.spinner = ora(`Using existing project ${projectName}...`).start();
+        } else {
+          this.spinner.text = `Creating Supabase project ${projectName}...`;
+
+          // Create new project
+          const { stdout: createOutput } = await execa('supabase', [
+            'projects',
+            'create',
+            projectName,
+            '--db-password',
+            generatePassword(),
+            '--region',
+            'us-east-1',
+            '--plan',
+            'free',
+          ]);
+
+          // Extract project ref from output
+          const refMatch = createOutput.match(/Project ID: (\w+)/);
+          if (refMatch) {
+            projectRef = refMatch[1];
+          }
+        }
+
+        // Get project API keys and URL
+        this.spinner.text = 'Getting project credentials...';
+        const { stdout: apiKeys } = await execa('supabase', ['projects', 'api-keys', projectRef]);
+
+        // Extract keys from output
+        const anonKeyMatch = apiKeys.match(/anon key: ([\w.-]+)/);
+        const serviceKeyMatch = apiKeys.match(/service_role key: ([\w.-]+)/);
+
+        const anonKey = anonKeyMatch ? anonKeyMatch[1] : '';
+        const serviceRoleKey = serviceKeyMatch ? serviceKeyMatch[1] : '';
+        const databaseUrl = `https://${projectRef}.supabase.co`;
+
+        databases.push({
+          env,
+          projectRef,
+          databaseUrl,
+          anonKey,
+          serviceRoleKey,
+        });
+      }
+
+      this.spinner.succeed('Supabase databases created');
+      console.log('  ℹ️  Note: Configure additional settings in Supabase dashboard');
+
+      return {
+        projectName: config.projectName,
+        organization: '',
+        databases,
+      };
+    } catch (error) {
+      this.spinner?.fail('Failed to provision Supabase databases');
+      throw new ProvisioningError('Failed to provision Supabase databases', error);
+    }
+  }
+
   private async configureEnvironment(
     _vercel: VercelProjectRecord | undefined,
     turso: { databases: TursoDatabaseRecord[] } | undefined,
+    supabase: { databases: SupabaseDatabaseRecord[] } | undefined,
     vercelBlob: VercelBlobRecord | undefined,
     _cloudflareR2: CloudflareR2Record | undefined,
+    _awsS3: AwsS3Record | undefined,
     _supabaseStorage: SupabaseStorageRecord | undefined,
     config: ProjectConfig
   ) {
@@ -616,6 +871,53 @@ export class CLIProvisioner implements CloudProvisioner {
         );
       }
 
+      // Set Supabase database environment variables
+      if (supabase?.databases && config.deployment) {
+        for (const db of supabase.databases) {
+          const target =
+            db.env === 'prod' ? 'production' : db.env === 'stg' ? 'preview' : 'development';
+
+          // Set Supabase URL
+          await execa('vercel', ['env', 'add', 'NEXT_PUBLIC_SUPABASE_URL', target, '--yes'], {
+            cwd: config.projectPath,
+            input: db.databaseUrl,
+            reject: false,
+          });
+
+          // Set Supabase Anon Key
+          await execa('vercel', ['env', 'add', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', target, '--yes'], {
+            cwd: config.projectPath,
+            input: db.anonKey,
+            reject: false,
+          });
+
+          // Set Supabase Service Role Key
+          await execa('vercel', ['env', 'add', 'SUPABASE_SERVICE_ROLE_KEY', target, '--yes'], {
+            cwd: config.projectPath,
+            input: db.serviceRoleKey,
+            reject: false,
+          });
+
+          // Set DATABASE_URL for Supabase
+          const dbUrl = `postgresql://postgres:[YOUR-PASSWORD]@db.${db.projectRef}.supabase.co:5432/postgres`;
+          await execa('vercel', ['env', 'add', 'DATABASE_URL', target, '--yes'], {
+            cwd: config.projectPath,
+            input: dbUrl,
+            reject: false,
+          });
+        }
+      }
+
+      // Set AWS S3 environment variables if available
+      if (_awsS3 && config.deployment) {
+        // Note: AWS credentials should be configured via IAM roles or secrets management
+        console.log('\n  ⚠️  Configure AWS S3 credentials in Vercel dashboard:');
+        console.log('     - AWS_REGION');
+        console.log('     - AWS_ACCESS_KEY_ID');
+        console.log('     - AWS_SECRET_ACCESS_KEY');
+        console.log('     - S3_BUCKET_NAME');
+      }
+
       // Note: Cloudflare R2 and Supabase Storage environment variables
       // need to be configured manually via their respective dashboards
 
@@ -625,4 +927,13 @@ export class CLIProvisioner implements CloudProvisioner {
       throw new ProvisioningError('Failed to configure environment variables', error);
     }
   }
+}
+
+function generatePassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+  let password = '';
+  for (let i = 0; i < 20; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
 }

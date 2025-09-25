@@ -34,12 +34,28 @@ interface SupabaseStorageRecord {
   projectRef?: string;
 }
 
+interface AwsS3Record {
+  bucketName: string;
+  region: string;
+}
+
+interface SupabaseDatabaseRecord {
+  env: string;
+  projectRef: string;
+}
+
+interface SupabaseProvisioningRecord {
+  databases: SupabaseDatabaseRecord[];
+}
+
 interface CloudProvisioningRecord {
   mode: 'mock' | 'real';
   turso?: TursoProvisioningRecord;
+  supabase?: SupabaseProvisioningRecord;
   vercel?: VercelProjectRecord;
   vercelBlob?: VercelBlobRecord;
   cloudflareR2?: CloudflareR2Record;
+  awsS3?: AwsS3Record;
   supabaseStorage?: SupabaseStorageRecord;
 }
 
@@ -243,6 +259,71 @@ async function deleteSupabaseStorage(record: CloudProvisioningRecord) {
   }
 }
 
+async function deleteAwsS3(record: CloudProvisioningRecord) {
+  const s3 = record.awsS3;
+  if (!s3) {
+    return;
+  }
+
+  try {
+    // Check if AWS CLI is available
+    await run('aws', ['--version'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping AWS S3 cleanup because AWS CLI is not installed.');
+    console.log('   Install it from: https://aws.amazon.com/cli/');
+    return;
+  }
+
+  // Check if configured
+  try {
+    await run('aws', ['sts', 'get-caller-identity'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping AWS S3 cleanup because AWS CLI is not configured.');
+    console.log('   Run "aws configure" to set up credentials.');
+    return;
+  }
+
+  try {
+    // Force delete the bucket and all its contents
+    await run('aws', ['s3', 'rb', `s3://${s3.bucketName}`, '--force'], process.env);
+    console.log(`🗑️  Removed AWS S3 bucket ${s3.bucketName}`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to delete S3 bucket ${s3.bucketName}: ${String(error)}`);
+  }
+}
+
+async function deleteSupabaseDatabase(record: CloudProvisioningRecord) {
+  const supabase = record.supabase;
+  if (!supabase || !supabase.databases.length) {
+    return;
+  }
+
+  try {
+    // Check if supabase CLI is available
+    await run('supabase', ['--version'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Supabase database cleanup because Supabase CLI is not installed.');
+    return;
+  }
+
+  // Check if logged in
+  try {
+    await run('supabase', ['projects', 'list'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Supabase database cleanup because you are not logged in.');
+    console.log('   Run "supabase login" to authenticate.');
+    return;
+  }
+
+  console.log('\n⚠️  Supabase project cleanup:');
+  console.log('   Supabase projects need to be deleted manually via the dashboard.');
+  console.log('   Projects to delete:');
+  for (const db of supabase.databases) {
+    console.log(`   - Project Ref: ${db.projectRef} (Environment: ${db.env})`);
+  }
+  console.log('   Visit: https://app.supabase.com/projects');
+}
+
 async function cleanupFiles(projectRoot: string) {
   const toRemove = ['.env.production', '.env.staging', '.env.development'];
   for (const file of toRemove) {
@@ -270,11 +351,13 @@ async function main() {
   if (record.mode === 'mock') {
     console.log('   • Detected mock provisioning. Cleaning local artifacts only.');
   } else {
+    await deleteAwsS3(record);
     await deleteCloudflareR2(record);
     await deleteSupabaseStorage(record);
     await deleteVercelBlob(record);
     await deleteVercelProject(record);
     await deleteTurso(record);
+    await deleteSupabaseDatabase(record);
   }
 
   await cleanupFiles(projectRoot);

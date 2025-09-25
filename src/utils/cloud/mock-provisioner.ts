@@ -6,9 +6,11 @@ import type {
   CloudProvisioningRecord,
   ProvisionedDatabaseEnv,
   TursoDatabaseRecord,
+  SupabaseDatabaseRecord,
   VercelBlobRecord,
   CloudflareR2Record,
   SupabaseStorageRecord,
+  AwsS3Record,
 } from './types.js';
 
 const ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
@@ -28,17 +30,35 @@ function createMockDatabaseRecords(slug: string): TursoDatabaseRecord[] {
   });
 }
 
+function createMockSupabaseRecords(slug: string): SupabaseDatabaseRecord[] {
+  return ENVIRONMENTS.map((env) => {
+    const projectRef = `mock-${slug}-${env}-${randomUUID().substring(0, 8)}`;
+    return {
+      env,
+      projectRef,
+      databaseUrl: `https://${projectRef}.supabase.co`,
+      anonKey: `mock-anon-key-${randomUUID()}`,
+      serviceRoleKey: `mock-service-key-${randomUUID()}`,
+    };
+  });
+}
+
 export class MockProvisioner implements CloudProvisioner {
   readonly mode = 'mock' as const;
 
   async provision(config: ProjectConfig): Promise<CloudProvisioningRecord> {
     const projectSlug = slugify(config.projectName);
-    const databases =
+
+    // Create database records based on selection
+    const tursoDatabases =
       config.database === 'turso' ? createMockDatabaseRecords(projectSlug) : undefined;
+    const supabaseDatabases =
+      config.database === 'supabase' ? createMockSupabaseRecords(projectSlug) : undefined;
 
     // Create storage record based on selection
     let vercelBlob: VercelBlobRecord | undefined;
     let cloudflareR2: CloudflareR2Record | undefined;
+    let awsS3: AwsS3Record | undefined;
     let supabaseStorage: SupabaseStorageRecord | undefined;
 
     if (config.storage === 'vercel-blob') {
@@ -55,6 +75,14 @@ export class MockProvisioner implements CloudProvisioner {
         secretAccessKey: `mock-secret-${randomUUID()}`,
         endpoint: 'https://mock-account.r2.cloudflarestorage.com',
       };
+    } else if (config.storage === 'aws-s3') {
+      awsS3 = {
+        bucketName: `${projectSlug}-s3-bucket`,
+        region: 'us-east-1',
+        accessKeyId: `mock-access-key-${randomUUID()}`,
+        secretAccessKey: `mock-secret-${randomUUID()}`,
+        publicUrl: `https://${projectSlug}-s3-bucket.s3.us-east-1.amazonaws.com`,
+      };
     } else if (config.storage === 'supabase-storage') {
       supabaseStorage = {
         bucketName: `${projectSlug}-storage`,
@@ -70,11 +98,18 @@ export class MockProvisioner implements CloudProvisioner {
       mode: this.mode,
       createdAt: new Date().toISOString(),
       projectName: config.projectName,
-      turso: databases
+      turso: tursoDatabases
         ? {
             organization: 'mock-org',
             group: 'default',
-            databases,
+            databases: tursoDatabases,
+          }
+        : undefined,
+      supabase: supabaseDatabases
+        ? {
+            projectName: config.projectName,
+            organization: 'mock-org',
+            databases: supabaseDatabases,
           }
         : undefined,
       vercel: config.deployment
@@ -86,6 +121,7 @@ export class MockProvisioner implements CloudProvisioner {
         : undefined,
       vercelBlob,
       cloudflareR2,
+      awsS3,
       supabaseStorage,
     };
   }
