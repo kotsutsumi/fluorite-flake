@@ -225,17 +225,23 @@ export class CLIProvisioner implements CloudProvisioner {
         await execa('vercel', ['login'], { stdio: 'inherit' });
       }
 
-      // Check if project already exists
+      // Check if project already exists by checking if we're already linked
       let projectExists = false;
       try {
-        const { stdout: listOutput } = await execa('vercel', ['ls'], {
+        // Try to get project info to see if we're already linked
+        const { stdout: projectInfo } = await execa('vercel', ['project'], {
           cwd: config.projectPath,
+          reject: false,
         });
-        if (listOutput.includes(config.projectName)) {
-          projectExists = true;
+        // If we got project info and it contains our project name, we're already linked
+        if (projectInfo && !projectInfo.includes('Error') && projectInfo.includes('Name:')) {
+          const nameMatch = projectInfo.match(/Name:\s+(\S+)/);
+          if (nameMatch && nameMatch[1] === config.projectName) {
+            projectExists = true;
+          }
         }
       } catch {
-        // Error checking projects, continue
+        // Not linked to any project, which is fine
       }
 
       if (projectExists) {
@@ -259,30 +265,38 @@ export class CLIProvisioner implements CloudProvisioner {
           this.spinner = ora(`Deleting existing project ${config.projectName}...`).start();
           await execa('vercel', ['remove', config.projectName, '--yes'], {
             cwd: config.projectPath,
+            timeout: 30000,
           });
           this.spinner.text = 'Creating Vercel project...';
-          await execa('vercel', ['link', '--yes', '--project', config.projectName], {
+          // Use vercel command without --project flag, let it prompt interactively
+          await execa('vercel', ['link', '--yes'], {
             cwd: config.projectPath,
             reject: false,
+            timeout: 30000,
           });
         } else {
           this.spinner = ora('Using existing Vercel project...').start();
-          await execa('vercel', ['link', '--yes', '--project', config.projectName], {
+          // Link to existing project
+          await execa('vercel', ['link', '--yes'], {
             cwd: config.projectPath,
             reject: false,
+            timeout: 30000,
           });
         }
       } else {
         this.spinner.text = 'Creating Vercel project...';
-        await execa('vercel', ['link', '--yes', '--project', config.projectName], {
+        // Create and link new project
+        await execa('vercel', ['link', '--yes'], {
           cwd: config.projectPath,
           reject: false,
+          timeout: 30000,
         });
       }
 
       // Get project info
       const { stdout: projectInfo } = await execa('vercel', ['project'], {
         cwd: config.projectPath,
+        timeout: 10000, // 10 second timeout
       });
 
       // Extract project details
@@ -321,6 +335,7 @@ export class CLIProvisioner implements CloudProvisioner {
       await execa('vercel', ['link', '--yes'], {
         cwd: config.projectPath,
         reject: false,
+        timeout: 15000, // 15 second timeout
       });
 
       // Check if blob store already exists
@@ -328,8 +343,9 @@ export class CLIProvisioner implements CloudProvisioner {
       try {
         const { stdout: storeList } = await execa('vercel', ['blob', 'store', 'list'], {
           cwd: config.projectPath,
+          timeout: 10000, // 10 second timeout
         });
-        if (storeList.includes(storeName)) {
+        if (storeList?.includes(storeName)) {
           storeExists = true;
         }
       } catch {
@@ -357,19 +373,57 @@ export class CLIProvisioner implements CloudProvisioner {
           this.spinner = ora(`Deleting existing blob store ${storeName}...`).start();
           await execa('vercel', ['blob', 'store', 'remove', storeName], {
             cwd: config.projectPath,
+            timeout: 30000, // 30 second timeout
           });
           this.spinner.text = 'Creating Vercel Blob store...';
-          await execa('vercel', ['blob', 'store', 'add', storeName], {
-            cwd: config.projectPath,
-          });
+          // Try create command - this creates AND connects the store
+          try {
+            await execa('vercel', ['blob', 'create', storeName], {
+              cwd: config.projectPath,
+              timeout: 30000, // 30 second timeout
+            });
+          } catch (createError: unknown) {
+            // If create fails, try the add command which is used in some versions
+            const error = createError as { stderr?: string; message?: string };
+            if (
+              error.stderr?.includes('unknown command') ||
+              error.message?.includes('unknown command')
+            ) {
+              await execa('vercel', ['blob', 'add', storeName], {
+                cwd: config.projectPath,
+                timeout: 30000, // 30 second timeout
+              });
+            } else {
+              throw createError;
+            }
+          }
         } else {
           this.spinner = ora('Using existing Vercel Blob store...').start();
+          // Store already exists and should be connected
         }
       } else {
         this.spinner.text = 'Creating Vercel Blob store...';
-        await execa('vercel', ['blob', 'store', 'add', storeName], {
-          cwd: config.projectPath,
-        });
+        // Try create command - this creates AND connects the store
+        try {
+          await execa('vercel', ['blob', 'create', storeName], {
+            cwd: config.projectPath,
+            timeout: 30000, // 30 second timeout
+          });
+        } catch (createError: unknown) {
+          // If create fails, try the add command which is used in some versions
+          const error = createError as { stderr?: string; message?: string };
+          if (
+            error.stderr?.includes('unknown command') ||
+            error.message?.includes('unknown command')
+          ) {
+            await execa('vercel', ['blob', 'add', storeName], {
+              cwd: config.projectPath,
+              timeout: 30000, // 30 second timeout
+            });
+          } else {
+            throw createError;
+          }
+        }
       }
 
       // For now, we'll skip token creation as it might need manual setup
