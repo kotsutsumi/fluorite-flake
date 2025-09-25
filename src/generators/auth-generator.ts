@@ -2257,10 +2257,10 @@ async function main() {
     data: {
       name: 'Tech Corp',  // Changed to match test expectations
       slug: 'tech-corp',
-      metadata: {
+      metadata: JSON.stringify({
         industry: 'Technology',
         size: 'Enterprise',
-      },
+      }),
     },
   });
 
@@ -2268,10 +2268,10 @@ async function main() {
     data: {
       name: 'Startup Inc',
       slug: 'startup-inc',
-      metadata: {
+      metadata: JSON.stringify({
         industry: 'SaaS',
         size: 'Startup',
-      },
+      }),
     },
   });
 
