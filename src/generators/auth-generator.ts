@@ -1,64 +1,64 @@
-import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import path from 'node:path';
 import fs from 'fs-extra';
-import type { ProjectConfig } from '../commands/create.js';
+import type { ProjectConfig } from '../commands/create/types.js';
 // Unused imports removed for cleanup
 
 export async function setupAuth(config: ProjectConfig) {
-  if (config.framework !== 'nextjs') {
-    return;
-  }
+    if (config.framework !== 'nextjs') {
+        return;
+    }
 
-  if (config.orm !== 'prisma') {
-    throw new Error(
-      'Better Auth advanced scaffolding currently requires Prisma. Please choose Prisma as the ORM when enabling authentication.'
-    );
-  }
+    if (config.orm !== 'prisma') {
+        throw new Error(
+            'Better Auth advanced scaffolding currently requires Prisma. Please choose Prisma as the ORM when enabling authentication.'
+        );
+    }
 
-  await addAuthDependencies(config);
-  await writeAuthCore(config);
-  await writeMiddleware(config);
-  await writeAuthApiRoute(config);
-  await writeDashboardScaffolding(config);
-  await writeApiRoutes(config);
-  await writeProfileUploadHelper(config);
-  await writeHelperFunctions(config);
-  await updateSeedFileForAuth(config);
+    await addAuthDependencies(config);
+    await writeAuthCore(config);
+    await writeMiddleware(config);
+    await writeAuthApiRoute(config);
+    await writeDashboardScaffolding(config);
+    await writeApiRoutes(config);
+    await writeProfileUploadHelper(config);
+    await writeHelperFunctions(config);
+    await updateSeedFileForAuth(config);
 }
 
 async function addAuthDependencies(config: ProjectConfig) {
-  const packageJsonPath = path.join(config.projectPath, 'package.json');
-  const packageJson = await fs.readJSON(packageJsonPath);
+    const packageJsonPath = path.join(config.projectPath, 'package.json');
+    const packageJson = await fs.readJSON(packageJsonPath);
 
-  packageJson.dependencies = packageJson.dependencies ?? {};
+    packageJson.dependencies = packageJson.dependencies ?? {};
 
-  if (!packageJson.dependencies['better-auth']) {
-    packageJson.dependencies['better-auth'] = '^1.2.3';
-  }
+    if (!packageJson.dependencies['better-auth']) {
+        packageJson.dependencies['better-auth'] = '^1.2.3';
+    }
 
-  if (!packageJson.dependencies.zod) {
-    packageJson.dependencies.zod = '^3.23.8';
-  }
+    if (!packageJson.dependencies.zod) {
+        packageJson.dependencies.zod = '^3.23.8';
+    }
 
-  if (!packageJson.dependencies.bcryptjs) {
-    packageJson.dependencies.bcryptjs = '^2.4.3';
-  }
+    if (!packageJson.dependencies.bcryptjs) {
+        packageJson.dependencies.bcryptjs = '^2.4.3';
+    }
 
-  // Add dev dependencies for types
-  packageJson.devDependencies = packageJson.devDependencies ?? {};
-  if (!packageJson.devDependencies['@types/bcryptjs']) {
-    packageJson.devDependencies['@types/bcryptjs'] = '^2.4.6';
-  }
+    // Add dev dependencies for types
+    packageJson.devDependencies = packageJson.devDependencies ?? {};
+    if (!packageJson.devDependencies['@types/bcryptjs']) {
+        packageJson.devDependencies['@types/bcryptjs'] = '^2.4.6';
+    }
 
-  await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+    await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }
 
 async function writeAuthCore(config: ProjectConfig) {
-  const provider = config.database === 'supabase' ? 'postgresql' : 'sqlite';
-  const libDir = path.join(config.projectPath, 'src/lib');
-  await fs.ensureDir(libDir);
+    const provider = config.database === 'supabase' ? 'postgresql' : 'sqlite';
+    const libDir = path.join(config.projectPath, 'src/lib');
+    await fs.ensureDir(libDir);
 
-  const rolesContent = `export const APP_ROLES = {
+    const rolesContent = `export const APP_ROLES = {
   ADMIN: 'admin',
   ORG_ADMIN: 'org_admin',
   USER: 'user',
@@ -73,11 +73,11 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 };
 `;
 
-  await fs.outputFile(path.join(libDir, 'roles.ts'), rolesContent);
+    await fs.outputFile(path.join(libDir, 'roles.ts'), rolesContent);
 
-  const authSecret = randomBytes(32).toString('hex');
+    const authSecret = randomBytes(32).toString('hex');
 
-  const authContent = `import { betterAuth } from 'better-auth';
+    const authContent = `import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { organization } from 'better-auth/plugins/organization';
 import prisma from '@/lib/db';
@@ -121,9 +121,9 @@ export const auth = betterAuth({
 });
 `;
 
-  await fs.outputFile(path.join(libDir, 'auth.ts'), authContent);
+    await fs.outputFile(path.join(libDir, 'auth.ts'), authContent);
 
-  const authClientContent = `'use client';
+    const authClientContent = `'use client';
 
 import { createAuthClient } from 'better-auth/react';
 import { organizationClient } from 'better-auth/client/plugins';
@@ -142,9 +142,9 @@ export const {
 } = authClient;
 `;
 
-  await fs.outputFile(path.join(libDir, 'auth-client.ts'), authClientContent);
+    await fs.outputFile(path.join(libDir, 'auth-client.ts'), authClientContent);
 
-  const authServerContent = `import { headers, cookies } from 'next/headers';
+    const authServerContent = `import { headers, cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/db';
 import { auth } from './auth';
@@ -249,9 +249,9 @@ export function roleLabel(role: AppRole) {
 }
 `;
 
-  await fs.outputFile(path.join(libDir, 'auth-server.ts'), authServerContent);
+    await fs.outputFile(path.join(libDir, 'auth-server.ts'), authServerContent);
 
-  const slugUtilContent = `export function toSlug(input: string) {
+    const slugUtilContent = `export function toSlug(input: string) {
   const normalized = input
     .toLowerCase()
     .trim()
@@ -266,20 +266,20 @@ export function roleLabel(role: AppRole) {
 }
 `;
 
-  await fs.outputFile(path.join(libDir, 'to-slug.ts'), slugUtilContent);
+    await fs.outputFile(path.join(libDir, 'to-slug.ts'), slugUtilContent);
 
-  await appendEnv(
-    config,
-    `# Authentication
+    await appendEnv(
+        config,
+        `# Authentication
 BETTER_AUTH_SECRET="${authSecret}"
 BETTER_AUTH_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 `
-  );
+    );
 }
 
 async function writeMiddleware(config: ProjectConfig) {
-  const middlewareContent = `import { NextResponse } from 'next/server';
+    const middlewareContent = `import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/api/auth'];
@@ -324,34 +324,34 @@ export const config = {
 };
 `;
 
-  await fs.outputFile(path.join(config.projectPath, 'middleware.ts'), middlewareContent);
+    await fs.outputFile(path.join(config.projectPath, 'middleware.ts'), middlewareContent);
 }
 
 async function writeAuthApiRoute(config: ProjectConfig) {
-  const authApiDir = path.join(config.projectPath, 'src/app/api/auth/[...all]');
-  await fs.ensureDir(authApiDir);
+    const authApiDir = path.join(config.projectPath, 'src/app/api/auth/[...all]');
+    await fs.ensureDir(authApiDir);
 
-  const authApiContent = `import { auth } from '@/lib/auth';
+    const authApiContent = `import { auth } from '@/lib/auth';
 
 export const { GET, POST, PUT, PATCH, DELETE, OPTIONS } = auth.handler;
 `;
 
-  await fs.outputFile(path.join(authApiDir, 'route.ts'), authApiContent);
+    await fs.outputFile(path.join(authApiDir, 'route.ts'), authApiContent);
 }
 
 async function writeDashboardScaffolding(config: ProjectConfig) {
-  const appDir = path.join(config.projectPath, 'src/app');
-  const groupDir = path.join(appDir, '(app)');
-  const componentsDir = path.join(config.projectPath, 'src/components/dashboard');
-  await fs.ensureDir(groupDir);
-  await fs.ensureDir(componentsDir);
+    const appDir = path.join(config.projectPath, 'src/app');
+    const groupDir = path.join(appDir, '(app)');
+    const componentsDir = path.join(config.projectPath, 'src/components/dashboard');
+    await fs.ensureDir(groupDir);
+    await fs.ensureDir(componentsDir);
 
-  const rootPagePath = path.join(appDir, 'page.tsx');
-  if (await fs.pathExists(rootPagePath)) {
-    await fs.remove(rootPagePath);
-  }
+    const rootPagePath = path.join(appDir, 'page.tsx');
+    if (await fs.pathExists(rootPagePath)) {
+        await fs.remove(rootPagePath);
+    }
 
-  const appLayoutContent = `import type { ReactNode } from 'react';
+    const appLayoutContent = `import type { ReactNode } from 'react';
 import { requireSession } from '@/lib/auth-server';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
@@ -377,9 +377,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 }
 `;
 
-  await fs.outputFile(path.join(groupDir, 'layout.tsx'), appLayoutContent);
+    await fs.outputFile(path.join(groupDir, 'layout.tsx'), appLayoutContent);
 
-  const sidebarContent = `'use client';
+    const sidebarContent = `'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -470,9 +470,9 @@ function roleLabel(role: AppRole) {
 }
 `;
 
-  await fs.outputFile(path.join(componentsDir, 'sidebar.tsx'), sidebarContent);
+    await fs.outputFile(path.join(componentsDir, 'sidebar.tsx'), sidebarContent);
 
-  const headerContent = `'use client';
+    const headerContent = `'use client';
 
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
@@ -548,9 +548,9 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 }
 `;
 
-  await fs.outputFile(path.join(componentsDir, 'dashboard-header.tsx'), headerContent);
+    await fs.outputFile(path.join(componentsDir, 'dashboard-header.tsx'), headerContent);
 
-  const dashboardPageContent = `import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    const dashboardPageContent = `import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { requireSession, getAccessibleOrganizationIds } from '@/lib/auth-server';
 import prisma from '@/lib/db';
@@ -632,9 +632,9 @@ export default async function DashboardPage() {
 }
 `;
 
-  await fs.outputFile(path.join(groupDir, 'page.tsx'), dashboardPageContent);
+    await fs.outputFile(path.join(groupDir, 'page.tsx'), dashboardPageContent);
 
-  const organizationsPageContent = `import { redirect } from 'next/navigation';
+    const organizationsPageContent = `import { redirect } from 'next/navigation';
 import prisma from '@/lib/db';
 import { requireSession } from '@/lib/auth-server';
 import { APP_ROLES } from '@/lib/roles';
@@ -674,9 +674,9 @@ export default async function OrganizationsPage() {
 }
 `;
 
-  await fs.outputFile(path.join(groupDir, 'organizations/page.tsx'), organizationsPageContent);
+    await fs.outputFile(path.join(groupDir, 'organizations/page.tsx'), organizationsPageContent);
 
-  const organizationsClientContent = `'use client';
+    const organizationsClientContent = `'use client';
 
 import { useMemo, useState, useTransition } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
@@ -916,12 +916,12 @@ export function OrganizationsClient({ initialOrganizations }: OrganizationsClien
 }
 `;
 
-  await fs.outputFile(
-    path.join(componentsDir, 'organizations-client.tsx'),
-    organizationsClientContent
-  );
+    await fs.outputFile(
+        path.join(componentsDir, 'organizations-client.tsx'),
+        organizationsClientContent
+    );
 
-  const usersPageContent = `import { redirect } from 'next/navigation';
+    const usersPageContent = `import { redirect } from 'next/navigation';
 import prisma from '@/lib/db';
 import { requireSession, getAccessibleOrganizationIds } from '@/lib/auth-server';
 import { APP_ROLES } from '@/lib/roles';
@@ -983,319 +983,319 @@ export default async function UsersPage() {
 }
 `;
 
-  await fs.outputFile(path.join(groupDir, 'users/page.tsx'), usersPageContent);
+    await fs.outputFile(path.join(groupDir, 'users/page.tsx'), usersPageContent);
 
-  const usersClientContentLines = [
-    "'use client';",
-    '',
-    "import { useMemo, useState, useTransition } from 'react';",
-    "import { Button } from '@/components/ui/button';",
-    "import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';",
-    "import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';",
-    "import { Input } from '@/components/ui/input';",
-    "import { Label } from '@/components/ui/label';",
-    "import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';",
-    "import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';",
-    "import { Badge } from '@/components/ui/badge';",
-    "import { APP_ROLES, ROLE_LABELS } from '@/lib/roles';",
-    "import { Trash2, UserPlus } from 'lucide-react';",
-    '',
-    'function getErrorMessage(error: unknown): string {',
-    '  if (error instanceof Error) return error.message;',
-    "  if (typeof error === 'string') return error;",
-    "  if (error && typeof error === 'object' && 'message' in error) {",
-    '    return String((error as any).message);',
-    '  }',
-    "  return 'An unknown error occurred';",
-    '}',
-    '',
-    'interface OrganizationOption {',
-    '  id: string;',
-    '  name: string;',
-    '  slug: string;',
-    '}',
-    '',
-    'interface UserMembership {',
-    '  id: string;',
-    '  role: string;',
-    '  organization: {',
-    '    id: string;',
-    '    name: string;',
-    '    slug: string;',
-    '  };',
-    '}',
-    '',
-    'interface DashboardUser {',
-    '  id: string;',
-    '  email: string;',
-    '  name: string | null;',
-    '  role: string;',
-    '  memberships: UserMembership[];',
-    '  createdAt: string;',
-    '}',
-    '',
-    'interface UsersClientProps {',
-    '  initialUsers: DashboardUser[];',
-    '  organizations: OrganizationOption[];',
-    '  currentRole: string;',
-    '  currentUserId: string;',
-    '}',
-    '',
-    'export function UsersClient({ initialUsers, organizations, currentRole, currentUserId }: UsersClientProps) {',
-    '  const [users, setUsers] = useState<DashboardUser[]>(initialUsers);',
-    '  const [isDialogOpen, setIsDialogOpen] = useState(false);',
-    '  const [form, setForm] = useState({',
-    "    name: '',",
-    "    email: '',",
-    "    password: '',",
-    "    organizationId: organizations[0]?.id ?? '',",
-    '    role: APP_ROLES.USER,',
-    '  });',
-    '  const [isPending, startTransition] = useTransition();',
-    "  const [error, setError] = useState('');",
-    '',
-    '  const canManageAdmins = currentRole === APP_ROLES.ADMIN;',
-    '',
-    '  const openDialog = () => {',
-    '    setForm({',
-    "      name: '',",
-    "      email: '',",
-    "      password: 'TempPass123!',",
-    "      organizationId: organizations[0]?.id ?? '',",
-    '      role: canManageAdmins ? APP_ROLES.ORG_ADMIN : APP_ROLES.USER,',
-    '    });',
-    "    setError('');",
-    '    setIsDialogOpen(true);',
-    '  };',
-    '',
-    '  const handleCreate = () => {',
-    '    startTransition(async () => {',
-    "      setError('');",
-    '      try {',
-    '        const payload = {',
-    '          name: form.name,',
-    '          email: form.email,',
-    '          password: form.password,',
-    '          organizationId: form.organizationId,',
-    '          role: form.role,',
-    '        };',
-    '',
-    "        const response = await fetch('/api/users', {",
-    "          method: 'POST',",
-    "          headers: { 'Content-Type': 'application/json' },",
-    '          body: JSON.stringify(payload),',
-    '        });',
-    '',
-    '        if (!response.ok) {',
-    '          const data = await response.json().catch(() => ({}));',
-    "          throw new Error(data.error || 'ユーザー作成に失敗しました');",
-    '        }',
-    '',
-    '        const data = await response.json();',
-    '        setUsers(data.users as DashboardUser[]);',
-    '        setIsDialogOpen(false);',
-    '      } catch (err: unknown) {',
-    "        setError(getErrorMessage(err) || 'ユーザー作成に失敗しました');",
-    '      }',
-    '    });',
-    '  };',
-    '',
-    '  const handleDelete = (user: DashboardUser) => {',
-    '    if (!window.confirm(`${user.email} を削除しますか？`)) {',
-    '      return;',
-    '    }',
-    '',
-    '    startTransition(async () => {',
-    "      setError('');",
-    '      try {',
-    '        const res = await fetch(`/api/users/${user.id}`, {',
-    "          method: 'DELETE',",
-    '        });',
-    '',
-    '        if (!res.ok) {',
-    '          const data = await res.json().catch(() => ({}));',
-    "          throw new Error(data.error || '削除に失敗しました');",
-    '        }',
-    '',
-    '        const data = await res.json();',
-    '        setUsers(data.users as DashboardUser[]);',
-    '      } catch (err: unknown) {',
-    '        setError(getErrorMessage(err));',
-    '      }',
-    '    });',
-    '  };',
-    '',
-    '  const summary = useMemo(() => {',
-    '    return {',
-    '      total: users.length,',
-    '      admin: users.filter((user) => user.role === APP_ROLES.ADMIN).length,',
-    '      orgAdmin: users.filter((user) => user.role === APP_ROLES.ORG_ADMIN).length,',
-    '      general: users.filter((user) => user.role === APP_ROLES.USER).length,',
-    '    };',
-    '  }, [users]);',
-    '',
-    '  return (',
-    '    <div className="space-y-6">',
-    '      <Card>',
-    '        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">',
-    '          <div>',
-    '            <CardTitle>ユーザー管理</CardTitle>',
-    '            <p className="text-sm text-muted-foreground">',
-    '              合計 {summary.total} 名 / 管理ユーザー {summary.admin} 名 / 組織管理 {summary.orgAdmin} 名 / 一般 {summary.general} 名',
-    '            </p>',
-    '          </div>',
-    '          <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">',
-    '            <Button onClick={openDialog} className="w-full md:w-auto" disabled={organizations.length === 0}>',
-    '              <UserPlus className="mr-2 h-4 w-4" /> ユーザーを追加',
-    '            </Button>',
-    '            {organizations.length === 0 && (',
-    '              <p className="text-xs text-muted-foreground">利用可能な組織がありません。先に組織を作成してください。</p>',
-    '            )}',
-    '          </div>',
-    '        </CardHeader>',
-    '        <CardContent className="overflow-x-auto">',
-    '          <Table>',
-    '            <TableHeader>',
-    '              <TableRow>',
-    '                <TableHead>氏名</TableHead>',
-    '                <TableHead>メールアドレス</TableHead>',
-    '                <TableHead>ロール</TableHead>',
-    '                <TableHead>所属組織</TableHead>',
-    '                <TableHead className="w-[120px]">操作</TableHead>',
-    '              </TableRow>',
-    '            </TableHeader>',
-    '            <TableBody>',
-    '              {users.map((user) => (',
-    '                <TableRow key={user.id}>',
-    '                  <TableCell className="font-medium">{user.name ?? \'-\'}</TableCell>',
-    '                  <TableCell>{user.email}</TableCell>',
-    '                  <TableCell>',
-    '                    <Badge variant="outline">{ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] ?? user.role}</Badge>',
-    '                  </TableCell>',
-    '                  <TableCell>',
-    '                    {user.memberships.length > 0',
-    '                      ? user.memberships',
-    '                          .map((membership) => `${membership.organization.name} (${membership.role})`)',
-    "                          .join(', ')",
-    "                      : '未所属'}",
-    '                  </TableCell>',
-    '                  <TableCell>',
-    '                    <Button',
-    '                      variant="outline"',
-    '                      size="icon"',
-    '                      onClick={() => handleDelete(user)}',
-    '                      disabled={isPending || user.id === currentUserId}',
-    '                    >',
-    '                      <Trash2 className="h-4 w-4" />',
-    '                    </Button>',
-    '                  </TableCell>',
-    '                </TableRow>',
-    '              ))}',
-    '              {users.length === 0 && (',
-    '                <TableRow>',
-    '                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">',
-    '                    表示できるユーザーがいません。',
-    '                  </TableCell>',
-    '                </TableRow>',
-    '              )}',
-    '            </TableBody>',
-    '          </Table>',
-    '          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}',
-    '        </CardContent>',
-    '      </Card>',
-    '',
-    '      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>',
-    '        <DialogContent className="sm:max-w-lg">',
-    '          <DialogHeader>',
-    '            <DialogTitle>ユーザーを追加</DialogTitle>',
-    '          </DialogHeader>',
-    '          <div className="space-y-4">',
-    '            <div className="space-y-2">',
-    '              <Label htmlFor="user-name">氏名</Label>',
-    '              <Input',
-    '                id="user-name"',
-    '                value={form.name}',
-    '                onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}',
-    '                placeholder="山田 太郎"',
-    '              />',
-    '            </div>',
-    '            <div className="space-y-2">',
-    '              <Label htmlFor="user-email">メールアドレス</Label>',
-    '              <Input',
-    '                id="user-email"',
-    '                type="email"',
-    '                value={form.email}',
-    '                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}',
-    '                placeholder="user@example.com"',
-    '              />',
-    '            </div>',
-    '            <div className="space-y-2">',
-    '              <Label htmlFor="user-password">初期パスワード</Label>',
-    '              <Input',
-    '                id="user-password"',
-    '                type="password"',
-    '                value={form.password}',
-    '                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}',
-    '                placeholder="TempPass123!"',
-    '              />',
-    '            </div>',
-    '            <div className="space-y-2">',
-    '              <Label>所属組織</Label>',
-    '              <Select',
-    '                value={form.organizationId}',
-    '                onValueChange={(value) => setForm((prev) => ({ ...prev, organizationId: value }))}',
-    '                disabled={organizations.length === 0}',
-    '              >',
-    '                <SelectTrigger>',
-    '                  <SelectValue placeholder="所属組織を選択" />',
-    '                </SelectTrigger>',
-    '                <SelectContent>',
-    '                  {organizations.map((organization) => (',
-    '                    <SelectItem key={organization.id} value={organization.id}>',
-    '                      {organization.name}',
-    '                    </SelectItem>',
-    '                  ))}',
-    '                </SelectContent>',
-    '              </Select>',
-    '            </div>',
-    '            <div className="space-y-2">',
-    '              <Label>ロール</Label>',
-    '              <Select value={form.role} onValueChange={(value) => setForm((prev) => ({ ...prev, role: value as string }))}>',
-    '                <SelectTrigger>',
-    '                  <SelectValue />',
-    '                </SelectTrigger>',
-    '                <SelectContent>',
-    '                  {canManageAdmins && <SelectItem value={APP_ROLES.ADMIN}>管理ユーザー</SelectItem>}',
-    '                  <SelectItem value={APP_ROLES.ORG_ADMIN}>組織管理ユーザー</SelectItem>',
-    '                  <SelectItem value={APP_ROLES.USER}>一般ユーザー</SelectItem>',
-    '                </SelectContent>',
-    '              </Select>',
-    '              {!canManageAdmins && (',
-    '                <p className="text-xs text-muted-foreground">組織管理ユーザーは一般ユーザーのみ作成できます。</p>',
-    '              )}',
-    '            </div>',
-    '          </div>',
-    '          {error && <p className="text-sm text-destructive">{error}</p>}',
-    '          <DialogFooter>',
-    '            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isPending}>',
-    '              キャンセル',
-    '            </Button>',
-    '            <Button onClick={handleCreate} disabled={isPending || organizations.length === 0}>',
-    '              作成する',
-    '            </Button>',
-    '          </DialogFooter>',
-    '        </DialogContent>',
-    '      </Dialog>',
-    '    </div>',
-    '  );',
-    '}',
-    '',
-  ];
-  const usersClientContent = usersClientContentLines.join('\n');
+    const usersClientContentLines = [
+        "'use client';",
+        '',
+        "import { useMemo, useState, useTransition } from 'react';",
+        "import { Button } from '@/components/ui/button';",
+        "import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';",
+        "import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';",
+        "import { Input } from '@/components/ui/input';",
+        "import { Label } from '@/components/ui/label';",
+        "import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';",
+        "import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';",
+        "import { Badge } from '@/components/ui/badge';",
+        "import { APP_ROLES, ROLE_LABELS } from '@/lib/roles';",
+        "import { Trash2, UserPlus } from 'lucide-react';",
+        '',
+        'function getErrorMessage(error: unknown): string {',
+        '  if (error instanceof Error) return error.message;',
+        "  if (typeof error === 'string') return error;",
+        "  if (error && typeof error === 'object' && 'message' in error) {",
+        '    return String((error as any).message);',
+        '  }',
+        "  return 'An unknown error occurred';",
+        '}',
+        '',
+        'interface OrganizationOption {',
+        '  id: string;',
+        '  name: string;',
+        '  slug: string;',
+        '}',
+        '',
+        'interface UserMembership {',
+        '  id: string;',
+        '  role: string;',
+        '  organization: {',
+        '    id: string;',
+        '    name: string;',
+        '    slug: string;',
+        '  };',
+        '}',
+        '',
+        'interface DashboardUser {',
+        '  id: string;',
+        '  email: string;',
+        '  name: string | null;',
+        '  role: string;',
+        '  memberships: UserMembership[];',
+        '  createdAt: string;',
+        '}',
+        '',
+        'interface UsersClientProps {',
+        '  initialUsers: DashboardUser[];',
+        '  organizations: OrganizationOption[];',
+        '  currentRole: string;',
+        '  currentUserId: string;',
+        '}',
+        '',
+        'export function UsersClient({ initialUsers, organizations, currentRole, currentUserId }: UsersClientProps) {',
+        '  const [users, setUsers] = useState<DashboardUser[]>(initialUsers);',
+        '  const [isDialogOpen, setIsDialogOpen] = useState(false);',
+        '  const [form, setForm] = useState({',
+        "    name: '',",
+        "    email: '',",
+        "    password: '',",
+        "    organizationId: organizations[0]?.id ?? '',",
+        '    role: APP_ROLES.USER,',
+        '  });',
+        '  const [isPending, startTransition] = useTransition();',
+        "  const [error, setError] = useState('');",
+        '',
+        '  const canManageAdmins = currentRole === APP_ROLES.ADMIN;',
+        '',
+        '  const openDialog = () => {',
+        '    setForm({',
+        "      name: '',",
+        "      email: '',",
+        "      password: 'TempPass123!',",
+        "      organizationId: organizations[0]?.id ?? '',",
+        '      role: canManageAdmins ? APP_ROLES.ORG_ADMIN : APP_ROLES.USER,',
+        '    });',
+        "    setError('');",
+        '    setIsDialogOpen(true);',
+        '  };',
+        '',
+        '  const handleCreate = () => {',
+        '    startTransition(async () => {',
+        "      setError('');",
+        '      try {',
+        '        const payload = {',
+        '          name: form.name,',
+        '          email: form.email,',
+        '          password: form.password,',
+        '          organizationId: form.organizationId,',
+        '          role: form.role,',
+        '        };',
+        '',
+        "        const response = await fetch('/api/users', {",
+        "          method: 'POST',",
+        "          headers: { 'Content-Type': 'application/json' },",
+        '          body: JSON.stringify(payload),',
+        '        });',
+        '',
+        '        if (!response.ok) {',
+        '          const data = await response.json().catch(() => ({}));',
+        "          throw new Error(data.error || 'ユーザー作成に失敗しました');",
+        '        }',
+        '',
+        '        const data = await response.json();',
+        '        setUsers(data.users as DashboardUser[]);',
+        '        setIsDialogOpen(false);',
+        '      } catch (err: unknown) {',
+        "        setError(getErrorMessage(err) || 'ユーザー作成に失敗しました');",
+        '      }',
+        '    });',
+        '  };',
+        '',
+        '  const handleDelete = (user: DashboardUser) => {',
+        '    if (!window.confirm(`${user.email} を削除しますか？`)) {',
+        '      return;',
+        '    }',
+        '',
+        '    startTransition(async () => {',
+        "      setError('');",
+        '      try {',
+        '        const res = await fetch(`/api/users/${user.id}`, {',
+        "          method: 'DELETE',",
+        '        });',
+        '',
+        '        if (!res.ok) {',
+        '          const data = await res.json().catch(() => ({}));',
+        "          throw new Error(data.error || '削除に失敗しました');",
+        '        }',
+        '',
+        '        const data = await res.json();',
+        '        setUsers(data.users as DashboardUser[]);',
+        '      } catch (err: unknown) {',
+        '        setError(getErrorMessage(err));',
+        '      }',
+        '    });',
+        '  };',
+        '',
+        '  const summary = useMemo(() => {',
+        '    return {',
+        '      total: users.length,',
+        '      admin: users.filter((user) => user.role === APP_ROLES.ADMIN).length,',
+        '      orgAdmin: users.filter((user) => user.role === APP_ROLES.ORG_ADMIN).length,',
+        '      general: users.filter((user) => user.role === APP_ROLES.USER).length,',
+        '    };',
+        '  }, [users]);',
+        '',
+        '  return (',
+        '    <div className="space-y-6">',
+        '      <Card>',
+        '        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">',
+        '          <div>',
+        '            <CardTitle>ユーザー管理</CardTitle>',
+        '            <p className="text-sm text-muted-foreground">',
+        '              合計 {summary.total} 名 / 管理ユーザー {summary.admin} 名 / 組織管理 {summary.orgAdmin} 名 / 一般 {summary.general} 名',
+        '            </p>',
+        '          </div>',
+        '          <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">',
+        '            <Button onClick={openDialog} className="w-full md:w-auto" disabled={organizations.length === 0}>',
+        '              <UserPlus className="mr-2 h-4 w-4" /> ユーザーを追加',
+        '            </Button>',
+        '            {organizations.length === 0 && (',
+        '              <p className="text-xs text-muted-foreground">利用可能な組織がありません。先に組織を作成してください。</p>',
+        '            )}',
+        '          </div>',
+        '        </CardHeader>',
+        '        <CardContent className="overflow-x-auto">',
+        '          <Table>',
+        '            <TableHeader>',
+        '              <TableRow>',
+        '                <TableHead>氏名</TableHead>',
+        '                <TableHead>メールアドレス</TableHead>',
+        '                <TableHead>ロール</TableHead>',
+        '                <TableHead>所属組織</TableHead>',
+        '                <TableHead className="w-[120px]">操作</TableHead>',
+        '              </TableRow>',
+        '            </TableHeader>',
+        '            <TableBody>',
+        '              {users.map((user) => (',
+        '                <TableRow key={user.id}>',
+        '                  <TableCell className="font-medium">{user.name ?? \'-\'}</TableCell>',
+        '                  <TableCell>{user.email}</TableCell>',
+        '                  <TableCell>',
+        '                    <Badge variant="outline">{ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] ?? user.role}</Badge>',
+        '                  </TableCell>',
+        '                  <TableCell>',
+        '                    {user.memberships.length > 0',
+        '                      ? user.memberships',
+        '                          .map((membership) => `${membership.organization.name} (${membership.role})`)',
+        "                          .join(', ')",
+        "                      : '未所属'}",
+        '                  </TableCell>',
+        '                  <TableCell>',
+        '                    <Button',
+        '                      variant="outline"',
+        '                      size="icon"',
+        '                      onClick={() => handleDelete(user)}',
+        '                      disabled={isPending || user.id === currentUserId}',
+        '                    >',
+        '                      <Trash2 className="h-4 w-4" />',
+        '                    </Button>',
+        '                  </TableCell>',
+        '                </TableRow>',
+        '              ))}',
+        '              {users.length === 0 && (',
+        '                <TableRow>',
+        '                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">',
+        '                    表示できるユーザーがいません。',
+        '                  </TableCell>',
+        '                </TableRow>',
+        '              )}',
+        '            </TableBody>',
+        '          </Table>',
+        '          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}',
+        '        </CardContent>',
+        '      </Card>',
+        '',
+        '      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>',
+        '        <DialogContent className="sm:max-w-lg">',
+        '          <DialogHeader>',
+        '            <DialogTitle>ユーザーを追加</DialogTitle>',
+        '          </DialogHeader>',
+        '          <div className="space-y-4">',
+        '            <div className="space-y-2">',
+        '              <Label htmlFor="user-name">氏名</Label>',
+        '              <Input',
+        '                id="user-name"',
+        '                value={form.name}',
+        '                onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}',
+        '                placeholder="山田 太郎"',
+        '              />',
+        '            </div>',
+        '            <div className="space-y-2">',
+        '              <Label htmlFor="user-email">メールアドレス</Label>',
+        '              <Input',
+        '                id="user-email"',
+        '                type="email"',
+        '                value={form.email}',
+        '                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}',
+        '                placeholder="user@example.com"',
+        '              />',
+        '            </div>',
+        '            <div className="space-y-2">',
+        '              <Label htmlFor="user-password">初期パスワード</Label>',
+        '              <Input',
+        '                id="user-password"',
+        '                type="password"',
+        '                value={form.password}',
+        '                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}',
+        '                placeholder="TempPass123!"',
+        '              />',
+        '            </div>',
+        '            <div className="space-y-2">',
+        '              <Label>所属組織</Label>',
+        '              <Select',
+        '                value={form.organizationId}',
+        '                onValueChange={(value) => setForm((prev) => ({ ...prev, organizationId: value }))}',
+        '                disabled={organizations.length === 0}',
+        '              >',
+        '                <SelectTrigger>',
+        '                  <SelectValue placeholder="所属組織を選択" />',
+        '                </SelectTrigger>',
+        '                <SelectContent>',
+        '                  {organizations.map((organization) => (',
+        '                    <SelectItem key={organization.id} value={organization.id}>',
+        '                      {organization.name}',
+        '                    </SelectItem>',
+        '                  ))}',
+        '                </SelectContent>',
+        '              </Select>',
+        '            </div>',
+        '            <div className="space-y-2">',
+        '              <Label>ロール</Label>',
+        '              <Select value={form.role} onValueChange={(value) => setForm((prev) => ({ ...prev, role: value as string }))}>',
+        '                <SelectTrigger>',
+        '                  <SelectValue />',
+        '                </SelectTrigger>',
+        '                <SelectContent>',
+        '                  {canManageAdmins && <SelectItem value={APP_ROLES.ADMIN}>管理ユーザー</SelectItem>}',
+        '                  <SelectItem value={APP_ROLES.ORG_ADMIN}>組織管理ユーザー</SelectItem>',
+        '                  <SelectItem value={APP_ROLES.USER}>一般ユーザー</SelectItem>',
+        '                </SelectContent>',
+        '              </Select>',
+        '              {!canManageAdmins && (',
+        '                <p className="text-xs text-muted-foreground">組織管理ユーザーは一般ユーザーのみ作成できます。</p>',
+        '              )}',
+        '            </div>',
+        '          </div>',
+        '          {error && <p className="text-sm text-destructive">{error}</p>}',
+        '          <DialogFooter>',
+        '            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isPending}>',
+        '              キャンセル',
+        '            </Button>',
+        '            <Button onClick={handleCreate} disabled={isPending || organizations.length === 0}>',
+        '              作成する',
+        '            </Button>',
+        '          </DialogFooter>',
+        '        </DialogContent>',
+        '      </Dialog>',
+        '    </div>',
+        '  );',
+        '}',
+        '',
+    ];
+    const usersClientContent = usersClientContentLines.join('\n');
 
-  await fs.outputFile(path.join(componentsDir, 'users-client.tsx'), usersClientContent);
+    await fs.outputFile(path.join(componentsDir, 'users-client.tsx'), usersClientContent);
 
-  const profilePageContent = `import prisma from '@/lib/db';
+    const profilePageContent = `import prisma from '@/lib/db';
 import { requireSession } from '@/lib/auth-server';
 import { ProfileForm } from '@/components/dashboard/profile-form';
 
@@ -1324,9 +1324,9 @@ export default async function ProfilePage() {
 }
 `;
 
-  await fs.outputFile(path.join(groupDir, 'profile/page.tsx'), profilePageContent);
+    await fs.outputFile(path.join(groupDir, 'profile/page.tsx'), profilePageContent);
 
-  const profileFormContent = `'use client';
+    const profileFormContent = `'use client';
 
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
@@ -1527,9 +1527,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 }
 `;
 
-  await fs.outputFile(path.join(componentsDir, 'profile-form.tsx'), profileFormContent);
+    await fs.outputFile(path.join(componentsDir, 'profile-form.tsx'), profileFormContent);
 
-  const loginPageContent = `'use client';
+    const loginPageContent = `'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
@@ -1669,28 +1669,28 @@ export default function LoginPage() {
 }
 `;
 
-  await fs.ensureDir(path.join(appDir, 'login'));
-  await fs.outputFile(path.join(appDir, 'login/page.tsx'), loginPageContent);
+    await fs.ensureDir(path.join(appDir, 'login'));
+    await fs.outputFile(path.join(appDir, 'login/page.tsx'), loginPageContent);
 }
 
 async function writeApiRoutes(config: ProjectConfig) {
-  const apiDir = path.join(config.projectPath, 'src/app/api');
-  await fs.ensureDir(apiDir);
+    const apiDir = path.join(config.projectPath, 'src/app/api');
+    await fs.ensureDir(apiDir);
 
-  await writeCustomAuthApi(config);
-  await writeOrganizationsApi(config);
-  await writeUsersApi(config);
-  await writeProfileApi(config);
+    await writeCustomAuthApi(config);
+    await writeOrganizationsApi(config);
+    await writeUsersApi(config);
+    await writeProfileApi(config);
 }
 
 async function writeCustomAuthApi(config: ProjectConfig) {
-  // Create custom sign-in API route for better login handling
-  const signInDir = path.join(config.projectPath, 'src/app/api/auth/sign-in/email');
-  const signOutDir = path.join(config.projectPath, 'src/app/api/auth/sign-out');
-  await fs.ensureDir(signInDir);
-  await fs.ensureDir(signOutDir);
+    // Create custom sign-in API route for better login handling
+    const signInDir = path.join(config.projectPath, 'src/app/api/auth/sign-in/email');
+    const signOutDir = path.join(config.projectPath, 'src/app/api/auth/sign-out');
+    await fs.ensureDir(signInDir);
+    await fs.ensureDir(signOutDir);
 
-  const signInRouteContent = `import { NextRequest, NextResponse } from 'next/server';
+    const signInRouteContent = `import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
@@ -1808,9 +1808,9 @@ export async function POST(request: NextRequest) {
   }
 }`;
 
-  await fs.outputFile(path.join(signInDir, 'route.ts'), signInRouteContent);
+    await fs.outputFile(path.join(signInDir, 'route.ts'), signInRouteContent);
 
-  const signOutRouteContent = `import { NextRequest, NextResponse } from 'next/server';
+    const signOutRouteContent = `import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/db';
 
@@ -1841,16 +1841,16 @@ export async function POST(request: NextRequest) {
   }
 }`;
 
-  await fs.outputFile(path.join(signOutDir, 'route.ts'), signOutRouteContent);
+    await fs.outputFile(path.join(signOutDir, 'route.ts'), signOutRouteContent);
 }
 
 async function writeOrganizationsApi(config: ProjectConfig) {
-  const dir = path.join(config.projectPath, 'src/app/api/organizations');
-  const organizationIdDir = path.join(dir, '[id]');
-  await fs.ensureDir(dir);
-  await fs.ensureDir(organizationIdDir);
+    const dir = path.join(config.projectPath, 'src/app/api/organizations');
+    const organizationIdDir = path.join(dir, '[id]');
+    await fs.ensureDir(dir);
+    await fs.ensureDir(organizationIdDir);
 
-  const collectionRoute = `import { NextResponse } from 'next/server';
+    const collectionRoute = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import prisma from '@/lib/db';
 import { auth } from '@/lib/auth';
@@ -1926,9 +1926,9 @@ export async function POST(request: Request) {
 }
 `;
 
-  await fs.outputFile(path.join(dir, 'route.ts'), collectionRoute);
+    await fs.outputFile(path.join(dir, 'route.ts'), collectionRoute);
 
-  const singleRoute = `import { NextResponse } from 'next/server';
+    const singleRoute = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import prisma from '@/lib/db';
 import { auth } from '@/lib/auth';
@@ -2006,16 +2006,16 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
 }
 `;
 
-  await fs.outputFile(path.join(organizationIdDir, 'route.ts'), singleRoute);
+    await fs.outputFile(path.join(organizationIdDir, 'route.ts'), singleRoute);
 }
 
 async function writeUsersApi(config: ProjectConfig) {
-  const dir = path.join(config.projectPath, 'src/app/api/users');
-  const userIdDir = path.join(dir, '[id]');
-  await fs.ensureDir(dir);
-  await fs.ensureDir(userIdDir);
+    const dir = path.join(config.projectPath, 'src/app/api/users');
+    const userIdDir = path.join(dir, '[id]');
+    await fs.ensureDir(dir);
+    await fs.ensureDir(userIdDir);
 
-  const collectionRoute = `import { NextResponse } from 'next/server';
+    const collectionRoute = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db';
@@ -2150,9 +2150,9 @@ export async function POST(request: Request) {
 }
 `;
 
-  await fs.outputFile(path.join(dir, 'route.ts'), collectionRoute);
+    await fs.outputFile(path.join(dir, 'route.ts'), collectionRoute);
 
-  const singleRoute = `import { NextResponse } from 'next/server';
+    const singleRoute = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db';
@@ -2296,14 +2296,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 }
 `;
 
-  await fs.outputFile(path.join(userIdDir, 'route.ts'), singleRoute);
+    await fs.outputFile(path.join(userIdDir, 'route.ts'), singleRoute);
 }
 
 async function writeProfileApi(config: ProjectConfig) {
-  const dir = path.join(config.projectPath, 'src/app/api/profile');
-  await fs.ensureDir(dir);
+    const dir = path.join(config.projectPath, 'src/app/api/profile');
+    await fs.ensureDir(dir);
 
-  const routeContent = `import { NextResponse } from 'next/server';
+    const routeContent = `import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/db';
@@ -2388,90 +2388,90 @@ export async function PUT(request: Request) {
 }
 `;
 
-  await fs.outputFile(path.join(dir, 'route.ts'), routeContent);
+    await fs.outputFile(path.join(dir, 'route.ts'), routeContent);
 }
 
 async function writeProfileUploadHelper(config: ProjectConfig) {
-  const helperPath = path.join(config.projectPath, 'src/lib/profile-upload.ts');
+    const helperPath = path.join(config.projectPath, 'src/lib/profile-upload.ts');
 
-  if (config.storage === 'none') {
-    const uploadsDir = path.join(config.projectPath, 'public/uploads');
-    await fs.ensureDir(uploadsDir);
-    await fs.outputFile(path.join(uploadsDir, '.gitkeep'), '');
+    if (config.storage === 'none') {
+        const uploadsDir = path.join(config.projectPath, 'public/uploads');
+        await fs.ensureDir(uploadsDir);
+        await fs.outputFile(path.join(uploadsDir, '.gitkeep'), '');
 
-    const helperLines = [
-      "import path from 'node:path';",
-      "import fs from 'fs-extra';",
-      '',
-      "const uploadsDir = path.join(process.cwd(), 'public', 'uploads');",
-      '',
-      'async function ensureUploadsDir() {',
-      '  await fs.ensureDir(uploadsDir);',
-      '}',
-      '',
-      'export async function saveProfileImage(file: File, userId: string) {',
-      '  await ensureUploadsDir();',
-      '  const arrayBuffer = await file.arrayBuffer();',
-      '  const buffer = Buffer.from(arrayBuffer);',
-      "  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';",
-      '  const filename = `${userId}-${Date.now()}.${extension}`;',
-      '  const storagePath = path.join(uploadsDir, filename);',
-      '  await fs.outputFile(storagePath, buffer);',
-      '  return `/uploads/${filename}`;',
-      '}',
-    ];
+        const helperLines = [
+            "import path from 'node:path';",
+            "import fs from 'fs-extra';",
+            '',
+            "const uploadsDir = path.join(process.cwd(), 'public', 'uploads');",
+            '',
+            'async function ensureUploadsDir() {',
+            '  await fs.ensureDir(uploadsDir);',
+            '}',
+            '',
+            'export async function saveProfileImage(file: File, userId: string) {',
+            '  await ensureUploadsDir();',
+            '  const arrayBuffer = await file.arrayBuffer();',
+            '  const buffer = Buffer.from(arrayBuffer);',
+            "  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';",
+            '  const filename = `${userId}-${Date.now()}.${extension}`;',
+            '  const storagePath = path.join(uploadsDir, filename);',
+            '  await fs.outputFile(storagePath, buffer);',
+            '  return `/uploads/${filename}`;',
+            '}',
+        ];
 
-    await fs.outputFile(helperPath, helperLines.join('\n'));
-  } else {
-    const helperLines = [
-      "import { uploadBuffer } from '@/lib/storage';",
-      '',
-      'export async function saveProfileImage(file: File, userId: string) {',
-      '  const arrayBuffer = await file.arrayBuffer();',
-      '  const buffer = Buffer.from(arrayBuffer);',
-      "  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';",
-      '  const filename = `profiles/${userId}-${Date.now()}.${extension}`;',
-      "  return uploadBuffer(buffer, filename, file.type || 'application/octet-stream');",
-      '}',
-    ];
+        await fs.outputFile(helperPath, helperLines.join('\n'));
+    } else {
+        const helperLines = [
+            "import { uploadBuffer } from '@/lib/storage';",
+            '',
+            'export async function saveProfileImage(file: File, userId: string) {',
+            '  const arrayBuffer = await file.arrayBuffer();',
+            '  const buffer = Buffer.from(arrayBuffer);',
+            "  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';",
+            '  const filename = `profiles/${userId}-${Date.now()}.${extension}`;',
+            "  return uploadBuffer(buffer, filename, file.type || 'application/octet-stream');",
+            '}',
+        ];
 
-    await fs.outputFile(helperPath, helperLines.join('\n'));
-  }
+        await fs.outputFile(helperPath, helperLines.join('\n'));
+    }
 }
 
 async function appendEnv(config: ProjectConfig, block: string) {
-  await appendEnvFile(path.join(config.projectPath, '.env.local'), block);
-  await appendEnvFile(path.join(config.projectPath, '.env'), block);
+    await appendEnvFile(path.join(config.projectPath, '.env.local'), block);
+    await appendEnvFile(path.join(config.projectPath, '.env'), block);
 }
 
 async function appendEnvFile(envPath: string, block: string) {
-  let existing = '';
+    let existing = '';
 
-  try {
-    existing = await fs.readFile(envPath, 'utf-8');
-  } catch (_error) {
-    // file does not exist yet
-  }
+    try {
+        existing = await fs.readFile(envPath, 'utf-8');
+    } catch (_error) {
+        // file does not exist yet
+    }
 
-  const linesToAdd = block
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    const linesToAdd = block
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
 
-  const linesMissing = linesToAdd.filter((line) => !existing.includes(line));
+    const linesMissing = linesToAdd.filter((line) => !existing.includes(line));
 
-  if (linesMissing.length === 0) {
-    return;
-  }
+    if (linesMissing.length === 0) {
+        return;
+    }
 
-  const newline = existing.endsWith('\n') || existing.length === 0 ? '' : '\n';
-  const updated = `${existing}${newline}${linesMissing.join('\n')}\n`;
-  await fs.outputFile(envPath, updated);
+    const newline = existing.endsWith('\n') || existing.length === 0 ? '' : '\n';
+    const updated = `${existing}${newline}${linesMissing.join('\n')}\n`;
+    await fs.outputFile(envPath, updated);
 }
 
 async function writeHelperFunctions(config: ProjectConfig) {
-  // Write error helper function
-  const errorHelperContent = `export function getErrorMessage(error: unknown): string {
+    // Write error helper function
+    const errorHelperContent = `export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
   if (error && typeof error === 'object' && 'message' in error) {
@@ -2481,13 +2481,13 @@ async function writeHelperFunctions(config: ProjectConfig) {
 }
 `;
 
-  const helperPath = path.join(config.projectPath, 'src/lib/error-helper.ts');
-  await fs.outputFile(helperPath, errorHelperContent);
+    const helperPath = path.join(config.projectPath, 'src/lib/error-helper.ts');
+    await fs.outputFile(helperPath, errorHelperContent);
 }
 
 async function updateSeedFileForAuth(config: ProjectConfig) {
-  // Update the seed file with proper auth test users
-  const seedContent = `import { PrismaClient } from '@prisma/client';
+    // Update the seed file with proper auth test users
+    const seedContent = `import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { APP_ROLES } from '../src/lib/roles';
 
@@ -2761,6 +2761,6 @@ main()
   });
 `;
 
-  const seedPath = path.join(config.projectPath, 'prisma/seed.ts');
-  await fs.outputFile(seedPath, seedContent);
+    const seedPath = path.join(config.projectPath, 'prisma/seed.ts');
+    await fs.outputFile(seedPath, seedContent);
 }

@@ -1,5 +1,5 @@
 // Main library exports for programmatic usage
-export { createProject, type ProjectConfig } from './commands/create.js';
+export { createProject, type ProjectConfig } from './commands/create/index.js';
 export { setupAuth } from './generators/auth-generator.js';
 export { setupDatabase } from './generators/database-generator.js';
 export { setupDeployment } from './generators/deployment-generator.js';

@@ -1,98 +1,101 @@
 import path from 'node:path';
 import { execa } from 'execa';
 import fs from 'fs-extra';
-import type { ProjectConfig } from '../commands/create.js';
+
+import type { ProjectConfig } from '../commands/create/types.js';
 import { generatePackageJson } from '../utils/package-json.js';
 
 export async function generateNextProject(config: ProjectConfig) {
-  await fs.ensureDir(config.projectPath);
+    await fs.ensureDir(config.projectPath);
 
-  const isMinimal = config.mode === 'minimal';
+    const isMinimal = config.mode === 'minimal';
 
-  await createNextAppStructure(config);
-  await generatePackageJson(config);
-  await setupTypeScript(config);
-  await setupTailwind(config);
-  await setupLinters(config);
-  await createNextjsConfig(config);
+    await createNextAppStructure(config);
+    await generatePackageJson(config);
+    await setupTypeScript(config);
+    await setupTailwind(config);
+    await setupLinters(config);
+    await createNextjsConfig(config);
 
-  if (isMinimal) {
-    await setupMinimalUILibraries(config);
-  } else {
-    await installDependencies(config);
-    await setupUILibraries(config);
-  }
+    if (isMinimal) {
+        await setupMinimalUILibraries(config);
+    } else {
+        await installDependencies(config);
+        await setupUILibraries(config);
+    }
 
-  await setupStateManagement(config);
-  await setupHooks(config);
+    await setupStateManagement(config);
+    await setupHooks(config);
 
-  if (!isMinimal) {
-    await setupHusky(config);
-  }
+    if (!isMinimal) {
+        await setupHusky(config);
+    }
 
-  await createInitialPages(config);
+    await createInitialPages(config);
 }
 
 async function createNextAppStructure(config: ProjectConfig) {
-  const dirs = [
-    'src/app',
-    'src/components',
-    'src/components/ui',
-    'src/lib',
-    'src/hooks',
-    'src/styles',
-    'public',
-  ];
+    const dirs = [
+        'src/app',
+        'src/components',
+        'src/components/ui',
+        'src/lib',
+        'src/hooks',
+        'src/styles',
+        'public',
+    ];
 
-  for (const dir of dirs) {
-    await fs.ensureDir(path.join(config.projectPath, dir));
-  }
+    for (const dir of dirs) {
+        await fs.ensureDir(path.join(config.projectPath, dir));
+    }
 }
 
 async function setupTypeScript(config: ProjectConfig) {
-  const tsConfig = {
-    compilerOptions: {
-      lib: ['dom', 'dom.iterable', 'esnext'],
-      allowJs: true,
-      skipLibCheck: true,
-      strict: true,
-      noEmit: true,
-      esModuleInterop: true,
-      module: 'esnext',
-      moduleResolution: 'bundler',
-      resolveJsonModule: true,
-      isolatedModules: true,
-      jsx: 'preserve',
-      incremental: true,
-      plugins: [
-        {
-          name: 'next',
+    const tsConfig = {
+        compilerOptions: {
+            lib: ['dom', 'dom.iterable', 'esnext'],
+            allowJs: true,
+            skipLibCheck: true,
+            strict: true,
+            noEmit: true,
+            esModuleInterop: true,
+            module: 'esnext',
+            moduleResolution: 'bundler',
+            resolveJsonModule: true,
+            isolatedModules: true,
+            jsx: 'preserve',
+            incremental: true,
+            plugins: [
+                {
+                    name: 'next',
+                },
+            ],
+            paths: {
+                '@/*': ['./src/*'],
+            },
         },
-      ],
-      paths: {
-        '@/*': ['./src/*'],
-      },
-    },
-    include: ['next-env.d.ts', '**/*.ts', '**/*.tsx', '.next/types/**/*.ts'],
-    exclude: ['node_modules'],
-  };
+        include: ['next-env.d.ts', '**/*.ts', '**/*.tsx', '.next/types/**/*.ts'],
+        exclude: ['node_modules'],
+    };
 
-  await fs.writeJSON(path.join(config.projectPath, 'tsconfig.json'), tsConfig, { spaces: 2 });
+    await fs.writeJSON(path.join(config.projectPath, 'tsconfig.json'), tsConfig, {
+        spaces: 2,
+    });
 
-  // Create next-env.d.ts
-  const nextEnvContent = `/// <reference types="next" />
+    // Create next-env.d.ts
+    const nextEnvContent = `/// <reference types="next" />
 /// <reference types="next/image-types/global" />
 
 // NOTE: This file should not be edited
 // see https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'next-env.d.ts'), nextEnvContent);
+    await fs.writeFile(path.join(config.projectPath, 'next-env.d.ts'), nextEnvContent);
 }
 
 async function setupTailwind(config: ProjectConfig) {
-  // Tailwind CSS v4 uses PostCSS config instead of tailwind.config.ts
-  const postcssConfig = `const config = {
+    // Tailwind CSS v4 uses PostCSS config instead of tailwind.config.ts
+    const postcssConfig = `const config = {
   plugins: {
     "@tailwindcss/postcss": {}
   }
@@ -101,9 +104,9 @@ async function setupTailwind(config: ProjectConfig) {
 export default config;
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'postcss.config.mjs'), postcssConfig);
+    await fs.writeFile(path.join(config.projectPath, 'postcss.config.mjs'), postcssConfig);
 
-  const tailwindContent = `@import "tailwindcss";
+    const tailwindContent = `@import "tailwindcss";
 
 /* Tailwind v4 dark mode with class selector */
 @variant dark (&:is(.dark *));
@@ -186,137 +189,139 @@ body {
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/app/globals.css'), tailwindContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/app/globals.css'), tailwindContent);
 
-  // PostCSS not needed with Next.js 15.5+ and Tailwind CSS v4
+    // PostCSS not needed with Next.js 15.5+ and Tailwind CSS v4
 }
 
 async function setupLinters(config: ProjectConfig) {
-  // Biome config
-  const biomeConfig = {
-    $schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
-    vcs: {
-      enabled: true,
-      clientKind: 'git',
-      useIgnoreFile: true,
-    },
-    files: {
-      ignore: ['node_modules', '.next', 'dist', '*.min.js', 'coverage'],
-    },
-    formatter: {
-      enabled: true,
-      formatWithErrors: false,
-      indentStyle: 'space',
-      indentWidth: 2,
-      lineEnding: 'lf',
-      lineWidth: 100,
-    },
-    organizeImports: {
-      enabled: true,
-    },
-    linter: {
-      enabled: true,
-      rules: {
-        recommended: true,
-        complexity: {
-          noExtraBooleanCast: 'error',
-          noMultipleSpacesInRegularExpressionLiterals: 'error',
-          noUselessCatch: 'error',
-          noWith: 'error',
-          useArrowFunction: 'error',
+    // Biome config
+    const biomeConfig = {
+        $schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
+        vcs: {
+            enabled: true,
+            clientKind: 'git',
+            useIgnoreFile: true,
         },
-        correctness: {
-          noConstAssign: 'error',
-          noConstantCondition: 'error',
-          noEmptyCharacterClassInRegex: 'error',
-          noEmptyPattern: 'error',
-          noGlobalObjectCalls: 'error',
-          noInvalidConstructorSuper: 'error',
-          noInvalidUseBeforeDeclaration: 'error',
-          noNewSymbol: 'error',
-          noPrecisionLoss: 'error',
-          noSelfAssign: 'error',
-          noSetterReturn: 'error',
-          noSwitchDeclarations: 'error',
-          noUndeclaredVariables: 'error',
-          noUnreachable: 'error',
-          noUnreachableSuper: 'error',
-          noUnsafeFinally: 'error',
-          noUnsafeOptionalChaining: 'error',
-          noUnusedLabels: 'error',
-          noUnusedVariables: 'error',
-          useIsNan: 'error',
-          useValidForDirection: 'error',
-          useYield: 'error',
+        files: {
+            ignore: ['node_modules', '.next', 'dist', '*.min.js', 'coverage'],
         },
-        style: {
-          noCommaOperator: 'error',
-          noNamespace: 'error',
-          noNonNullAssertion: 'warn',
-          noParameterAssign: 'error',
-          noVar: 'error',
-          useAsConstAssertion: 'error',
-          useBlockStatements: 'error',
-          useConst: 'error',
-          useDefaultParameterLast: 'error',
-          useExponentiationOperator: 'error',
-          useNumericLiterals: 'error',
-          useShorthandAssign: 'error',
-          useSingleVarDeclarator: 'error',
-          useTemplate: 'error',
+        formatter: {
+            enabled: true,
+            formatWithErrors: false,
+            indentStyle: 'space',
+            indentWidth: 2,
+            lineEnding: 'lf',
+            lineWidth: 100,
         },
-        suspicious: {
-          noAsyncPromiseExecutor: 'error',
-          noCatchAssign: 'error',
-          noClassAssign: 'error',
-          noCompareNegZero: 'error',
-          noConfusingLabels: 'error',
-          noControlCharactersInRegex: 'error',
-          noDebugger: 'error',
-          noDoubleEquals: 'error',
-          noDuplicateCase: 'error',
-          noDuplicateClassMembers: 'error',
-          noDuplicateJsxProps: 'error',
-          noDuplicateObjectKeys: 'error',
-          noDuplicateParameters: 'error',
-          noEmptyBlockStatements: 'error',
-          noFallthroughSwitchClause: 'error',
-          noFunctionAssign: 'error',
-          noGlobalAssign: 'error',
-          noImportAssign: 'error',
-          noLabelVar: 'error',
-          noMisleadingCharacterClass: 'error',
-          noPrototypeBuiltins: 'error',
-          noRedeclare: 'error',
-          noSelfCompare: 'error',
-          noShadowRestrictedNames: 'error',
-          noUnsafeNegation: 'error',
-          useDefaultSwitchClauseLast: 'error',
-          useValidTypeof: 'error',
+        organizeImports: {
+            enabled: true,
         },
-      },
-    },
-    javascript: {
-      formatter: {
-        quoteStyle: 'single',
-        jsxQuoteStyle: 'double',
-        quoteProperties: 'asNeeded',
-        trailingCommas: 'es5',
-        semicolons: 'always',
-        arrowParentheses: 'always',
-        bracketSameLine: false,
-        bracketSpacing: true,
-      },
-    },
-  };
+        linter: {
+            enabled: true,
+            rules: {
+                recommended: true,
+                complexity: {
+                    noExtraBooleanCast: 'error',
+                    noMultipleSpacesInRegularExpressionLiterals: 'error',
+                    noUselessCatch: 'error',
+                    noWith: 'error',
+                    useArrowFunction: 'error',
+                },
+                correctness: {
+                    noConstAssign: 'error',
+                    noConstantCondition: 'error',
+                    noEmptyCharacterClassInRegex: 'error',
+                    noEmptyPattern: 'error',
+                    noGlobalObjectCalls: 'error',
+                    noInvalidConstructorSuper: 'error',
+                    noInvalidUseBeforeDeclaration: 'error',
+                    noNewSymbol: 'error',
+                    noPrecisionLoss: 'error',
+                    noSelfAssign: 'error',
+                    noSetterReturn: 'error',
+                    noSwitchDeclarations: 'error',
+                    noUndeclaredVariables: 'error',
+                    noUnreachable: 'error',
+                    noUnreachableSuper: 'error',
+                    noUnsafeFinally: 'error',
+                    noUnsafeOptionalChaining: 'error',
+                    noUnusedLabels: 'error',
+                    noUnusedVariables: 'error',
+                    useIsNan: 'error',
+                    useValidForDirection: 'error',
+                    useYield: 'error',
+                },
+                style: {
+                    noCommaOperator: 'error',
+                    noNamespace: 'error',
+                    noNonNullAssertion: 'warn',
+                    noParameterAssign: 'error',
+                    noVar: 'error',
+                    useAsConstAssertion: 'error',
+                    useBlockStatements: 'error',
+                    useConst: 'error',
+                    useDefaultParameterLast: 'error',
+                    useExponentiationOperator: 'error',
+                    useNumericLiterals: 'error',
+                    useShorthandAssign: 'error',
+                    useSingleVarDeclarator: 'error',
+                    useTemplate: 'error',
+                },
+                suspicious: {
+                    noAsyncPromiseExecutor: 'error',
+                    noCatchAssign: 'error',
+                    noClassAssign: 'error',
+                    noCompareNegZero: 'error',
+                    noConfusingLabels: 'error',
+                    noControlCharactersInRegex: 'error',
+                    noDebugger: 'error',
+                    noDoubleEquals: 'error',
+                    noDuplicateCase: 'error',
+                    noDuplicateClassMembers: 'error',
+                    noDuplicateJsxProps: 'error',
+                    noDuplicateObjectKeys: 'error',
+                    noDuplicateParameters: 'error',
+                    noEmptyBlockStatements: 'error',
+                    noFallthroughSwitchClause: 'error',
+                    noFunctionAssign: 'error',
+                    noGlobalAssign: 'error',
+                    noImportAssign: 'error',
+                    noLabelVar: 'error',
+                    noMisleadingCharacterClass: 'error',
+                    noPrototypeBuiltins: 'error',
+                    noRedeclare: 'error',
+                    noSelfCompare: 'error',
+                    noShadowRestrictedNames: 'error',
+                    noUnsafeNegation: 'error',
+                    useDefaultSwitchClauseLast: 'error',
+                    useValidTypeof: 'error',
+                },
+            },
+        },
+        javascript: {
+            formatter: {
+                quoteStyle: 'single',
+                jsxQuoteStyle: 'double',
+                quoteProperties: 'asNeeded',
+                trailingCommas: 'es5',
+                semicolons: 'always',
+                arrowParentheses: 'always',
+                bracketSameLine: false,
+                bracketSpacing: true,
+            },
+        },
+    };
 
-  await fs.writeJSON(path.join(config.projectPath, 'biome.json'), biomeConfig, { spaces: 2 });
+    await fs.writeJSON(path.join(config.projectPath, 'biome.json'), biomeConfig, {
+        spaces: 2,
+    });
 }
 
 async function setupMinimalUILibraries(config: ProjectConfig) {
-  console.log('  • Creating minimal UI component stubs...');
+    console.log('  • Creating minimal UI component stubs...');
 
-  const utilsContent = `import { type ClassValue, clsx } from 'clsx';
+    const utilsContent = `import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -324,34 +329,34 @@ export function cn(...inputs: ClassValue[]) {
 }
 `;
 
-  await fs.outputFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
+    await fs.outputFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
 
-  const componentsConfig = {
-    $schema: 'https://ui.shadcn.com/schema.json',
-    style: 'new-york',
-    rsc: true,
-    tsx: true,
-    tailwind: {
-      css: 'src/app/globals.css',
-      baseColor: 'neutral',
-      cssVariables: true,
-      prefix: '',
-    },
-    aliases: {
-      components: '@/components',
-      utils: '@/lib/utils',
-      ui: '@/components/ui',
-      lib: '@/lib',
-      hooks: '@/hooks',
-    },
-  } as const;
+    const componentsConfig = {
+        $schema: 'https://ui.shadcn.com/schema.json',
+        style: 'new-york',
+        rsc: true,
+        tsx: true,
+        tailwind: {
+            css: 'src/app/globals.css',
+            baseColor: 'neutral',
+            cssVariables: true,
+            prefix: '',
+        },
+        aliases: {
+            components: '@/components',
+            utils: '@/lib/utils',
+            ui: '@/components/ui',
+            lib: '@/lib',
+            hooks: '@/hooks',
+        },
+    } as const;
 
-  await fs.writeJSON(path.join(config.projectPath, 'components.json'), componentsConfig, {
-    spaces: 2,
-  });
+    await fs.writeJSON(path.join(config.projectPath, 'components.json'), componentsConfig, {
+        spaces: 2,
+    });
 
-  const files: Record<string, string> = {
-    'src/components/ui/button.tsx': `import type { ButtonHTMLAttributes } from 'react';
+    const files: Record<string, string> = {
+        'src/components/ui/button.tsx': `import type { ButtonHTMLAttributes } from 'react';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'secondary' | 'outline';
@@ -363,7 +368,7 @@ export function Button({ variant: _variant, ...props }: ButtonProps) {
 
 export default Button;
 `,
-    'src/components/ui/card.tsx': `import type { HTMLAttributes } from 'react';
+        'src/components/ui/card.tsx': `import type { HTMLAttributes } from 'react';
 
 export function Card(props: HTMLAttributes<HTMLDivElement>) {
   return <div {...props} />;
@@ -385,13 +390,13 @@ export function CardContent(props: HTMLAttributes<HTMLDivElement>) {
   return <div {...props} />;
 }
 `,
-    'src/components/ui/badge.tsx': `import type { HTMLAttributes } from 'react';
+        'src/components/ui/badge.tsx': `import type { HTMLAttributes } from 'react';
 
 export function Badge(props: HTMLAttributes<HTMLSpanElement>) {
   return <span {...props} />;
 }
 `,
-    'src/components/ui/dialog.tsx': `import type { HTMLAttributes } from 'react';
+        'src/components/ui/dialog.tsx': `import type { HTMLAttributes } from 'react';
 
 export function Dialog(props: HTMLAttributes<HTMLDivElement>) {
   return <div {...props} />;
@@ -413,7 +418,7 @@ export function DialogTitle(props: HTMLAttributes<HTMLHeadingElement>) {
   return <h2 {...props} />;
 }
 `,
-    'src/components/ui/input.tsx': `import { forwardRef } from 'react';
+        'src/components/ui/input.tsx': `import { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement>;
@@ -422,7 +427,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(pro
   return <input ref={ref} {...props} />;
 });
 `,
-    'src/components/ui/textarea.tsx': `import { forwardRef } from 'react';
+        'src/components/ui/textarea.tsx': `import { forwardRef } from 'react';
 import type { TextareaHTMLAttributes } from 'react';
 
 export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
@@ -434,7 +439,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   return <textarea ref={ref} {...props} />;
 });
 `,
-    'src/components/ui/table.tsx': `import type {
+        'src/components/ui/table.tsx': `import type {
   HTMLAttributes,
   TableHTMLAttributes,
   TdHTMLAttributes,
@@ -465,7 +470,7 @@ export function TableCell(props: TdHTMLAttributes<HTMLTableCellElement>) {
   return <td {...props} />;
 }
 `,
-    'src/components/ui/select.tsx': `import type { ChangeEvent, HTMLAttributes, ReactNode } from 'react';
+        'src/components/ui/select.tsx': `import type { ChangeEvent, HTMLAttributes, ReactNode } from 'react';
 
 export interface SelectProps {
   value?: string;
@@ -507,7 +512,7 @@ export function SelectValue({ placeholder, value }: { placeholder?: string; valu
   return <span data-select="value">{value ?? placeholder ?? ''}</span>;
 }
 `,
-    'src/components/ui/label.tsx': `import type { LabelHTMLAttributes } from 'react';
+        'src/components/ui/label.tsx': `import type { LabelHTMLAttributes } from 'react';
 
 export type LabelProps = LabelHTMLAttributes<HTMLLabelElement>;
 
@@ -515,7 +520,7 @@ export function Label(props: LabelProps) {
   return <label {...props} />;
 }
 `,
-    'src/components/ui/alert.tsx': `import type { HTMLAttributes } from 'react';
+        'src/components/ui/alert.tsx': `import type { HTMLAttributes } from 'react';
 
 export function Alert(props: HTMLAttributes<HTMLDivElement>) {
   return <div role="alert" {...props} />;
@@ -525,13 +530,13 @@ export function AlertDescription(props: HTMLAttributes<HTMLParagraphElement>) {
   return <p {...props} />;
 }
 `,
-    'src/components/ui/separator.tsx': `import type { HTMLAttributes } from 'react';
+        'src/components/ui/separator.tsx': `import type { HTMLAttributes } from 'react';
 
 export function Separator(props: HTMLAttributes<HTMLHRElement>) {
   return <hr {...props} />;
 }
 `,
-    'src/components/ui/avatar.tsx': `import type { HTMLAttributes, ImgHTMLAttributes } from 'react';
+        'src/components/ui/avatar.tsx': `import type { HTMLAttributes, ImgHTMLAttributes } from 'react';
 
 export function Avatar(props: HTMLAttributes<HTMLDivElement>) {
   return <div {...props} />;
@@ -545,7 +550,7 @@ export function AvatarFallback(props: HTMLAttributes<HTMLSpanElement>) {
   return <span {...props} />;
 }
 `,
-    'src/components/ui/kibo-ui/announcement.tsx': `import type { HTMLAttributes } from 'react';
+        'src/components/ui/kibo-ui/announcement.tsx': `import type { HTMLAttributes } from 'react';
 
 export function Announcement(props: HTMLAttributes<HTMLDivElement>) {
   return <div role="status" {...props} />;
@@ -559,7 +564,7 @@ export function AnnouncementTitle(props: HTMLAttributes<HTMLParagraphElement>) {
   return <p {...props} />;
 }
 `,
-    'src/components/ui/kibo-ui/theme-switcher.tsx': `import type { ChangeEvent } from 'react';
+        'src/components/ui/kibo-ui/theme-switcher.tsx': `import type { ChangeEvent } from 'react';
 
 export interface ThemeSwitcherProps {
   value: 'light' | 'dark' | 'system';
@@ -583,7 +588,7 @@ export function ThemeSwitcher({ value, onChange }: ThemeSwitcherProps) {
   );
 }
 `,
-    'src/components/ui/dropdown-menu.tsx': `'use client';
+        'src/components/ui/dropdown-menu.tsx': `'use client';
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
@@ -811,16 +816,16 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 };`,
-  };
+    };
 
-  for (const [relativePath, content] of Object.entries(files)) {
-    await fs.outputFile(path.join(config.projectPath, relativePath), content);
-  }
+    for (const [relativePath, content] of Object.entries(files)) {
+        await fs.outputFile(path.join(config.projectPath, relativePath), content);
+    }
 }
 
 async function setupUILibraries(config: ProjectConfig) {
-  // Create utils.ts file
-  const utilsContent = `import { type ClassValue, clsx } from 'clsx';
+    // Create utils.ts file
+    const utilsContent = `import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -828,50 +833,50 @@ export function cn(...inputs: ClassValue[]) {
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
 
-  console.log('  • Installing UI component library...');
+    console.log('  • Installing UI component library...');
 
-  // Copy pre-verified UI components from templates
-  const templatesPath = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    '../../templates/nextjs-ui-components'
-  );
-  const targetPath = path.join(config.projectPath, 'src/components/ui');
+    // Copy pre-verified UI components from templates
+    const templatesPath = path.join(
+        path.dirname(new URL(import.meta.url).pathname),
+        '../templates/nextjs-ui-components'
+    );
+    const targetPath = path.join(config.projectPath, 'src/components/ui');
 
-  await fs.ensureDir(targetPath);
-  await fs.copy(templatesPath, targetPath, { overwrite: true });
+    await fs.ensureDir(targetPath);
+    await fs.copy(templatesPath, targetPath, { overwrite: true });
 
-  console.log('  • Installed verified UI components');
+    console.log('  • Installed verified UI components');
 }
 
 async function setupHooks(config: ProjectConfig) {
-  // Copy pre-verified hooks from templates
-  const hooksTemplatePath = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    '../../templates/nextjs-hooks'
-  );
-  const targetHooksPath = path.join(config.projectPath, 'src/hooks');
-  await fs.ensureDir(targetHooksPath);
+    // Copy pre-verified hooks from templates
+    const hooksTemplatePath = path.join(
+        path.dirname(new URL(import.meta.url).pathname),
+        '../templates/nextjs-hooks'
+    );
+    const targetHooksPath = path.join(config.projectPath, 'src/hooks');
+    await fs.ensureDir(targetHooksPath);
 
-  // Check if hooks template exists and has files
-  if (await fs.pathExists(hooksTemplatePath)) {
-    await fs.copy(hooksTemplatePath, targetHooksPath, { overwrite: true });
-  }
+    // Check if hooks template exists and has files
+    if (await fs.pathExists(hooksTemplatePath)) {
+        await fs.copy(hooksTemplatePath, targetHooksPath, { overwrite: true });
+    }
 }
 
 async function setupStateManagement(config: ProjectConfig) {
-  // Jotai store
-  const storeContent = `import { atom } from 'jotai';
+    // Jotai store
+    const storeContent = `import { atom } from 'jotai';
 
 export const countAtom = atom(0);
 export const themeAtom = atom<'light' | 'dark'>('light');
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/lib/store.ts'), storeContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/lib/store.ts'), storeContent);
 
-  // Providers
-  const providersContent = `'use client';
+    // Providers
+    const providersContent = `'use client';
 
 import type { ReactNode } from 'react';
 import { Provider as JotaiProvider } from 'jotai';
@@ -893,30 +898,30 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 `;
 
-  await fs.writeFile(
-    path.join(config.projectPath, 'src/components/providers.tsx'),
-    providersContent
-  );
+    await fs.writeFile(
+        path.join(config.projectPath, 'src/components/providers.tsx'),
+        providersContent
+    );
 }
 
 async function setupHusky(config: ProjectConfig) {
-  // Initialize husky (prepare script is already in package.json)
-  try {
-    await execa(config.packageManager, ['run', 'prepare'], {
-      cwd: config.projectPath,
-      stdio: 'inherit',
-    });
-  } catch (_error) {
-    // If husky init fails, it's not critical - continue with setup
-    console.log('  • Note: Husky initialization will complete on next install');
-  }
+    // Initialize husky (prepare script is already in package.json)
+    try {
+        await execa(config.packageManager, ['run', 'prepare'], {
+            cwd: config.projectPath,
+            stdio: 'inherit',
+        });
+    } catch (_error) {
+        // If husky init fails, it's not critical - continue with setup
+        console.log('  • Note: Husky initialization will complete on next install');
+    }
 
-  // Create .husky directory
-  const huskyDir = path.join(config.projectPath, '.husky');
-  await fs.ensureDir(huskyDir);
+    // Create .husky directory
+    const huskyDir = path.join(config.projectPath, '.husky');
+    await fs.ensureDir(huskyDir);
 
-  // Pre-commit hook
-  const preCommitContent = `#!/usr/bin/env sh
+    // Pre-commit hook
+    const preCommitContent = `#!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
 echo "🔍 Running pre-commit checks..."
@@ -936,14 +941,14 @@ ${config.packageManager} run build
 echo "✅ Pre-commit checks completed!"
 `;
 
-  const preCommitPath = path.join(huskyDir, 'pre-commit');
-  await fs.writeFile(preCommitPath, preCommitContent);
-  await fs.chmod(preCommitPath, '755');
+    const preCommitPath = path.join(huskyDir, 'pre-commit');
+    await fs.writeFile(preCommitPath, preCommitContent);
+    await fs.chmod(preCommitPath, '755');
 }
 
 async function createNextjsConfig(config: ProjectConfig) {
-  // Next.js config
-  const nextConfigContent = `/** @type {import('next').NextConfig} */
+    // Next.js config
+    const nextConfigContent = `/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -954,17 +959,17 @@ const nextConfig = {
 export default nextConfig;
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'next.config.mjs'), nextConfigContent);
+    await fs.writeFile(path.join(config.projectPath, 'next.config.mjs'), nextConfigContent);
 
-  // Environment variables
-  const envContent = `# Environment variables
+    // Environment variables
+    const envContent = `# Environment variables
 NODE_ENV=development
 `;
 
-  await fs.writeFile(path.join(config.projectPath, '.env.local'), envContent);
+    await fs.writeFile(path.join(config.projectPath, '.env.local'), envContent);
 
-  // Gitignore
-  const gitignoreContent = `# Dependencies
+    // Gitignore
+    const gitignoreContent = `# Dependencies
 /node_modules
 /.pnp
 .pnp.js
@@ -1001,12 +1006,12 @@ yarn-error.log*
 next-env.d.ts
 `;
 
-  await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
+    await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
 }
 
 async function createInitialPages(config: ProjectConfig) {
-  // Layout
-  const layoutContent = `import type { Metadata } from 'next';
+    // Layout
+    const layoutContent = `import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import { Providers } from '@/components/providers';
@@ -1034,10 +1039,10 @@ export default function RootLayout({
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/app/layout.tsx'), layoutContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/app/layout.tsx'), layoutContent);
 
-  // Homepage with optional database demo
-  const pageContent = `'use client';
+    // Homepage with optional database demo
+    const pageContent = `'use client';
 
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -1058,8 +1063,8 @@ import {
   AnnouncementTitle,
 } from '@/components/ui/kibo-ui/announcement';
 import { ThemeSwitcher } from '@/components/ui/kibo-ui/theme-switcher';${
-    config.database !== 'none' ? "\nimport DatabaseDemo from '@/components/database-demo';" : ''
-  }
+        config.database !== 'none' ? "\nimport DatabaseDemo from '@/components/database-demo';" : ''
+    }
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -1136,11 +1141,11 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>${
-          config.database !== 'none'
-            ? `
+            config.database !== 'none'
+                ? `
 
         <DatabaseDemo />`
-            : ''
+                : ''
         }
       </div>
     </main>
@@ -1148,18 +1153,18 @@ export default function Home() {
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/app/page.tsx'), pageContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/app/page.tsx'), pageContent);
 }
 
 async function installDependencies(config: ProjectConfig) {
-  console.log('  • Installing dependencies...');
+    console.log('  • Installing dependencies...');
 
-  try {
-    await execa(config.packageManager, ['install'], {
-      cwd: config.projectPath,
-      stdio: 'inherit',
-    });
-  } catch (error) {
-    throw new Error(`Failed to install dependencies: ${(error as Error).message}`);
-  }
+    try {
+        await execa(config.packageManager, ['install'], {
+            cwd: config.projectPath,
+            stdio: 'inherit',
+        });
+    } catch (error) {
+        throw new Error(`Failed to install dependencies: ${(error as Error).message}`);
+    }
 }

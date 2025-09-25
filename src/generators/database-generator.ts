@@ -1,66 +1,66 @@
 import path from 'node:path';
 import fs from 'fs-extra';
-import type { ProjectConfig } from '../commands/create.js';
+import type { ProjectConfig } from '../commands/create/types.js';
 
 export async function setupDatabase(config: ProjectConfig) {
-  if (config.database === 'turso') {
-    await setupTurso(config);
-  } else if (config.database === 'supabase') {
-    await setupSupabase(config);
-  }
+    if (config.database === 'turso') {
+        await setupTurso(config);
+    } else if (config.database === 'supabase') {
+        await setupSupabase(config);
+    }
 
-  // Setup ORM
-  if (config.orm === 'prisma') {
-    await setupPrismaWithPost(config);
-  } else if (config.orm === 'drizzle') {
-    await setupDrizzleWithPost(config);
-  }
+    // Setup ORM
+    if (config.orm === 'prisma') {
+        await setupPrismaWithPost(config);
+    } else if (config.orm === 'drizzle') {
+        await setupDrizzleWithPost(config);
+    }
 
-  // Add database scripts to package.json
-  await addDatabaseScripts(config);
+    // Add database scripts to package.json
+    await addDatabaseScripts(config);
 
-  // Create API routes and UI for database demo
-  if (config.framework === 'nextjs' && config.database !== 'none') {
-    await createDatabaseDemoUI(config);
-  }
+    // Create API routes and UI for database demo
+    if (config.framework === 'nextjs' && config.database !== 'none') {
+        await createDatabaseDemoUI(config);
+    }
 
-  // Add post-install script for Turso database initialization
-  if (config.database === 'turso' && config.orm === 'prisma') {
-    await addPostInstallScript(config);
-  }
+    // Add post-install script for Turso database initialization
+    if (config.database === 'turso' && config.orm === 'prisma') {
+        await addPostInstallScript(config);
+    }
 }
 
 async function setupTurso(config: ProjectConfig) {
-  // Create database directory
-  await fs.ensureDir(path.join(config.projectPath, 'prisma'));
+    // Create database directory
+    await fs.ensureDir(path.join(config.projectPath, 'prisma'));
 
-  // Set up local Turso database with automatic configuration
-  const localDbPath = './prisma/dev.db';
+    // Set up local Turso database with automatic configuration
+    const localDbPath = './prisma/dev.db';
 
-  // Create comprehensive environment variables for local and cloud
-  const envContent = `
+    // Create comprehensive environment variables for local and cloud
+    const envContent = `
 # Turso Database - Local Development
-TURSO_DATABASE_URL="file:${localDbPath}"
+TURSO_DATABASE_URL="file://${localDbPath}"
 TURSO_AUTH_TOKEN=""
-DATABASE_URL="file:${localDbPath}"
+DATABASE_URL="file://${localDbPath}"
 
 # Turso Cloud - Production/Staging/Development
 # These will be automatically set during deployment
 # Run 'pnpm run setup:turso:cloud' to create cloud databases
 `;
 
-  // Write to .env for Prisma CLI compatibility
-  const envPath = path.join(config.projectPath, '.env');
-  const existingEnv = await fs.readFile(envPath, 'utf-8').catch(() => '');
-  await fs.writeFile(envPath, existingEnv + envContent);
+    // Write to .env for Prisma CLI compatibility
+    const envPath = path.join(config.projectPath, '.env');
+    const existingEnv = await fs.readFile(envPath, 'utf-8').catch(() => '');
+    await fs.writeFile(envPath, existingEnv + envContent);
 
-  // Also write to .env.local for Next.js
-  const envLocalPath = path.join(config.projectPath, '.env.local');
-  const existingEnvLocal = await fs.readFile(envLocalPath, 'utf-8').catch(() => '');
-  await fs.writeFile(envLocalPath, existingEnvLocal + envContent);
+    // Also write to .env.local for Next.js
+    const envLocalPath = path.join(config.projectPath, '.env.local');
+    const existingEnvLocal = await fs.readFile(envLocalPath, 'utf-8').catch(() => '');
+    await fs.writeFile(envLocalPath, existingEnvLocal + envContent);
 
-  // Create comprehensive Turso setup script for local and cloud
-  const setupScriptContent = `#!/usr/bin/env bash
+    // Create comprehensive Turso setup script for local and cloud
+    const setupScriptContent = `#!/usr/bin/env bash
 set -e
 
 PROJECT_NAME="${config.projectName}"
@@ -172,18 +172,18 @@ echo "   3. Run '${config.packageManager} run setup:turso:cloud' to set up cloud
 echo "   4. Run '${config.packageManager} run deploy' to deploy to Vercel"
 `;
 
-  const scriptPath = path.join(config.projectPath, 'scripts', 'setup-turso.sh');
-  await fs.ensureDir(path.dirname(scriptPath));
-  await fs.writeFile(scriptPath, setupScriptContent);
-  await fs.chmod(scriptPath, '755');
+    const scriptPath = path.join(config.projectPath, 'scripts', 'setup-turso.sh');
+    await fs.ensureDir(path.dirname(scriptPath));
+    await fs.writeFile(scriptPath, setupScriptContent);
+    await fs.chmod(scriptPath, '755');
 }
 
 async function setupSupabase(config: ProjectConfig) {
-  // Create supabase directory
-  await fs.ensureDir(path.join(config.projectPath, 'supabase'));
+    // Create supabase directory
+    await fs.ensureDir(path.join(config.projectPath, 'supabase'));
 
-  // Supabase environment variables
-  const envContent = `
+    // Supabase environment variables
+    const envContent = `
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL="https://[project-id].supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="[anon-key]"
@@ -191,18 +191,18 @@ SUPABASE_SERVICE_ROLE_KEY="[service-role-key]"
 DATABASE_URL="postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres"
 `;
 
-  // Write to .env for Prisma CLI compatibility
-  const envPath = path.join(config.projectPath, '.env');
-  const existingEnv = await fs.readFile(envPath, 'utf-8').catch(() => '');
-  await fs.writeFile(envPath, existingEnv + envContent);
+    // Write to .env for Prisma CLI compatibility
+    const envPath = path.join(config.projectPath, '.env');
+    const existingEnv = await fs.readFile(envPath, 'utf-8').catch(() => '');
+    await fs.writeFile(envPath, existingEnv + envContent);
 
-  // Also write to .env.local for Next.js
-  const envLocalPath = path.join(config.projectPath, '.env.local');
-  const existingEnvLocal = await fs.readFile(envLocalPath, 'utf-8').catch(() => '');
-  await fs.writeFile(envLocalPath, existingEnvLocal + envContent);
+    // Also write to .env.local for Next.js
+    const envLocalPath = path.join(config.projectPath, '.env.local');
+    const existingEnvLocal = await fs.readFile(envLocalPath, 'utf-8').catch(() => '');
+    await fs.writeFile(envLocalPath, existingEnvLocal + envContent);
 
-  // Supabase client
-  const supabaseClientContent = `import { createClient } from '@supabase/supabase-js';
+    // Supabase client
+    const supabaseClientContent = `import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -210,10 +210,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/lib/supabase.ts'), supabaseClientContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/lib/supabase.ts'), supabaseClientContent);
 
-  // Supabase setup script
-  const setupScriptContent = `#!/usr/bin/env bash
+    // Supabase setup script
+    const setupScriptContent = `#!/usr/bin/env bash
 set -e
 
 echo "🚀 Setting up Supabase project..."
@@ -244,28 +244,28 @@ echo "   supabase projects create ${config.projectName}"
 echo "   supabase link --project-ref [project-id]"
 `;
 
-  const scriptPath = path.join(config.projectPath, 'scripts', 'setup-supabase.sh');
-  await fs.ensureDir(path.dirname(scriptPath));
-  await fs.writeFile(scriptPath, setupScriptContent);
-  await fs.chmod(scriptPath, '755');
+    const scriptPath = path.join(config.projectPath, 'scripts', 'setup-supabase.sh');
+    await fs.ensureDir(path.dirname(scriptPath));
+    await fs.writeFile(scriptPath, setupScriptContent);
+    await fs.chmod(scriptPath, '755');
 }
 
 async function setupPrismaWithPost(config: ProjectConfig) {
-  await fs.ensureDir(path.join(config.projectPath, 'prisma'));
+    await fs.ensureDir(path.join(config.projectPath, 'prisma'));
 
-  // Prisma schema with Post model
-  let datasourceProvider = 'sqlite';
-  let datasourceUrl = '"file:./dev.db"';
+    // Prisma schema with Post model
+    let datasourceProvider = 'sqlite';
+    let datasourceUrl = '"file:./dev.db"';
 
-  if (config.database === 'turso') {
-    datasourceProvider = 'sqlite';
-    datasourceUrl = 'env("DATABASE_URL")';
-  } else if (config.database === 'supabase') {
-    datasourceProvider = 'postgresql';
-    datasourceUrl = 'env("DATABASE_URL")';
-  }
+    if (config.database === 'turso') {
+        datasourceProvider = 'sqlite';
+        datasourceUrl = 'env("DATABASE_URL")';
+    } else if (config.database === 'supabase') {
+        datasourceProvider = 'postgresql';
+        datasourceUrl = 'env("DATABASE_URL")';
+    }
 
-  const schemaContent = `// Prisma schema with Post model for demonstration
+    const schemaContent = `// Prisma schema with Post model for demonstration
 
 generator client {
   provider = "prisma-client-js"
@@ -348,8 +348,8 @@ model Verification {
 
   @@index([identifier])
 }${
-    config.auth
-      ? `
+        config.auth
+            ? `
 
 model Organization {
   id         String       @id @default(cuid())
@@ -389,14 +389,14 @@ model Invitation {
   @@index([email])
   @@index([organizationId])
 }`
-      : ''
-  }
+            : ''
+    }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'prisma/schema.prisma'), schemaContent);
+    await fs.writeFile(path.join(config.projectPath, 'prisma/schema.prisma'), schemaContent);
 
-  // Enhanced seed file with Posts
-  const seedContent = `import { PrismaClient } from '@prisma/client';
+    // Enhanced seed file with Posts
+    const seedContent = `import { PrismaClient } from '@prisma/client';
 ${config.auth ? "import bcrypt from 'bcryptjs';" : ''}
 
 const prisma = new PrismaClient();
@@ -405,12 +405,12 @@ async function main() {
   // Clean up existing data (handle empty database gracefully)
   try {
     await prisma.post.deleteMany();${
-      config.auth
-        ? `
+        config.auth
+            ? `
     await prisma.invitation.deleteMany();
     await prisma.member.deleteMany();
     await prisma.organization.deleteMany();`
-        : ''
+            : ''
     }
     await prisma.session.deleteMany();
     await prisma.account.deleteMany();
@@ -421,11 +421,11 @@ async function main() {
   }
 
   ${
-    config.auth
-      ? `
+      config.auth
+          ? `
   const hashedPassword = await bcrypt.hash('Demo123!', 12);
   `
-      : ''
+          : ''
   }
 
   // Create demo users
@@ -435,8 +435,8 @@ async function main() {
       name: 'Alice Johnson',
       emailVerified: true,
       ${
-        config.auth
-          ? `
+          config.auth
+              ? `
       accounts: {
         create: {
           providerId: 'email-password',
@@ -445,7 +445,7 @@ async function main() {
         },
       },
       `
-          : ''
+              : ''
       }
     },
   });
@@ -456,8 +456,8 @@ async function main() {
       name: 'Bob Smith',
       emailVerified: true,
       ${
-        config.auth
-          ? `
+          config.auth
+              ? `
       accounts: {
         create: {
           providerId: 'email-password',
@@ -466,7 +466,7 @@ async function main() {
         },
       },
       `
-          : ''
+              : ''
       }
     },
   });
@@ -476,8 +476,8 @@ async function main() {
       email: 'charlie@example.com',
       name: 'Charlie Brown',
       ${
-        config.auth
-          ? `
+          config.auth
+              ? `
       accounts: {
         create: {
           providerId: 'email-password',
@@ -486,7 +486,7 @@ async function main() {
         },
       },
       `
-          : ''
+              : ''
       }
     },
   });
@@ -533,8 +533,8 @@ async function main() {
   });
 
   ${
-    config.auth
-      ? `
+      config.auth
+          ? `
   // Create organizations and memberships
   const techCorp = await prisma.organization.create({
     data: {
@@ -573,7 +573,7 @@ async function main() {
     },
   });
   `
-      : ''
+          : ''
   }
 
   console.log('✅ Database seeded successfully!');
@@ -582,8 +582,8 @@ async function main() {
   console.log('   - 3 users');
   console.log('   - 5 posts (4 published, 1 draft)');
   ${
-    config.auth
-      ? `
+      config.auth
+          ? `
   console.log('   - 2 organizations');
   console.log('   - 4 memberships');
   console.log('   - 1 invitation');
@@ -593,7 +593,7 @@ async function main() {
   console.log('   - bob@example.com / Demo123! (member of Tech Corp, owner of Startup Inc)');
   console.log('   - charlie@example.com / Demo123! (member of Startup Inc)');
   `
-      : ''
+          : ''
   }
 }
 
@@ -608,11 +608,11 @@ main()
   });
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'prisma/seed.ts'), seedContent);
+    await fs.writeFile(path.join(config.projectPath, 'prisma/seed.ts'), seedContent);
 
-  // Database client for Turso
-  if (config.database === 'turso') {
-    const tursoClientContent = `import { PrismaClient } from '@prisma/client';
+    // Database client for Turso
+    if (config.database === 'turso') {
+        const tursoClientContent = `import { PrismaClient } from '@prisma/client';
 
 // For local development with Turso (SQLite), we use the standard Prisma client
 // No adapters needed for local SQLite files
@@ -623,9 +623,27 @@ const prisma = new PrismaClient({
 export default prisma;
 `;
 
-    await fs.writeFile(path.join(config.projectPath, 'src/lib/db.ts'), tursoClientContent);
-  } else {
-    const dbClientContent = `import { PrismaClient } from '@prisma/client';
+        await fs.writeFile(path.join(config.projectPath, 'src/lib/db.ts'), tursoClientContent);
+    } else {
+        const dbClientContent = `import { PrismaClient } from '@prisma/client';
+
+function normalizeSqliteUrl(url: string | undefined | null) {
+  if (!url) return undefined;
+  if (url.startsWith('file://')) {
+    const raw = url.slice('file://'.length);
+    return raw.startsWith('/') ? \`file:\${raw}\` : \`file:./\${raw.replace(/^\\.\\//g, '')}\`;
+  }
+  if (url.startsWith('file:') && !url.startsWith('file:/') && !url.startsWith('file:./')) {
+    const raw = url.slice('file:'.length);
+    return \`file:./\${raw.replace(/^\\.\\//g, '')}\`;
+  }
+  return url;
+}
+
+const normalizedDatabaseUrl = normalizeSqliteUrl(process.env.DATABASE_URL);
+if (normalizedDatabaseUrl) {
+  process.env.DATABASE_URL = normalizedDatabaseUrl;
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -642,15 +660,15 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 export default prisma;
 `;
 
-    await fs.writeFile(path.join(config.projectPath, 'src/lib/db.ts'), dbClientContent);
-  }
+        await fs.writeFile(path.join(config.projectPath, 'src/lib/db.ts'), dbClientContent);
+    }
 }
 
 async function setupDrizzleWithPost(config: ProjectConfig) {
-  await fs.ensureDir(path.join(config.projectPath, 'src/db'));
+    await fs.ensureDir(path.join(config.projectPath, 'src/db'));
 
-  // Drizzle config file
-  const drizzleConfigContent = `import { defineConfig } from 'drizzle-kit';
+    // Drizzle config file
+    const drizzleConfigContent = `import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
   schema: './src/db/schema.ts',
@@ -658,25 +676,25 @@ export default defineConfig({
   dialect: '${config.database === 'turso' ? 'sqlite' : 'postgresql'}',
   dbCredentials: {
     ${
-      config.database === 'turso'
-        ? `url: process.env.DATABASE_URL || 'file:./prisma/dev.db',`
-        : 'connectionString: process.env.DATABASE_URL!,'
+        config.database === 'turso'
+            ? `url: process.env.DATABASE_URL || 'file:./prisma/dev.db',`
+            : 'connectionString: process.env.DATABASE_URL!,'
     }
   },
 });
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'drizzle.config.ts'), drizzleConfigContent);
+    await fs.writeFile(path.join(config.projectPath, 'drizzle.config.ts'), drizzleConfigContent);
 
-  // Database schema with Post model
-  let schemaImports = '';
-  let schemaContent = '';
+    // Database schema with Post model
+    let schemaImports = '';
+    let schemaContent = '';
 
-  if (config.database === 'turso') {
-    schemaImports = `import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+    if (config.database === 'turso') {
+        schemaImports = `import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';`;
 
-    schemaContent = `
+        schemaContent = `
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().default(sql\`(lower(hex(randomblob(16))))\`),
   email: text('email').notNull().unique(),
@@ -724,10 +742,10 @@ export const sessions = sqliteTable('sessions', {
   createdAt: text('created_at').default(sql\`(current_timestamp)\`),
   updatedAt: text('updated_at').default(sql\`(current_timestamp)\`),
 });`;
-  } else {
-    schemaImports = `import { pgTable, text, boolean, timestamp, uuid } from 'drizzle-orm/pg-core';`;
+    } else {
+        schemaImports = `import { pgTable, text, boolean, timestamp, uuid } from 'drizzle-orm/pg-core';`;
 
-    schemaContent = `
+        schemaContent = `
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
@@ -775,9 +793,9 @@ export const sessions = pgTable('sessions', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });`;
-  }
+    }
 
-  const schemaFileContent = `${schemaImports}
+    const schemaFileContent = `${schemaImports}
 ${schemaContent}
 
 export type User = typeof users.$inferSelect;
@@ -790,13 +808,13 @@ export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/db/schema.ts'), schemaFileContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/db/schema.ts'), schemaFileContent);
 
-  // Drizzle database client
-  let dbClientContent = '';
+    // Drizzle database client
+    let dbClientContent = '';
 
-  if (config.database === 'turso') {
-    dbClientContent = `import { drizzle } from 'drizzle-orm/libsql';
+    if (config.database === 'turso') {
+        dbClientContent = `import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
 import * as schema from './schema';
 
@@ -807,8 +825,8 @@ const client = createClient({
 
 export const db = drizzle(client, { schema });
 `;
-  } else {
-    dbClientContent = `import { drizzle } from 'drizzle-orm/postgres-js';
+    } else {
+        dbClientContent = `import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
@@ -817,12 +835,12 @@ const client = postgres(connectionString);
 
 export const db = drizzle(client, { schema });
 `;
-  }
+    }
 
-  await fs.writeFile(path.join(config.projectPath, 'src/db/index.ts'), dbClientContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/db/index.ts'), dbClientContent);
 
-  // Seed file with Posts
-  const seedContent = `import { db } from './index';
+    // Seed file with Posts
+    const seedContent = `import { db } from './index';
 import { users, posts } from './schema';
 ${config.auth ? "import bcrypt from 'bcryptjs';" : ''}
 
@@ -834,11 +852,11 @@ async function seed() {
   await db.delete(users);
 
   ${
-    config.auth
-      ? `
+      config.auth
+          ? `
   const hashedPassword = await bcrypt.hash('Demo123!', 12);
   `
-      : ''
+          : ''
   }
 
   // Create demo users
@@ -907,10 +925,10 @@ seed().catch((error) => {
 });
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'src/db/seed.ts'), seedContent);
+    await fs.writeFile(path.join(config.projectPath, 'src/db/seed.ts'), seedContent);
 
-  // Create migration script
-  const migrationScriptContent = `#!/usr/bin/env bash
+    // Create migration script
+    const migrationScriptContent = `#!/usr/bin/env bash
 set -e
 
 echo "🗄️ Running database migrations..."
@@ -924,17 +942,17 @@ ${config.packageManager} run db:push
 echo "✅ Migrations complete!"
 `;
 
-  const migrationScriptPath = path.join(config.projectPath, 'scripts', 'migrate.sh');
-  await fs.ensureDir(path.dirname(migrationScriptPath));
-  await fs.writeFile(migrationScriptPath, migrationScriptContent);
-  await fs.chmod(migrationScriptPath, '755');
+    const migrationScriptPath = path.join(config.projectPath, 'scripts', 'migrate.sh');
+    await fs.ensureDir(path.dirname(migrationScriptPath));
+    await fs.writeFile(migrationScriptPath, migrationScriptContent);
+    await fs.chmod(migrationScriptPath, '755');
 }
 
 async function createDatabaseDemoUI(config: ProjectConfig) {
-  console.log('  • Creating database demo UI and API routes...');
+    console.log('  • Creating database demo UI and API routes...');
 
-  // Create API route for posts
-  const apiRouteContent = `import { type NextRequest, NextResponse } from 'next/server';
+    // Create API route for posts
+    const apiRouteContent = `import { type NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
 export async function GET() {
@@ -994,12 +1012,12 @@ export async function POST(request: NextRequest) {
 }
 `;
 
-  const apiPath = path.join(config.projectPath, 'src/app/api/posts/route.ts');
-  await fs.ensureDir(path.dirname(apiPath));
-  await fs.writeFile(apiPath, apiRouteContent);
+    const apiPath = path.join(config.projectPath, 'src/app/api/posts/route.ts');
+    await fs.ensureDir(path.dirname(apiPath));
+    await fs.writeFile(apiPath, apiRouteContent);
 
-  // Create database demo component
-  const demoComponentContent = `'use client';
+    // Create database demo component
+    const demoComponentContent = `'use client';
 
 import type React from 'react';
 import { useEffect, useState, useCallback } from 'react';
@@ -1203,144 +1221,171 @@ export default function DatabaseDemo() {
 }
 `;
 
-  const componentPath = path.join(config.projectPath, 'src/components/database-demo.tsx');
-  await fs.ensureDir(path.dirname(componentPath));
-  await fs.writeFile(componentPath, demoComponentContent);
+    const componentPath = path.join(config.projectPath, 'src/components/database-demo.tsx');
+    await fs.ensureDir(path.dirname(componentPath));
+    await fs.writeFile(componentPath, demoComponentContent);
 
-  console.log('  • ✅ Database demo UI and API routes created');
+    console.log('  • ✅ Database demo UI and API routes created');
 }
 
 async function addDatabaseScripts(config: ProjectConfig) {
-  const packageJsonPath = path.join(config.projectPath, 'package.json');
-  const packageJson = await fs.readJSON(packageJsonPath);
+    const packageJsonPath = path.join(config.projectPath, 'package.json');
+    const packageJson = await fs.readJSON(packageJsonPath);
 
-  const dbScripts: Record<string, string> = {};
+    const dbScripts: Record<string, string> = {};
 
-  if (config.orm === 'prisma') {
-    dbScripts['db:generate'] = 'prisma generate';
-    dbScripts['db:push'] = 'prisma db push';
-    dbScripts['db:push:force'] = 'prisma db push --force-reset';
-    dbScripts['db:migrate'] = 'prisma migrate dev';
-    dbScripts['db:migrate:prod'] = 'prisma migrate deploy';
-    dbScripts['db:seed'] = 'tsx prisma/seed.ts';
-    dbScripts['db:studio'] = 'prisma studio';
-    dbScripts['db:reset'] = 'prisma migrate reset';
-  } else if (config.orm === 'drizzle') {
-    dbScripts['db:generate'] = 'drizzle-kit generate';
-    dbScripts['db:push'] = 'drizzle-kit push';
-    dbScripts['db:migrate'] = 'drizzle-kit migrate';
-    dbScripts['db:studio'] = 'drizzle-kit studio';
-    dbScripts['db:seed'] = 'tsx src/db/seed.ts';
-  }
+    if (config.orm === 'prisma') {
+        dbScripts['db:generate'] = 'prisma generate';
+        dbScripts['db:push'] = 'prisma db push';
+        dbScripts['db:push:force'] = 'prisma db push --force-reset';
+        dbScripts['db:migrate'] = 'prisma migrate dev';
+        dbScripts['db:migrate:prod'] = 'prisma migrate deploy';
+        dbScripts['db:seed'] = 'tsx prisma/seed.ts';
+        dbScripts['db:studio'] = 'prisma studio';
+        dbScripts['db:reset'] = 'prisma migrate reset';
+    } else if (config.orm === 'drizzle') {
+        dbScripts['db:generate'] = 'drizzle-kit generate';
+        dbScripts['db:push'] = 'drizzle-kit push';
+        dbScripts['db:migrate'] = 'drizzle-kit migrate';
+        dbScripts['db:studio'] = 'drizzle-kit studio';
+        dbScripts['db:seed'] = 'tsx src/db/seed.ts';
+    }
 
-  // Add database-specific scripts
-  if (config.database === 'turso') {
-    dbScripts['setup:turso'] = 'bash scripts/setup-turso.sh';
-    dbScripts['setup:turso:cloud'] = 'bash scripts/setup-turso.sh --cloud';
-  } else if (config.database === 'supabase') {
-    dbScripts['setup:supabase'] = 'bash scripts/setup-supabase.sh';
-  }
+    // Add database-specific scripts
+    if (config.database === 'turso') {
+        dbScripts['setup:turso'] = 'bash scripts/setup-turso.sh';
+        dbScripts['setup:turso:cloud'] = 'bash scripts/setup-turso.sh --cloud';
+    } else if (config.database === 'supabase') {
+        dbScripts['setup:supabase'] = 'bash scripts/setup-supabase.sh';
+    }
 
-  packageJson.scripts = {
-    ...packageJson.scripts,
-    ...dbScripts,
-  };
-
-  // Update Prisma configuration in package.json
-  if (config.orm === 'prisma') {
-    packageJson.prisma = {
-      seed: 'tsx prisma/seed.ts',
+    packageJson.scripts = {
+        ...packageJson.scripts,
+        ...dbScripts,
     };
-  }
 
-  await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+    // Update Prisma configuration in package.json
+    if (config.orm === 'prisma') {
+        packageJson.prisma = {
+            seed: 'tsx prisma/seed.ts',
+        };
+    }
 
-  // Add .npmrc for pnpm to properly handle Prisma
-  if (config.packageManager === 'pnpm' && config.orm === 'prisma') {
-    const npmrcContent = `# Allow pnpm to properly handle Prisma client generation
+    await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+
+    // Add .npmrc for pnpm to properly handle Prisma
+    if (config.packageManager === 'pnpm' && config.orm === 'prisma') {
+        const npmrcContent = `# Allow pnpm to properly handle Prisma client generation
 public-hoist-pattern[]=@prisma/client
 public-hoist-pattern[]=prisma
 `;
-    await fs.writeFile(path.join(config.projectPath, '.npmrc'), npmrcContent);
-  }
+        await fs.writeFile(path.join(config.projectPath, '.npmrc'), npmrcContent);
+    }
 }
 
 async function addPostInstallScript(config: ProjectConfig) {
-  const packageJsonPath = path.join(config.projectPath, 'package.json');
-  const packageJson = await fs.readJSON(packageJsonPath);
+    const packageJsonPath = path.join(config.projectPath, 'package.json');
+    const packageJson = await fs.readJSON(packageJsonPath);
 
-  const scripts = packageJson.scripts ?? {};
-  const hasInitHook =
-    typeof scripts.predev === 'string' && scripts.predev.includes('scripts/init-turso-db.sh');
-  const normalizedPredev = !scripts.predev
-    ? 'bash scripts/init-turso-db.sh'
-    : hasInitHook
-      ? scripts.predev
-      : `bash scripts/init-turso-db.sh && ${scripts.predev}`;
+    const scripts = packageJson.scripts ?? {};
+    const hasInitHook =
+        typeof scripts.predev === 'string' && scripts.predev.includes('scripts/init-turso-db.sh');
+    const normalizedPredev = !scripts.predev
+        ? 'bash scripts/init-turso-db.sh'
+        : hasInitHook
+          ? scripts.predev
+          : `bash scripts/init-turso-db.sh && ${scripts.predev}`;
 
-  const alreadyWrapped = typeof scripts.dev === 'string' && scripts.dev.includes('scripts/dev.mjs');
-  const fallbackDev = scripts['dev:next'] ?? 'next dev';
-  const originalDev = alreadyWrapped ? fallbackDev : (scripts.dev ?? fallbackDev);
+    const alreadyWrapped =
+        typeof scripts.dev === 'string' && scripts.dev.includes('scripts/dev.mjs');
+    const fallbackDev = scripts['dev:next'] ?? 'next dev';
+    const originalDev = alreadyWrapped ? fallbackDev : (scripts.dev ?? fallbackDev);
 
-  packageJson.scripts = {
-    ...scripts,
-    postinstall: 'bash scripts/init-turso-db.sh',
-    predev: normalizedPredev,
-    dev: 'node scripts/dev.mjs',
-    'dev:next': originalDev,
-  };
+    packageJson.scripts = {
+        ...scripts,
+        postinstall: 'bash scripts/init-turso-db.sh',
+        predev: normalizedPredev,
+        dev: 'node scripts/dev.mjs',
+        'dev:next': originalDev,
+    };
 
-  await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+    await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
-  const prismaGenerateCommand =
-    config.packageManager === 'pnpm'
-      ? 'pnpm exec prisma generate'
-      : config.packageManager === 'yarn'
-        ? 'yarn prisma generate'
-        : 'npx --yes prisma generate';
-  const prismaPushCommand =
-    config.packageManager === 'pnpm'
-      ? 'pnpm exec prisma db push --force-reset'
-      : config.packageManager === 'yarn'
-        ? 'yarn prisma db push --force-reset'
-        : 'npx --yes prisma db push --force-reset';
-  const prismaSeedCommand =
-    config.packageManager === 'pnpm'
-      ? 'pnpm exec prisma db seed'
-      : config.packageManager === 'yarn'
-        ? 'yarn prisma db seed'
-        : 'npx --yes prisma db seed';
+    const _prismaGenerateCommand =
+        config.packageManager === 'pnpm'
+            ? 'pnpm exec prisma generate'
+            : config.packageManager === 'yarn'
+              ? 'yarn prisma generate'
+              : 'npx --yes prisma generate';
+    const _prismaPushCommand =
+        config.packageManager === 'pnpm'
+            ? 'pnpm exec prisma db push --force-reset'
+            : config.packageManager === 'yarn'
+              ? 'yarn prisma db push --force-reset'
+              : 'npx --yes prisma db push --force-reset';
+    const _prismaSeedCommand =
+        config.packageManager === 'pnpm'
+            ? 'pnpm exec prisma db seed'
+            : config.packageManager === 'yarn'
+              ? 'yarn prisma db seed'
+              : 'npx --yes prisma db seed';
 
-  const initScriptContent = `#!/usr/bin/env bash
+    const initScriptContent = `#!/usr/bin/env bash
 set -euo pipefail
 
-echo "🚀 Initializing Turso database..."
+PROJECT_ROOT="$(pwd)"
+FLAG_FILE="$PROJECT_ROOT/.fluorite-db-ready"
 
-INIT_SUCCESS=true
-
-# Use absolute path for database
-PROJECT_ROOT=$(pwd)
-DEV_DB_PATH="$PROJECT_ROOT/prisma/dev.db"
-DEV_DB_URL="file:$DEV_DB_PATH"
-export DATABASE_URL="$DEV_DB_URL"
-export TURSO_DATABASE_URL="$DEV_DB_URL"
-export TURSO_AUTH_TOKEN=""
-
-mkdir -p prisma
-touch "$DEV_DB_PATH"
-
-# For pnpm, ensure Prisma client is properly linked
-if [ -f "pnpm-lock.yaml" ]; then
-  echo "  • Ensuring Prisma client is properly linked for pnpm..."
-  if [ -d "node_modules/.prisma" ]; then
-    rm -rf "node_modules/@prisma/client/node_modules/.prisma" 2>/dev/null || true
-    mkdir -p "node_modules/@prisma/client/node_modules"
-    cp -r "node_modules/.prisma" "node_modules/@prisma/client/node_modules/.prisma" 2>/dev/null || true
+if [ -f "$FLAG_FILE" ] && [ "\${FORCE_DB_INIT:-0}" != "1" ]; then
+  if [ -f "$PROJECT_ROOT/prisma/dev.db" ]; then
+    echo "⏭️  Database already initialized (remove .fluorite-db-ready or set FORCE_DB_INIT=1 to rebuild)."
+    exit 0
+  else
+    echo "⚠️  Initialization marker found but prisma/dev.db is missing. Reinitializing..."
   fi
 fi
 
+rm -f "$FLAG_FILE"
+
+RAW_DB_URL="\${DATABASE_URL:-file://prisma/dev.db}"
+DEV_DB_URL="$RAW_DB_URL"
+
+if [[ $DEV_DB_URL == file://* ]]; then
+  REL_PATH="\${DEV_DB_URL#file://}"
+  if [[ $REL_PATH == /* ]]; then
+    DEV_DB_URL="file:\${REL_PATH}"
+  else
+    DEV_DB_URL="file:./\${REL_PATH#./}"
+  fi
+elif [[ $DEV_DB_URL == file:* ]]; then
+  REL_PATH="\${DEV_DB_URL#file:}"
+  if [[ $REL_PATH != /* && $REL_PATH != ./* ]]; then
+    DEV_DB_URL="file:./\${REL_PATH#./}"
+  fi
+else
+  DEV_DB_URL='file:./prisma/dev.db'
+fi
+
+export DATABASE_URL="$DEV_DB_URL"
+export TURSO_DATABASE_URL="$DEV_DB_URL"
+export TURSO_AUTH_TOKEN="\${TURSO_AUTH_TOKEN:-}"
+
+DB_PATH="\${DEV_DB_URL#file:}"
+DB_PATH="\${DB_PATH#//}"
+if [[ $DB_PATH == /* ]]; then
+  DB_FILE="$DB_PATH"
+else
+  DB_FILE="$PROJECT_ROOT/\${DB_PATH#./}"
+fi
+
+mkdir -p "$(dirname "$DB_FILE")"
+touch "$DB_FILE"
+
+echo "🚀 Initializing Turso database..."
+INIT_SUCCESS=true
+
 echo "  • Generating Prisma client..."
-if OUTPUT=$(${prismaGenerateCommand} 2>&1); then
+if OUTPUT=$(${_prismaGenerateCommand} 2>&1); then
   echo "  ✅ Prisma client generated"
 else
   echo "  ⚠️  Prisma client generation failed:"
@@ -1351,7 +1396,7 @@ fi
 
 if [ "$INIT_SUCCESS" = true ]; then
   echo "  • Pushing schema to database..."
-  if OUTPUT=$(${prismaPushCommand} 2>&1); then
+  if OUTPUT=$(${_prismaPushCommand} 2>&1); then
     echo "  ✅ Schema pushed to database"
   else
     echo "  ⚠️  Schema push failed:"
@@ -1363,34 +1408,35 @@ fi
 
 if [ "$INIT_SUCCESS" = true ]; then
   echo "  • Seeding database..."
-  if OUTPUT=$(${prismaSeedCommand} 2>&1); then
+  if OUTPUT=$(${_prismaSeedCommand} 2>&1); then
     echo "  ✅ Database seeded"
   else
     echo "  ⚠️  Database seeding failed"
     echo "$OUTPUT" | sed 's/^/      /'
     echo ""
+    INIT_SUCCESS=false
   fi
 fi
 
 if [ "$INIT_SUCCESS" = true ]; then
   echo "✅ Turso database initialization complete!"
+  touch "$FLAG_FILE"
 else
   echo ""
   echo "⚠️  Database initialization incomplete. Run the following after fixing any issues:"
-  echo "    ${prismaGenerateCommand}"
-  echo "    ${prismaPushCommand}"
-  echo "    ${prismaSeedCommand}"
+  echo "    ${_prismaGenerateCommand}"
+  echo "    ${_prismaPushCommand}"
+  echo "    ${_prismaSeedCommand}"
   exit 1
 fi
 `;
+    const scriptsDir = path.join(config.projectPath, 'scripts');
+    await fs.ensureDir(scriptsDir);
+    const initScriptPath = path.join(scriptsDir, 'init-turso-db.sh');
+    await fs.writeFile(initScriptPath, initScriptContent);
+    await fs.chmod(initScriptPath, '755');
 
-  const scriptsDir = path.join(config.projectPath, 'scripts');
-  await fs.ensureDir(scriptsDir);
-  const initScriptPath = path.join(scriptsDir, 'init-turso-db.sh');
-  await fs.writeFile(initScriptPath, initScriptContent);
-  await fs.chmod(initScriptPath, '755');
-
-  const devBootstrapContent = `#!/usr/bin/env node
+    const devBootstrapContent = `#!/usr/bin/env node
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -1412,8 +1458,27 @@ function run(command, options = {}) {
   });
 }
 
+async function fileExists(target) {
+  try {
+    await fs.access(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function ensureDatabase() {
   const initScript = path.join(scriptDir, 'init-turso-db.sh');
+  const sentinel = path.join(projectRoot, '.fluorite-db-ready');
+  const dbFile = path.join(projectRoot, 'prisma/dev.db');
+  const force = process.env.FORCE_DB_INIT === '1';
+
+  const needsInit = force || !(await fileExists(sentinel)) || !(await fileExists(dbFile));
+
+  if (!needsInit) {
+    return;
+  }
+
   try {
     await fs.access(initScript);
     await run('bash "' + initScript + '"', { cwd: projectRoot });
@@ -1438,5 +1503,5 @@ try {
 }
 `;
 
-  await fs.writeFile(path.join(scriptsDir, 'dev.mjs'), devBootstrapContent);
+    await fs.writeFile(path.join(scriptsDir, 'dev.mjs'), devBootstrapContent);
 }

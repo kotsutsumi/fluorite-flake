@@ -1,216 +1,221 @@
 import path from 'node:path';
 import fs from 'fs-extra';
-import type { ProjectConfig } from '../commands/create.js';
+
+import type { ProjectConfig } from '../commands/create/types.js';
 
 export async function generateExpoProject(config: ProjectConfig) {
-  // Create project directory
-  await fs.ensureDir(config.projectPath);
+    // Create project directory
+    await fs.ensureDir(config.projectPath);
 
-  // Create Expo app structure
-  await createExpoAppStructure(config);
+    // Create Expo app structure
+    await createExpoAppStructure(config);
 
-  // Setup package.json for Expo
-  await generateExpoPackageJson(config);
+    // Setup package.json for Expo
+    await generateExpoPackageJson(config);
 
-  // Setup TypeScript
-  await setupExpoTypeScript(config);
+    // Setup TypeScript
+    await setupExpoTypeScript(config);
 
-  // Setup Expo configuration
-  await setupExpoConfig(config);
+    // Setup Expo configuration
+    await setupExpoConfig(config);
 
-  // Setup Metro bundler
-  await setupMetro(config);
+    // Setup Metro bundler
+    await setupMetro(config);
 
-  // Setup Babel configuration
-  await setupBabel(config);
+    // Setup Babel configuration
+    await setupBabel(config);
 
-  // Create initial app structure
-  await createInitialExpoApp(config);
+    // Create initial app structure
+    await createInitialExpoApp(config);
 
-  // Setup .gitignore
-  await createExpoGitignore(config);
+    // Setup .gitignore
+    await createExpoGitignore(config);
 
-  // Setup Maestro E2E testing
-  await setupMaestroTesting(config);
+    // Setup Maestro E2E testing
+    await setupMaestroTesting(config);
 }
 
 async function createExpoAppStructure(config: ProjectConfig) {
-  const dirs = [
-    'app',
-    'components',
-    'components/ui',
-    'constants',
-    'hooks',
-    'assets',
-    'assets/images',
-    'assets/fonts',
-  ];
+    const dirs = [
+        'app',
+        'components',
+        'components/ui',
+        'constants',
+        'hooks',
+        'assets',
+        'assets/images',
+        'assets/fonts',
+    ];
 
-  for (const dir of dirs) {
-    await fs.ensureDir(path.join(config.projectPath, dir));
-  }
+    for (const dir of dirs) {
+        await fs.ensureDir(path.join(config.projectPath, dir));
+    }
 }
 
 async function generateExpoPackageJson(config: ProjectConfig) {
-  const packageJson: {
-    name: string;
-    version: string;
-    main: string;
-    scripts: Record<string, string>;
-    dependencies: Record<string, string>;
-    devDependencies: Record<string, string>;
-  } = {
-    name: config.projectName,
-    version: '1.0.0',
-    main: 'expo-router/entry',
-    scripts: {
-      start: 'expo start',
-      android: 'expo start --android',
-      ios: 'expo start --ios',
-      web: 'expo start --web',
-      test: 'jest --watchAll',
-      'build:android': 'eas build --platform android',
-      'build:ios': 'eas build --platform ios',
-      'build:all': 'eas build --platform all',
-    },
-    dependencies: {
-      expo: '~52.0.0',
-      react: '18.3.1',
-      'react-native': '0.76.5',
-      'expo-router': '~4.0.0',
-      'expo-constants': '~17.0.0',
-      'expo-linking': '~7.0.0',
-      'expo-status-bar': '~2.0.0',
-      'expo-splash-screen': '~0.29.0',
-      'expo-system-ui': '~4.0.0',
-      'react-native-safe-area-context': '4.12.0',
-      'react-native-screens': '~4.1.0',
-      '@react-navigation/native': '^7.0.0',
-      'react-native-gesture-handler': '~2.20.0',
-      'react-native-reanimated': '~3.16.0',
-      jotai: '^2.10.3',
-    },
-    devDependencies: {
-      '@babel/core': '^7.25.0',
-      '@types/react': '~18.3.0',
-      '@types/jest': '^29.5.0',
-      jest: '^29.4.0',
-      'jest-expo': '~52.0.0',
-      typescript: '~5.3.0',
-    },
-  };
+    const packageJson: {
+        name: string;
+        version: string;
+        main: string;
+        scripts: Record<string, string>;
+        dependencies: Record<string, string>;
+        devDependencies: Record<string, string>;
+    } = {
+        name: config.projectName,
+        version: '1.0.0',
+        main: 'expo-router/entry',
+        scripts: {
+            start: 'expo start',
+            android: 'expo start --android',
+            ios: 'expo start --ios',
+            web: 'expo start --web',
+            test: 'jest --watchAll',
+            'build:android': 'eas build --platform android',
+            'build:ios': 'eas build --platform ios',
+            'build:all': 'eas build --platform all',
+        },
+        dependencies: {
+            expo: '~52.0.0',
+            react: '18.3.1',
+            'react-native': '0.76.5',
+            'expo-router': '~4.0.0',
+            'expo-constants': '~17.0.0',
+            'expo-linking': '~7.0.0',
+            'expo-status-bar': '~2.0.0',
+            'expo-splash-screen': '~0.29.0',
+            'expo-system-ui': '~4.0.0',
+            'react-native-safe-area-context': '4.12.0',
+            'react-native-screens': '~4.1.0',
+            '@react-navigation/native': '^7.0.0',
+            'react-native-gesture-handler': '~2.20.0',
+            'react-native-reanimated': '~3.16.0',
+            jotai: '^2.10.3',
+        },
+        devDependencies: {
+            '@babel/core': '^7.25.0',
+            '@types/react': '~18.3.0',
+            '@types/jest': '^29.5.0',
+            jest: '^29.4.0',
+            'jest-expo': '~52.0.0',
+            typescript: '~5.3.0',
+        },
+    };
 
-  // Add database dependencies for Expo
-  if (config.database === 'turso' && config.orm === 'drizzle') {
-    packageJson.dependencies['drizzle-orm'] = '^0.38.3';
-    packageJson.dependencies['@libsql/client'] = '^0.15.0';
-    packageJson.devDependencies['drizzle-kit'] = '^0.30.2';
-  } else if (config.database === 'supabase') {
-    packageJson.dependencies['@supabase/supabase-js'] = '^2.48.1';
-  }
-
-  // Add storage dependencies
-  if (config.storage !== 'none') {
-    switch (config.storage) {
-      case 'supabase-storage':
+    // Add database dependencies for Expo
+    if (config.database === 'turso' && config.orm === 'drizzle') {
+        packageJson.dependencies['drizzle-orm'] = '^0.38.3';
+        packageJson.dependencies['@libsql/client'] = '^0.15.0';
+        packageJson.devDependencies['drizzle-kit'] = '^0.30.2';
+    } else if (config.database === 'supabase') {
         packageJson.dependencies['@supabase/supabase-js'] = '^2.48.1';
-        break;
-      case 'aws-s3':
-        packageJson.dependencies['@aws-sdk/client-s3'] = '^3.705.0';
-        break;
-      default:
-        break;
     }
-  }
 
-  // Add authentication dependencies
-  if (config.auth) {
-    packageJson.dependencies['expo-auth-session'] = '~6.0.0';
-    packageJson.dependencies['expo-crypto'] = '~14.0.0';
-    packageJson.dependencies['expo-web-browser'] = '~14.0.0';
-  }
+    // Add storage dependencies
+    if (config.storage !== 'none') {
+        switch (config.storage) {
+            case 'supabase-storage':
+                packageJson.dependencies['@supabase/supabase-js'] = '^2.48.1';
+                break;
+            case 'aws-s3':
+                packageJson.dependencies['@aws-sdk/client-s3'] = '^3.705.0';
+                break;
+            default:
+                break;
+        }
+    }
 
-  await fs.writeJSON(path.join(config.projectPath, 'package.json'), packageJson, {
-    spaces: 2,
-  });
+    // Add authentication dependencies
+    if (config.auth) {
+        packageJson.dependencies['expo-auth-session'] = '~6.0.0';
+        packageJson.dependencies['expo-crypto'] = '~14.0.0';
+        packageJson.dependencies['expo-web-browser'] = '~14.0.0';
+    }
+
+    await fs.writeJSON(path.join(config.projectPath, 'package.json'), packageJson, {
+        spaces: 2,
+    });
 }
 
 async function setupExpoTypeScript(config: ProjectConfig) {
-  const tsConfig = {
-    extends: 'expo/tsconfig.base',
-    compilerOptions: {
-      strict: true,
-      paths: {
-        '@/*': ['./'],
-      },
-    },
-    include: ['**/*.ts', '**/*.tsx', '.expo/types/**/*.ts', 'expo-env.d.ts'],
-    exclude: ['node_modules'],
-  };
+    const tsConfig = {
+        extends: 'expo/tsconfig.base',
+        compilerOptions: {
+            strict: true,
+            paths: {
+                '@/*': ['./'],
+            },
+        },
+        include: ['**/*.ts', '**/*.tsx', '.expo/types/**/*.ts', 'expo-env.d.ts'],
+        exclude: ['node_modules'],
+    };
 
-  await fs.writeJSON(path.join(config.projectPath, 'tsconfig.json'), tsConfig, { spaces: 2 });
+    await fs.writeJSON(path.join(config.projectPath, 'tsconfig.json'), tsConfig, {
+        spaces: 2,
+    });
 
-  // Create expo-env.d.ts
-  const expoEnvContent = `/// <reference types="expo/types" />
+    // Create expo-env.d.ts
+    const expoEnvContent = `/// <reference types="expo/types" />
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'expo-env.d.ts'), expoEnvContent);
+    await fs.writeFile(path.join(config.projectPath, 'expo-env.d.ts'), expoEnvContent);
 }
 
 async function setupExpoConfig(config: ProjectConfig) {
-  const appConfig = {
-    expo: {
-      name: config.projectName,
-      slug: config.projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-      version: '1.0.0',
-      orientation: 'portrait',
-      icon: './assets/images/icon.png',
-      scheme: config.projectName.toLowerCase(),
-      userInterfaceStyle: 'automatic',
-      newArchEnabled: true,
-      splash: {
-        image: './assets/images/splash-icon.png',
-        resizeMode: 'contain',
-        backgroundColor: '#ffffff',
-      },
-      ios: {
-        supportsTablet: true,
-        bundleIdentifier: `com.${config.projectName.toLowerCase()}.app`,
-      },
-      android: {
-        adaptiveIcon: {
-          foregroundImage: './assets/images/adaptive-icon.png',
-          backgroundColor: '#ffffff',
+    const appConfig = {
+        expo: {
+            name: config.projectName,
+            slug: config.projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+            version: '1.0.0',
+            orientation: 'portrait',
+            icon: './assets/images/icon.png',
+            scheme: config.projectName.toLowerCase(),
+            userInterfaceStyle: 'automatic',
+            newArchEnabled: true,
+            splash: {
+                image: './assets/images/splash-icon.png',
+                resizeMode: 'contain',
+                backgroundColor: '#ffffff',
+            },
+            ios: {
+                supportsTablet: true,
+                bundleIdentifier: `com.${config.projectName.toLowerCase()}.app`,
+            },
+            android: {
+                adaptiveIcon: {
+                    foregroundImage: './assets/images/adaptive-icon.png',
+                    backgroundColor: '#ffffff',
+                },
+                package: `com.${config.projectName.toLowerCase()}.app`,
+            },
+            web: {
+                bundler: 'metro',
+                output: 'static',
+                favicon: './assets/images/favicon.png',
+            },
+            plugins: [
+                'expo-router',
+                [
+                    'expo-splash-screen',
+                    {
+                        imageHeight: 200,
+                        resizeMode: 'contain',
+                        backgroundColor: '#ffffff',
+                    },
+                ],
+            ],
+            experiments: {
+                typedRoutes: true,
+            },
         },
-        package: `com.${config.projectName.toLowerCase()}.app`,
-      },
-      web: {
-        bundler: 'metro',
-        output: 'static',
-        favicon: './assets/images/favicon.png',
-      },
-      plugins: [
-        'expo-router',
-        [
-          'expo-splash-screen',
-          {
-            imageHeight: 200,
-            resizeMode: 'contain',
-            backgroundColor: '#ffffff',
-          },
-        ],
-      ],
-      experiments: {
-        typedRoutes: true,
-      },
-    },
-  };
+    };
 
-  await fs.writeJSON(path.join(config.projectPath, 'app.json'), appConfig, { spaces: 2 });
+    await fs.writeJSON(path.join(config.projectPath, 'app.json'), appConfig, {
+        spaces: 2,
+    });
 }
 
 async function setupMetro(config: ProjectConfig) {
-  const metroConfig = `const { getDefaultConfig } = require('expo/metro-config');
+    const metroConfig = `const { getDefaultConfig } = require('expo/metro-config');
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
@@ -218,23 +223,23 @@ const config = getDefaultConfig(__dirname);
 module.exports = config;
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'metro.config.js'), metroConfig);
+    await fs.writeFile(path.join(config.projectPath, 'metro.config.js'), metroConfig);
 }
 
 async function setupBabel(config: ProjectConfig) {
-  const babelConfig = {
-    presets: ['babel-preset-expo'],
-    plugins: ['react-native-reanimated/plugin'],
-  };
+    const babelConfig = {
+        presets: ['babel-preset-expo'],
+        plugins: ['react-native-reanimated/plugin'],
+    };
 
-  await fs.writeJSON(path.join(config.projectPath, 'babel.config.js'), babelConfig, {
-    spaces: 2,
-  });
+    await fs.writeJSON(path.join(config.projectPath, 'babel.config.js'), babelConfig, {
+        spaces: 2,
+    });
 }
 
 async function createInitialExpoApp(config: ProjectConfig) {
-  // Root layout
-  const rootLayoutContent = `import { Stack } from 'expo-router';
+    // Root layout
+    const rootLayoutContent = `import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { SplashScreen } from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -269,12 +274,12 @@ export default function RootLayout() {
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'app/_layout.tsx'), rootLayoutContent);
+    await fs.writeFile(path.join(config.projectPath, 'app/_layout.tsx'), rootLayoutContent);
 
-  // Create tabs layout
-  await fs.ensureDir(path.join(config.projectPath, 'app/(tabs)'));
+    // Create tabs layout
+    await fs.ensureDir(path.join(config.projectPath, 'app/(tabs)'));
 
-  const tabsLayoutContent = `import { Tabs } from 'expo-router';
+    const tabsLayoutContent = `import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
@@ -314,10 +319,10 @@ export default function TabLayout() {
 }
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/_layout.tsx'), tabsLayoutContent);
+    await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/_layout.tsx'), tabsLayoutContent);
 
-  // Home screen
-  const homeScreenContent = `import { StyleSheet, Text, View } from 'react-native';
+    // Home screen
+    const homeScreenContent = `import { StyleSheet, Text, View } from 'react-native';
 import { useAtom } from 'jotai';
 import { atom } from 'jotai';
 
@@ -410,10 +415,10 @@ const styles = StyleSheet.create({
 });
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/index.tsx'), homeScreenContent);
+    await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/index.tsx'), homeScreenContent);
 
-  // Explore screen
-  const exploreScreenContent = `import { StyleSheet, Text, View, ScrollView } from 'react-native';
+    // Explore screen
+    const exploreScreenContent = `import { StyleSheet, Text, View, ScrollView } from 'react-native';
 
 export default function ExploreScreen() {
   return (
@@ -496,10 +501,13 @@ const styles = StyleSheet.create({
 });
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/explore.tsx'), exploreScreenContent);
+    await fs.writeFile(
+        path.join(config.projectPath, 'app/(tabs)/explore.tsx'),
+        exploreScreenContent
+    );
 
-  // Not found screen
-  const notFoundContent = `import { Link, Stack } from 'expo-router';
+    // Not found screen
+    const notFoundContent = `import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function NotFoundScreen() {
@@ -538,15 +546,15 @@ const styles = StyleSheet.create({
 });
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'app/+not-found.tsx'), notFoundContent);
+    await fs.writeFile(path.join(config.projectPath, 'app/+not-found.tsx'), notFoundContent);
 
-  // Create placeholder assets
-  await createPlaceholderAssets(config);
+    // Create placeholder assets
+    await createPlaceholderAssets(config);
 }
 
 async function createPlaceholderAssets(config: ProjectConfig) {
-  // For now, create README files explaining what assets are needed
-  const assetsReadme = `# Assets
+    // For now, create README files explaining what assets are needed
+    const assetsReadme = `# Assets
 
 Please add the following asset files:
 
@@ -563,11 +571,11 @@ Add custom fonts in this directory and reference them in app/_layout.tsx
 Placeholder assets have been created. Replace with your actual design assets.
 `;
 
-  await fs.writeFile(path.join(config.projectPath, 'assets/README.md'), assetsReadme);
+    await fs.writeFile(path.join(config.projectPath, 'assets/README.md'), assetsReadme);
 }
 
 async function createExpoGitignore(config: ProjectConfig) {
-  const gitignoreContent = `# Learn more https://docs.github.io/en/get-started/getting-started-with-git/ignoring-files
+    const gitignoreContent = `# Learn more https://docs.github.io/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
 node_modules/
@@ -604,16 +612,16 @@ yarn-error.*
 *.tsbuildinfo
 `;
 
-  await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
+    await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
 }
 
 async function setupMaestroTesting(config: ProjectConfig) {
-  // Create .maestro directory for test flows
-  const maestroDir = path.join(config.projectPath, '.maestro');
-  await fs.ensureDir(maestroDir);
+    // Create .maestro directory for test flows
+    const maestroDir = path.join(config.projectPath, '.maestro');
+    await fs.ensureDir(maestroDir);
 
-  // Create README for Maestro
-  const maestroReadme = `# Maestro E2E Testing
+    // Create README for Maestro
+    const maestroReadme = `# Maestro E2E Testing
 
 Maestro is a lightweight E2E testing framework for mobile apps that works great with Expo.
 
@@ -690,10 +698,10 @@ Key concepts:
 - [Expo Testing Guide](https://docs.expo.dev/develop/testing/introduction/)
 `;
 
-  await fs.writeFile(path.join(maestroDir, 'README.md'), maestroReadme);
+    await fs.writeFile(path.join(maestroDir, 'README.md'), maestroReadme);
 
-  // Create a basic smoke test
-  const smokeTest = `# Basic smoke test for ${config.projectName}
+    // Create a basic smoke test
+    const smokeTest = `# Basic smoke test for ${config.projectName}
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
 ---
@@ -747,10 +755,10 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
     text: "Welcome to ${config.projectName}!"
 `;
 
-  await fs.writeFile(path.join(maestroDir, 'smoke-test.yaml'), smokeTest);
+    await fs.writeFile(path.join(maestroDir, 'smoke-test.yaml'), smokeTest);
 
-  // Create navigation test
-  const navigationTest = `# Navigation test for ${config.projectName}
+    // Create navigation test
+    const navigationTest = `# Navigation test for ${config.projectName}
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
 ---
@@ -779,11 +787,11 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
     speed: SLOW
 `;
 
-  await fs.writeFile(path.join(maestroDir, 'navigation-test.yaml'), navigationTest);
+    await fs.writeFile(path.join(maestroDir, 'navigation-test.yaml'), navigationTest);
 
-  // Create auth test template if auth is enabled
-  if (config.auth) {
-    const authTest = `# Authentication flow test
+    // Create auth test template if auth is enabled
+    if (config.auth) {
+        const authTest = `# Authentication flow test
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
 ---
@@ -827,11 +835,11 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
     # Adjust based on your post-login UI
 `;
 
-    await fs.writeFile(path.join(maestroDir, 'auth-test.yaml'), authTest);
-  }
+        await fs.writeFile(path.join(maestroDir, 'auth-test.yaml'), authTest);
+    }
 
-  // Create a CI workflow template
-  const ciWorkflow = `# CI Test Suite
+    // Create a CI workflow template
+    const ciWorkflow = `# CI Test Suite
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
 ---
@@ -855,47 +863,47 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
     text: "Something went wrong"
 `;
 
-  await fs.writeFile(path.join(maestroDir, 'ci-test-suite.yaml'), ciWorkflow);
+    await fs.writeFile(path.join(maestroDir, 'ci-test-suite.yaml'), ciWorkflow);
 
-  // Update package.json with Maestro test scripts
-  const packageJsonPath = path.join(config.projectPath, 'package.json');
-  if (await fs.pathExists(packageJsonPath)) {
-    const packageJson = await fs.readJSON(packageJsonPath);
+    // Update package.json with Maestro test scripts
+    const packageJsonPath = path.join(config.projectPath, 'package.json');
+    if (await fs.pathExists(packageJsonPath)) {
+        const packageJson = await fs.readJSON(packageJsonPath);
 
-    // Add Maestro test scripts
-    packageJson.scripts = {
-      ...packageJson.scripts,
-      'test:e2e': 'maestro test .maestro/',
-      'test:e2e:smoke': 'maestro test .maestro/smoke-test.yaml',
-      'test:e2e:record': 'maestro record .maestro/smoke-test.yaml',
-      'test:e2e:ci': 'maestro test .maestro/ci-test-suite.yaml',
-    };
+        // Add Maestro test scripts
+        packageJson.scripts = {
+            ...packageJson.scripts,
+            'test:e2e': 'maestro test .maestro/',
+            'test:e2e:smoke': 'maestro test .maestro/smoke-test.yaml',
+            'test:e2e:record': 'maestro record .maestro/smoke-test.yaml',
+            'test:e2e:ci': 'maestro test .maestro/ci-test-suite.yaml',
+        };
 
-    await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
-  }
+        await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+    }
 
-  // Add testID props to main components for better testing
-  // Update the home screen to include testIDs
-  const homeScreenPath = path.join(config.projectPath, 'app/(tabs)/index.tsx');
-  if (await fs.pathExists(homeScreenPath)) {
-    const homeContent = await fs.readFile(homeScreenPath, 'utf-8');
+    // Add testID props to main components for better testing
+    // Update the home screen to include testIDs
+    const homeScreenPath = path.join(config.projectPath, 'app/(tabs)/index.tsx');
+    if (await fs.pathExists(homeScreenPath)) {
+        const homeContent = await fs.readFile(homeScreenPath, 'utf-8');
 
-    // Add testID props to make components easier to test with Maestro
-    const updatedHomeContent = homeContent
-      .replace(
-        'style={styles.button}',
-        'style={styles.button}\n          testID="increment-button"'
-      )
-      .replace(
-        'style={styles.counterText}',
-        'style={styles.counterText}\n        testID="counter-text"'
-      );
+        // Add testID props to make components easier to test with Maestro
+        const updatedHomeContent = homeContent
+            .replace(
+                'style={styles.button}',
+                'style={styles.button}\n          testID="increment-button"'
+            )
+            .replace(
+                'style={styles.counterText}',
+                'style={styles.counterText}\n        testID="counter-text"'
+            );
 
-    await fs.writeFile(homeScreenPath, updatedHomeContent);
-  }
+        await fs.writeFile(homeScreenPath, updatedHomeContent);
+    }
 
-  // Create a config file for Maestro Studio
-  const maestroConfig = `# Maestro Configuration
+    // Create a config file for Maestro Studio
+    const maestroConfig = `# Maestro Configuration
 app:
   id: com.${config.projectName.toLowerCase().replace(/-/g, '')}
   name: ${config.projectName}
@@ -915,5 +923,5 @@ environments:
     appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}.prod
 `;
 
-  await fs.writeFile(path.join(maestroDir, 'config.yaml'), maestroConfig);
+    await fs.writeFile(path.join(maestroDir, 'config.yaml'), maestroConfig);
 }

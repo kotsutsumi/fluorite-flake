@@ -1,36 +1,37 @@
 import path from 'node:path';
 import fs from 'fs-extra';
-import type { ProjectConfig } from '../commands/create.js';
+
+import type { ProjectConfig } from '../commands/create/types.js';
 
 export async function setupStorage(config: ProjectConfig) {
-  if (config.storage === 'none') {
-    return;
-  }
+    if (config.storage === 'none') {
+        return;
+    }
 
-  switch (config.storage) {
-    case 'vercel-blob':
-      await setupVercelBlob(config);
-      break;
-    case 'aws-s3':
-      await setupAwsS3(config);
-      break;
-    case 'cloudflare-r2':
-      await setupCloudflareR2(config);
-      break;
-    case 'supabase-storage':
-      await setupSupabaseStorage(config);
-      break;
-    default:
-      break;
-  }
+    switch (config.storage) {
+        case 'vercel-blob':
+            await setupVercelBlob(config);
+            break;
+        case 'aws-s3':
+            await setupAwsS3(config);
+            break;
+        case 'cloudflare-r2':
+            await setupCloudflareR2(config);
+            break;
+        case 'supabase-storage':
+            await setupSupabaseStorage(config);
+            break;
+        default:
+            break;
+    }
 
-  await createUploadRoute(config);
-  await createUploadComponent(config);
+    await createUploadRoute(config);
+    await createUploadComponent(config);
 }
 
 async function setupVercelBlob(config: ProjectConfig) {
-  // Create a script to automatically retrieve and set the Vercel Blob token
-  const setupBlobScript = `#!/bin/bash
+    // Create a script to automatically retrieve and set the Vercel Blob token
+    const setupBlobScript = `#!/bin/bash
 # Setup Vercel Blob Storage with automatic token retrieval
 
 set -e
@@ -144,20 +145,20 @@ echo ""
 echo "📝 You can now use Blob storage in your application"
 `;
 
-  // Write the setup script
-  const scriptsDir = path.join(config.projectPath, 'scripts');
-  await fs.ensureDir(scriptsDir);
-  await fs.writeFile(path.join(scriptsDir, 'setup-vercel-blob.sh'), setupBlobScript, {
-    mode: 0o755,
-  });
+    // Write the setup script
+    const scriptsDir = path.join(config.projectPath, 'scripts');
+    await fs.ensureDir(scriptsDir);
+    await fs.writeFile(path.join(scriptsDir, 'setup-vercel-blob.sh'), setupBlobScript, {
+        mode: 0o755,
+    });
 
-  // Add a minimal placeholder to .env.local
-  await appendEnv(
-    config.projectPath,
-    `\n# Vercel Blob Storage\n# Run 'npm run setup:blob' to automatically configure the token\nBLOB_READ_WRITE_TOKEN=""\n`
-  );
+    // Add a minimal placeholder to .env.local
+    await appendEnv(
+        config.projectPath,
+        `\n# Vercel Blob Storage\n# Run 'npm run setup:blob' to automatically configure the token\nBLOB_READ_WRITE_TOKEN=""\n`
+    );
 
-  const storageContent = `import { put, del, list } from '@vercel/blob';
+    const storageContent = `import { put, del, list } from '@vercel/blob';
 
 export async function uploadBuffer(buffer: Buffer, filename: string, contentType?: string) {
   const blob = await put(filename, buffer, {
@@ -178,21 +179,21 @@ export async function listFiles(options?: { limit?: number; prefix?: string }) {
 }
 `;
 
-  await writeStorageLib(config, storageContent);
+    await writeStorageLib(config, storageContent);
 
-  // Add setup script to package.json
-  const packageJsonPath = path.join(config.projectPath, 'package.json');
-  const packageJson = await fs.readJSON(packageJsonPath);
-  packageJson.scripts = {
-    ...packageJson.scripts,
-    'setup:blob': 'bash scripts/setup-vercel-blob.sh',
-    'setup:storage': 'bash scripts/setup-vercel-blob.sh',
-    'check:blob': 'tsx scripts/check-blob-config.ts',
-  };
-  await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+    // Add setup script to package.json
+    const packageJsonPath = path.join(config.projectPath, 'package.json');
+    const packageJson = await fs.readJSON(packageJsonPath);
+    packageJson.scripts = {
+        ...packageJson.scripts,
+        'setup:blob': 'bash scripts/setup-vercel-blob.sh',
+        'setup:storage': 'bash scripts/setup-vercel-blob.sh',
+        'check:blob': 'tsx scripts/check-blob-config.ts',
+    };
+    await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
-  // Create a helper script for checking blob configuration
-  const checkBlobScript = `import { list } from '@vercel/blob';
+    // Create a helper script for checking blob configuration
+    const checkBlobScript = `import { list } from '@vercel/blob';
 
 async function checkBlobConfiguration() {
   try {
@@ -229,19 +230,19 @@ if (require.main === module) {
 export { checkBlobConfiguration };
 `;
 
-  await fs.writeFile(
-    path.join(config.projectPath, 'scripts', 'check-blob-config.ts'),
-    checkBlobScript
-  );
+    await fs.writeFile(
+        path.join(config.projectPath, 'scripts', 'check-blob-config.ts'),
+        checkBlobScript
+    );
 }
 
 async function setupAwsS3(config: ProjectConfig) {
-  await appendEnv(
-    config.projectPath,
-    `\n# AWS S3\nAWS_REGION="us-east-1"\nAWS_ACCESS_KEY_ID="[your-access-key]"\nAWS_SECRET_ACCESS_KEY="[your-secret-key]"\nS3_BUCKET_NAME="[your-bucket-name]"\nAWS_S3_PUBLIC_URL="https://[your-bucket-name].s3.amazonaws.com"\n`
-  );
+    await appendEnv(
+        config.projectPath,
+        `\n# AWS S3\nAWS_REGION="us-east-1"\nAWS_ACCESS_KEY_ID="[your-access-key]"\nAWS_SECRET_ACCESS_KEY="[your-secret-key]"\nS3_BUCKET_NAME="[your-bucket-name]"\nAWS_S3_PUBLIC_URL="https://[your-bucket-name].s3.amazonaws.com"\n`
+    );
 
-  const storageContent = `import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+    const storageContent = `import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -274,16 +275,16 @@ export async function uploadBuffer(buffer: Buffer, filename: string, contentType
 }
 `;
 
-  await writeStorageLib(config, storageContent);
+    await writeStorageLib(config, storageContent);
 }
 
 async function setupCloudflareR2(config: ProjectConfig) {
-  await appendEnv(
-    config.projectPath,
-    `\n# Cloudflare R2\nR2_ACCOUNT_ID="[account-id]"\nR2_ACCESS_KEY_ID="[access-key]"\nR2_SECRET_ACCESS_KEY="[secret-key]"\nR2_BUCKET_NAME="[bucket-name]"\nR2_PUBLIC_URL="https://assets.example.com"\n`
-  );
+    await appendEnv(
+        config.projectPath,
+        `\n# Cloudflare R2\nR2_ACCOUNT_ID="[account-id]"\nR2_ACCESS_KEY_ID="[access-key]"\nR2_SECRET_ACCESS_KEY="[secret-key]"\nR2_BUCKET_NAME="[bucket-name]"\nR2_PUBLIC_URL="https://assets.example.com"\n`
+    );
 
-  const storageContent = `import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+    const storageContent = `import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const endpoint = process.env.R2_CUSTOM_ENDPOINT
   ? process.env.R2_CUSTOM_ENDPOINT
@@ -322,18 +323,18 @@ export async function uploadBuffer(buffer: Buffer, filename: string, contentType
 }
 `;
 
-  await writeStorageLib(config, storageContent);
+    await writeStorageLib(config, storageContent);
 }
 
 async function setupSupabaseStorage(config: ProjectConfig) {
-  await appendEnv(
-    config.projectPath,
-    `\n# Supabase Storage\nNEXT_PUBLIC_SUPABASE_URL="https://[project-id].supabase.co"\nNEXT_PUBLIC_SUPABASE_ANON_KEY="[anon-key]"\nSUPABASE_SERVICE_ROLE_KEY="[service-role-key]"\nSUPABASE_STORAGE_BUCKET="uploads"\n`
-  );
+    await appendEnv(
+        config.projectPath,
+        `\n# Supabase Storage\nNEXT_PUBLIC_SUPABASE_URL="https://[project-id].supabase.co"\nNEXT_PUBLIC_SUPABASE_ANON_KEY="[anon-key]"\nSUPABASE_SERVICE_ROLE_KEY="[service-role-key]"\nSUPABASE_STORAGE_BUCKET="uploads"\n`
+    );
 
-  await ensureSupabaseClient(config);
+    await ensureSupabaseClient(config);
 
-  const storageContent = `import { createClient } from '@supabase/supabase-js';
+    const storageContent = `import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -363,16 +364,16 @@ export async function uploadBuffer(buffer: Buffer, filename: string, contentType
 }
 `;
 
-  await writeStorageLib(config, storageContent);
+    await writeStorageLib(config, storageContent);
 }
 
 async function ensureSupabaseClient(config: ProjectConfig) {
-  const supabasePath = path.join(config.projectPath, 'src/lib/supabase.ts');
-  if (await fs.pathExists(supabasePath)) {
-    return;
-  }
+    const supabasePath = path.join(config.projectPath, 'src/lib/supabase.ts');
+    if (await fs.pathExists(supabasePath)) {
+        return;
+    }
 
-  const clientContent = `import { createClient } from '@supabase/supabase-js';
+    const clientContent = `import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -380,12 +381,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 `;
 
-  await fs.ensureDir(path.dirname(supabasePath));
-  await fs.writeFile(supabasePath, clientContent);
+    await fs.ensureDir(path.dirname(supabasePath));
+    await fs.writeFile(supabasePath, clientContent);
 }
 
 async function createUploadRoute(config: ProjectConfig) {
-  const routeContent = `import { Buffer } from 'node:buffer';
+    const routeContent = `import { Buffer } from 'node:buffer';
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadBuffer } from '@/lib/storage';
 
@@ -410,13 +411,13 @@ export async function POST(request: NextRequest) {
 }
 `;
 
-  const routeDir = path.join(config.projectPath, 'src/app/api/upload');
-  await fs.ensureDir(routeDir);
-  await fs.writeFile(path.join(routeDir, 'route.ts'), routeContent);
+    const routeDir = path.join(config.projectPath, 'src/app/api/upload');
+    await fs.ensureDir(routeDir);
+    await fs.writeFile(path.join(routeDir, 'route.ts'), routeContent);
 }
 
 async function createUploadComponent(config: ProjectConfig) {
-  const componentContent = `'use client';
+    const componentContent = `'use client';
 
 import type { ChangeEvent } from 'react';
 import { useState } from 'react';
@@ -481,20 +482,20 @@ export function FileUpload() {
 }
 `;
 
-  const componentPath = path.join(config.projectPath, 'src/components/file-upload.tsx');
-  await fs.ensureDir(path.dirname(componentPath));
-  await fs.writeFile(componentPath, componentContent);
+    const componentPath = path.join(config.projectPath, 'src/components/file-upload.tsx');
+    await fs.ensureDir(path.dirname(componentPath));
+    await fs.writeFile(componentPath, componentContent);
 }
 
 async function writeStorageLib(config: ProjectConfig, contents: string) {
-  const storagePath = path.join(config.projectPath, 'src/lib/storage.ts');
-  await fs.ensureDir(path.dirname(storagePath));
-  await fs.writeFile(storagePath, contents);
+    const storagePath = path.join(config.projectPath, 'src/lib/storage.ts');
+    await fs.ensureDir(path.dirname(storagePath));
+    await fs.writeFile(storagePath, contents);
 }
 
 async function appendEnv(projectPath: string, snippet: string) {
-  const envPath = path.join(projectPath, '.env.local');
-  const existing = await fs.readFile(envPath, 'utf-8').catch(() => '');
-  const separator = existing.endsWith('\n') || existing.length === 0 ? '' : '\n';
-  await fs.writeFile(envPath, `${existing}${separator}${snippet}`);
+    const envPath = path.join(projectPath, '.env.local');
+    const existing = await fs.readFile(envPath, 'utf-8').catch(() => '');
+    const separator = existing.endsWith('\n') || existing.length === 0 ? '' : '\n';
+    await fs.writeFile(envPath, `${existing}${separator}${snippet}`);
 }
