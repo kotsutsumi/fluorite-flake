@@ -80,7 +80,10 @@ export class CLIProvisioner implements CloudProvisioner {
     );
   }
 
-  private async createAndConnectBlobStore(storeName: string, projectPath: string): Promise<string | undefined> {
+  private async createAndConnectBlobStore(
+    storeName: string,
+    projectPath: string
+  ): Promise<string | undefined> {
     const createVariants: string[][] = [
       ['blob', 'store', 'add', storeName],
       ['blob', 'store', 'create', storeName],
@@ -119,7 +122,10 @@ export class CLIProvisioner implements CloudProvisioner {
     return token;
   }
 
-  private async connectBlobStore(storeName: string, projectPath: string): Promise<string | undefined> {
+  private async connectBlobStore(
+    storeName: string,
+    projectPath: string
+  ): Promise<string | undefined> {
     // Try to connect/link the blob store to the project
     const connectVariants: string[][] = [
       ['blob', 'store', 'connect', storeName],
@@ -648,12 +654,12 @@ export class CLIProvisioner implements CloudProvisioner {
       } else {
         console.log(
           '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard:\n' +
-          '      1. Go to https://vercel.com/dashboard\n' +
-          '      2. Select your project\n' +
-          '      3. Go to Storage tab\n' +
-          '      4. Select your blob store\n' +
-          '      5. Create a read/write token\n' +
-          '      6. Add it as BLOB_READ_WRITE_TOKEN environment variable'
+            '      1. Go to https://vercel.com/dashboard\n' +
+            '      2. Select your project\n' +
+            '      3. Go to Storage tab\n' +
+            '      4. Select your blob store\n' +
+            '      5. Create a read/write token\n' +
+            '      6. Add it as BLOB_READ_WRITE_TOKEN environment variable'
         );
       }
 
