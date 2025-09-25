@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🗄️ Running database migrations..."
+
+# Generate SQL migrations
+{{packageManager}} run db:generate
+
+# Apply migrations
+{{packageManager}} run db:push
+
+echo "✅ Migrations complete!"

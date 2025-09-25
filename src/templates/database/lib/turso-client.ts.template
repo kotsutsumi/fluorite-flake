@@ -1,0 +1,9 @@
+import { PrismaClient } from '@prisma/client';
+
+// For local development with Turso (SQLite), we use the standard Prisma client
+// No adapters needed for local SQLite files
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
+
+export default prisma;

@@ -1,0 +1,174 @@
+import { PrismaClient } from '@prisma/client';{{#if auth}}
+import bcrypt from 'bcryptjs';{{/if}}
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Clean up existing data (handle empty database gracefully)
+  try {
+    await prisma.post.deleteMany();{{#if auth}}
+    await prisma.invitation.deleteMany();
+    await prisma.member.deleteMany();
+    await prisma.organization.deleteMany();{{/if}}
+    await prisma.session.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.user.deleteMany();
+  } catch (_error) {
+    // Ignore errors during cleanup (tables might not exist yet)
+    console.log('Database cleanup skipped (fresh database)');
+  }
+
+  {{#if auth}}
+  const hashedPassword = await bcrypt.hash('Demo123!', 12);
+  {{/if}}
+
+  // Create demo users
+  const alice = await prisma.user.create({
+    data: {
+      email: 'alice@example.com',
+      name: 'Alice Johnson',
+      emailVerified: true,{{#if auth}}
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'alice@example.com',
+          password: hashedPassword,
+        },
+      },{{/if}}
+    },
+  });
+
+  const bob = await prisma.user.create({
+    data: {
+      email: 'bob@example.com',
+      name: 'Bob Smith',
+      emailVerified: true,{{#if auth}}
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'bob@example.com',
+          password: hashedPassword,
+        },
+      },{{/if}}
+    },
+  });
+
+  const charlie = await prisma.user.create({
+    data: {
+      email: 'charlie@example.com',
+      name: 'Charlie Brown',{{#if auth}}
+      accounts: {
+        create: {
+          providerId: 'email-password',
+          accountId: 'charlie@example.com',
+          password: hashedPassword,
+        },
+      },{{/if}}
+    },
+  });
+
+  // Create demo posts
+  await prisma.post.createMany({
+    data: [
+      {
+        title: 'Getting Started with Next.js and Turso',
+        content: 'Next.js is a powerful React framework that enables you to build full-stack web applications. Combined with Turso, a distributed SQLite database, you get the perfect combination of developer experience and performance.',
+        published: true,
+        authorId: alice.id,
+        createdAt: new Date('2024-01-15'),
+      },
+      {
+        title: 'Why Turso is Perfect for Edge Computing',
+        content: 'Turso brings SQLite to the edge, offering low-latency database access from anywhere in the world. Its distributed nature makes it ideal for modern web applications.',
+        published: true,
+        authorId: alice.id,
+        createdAt: new Date('2024-01-18'),
+      },
+      {
+        title: 'Building Scalable Apps with Prisma',
+        content: 'Prisma provides a type-safe database client that makes working with databases a breeze. Learn how to leverage its power in your Next.js applications.',
+        published: true,
+        authorId: bob.id,
+        createdAt: new Date('2024-01-20'),
+      },
+      {
+        title: 'Draft: Advanced Turso Techniques',
+        content: 'This post is still in progress. It will cover advanced techniques for optimizing Turso performance.',
+        published: false,
+        authorId: bob.id,
+        createdAt: new Date('2024-01-22'),
+      },
+      {
+        title: 'The Future of Edge Databases',
+        content: 'Edge computing is revolutionizing how we think about data storage and retrieval. Discover what the future holds for edge databases.',
+        published: true,
+        authorId: charlie.id,
+        createdAt: new Date('2024-01-25'),
+      },
+    ],
+  });
+
+  {{#if auth}}
+  // Create organizations and memberships
+  const techCorp = await prisma.organization.create({
+    data: {
+      name: 'Tech Corp',
+      slug: 'tech-corp',
+      metadata: JSON.stringify({ industry: 'Technology' }),
+    },
+  });
+
+  const startupInc = await prisma.organization.create({
+    data: {
+      name: 'Startup Inc',
+      slug: 'startup-inc',
+      metadata: JSON.stringify({ industry: 'Software' }),
+    },
+  });
+
+  // Create memberships
+  await prisma.member.createMany({
+    data: [
+      { userId: alice.id, organizationId: techCorp.id, role: 'owner' },
+      { userId: bob.id, organizationId: techCorp.id, role: 'member' },
+      { userId: bob.id, organizationId: startupInc.id, role: 'owner' },
+      { userId: charlie.id, organizationId: startupInc.id, role: 'member' },
+    ],
+  });
+
+  // Create an invitation
+  await prisma.invitation.create({
+    data: {
+      email: 'dave@example.com',
+      role: 'member',
+      organizationId: techCorp.id,
+      invitedBy: alice.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    },
+  });
+  {{/if}}
+
+  console.log('✅ Database seeded successfully!');
+  console.log('');
+  console.log('📊 Created:');
+  console.log('   - 3 users');
+  console.log('   - 5 posts (4 published, 1 draft)');{{#if auth}}
+  console.log('   - 2 organizations');
+  console.log('   - 4 memberships');
+  console.log('   - 1 invitation');
+  console.log('');
+  console.log('🔐 Login credentials:');
+  console.log('   - alice@example.com / Demo123! (owner of Tech Corp)');
+  console.log('   - bob@example.com / Demo123! (member of Tech Corp, owner of Startup Inc)');
+  console.log('   - charlie@example.com / Demo123! (member of Startup Inc)');{{/if}}
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error('❌ Failed to seed database', error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

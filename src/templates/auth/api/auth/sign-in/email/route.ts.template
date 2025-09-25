@@ -1,0 +1,117 @@
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { cookies } from 'next/headers';
+import prisma from '@/lib/db';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { email, password } = body;
+
+    console.log('Login attempt for:', email);
+    console.log('Password provided:', !!password);
+
+    // Find user in database with their account
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        accounts: {
+          where: {
+            providerId: 'email-password'
+          }
+        }
+      }
+    });
+
+    console.log('User found:', !!user);
+    console.log('Accounts found:', user?.accounts?.length || 0);
+
+    if (!user || !user.accounts[0]) {
+      console.error('User not found or no accounts:', {
+        userExists: !!user,
+        accountsLength: user?.accounts?.length || 0
+      });
+      return NextResponse.json({
+        error: { message: 'Invalid credentials' }
+      }, { status: 401 });
+    }
+
+    // Verify password from the account
+    const account = user.accounts[0];
+    console.log('Account password exists:', !!account.password);
+    console.log('Account password length:', account.password?.length || 0);
+
+    const isValidPassword = await bcrypt.compare(password, account.password || '');
+    console.log('Password verification result:', isValidPassword);
+
+    if (!isValidPassword) {
+      console.error('Password verification failed for user:', email);
+      console.error('Provided password:', password);
+      console.error('Stored hash:', account.password);
+      return NextResponse.json({
+        error: { message: 'Invalid credentials' }
+      }, { status: 401 });
+    }
+
+    // Create session
+    const sessionToken = randomUUID();
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    // Store session in database
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        token: sessionToken,
+        expiresAt: expires,
+        ipAddress: request.ip || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      }
+    });
+
+    // Return success response with cookie in headers
+    const response = NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        role: user.role
+      },
+      session: {
+        id: session.id,
+        userId: user.id,
+        token: sessionToken,
+        expiresAt: expires.toISOString()
+      }
+    });
+
+    // Set cookie in response headers
+    console.log('Setting session cookie:', sessionToken);
+    response.cookies.set('session', sessionToken, {
+      httpOnly: true,
+      secure: ${process.env.NODE_ENV} === 'production',
+      sameSite: 'lax',
+      expires: expires,
+      path: '/'
+    });
+
+    console.log('Cookie settings:', {
+      httpOnly: true,
+      secure: ${process.env.NODE_ENV} === 'production',
+      sameSite: 'lax',
+      expires: expires.toISOString(),
+      path: '/'
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json({
+      error: { message: 'Login failed' }
+    }, { status: 500 });
+  }
+}

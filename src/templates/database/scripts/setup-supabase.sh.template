@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🚀 Setting up Supabase project..."
+
+# Check if supabase CLI is installed
+if ! command -v supabase &> /dev/null; then
+    echo "❌ Supabase CLI not found. Please install it first:"
+    echo "   brew install supabase/tap/supabase"
+    exit 1
+fi
+
+# Login to Supabase
+echo "📝 Logging in to Supabase..."
+supabase login
+
+# Initialize Supabase project
+echo "🗄️ Initializing Supabase project..."
+supabase init
+
+# Start local Supabase
+echo "🚀 Starting local Supabase..."
+supabase start
+
+echo "✅ Supabase setup complete!"
+echo ""
+echo "To create a remote project:"
+echo "   supabase projects create {{projectName}}"
+echo "   supabase link --project-ref [project-id]"

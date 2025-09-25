@@ -1,0 +1,8 @@
+# Turso Database - Local Development
+TURSO_DATABASE_URL="file://{{localDbPath}}"
+TURSO_AUTH_TOKEN=""
+DATABASE_URL="file://{{localDbPath}}"
+
+# Turso Cloud - Production/Staging/Development
+# These will be automatically set during deployment
+# Run '{{packageManager}} run setup:turso:cloud' to create cloud databases

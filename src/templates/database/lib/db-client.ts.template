@@ -1,0 +1,7 @@
+import { PrismaClient } from '@prisma/client';
+
+function normalizeSqliteUrl(url: string | undefined | null) {
+  if (!url) return undefined;
+  if (url.startsWith('file://')) {
+    const raw = url.slice('file://'.length);
+    return raw.startsWith('/') ? \

@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'fs-extra';
 
 import type { ProjectConfig } from '../commands/create/types.js';
+import { readTemplate, readTemplateWithReplacements } from '../utils/template-reader.js';
 
 export async function setupDeployment(config: ProjectConfig) {
     // Flutter has its own deployment configuration
@@ -150,58 +151,10 @@ async function createDeploymentScripts(config: ProjectConfig) {
 }
 
 async function createSetupDeploymentScript(config: ProjectConfig) {
-    const deployScriptContent = `#!/usr/bin/env bash
-set -e
-
-PROJECT_NAME="${config.projectName}"
-ENV=\${1:-"prod"}
-
-echo "🚀 Setting up Vercel deployment for $PROJECT_NAME (\$ENV environment)..."
-
-# Check if vercel CLI is installed
-if ! command -v vercel &> /dev/null; then
-    echo "⚠️ Vercel CLI not found. Installing..."
-    npm i -g vercel
-fi
-
-# Login to Vercel (if not already logged in)
-echo "📝 Checking Vercel authentication..."
-if ! vercel whoami &> /dev/null; then
-    echo "Logging in to Vercel..."
-    vercel login
-fi
-
-# Link to Vercel project
-if [ ! -f ".vercel/project.json" ]; then
-    echo "🔗 Linking to Vercel project..."
-    vercel link --yes
-else
-    echo "✅ Already linked to Vercel project"
-fi
-
-# Set environment-specific variables
-echo "🔐 Setting environment variables for \$ENV..."
-
-if [ "\$ENV" == "prod" ] || [ "\$ENV" == "production" ]; then
-    ENV_FILE=".env.production"
-    ENV_FLAG="--environment=production"
-    ENV_NAME="production"
-elif [ "\$ENV" == "stg" ] || [ "\$ENV" == "staging" ]; then
-    ENV_FILE=".env.staging"
-    ENV_FLAG="--environment=preview"
-    ENV_NAME="staging"
-elif [ "\$ENV" == "dev" ] || [ "\$ENV" == "development" ]; then
-    ENV_FILE=".env.development"
-    ENV_FLAG="--environment=preview"
-    ENV_NAME="development"
-else
-    echo "❌ Invalid environment. Use: prod, staging, or dev"
-    exit 1
-fi
-
-${
-    config.storage === 'vercel-blob'
-        ? `# Setup Vercel Blob Storage automatically
+    // Build blob storage setup section
+    let blobStorageSetup = '';
+    if (config.storage === 'vercel-blob') {
+        blobStorageSetup = `# Setup Vercel Blob Storage automatically
 if [ ! -f ".env.local" ] || ! grep -q "BLOB_READ_WRITE_TOKEN=" .env.local || [ -z "$(grep BLOB_READ_WRITE_TOKEN= .env.local | cut -d'=' -f2)" ]; then
     echo ""
     echo "🔑 Setting up Vercel Blob Storage..."
@@ -218,76 +171,30 @@ if [ ! -f ".env.local" ] || ! grep -q "BLOB_READ_WRITE_TOKEN=" .env.local || [ -
         fi
     fi
 fi
-`
-        : ''
-}
+`;
+    }
 
-# Load environment variables from file and set them in Vercel
-if [ -f "\$ENV_FILE" ]; then
-    echo "📄 Loading environment variables from \$ENV_FILE..."
-
-    # Read each line from the env file
-    while IFS= read -r line; do
-        # Skip comments and empty lines
-        if [[ ! "\$line" =~ ^# ]] && [[ -n "\$line" ]]; then
-            # Extract key and value
-            KEY=\$(echo "\$line" | cut -d '=' -f 1)
-            VALUE=\$(echo "\$line" | cut -d '=' -f 2- | sed 's/^"//' | sed 's/"$//')
-
-            # Set the environment variable in Vercel
-            echo "   Setting \$KEY..."
-            echo "\$VALUE" | vercel env add \$KEY \$ENV_FLAG --yes 2>/dev/null || true
-        fi
-    done < "\$ENV_FILE"
-
-    echo "✅ Environment variables set for \$ENV_NAME"
-else
-    echo "⚠️ No environment file found at \$ENV_FILE"
-fi
-
-${
-    config.database !== 'none' && config.orm === 'prisma'
-        ? `
+    // Build database migrations section
+    let databaseMigrations = '';
+    if (config.database !== 'none' && config.orm === 'prisma') {
+        databaseMigrations = `
 # Run database migrations for production
-if [ "\$ENV" == "prod" ] || [ "\$ENV" == "production" ]; then
+if [ "$ENV" == "prod" ] || [ "$ENV" == "production" ]; then
     echo "🗄️ Running database migrations..."
     ${config.packageManager} run db:migrate:prod || echo "Migration will run during build"
 fi
-`
-        : ''
-}
-
-# Deploy to Vercel
-echo "🚀 Deploying to Vercel (\$ENV_NAME)..."
-
-if [ "\$ENV" == "prod" ] || [ "\$ENV" == "production" ]; then
-    vercel --prod
-else
-    DEPLOYMENT_URL=\$(vercel --preview)
-    echo ""
-    echo "✅ Deployment complete!"
-    echo "🔗 Preview URL: \$DEPLOYMENT_URL"
-
-    # Create alias for staging/dev environments
-    if [ "\$ENV" == "stg" ] || [ "\$ENV" == "staging" ]; then
-        ALIAS="\${PROJECT_NAME}-staging.vercel.app"
-        vercel alias \$DEPLOYMENT_URL \$ALIAS
-        echo "🔗 Staging alias: https://\$ALIAS"
-    elif [ "\$ENV" == "dev" ] || [ "\$ENV" == "development" ]; then
-        ALIAS="\${PROJECT_NAME}-dev.vercel.app"
-        vercel alias \$DEPLOYMENT_URL \$ALIAS
-        echo "🔗 Development alias: https://\$ALIAS"
-    fi
-fi
-
-echo ""
-echo "✅ Deployment setup complete for \$ENV_NAME!"
-echo ""
-echo "📚 Next steps:"
-echo "   - Visit your deployment URL to see the app"
-echo "   - Run '${config.packageManager} run deploy:\$ENV' for future deployments"
-echo "   - Run '${config.packageManager} run deploy:destroy' to remove everything"
 `;
+    }
+
+    const deployScriptContent = await readTemplateWithReplacements(
+        'deployment/scripts/setup-deployment.sh.template',
+        {
+            projectName: config.projectName,
+            packageManager: config.packageManager,
+            blobStorageSetup,
+            databaseMigrations,
+        }
+    );
 
     const scriptPath = path.join(config.projectPath, 'scripts', 'setup-deployment.sh');
     await fs.ensureDir(path.dirname(scriptPath));
@@ -296,42 +203,17 @@ echo "   - Run '${config.packageManager} run deploy:destroy' to remove everythin
 }
 
 async function createDestroyDeploymentScript(config: ProjectConfig) {
-    const templatePath = path.join(
-        path.dirname(new URL(import.meta.url).pathname),
-        '../templates/scripts/destroy-deployment.ts'
-    );
+    const content = await readTemplate('scripts/destroy-deployment.ts.template');
     const scriptPath = path.join(config.projectPath, 'scripts', 'destroy-deployment.ts');
-    const content = await fs.readFile(templatePath, 'utf-8');
     await fs.ensureDir(path.dirname(scriptPath));
     await fs.writeFile(scriptPath, content);
 }
 
 async function createVercelAutomationScript(config: ProjectConfig) {
-    const automationScriptContent = `#!/usr/bin/env bash
-set -e
-
-PROJECT_NAME="${config.projectName}"
-PROJECT_NAME_CLEAN=\$(echo "\$PROJECT_NAME" | tr '-' '_')
-
-echo "🎯 Automated Vercel + ${config.database === 'turso' ? 'Turso' : 'Supabase'} deployment setup..."
-echo ""
-echo "This script will:"
-echo "  1. Create cloud databases (prod, stg, dev)"
-echo "  2. Set up Vercel project with environments"
-echo "  3. Configure all environment variables"
-echo "  4. Deploy to all environments"
-echo ""
-read -p "Continue? (Y/n) " -n 1 -r
-echo ""
-
-if [[ \$REPLY =~ ^[Nn]$ ]]; then
-    echo "Cancelled."
-    exit 0
-fi
-
-${
-    config.database === 'turso'
-        ? `
+    // Build Turso setup section
+    let tursoSetup = '';
+    if (config.database === 'turso') {
+        tursoSetup = `
 # Step 1: Set up Turso Cloud databases
 echo ""
 echo "📦 Step 1: Setting up Turso Cloud databases..."
@@ -341,62 +223,20 @@ if [ $? -ne 0 ]; then
     echo "❌ Failed to set up Turso databases"
     exit 1
 fi
-`
-        : ''
-}
-
-# Step 2: Set up Vercel project
-echo ""
-echo "🔗 Step 2: Linking Vercel project..."
-
-# Install Vercel CLI if needed
-if ! command -v vercel &> /dev/null; then
-    echo "Installing Vercel CLI..."
-    npm i -g vercel
-fi
-
-# Login to Vercel
-if ! vercel whoami &> /dev/null; then
-    echo "Logging in to Vercel..."
-    vercel login
-fi
-
-# Link project
-vercel link --yes
-
-# Step 3: Deploy to all environments
-echo ""
-echo "🚀 Step 3: Deploying to all environments..."
-
-# Deploy to development
-echo ""
-echo "📌 Deploying to development environment..."
-bash scripts/setup-deployment.sh dev
-
-# Deploy to staging
-echo ""
-echo "📌 Deploying to staging environment..."
-bash scripts/setup-deployment.sh staging
-
-# Deploy to production
-echo ""
-echo "📌 Deploying to production environment..."
-bash scripts/setup-deployment.sh prod
-
-echo ""
-echo "🎉 Automated deployment complete!"
-echo ""
-echo "📊 Your deployments:"
-echo "   Production: https://\${PROJECT_NAME}.vercel.app"
-echo "   Staging: https://\${PROJECT_NAME}-staging.vercel.app"
-echo "   Development: https://\${PROJECT_NAME}-dev.vercel.app"
-echo ""
-echo "📚 Management commands:"
-echo "   ${config.packageManager} run deploy:prod     - Deploy to production"
-echo "   ${config.packageManager} run deploy:staging  - Deploy to staging"
-echo "   ${config.packageManager} run deploy:dev      - Deploy to development"
-echo "   ${config.packageManager} run deploy:destroy  - Remove everything"
 `;
+    }
+
+    const databaseType = config.database === 'turso' ? 'Turso' : 'Supabase';
+
+    const automationScriptContent = await readTemplateWithReplacements(
+        'deployment/scripts/automated-deployment.sh.template',
+        {
+            projectName: config.projectName,
+            databaseType,
+            packageManager: config.packageManager,
+            tursoSetup,
+        }
+    );
 
     const scriptPath = path.join(config.projectPath, 'scripts', 'automated-deployment.sh');
     await fs.ensureDir(path.dirname(scriptPath));
