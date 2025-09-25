@@ -9,11 +9,7 @@ vi.mock('execa', () => ({ execa: vi.fn() }));
 import { execa } from 'execa';
 const execaMock = vi.mocked(execa);
 
-import {
-    cloneRepository,
-    downloadAndExtract,
-    downloadFile,
-} from '../../src/utils/download.js';
+import { cloneRepository, downloadAndExtract, downloadFile } from '../../src/utils/download.js';
 
 describe('download utilities', () => {
     beforeEach(() => {
@@ -28,18 +24,23 @@ describe('download utilities', () => {
 
         await downloadAndExtract('https://example.com/archive.tgz', destination);
 
-        expect(execaMock).toHaveBeenNthCalledWith(1, 'curl', [
-            '-L',
-            '-o',
-            path.join(destination, '.temp', 'download.tar.gz'),
-            'https://example.com/archive.tgz',
-        ], expect.objectContaining({ stdio: 'pipe' }));
-        expect(execaMock).toHaveBeenNthCalledWith(2, 'tar', [
-            '-xzf',
-            path.join(destination, '.temp', 'download.tar.gz'),
-            '-C',
-            destination,
-        ], expect.objectContaining({ stdio: 'pipe' }));
+        expect(execaMock).toHaveBeenNthCalledWith(
+            1,
+            'curl',
+            [
+                '-L',
+                '-o',
+                path.join(destination, '.temp', 'download.tar.gz'),
+                'https://example.com/archive.tgz',
+            ],
+            expect.objectContaining({ stdio: 'pipe' })
+        );
+        expect(execaMock).toHaveBeenNthCalledWith(
+            2,
+            'tar',
+            ['-xzf', path.join(destination, '.temp', 'download.tar.gz'), '-C', destination],
+            expect.objectContaining({ stdio: 'pipe' })
+        );
 
         expect(await fs.pathExists(path.join(destination, '.temp'))).toBe(false);
     });
