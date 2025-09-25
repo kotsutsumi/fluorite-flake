@@ -175,7 +175,7 @@ async function runProjectGeneration(config: ProjectConfig) {
 
         // Push schema to database with force reset for initial setup
         spinner.text = 'Creating database tables...';
-        await execa(config.packageManager, ['run', 'db:push', '--force-reset'], {
+        await execa(config.packageManager, ['run', 'db:push:force'], {
           cwd: config.projectPath,
           stdio: 'pipe',
         });
@@ -192,7 +192,7 @@ async function runProjectGeneration(config: ProjectConfig) {
         spinner.warn('Database setup incomplete. You can run it manually later with:');
         console.log(chalk.gray(`    cd ${config.projectName}`));
         console.log(chalk.gray(`    ${config.packageManager} run db:generate`));
-        console.log(chalk.gray(`    ${config.packageManager} run db:push --force-reset`));
+        console.log(chalk.gray(`    ${config.packageManager} run db:push:force`));
         console.log(chalk.gray(`    ${config.packageManager} run db:seed`));
       }
     }

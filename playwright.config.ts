@@ -61,6 +61,17 @@ export default defineConfig({
         viewport: { width: 1280, height: 720 },
       },
     },
+    {
+      name: 'login-e2e',
+      testMatch: '**/login.test.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Custom options for login tests
+        ignoreHTTPSErrors: true,
+        viewport: { width: 1280, height: 720 },
+      },
+      timeout: 120000, // 2 minutes for login tests
+    },
     // Quick smoke tests for CI
     {
       name: 'smoke-tests',

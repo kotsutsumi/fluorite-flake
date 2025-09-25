@@ -1240,6 +1240,7 @@ async function addDatabaseScripts(config: ProjectConfig) {
   if (config.orm === 'prisma') {
     dbScripts['db:generate'] = 'prisma generate';
     dbScripts['db:push'] = 'prisma db push';
+    dbScripts['db:push:force'] = 'prisma db push --force-reset';
     dbScripts['db:migrate'] = 'prisma migrate dev';
     dbScripts['db:migrate:prod'] = 'prisma migrate deploy';
     dbScripts['db:seed'] = 'tsx prisma/seed.ts';
@@ -1325,7 +1326,7 @@ fi
 # Push schema to database (always force to ensure tables exist)
 if [ "$INIT_SUCCESS" = true ]; then
   echo "  • Pushing schema to database..."
-  if OUTPUT=$(${config.packageManager} run db:push --force-reset 2>&1); then
+  if OUTPUT=$(${config.packageManager} run db:push:force 2>&1); then
     echo "  ✅ Schema pushed to database"
   else
     echo "  ⚠️  Schema push failed:"
@@ -1355,7 +1356,7 @@ else
   echo ""
   echo "⚠️  Database initialization incomplete. Run the following after fixing any issues:"
   echo "    ${config.packageManager} run db:generate"
-  echo "    ${config.packageManager} run db:push"
+  echo "    ${config.packageManager} run db:push:force"
   echo "    ${config.packageManager} run db:seed"
   exit 0  # Don't fail - allow dev server to start anyway
 fi
