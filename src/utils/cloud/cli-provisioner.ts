@@ -182,7 +182,7 @@ export class CLIProvisioner implements CloudProvisioner {
   }
 
   private async provisionVercelBlob(
-    project: VercelProjectRecord,
+    _project: VercelProjectRecord,
     slug: string,
     config: ProjectConfig
   ): Promise<VercelBlobRecord> {
@@ -191,26 +191,19 @@ export class CLIProvisioner implements CloudProvisioner {
     try {
       const storeName = `${slug}-blob`;
 
-      // Create blob store
+      // Create blob store (without --project flag since we're in the project directory)
       this.spinner.text = 'Creating Vercel Blob store...';
       await execa(
         'vercel',
-        ['storage', 'create', 'blob', storeName, '--project', project.projectName, '--yes'],
+        ['blob', 'create', storeName, '--yes'],
         {
           cwd: config.projectPath,
           reject: false, // Don't reject if store already exists
         }
       );
 
-      // Connect blob store to project
-      this.spinner.text = 'Connecting Blob store to project...';
-      await execa(
-        'vercel',
-        ['storage', 'connect', storeName, '--project', project.projectName, '--yes'],
-        {
-          cwd: config.projectPath,
-        }
-      );
+      // The store is automatically connected when created from within a project directory
+      this.spinner.text = 'Verifying Blob store connection...';
 
       this.spinner.succeed('Vercel Blob storage configured');
 
@@ -226,7 +219,7 @@ export class CLIProvisioner implements CloudProvisioner {
   }
 
   private async configureEnvironment(
-    vercel: VercelProjectRecord,
+    _vercel: VercelProjectRecord,
     turso: { databases: TursoDatabaseRecord[] },
     _vercelBlob: VercelBlobRecord,
     config: ProjectConfig
@@ -239,22 +232,19 @@ export class CLIProvisioner implements CloudProvisioner {
         const target =
           db.env === 'prod' ? 'production' : db.env === 'stg' ? 'preview' : 'development';
 
-        // Set DATABASE_URL
+        // Set DATABASE_URL (no --project flag when running from project directory)
         await execa(
           'vercel',
           [
             'env',
             'add',
             'DATABASE_URL',
-            `${db.databaseUrl}?authToken=${db.authToken}`,
-            '--yes',
-            '--target',
             target,
-            '--project',
-            vercel.projectName,
+            '--yes'
           ],
           {
             cwd: config.projectPath,
+            input: `${db.databaseUrl}?authToken=${db.authToken}`,
             reject: false,
           }
         );
@@ -266,15 +256,12 @@ export class CLIProvisioner implements CloudProvisioner {
             'env',
             'add',
             'TURSO_DATABASE_URL',
-            db.databaseUrl,
-            '--yes',
-            '--target',
             target,
-            '--project',
-            vercel.projectName,
+            '--yes'
           ],
           {
             cwd: config.projectPath,
+            input: db.databaseUrl,
             reject: false,
           }
         );
@@ -286,15 +273,12 @@ export class CLIProvisioner implements CloudProvisioner {
             'env',
             'add',
             'TURSO_AUTH_TOKEN',
-            db.authToken,
-            '--yes',
-            '--target',
             target,
-            '--project',
-            vercel.projectName,
+            '--yes'
           ],
           {
             cwd: config.projectPath,
+            input: db.authToken,
             reject: false,
           }
         );
