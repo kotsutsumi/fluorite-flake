@@ -84,7 +84,8 @@ export class CLIProvisioner implements CloudProvisioner {
       const databases: TursoDatabaseRecord[] = [];
 
       for (const env of DB_ENVIRONMENTS) {
-        const dbName = `${slug}_${env}`;
+        // Turso only accepts lowercase letters, numbers, and dashes (no underscores)
+        const dbName = `${slug}-${env}`;
         this.spinner.text = `Creating database ${dbName}...`;
 
         // Create database

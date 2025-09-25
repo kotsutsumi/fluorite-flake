@@ -12,10 +12,12 @@ const ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
 
 function createMockDatabaseRecords(slug: string): TursoDatabaseRecord[] {
   return ENVIRONMENTS.map((env) => {
-    const hostname = `${slug}-${env}.mock.turso.dev`;
+    // Use dashes instead of underscores for consistency with Turso naming requirements
+    const dbName = `${slug}-${env}`;
+    const hostname = `${dbName}.mock.turso.dev`;
     return {
       env,
-      name: `${slug}_${env}`,
+      name: dbName,
       hostname,
       databaseUrl: `libsql://${hostname}`,
       authToken: `mock-token-${randomUUID()}`,
