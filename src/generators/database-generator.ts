@@ -35,7 +35,7 @@ async function setupTurso(config: ProjectConfig) {
   await fs.ensureDir(path.join(config.projectPath, 'prisma'));
 
   // Set up local Turso database with automatic configuration
-  const localDbPath = path.join('prisma', 'dev.db');
+  const localDbPath = './prisma/dev.db';
 
   // Create comprehensive environment variables for local and cloud
   const envContent = `

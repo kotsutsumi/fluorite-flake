@@ -143,11 +143,29 @@ async function runProjectGeneration(config: ProjectConfig) {
     if (config.framework !== 'flutter') {
       spinner = ora('Installing dependencies...').start();
       try {
-        await execa(config.packageManager, ['install'], {
+        // Use 'inherit' stdio to show progress for pnpm/yarn, but 'pipe' for npm/bun to avoid clutter
+        const useInheritStdio =
+          config.packageManager === 'pnpm' || config.packageManager === 'yarn';
+
+        const childProcess = execa(config.packageManager, ['install'], {
           cwd: config.projectPath,
-          stdio: 'pipe',
+          stdio: useInheritStdio ? ['inherit', 'pipe', 'inherit'] : 'pipe',
           timeout: 180000, // 3 minute timeout
         });
+
+        // For npm/bun, update spinner text periodically to show it's still running
+        if (!useInheritStdio) {
+          const progressInterval = setInterval(() => {
+            const dots = spinner.text.endsWith('...') ? '' : '.';
+            spinner.text = `Installing dependencies${dots ? '' : '.'}${dots}${dots}`;
+          }, 1000);
+
+          await childProcess;
+          clearInterval(progressInterval);
+        } else {
+          await childProcess;
+        }
+
         spinner.succeed('Dependencies installed');
       } catch (error) {
         spinner.fail('Failed to install dependencies');
