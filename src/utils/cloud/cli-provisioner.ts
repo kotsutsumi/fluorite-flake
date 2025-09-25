@@ -82,8 +82,8 @@ export class CLIProvisioner implements CloudProvisioner {
 
   private async createAndConnectBlobStore(storeName: string, projectPath: string) {
     const createVariants: string[][] = [
-      ['blob', 'store', 'add', storeName],
-      ['blob', 'store', 'create', storeName],
+      ['blob', 'store', 'add', storeName, '--yes'],
+      ['blob', 'store', 'create', storeName, '--yes'],
     ];
 
     let created = false;
@@ -92,6 +92,8 @@ export class CLIProvisioner implements CloudProvisioner {
         await execa('vercel', args, {
           cwd: projectPath,
           timeout: 30000,
+          stdin: 'pipe',
+          input: 'y\n', // Fallback for prompts if --yes doesn't work
         });
         created = true;
         break;
@@ -118,8 +120,8 @@ export class CLIProvisioner implements CloudProvisioner {
 
   private async connectBlobStore(storeName: string, projectPath: string) {
     const connectVariants: string[][] = [
-      ['blob', 'store', 'connect', storeName],
-      ['blob', 'store', 'link', storeName],
+      ['blob', 'store', 'connect', storeName, '--yes'],
+      ['blob', 'store', 'link', storeName, '--yes'],
     ];
 
     let lastError: unknown;
@@ -129,6 +131,8 @@ export class CLIProvisioner implements CloudProvisioner {
         await execa('vercel', args, {
           cwd: projectPath,
           timeout: 30000,
+          stdin: 'pipe',
+          input: 'y\n', // Fallback for prompts if --yes doesn't work
         });
         return;
       } catch (error) {
