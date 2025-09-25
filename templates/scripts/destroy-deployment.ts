@@ -4,8 +4,6 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawn } from 'node:child_process';
 
-const TURSO_API_BASE = 'https://api.turso.tech';
-const VERCEL_API_BASE = 'https://api.vercel.com';
 const PROVISIONING_FILE = 'fluorite-cloud.json';
 
 interface TursoDatabaseRecord {
@@ -81,32 +79,33 @@ async function deleteTurso(record: CloudProvisioningRecord) {
     return;
   }
 
-  const token =
-    process.env.TURSO_API_TOKEN || process.env.TURSO_TOKEN || process.env.TURSO_AUTH_TOKEN;
-  if (!token) {
-    console.warn('\n⚠️  Skipping Turso cleanup because TURSO_API_TOKEN is not set.');
+  try {
+    // Check if turso CLI is available
+    await run('turso', ['--version'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Turso cleanup because Turso CLI is not installed.');
+    return;
+  }
+
+  // Check if logged in
+  try {
+    const authStatus = await run('turso', ['auth', 'status'], process.env);
+    if (!authStatus.includes('Logged in')) {
+      console.warn('\n⚠️  Skipping Turso cleanup because you are not logged in to Turso.');
+      console.log('   Run "turso auth login" to log in.');
+      return;
+    }
+  } catch {
+    console.warn('\n⚠️  Skipping Turso cleanup - could not check auth status.');
     return;
   }
 
   for (const database of turso.databases) {
-    const response = await fetch(
-      `${TURSO_API_BASE}/v1/organizations/${turso.organization}/databases/${database.name}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok && response.status !== 404) {
-      const body = await response.text().catch(() => '');
-      console.warn(
-        `⚠️  Failed to delete Turso database ${database.name}: ${response.status} ${body}`
-      );
-    } else {
+    try {
+      await run('turso', ['db', 'destroy', database.name, '--yes'], process.env);
       console.log(`🗑️  Removed Turso database ${database.name}`);
+    } catch (error) {
+      console.warn(`⚠️  Failed to delete Turso database ${database.name}: ${String(error)}`);
     }
   }
 }
@@ -117,32 +116,37 @@ async function deleteVercelProject(record: CloudProvisioningRecord) {
     return;
   }
 
-  const token = process.env.VERCEL_TOKEN;
-  if (!token) {
-    console.warn('\n⚠️  Skipping Vercel project removal because VERCEL_TOKEN is not set.');
+  try {
+    // Check if vercel CLI is available
+    await run('vercel', ['--version'], process.env);
+  } catch {
+    console.warn('\n⚠️  Skipping Vercel project removal because Vercel CLI is not installed.');
     return;
   }
 
-  const teamQuery = project.teamId ? `?teamId=${encodeURIComponent(project.teamId)}` : '';
-
-  const response = await fetch(
-    `${VERCEL_API_BASE}/v10/projects/${encodeURIComponent(project.projectId)}${teamQuery}`,
-    {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+  // Check if logged in
+  try {
+    const whoami = await run('vercel', ['whoami'], process.env);
+    if (!whoami || whoami.includes('Error')) {
+      console.warn('\n⚠️  Skipping Vercel cleanup because you are not logged in to Vercel.');
+      console.log('   Run "vercel login" to log in.');
+      return;
     }
-  );
+  } catch {
+    console.warn('\n⚠️  Skipping Vercel cleanup - could not check auth status.');
+    return;
+  }
 
-  if (!response.ok && response.status !== 404) {
-    const body = await response.text().catch(() => '');
-    console.warn(
-      `⚠️  Failed to delete Vercel project ${project.projectId}: ${response.status} ${body}`
-    );
-  } else {
+  try {
+    const args = ['remove', project.projectName, '--yes'];
+    if (project.teamId) {
+      args.push('--scope', project.teamId);
+    }
+
+    await run('vercel', args, process.env);
     console.log(`🗑️  Removed Vercel project ${project.projectName}`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to delete Vercel project ${project.projectName}: ${String(error)}`);
   }
 }
 
@@ -152,14 +156,16 @@ async function deleteVercelBlob(record: CloudProvisioningRecord) {
     return;
   }
 
-  const token = process.env.VERCEL_TOKEN;
-  if (!token) {
-    console.warn('\n⚠️  Skipping Vercel Blob cleanup because VERCEL_TOKEN is not set.');
+  try {
+    // Check if vercel CLI is available
+    await run('vercel', ['--version'], process.env);
+  } catch {
+    // CLI not available, already warned in project deletion
     return;
   }
 
   try {
-    const args = ['storage', 'store', 'rm', store.storeName, '--yes'];
+    const args = ['storage', 'rm', store.storeName, '--yes'];
     if (record.vercel?.projectName) {
       args.push('--project', record.vercel.projectName);
     }
@@ -167,10 +173,7 @@ async function deleteVercelBlob(record: CloudProvisioningRecord) {
       args.push('--scope', record.vercel.teamId);
     }
 
-    await run('vercel', args, {
-      ...process.env,
-      VERCEL_TOKEN: token,
-    });
+    await run('vercel', args, process.env);
     console.log(`🗑️  Removed Vercel Blob store ${store.storeName}`);
   } catch (error) {
     console.warn(`⚠️  Failed to remove Vercel Blob store ${store.storeName}: ${String(error)}`);

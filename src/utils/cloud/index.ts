@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../../commands/create.js';
 import { upsertEnvFile } from '../env-file.js';
 import { MockProvisioner } from './mock-provisioner.js';
-import { RealProvisioner } from './real-provisioner.js';
+import { CLIProvisioner } from './cli-provisioner.js';
 import type { CloudProvisioningRecord, CloudProvisioner, TursoDatabaseRecord } from './types.js';
 
 export const PROVISIONING_FILENAME = 'fluorite-cloud.json';
@@ -34,15 +34,16 @@ function resolveProvisioner(): CloudProvisioner {
     return new MockProvisioner();
   }
 
-  if (forcedMode === 'real') {
-    return new RealProvisioner();
+  if (forcedMode === 'real' || forcedMode === 'cli') {
+    return new CLIProvisioner();
   }
 
   if (process.env.NODE_ENV === 'test') {
     return new MockProvisioner();
   }
 
-  return new RealProvisioner();
+  // Default to CLI provisioner for automatic resource creation
+  return new CLIProvisioner();
 }
 
 export async function provisionCloudResources(
