@@ -11,6 +11,7 @@ import { generateExpoProject } from '../generators/expo-generator.js';
 import { generateFlutterProject } from '../generators/flutter-generator.js';
 import { generateNextProject } from '../generators/next-generator.js';
 import { setupStorage } from '../generators/storage-generator.js';
+import { provisionCloudResources, isProvisioningEligible } from '../utils/cloud/index.js';
 import { generateTauriProject } from '../generators/tauri-generator.js';
 
 // Helper functions
@@ -122,7 +123,15 @@ async function runProjectGeneration(config: ProjectConfig) {
       spinner.succeed(`${deploymentText} deployment configured`);
     }
 
+    // Step 4b: Provision managed cloud resources when eligible
+    if (isProvisioningEligible(config)) {
+      spinner = ora('Provisioning managed services...').start();
+      await provisionCloudResources(config);
+      spinner.succeed('Managed services provisioned');
+    }
+
     // Step 5: Setup authentication if selected
+
     if (config.auth) {
       const authText = getAuthText(config.framework);
       spinner = ora(`Setting up ${authText}...`).start();

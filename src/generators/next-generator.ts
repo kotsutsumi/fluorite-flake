@@ -755,6 +755,7 @@ NODE_ENV=development
 # Misc
 .DS_Store
 *.pem
+fluorite-cloud.json
 
 # Debug
 npm-debug.log*

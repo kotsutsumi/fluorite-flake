@@ -82,7 +82,7 @@ async function addDeploymentScripts(config: ProjectConfig) {
     'deploy:prod': 'vercel --prod',
     'deploy:staging': 'vercel --preview',
     'deploy:dev': 'vercel --preview',
-    'deploy:destroy': 'bash scripts/destroy-deployment.sh',
+    'deploy:destroy': 'tsx scripts/destroy-deployment.ts',
 
     // Automated deployment with environment setup
     'deploy:setup': 'bash scripts/setup-deployment.sh',
@@ -272,97 +272,14 @@ echo "   - Run '${config.packageManager} run deploy:destroy' to remove everythin
 }
 
 async function createDestroyDeploymentScript(config: ProjectConfig) {
-  const destroyScriptContent = `#!/usr/bin/env bash
-set -e
-
-PROJECT_NAME="${config.projectName}"
-PROJECT_NAME_CLEAN=\$(echo "\$PROJECT_NAME" | tr '-' '_')
-
-echo "🗑️ Destroying deployment for $PROJECT_NAME..."
-echo "⚠️  This will remove:"
-echo "   - Vercel project and all deployments"
-${config.database === 'turso' ? `echo "   - Turso Cloud databases (prod, stg, dev)"` : ''}
-${config.database === 'supabase' ? `echo "   - Local Supabase instance"` : ''}
-echo ""
-read -p "Are you sure? (y/N) " -n 1 -r
-echo ""
-
-if [[ ! \$REPLY =~ ^[Yy]$ ]]; then
-    echo "Cancelled."
-    exit 0
-fi
-
-# Check if vercel CLI is installed
-if command -v vercel &> /dev/null; then
-    echo "🔥 Removing Vercel project..."
-    vercel remove --yes || echo "Vercel project may not exist or already removed"
-else
-    echo "⚠️ Vercel CLI not found, skipping Vercel cleanup"
-fi
-
-${
-  config.database === 'turso'
-    ? `
-# Remove Turso databases
-if command -v turso &> /dev/null; then
-    echo "🗄️ Removing Turso databases..."
-
-    # Check if logged in to Turso
-    if turso auth status &>/dev/null; then
-        # Remove each environment database
-        for env in prod stg dev; do
-            DB_NAME="\${PROJECT_NAME_CLEAN}_\${env}"
-            echo "   Removing database: \$DB_NAME..."
-            turso db destroy \$DB_NAME --yes 2>/dev/null || echo "   Database \$DB_NAME not found"
-        done
-
-        echo "✅ Turso databases removed"
-    else
-        echo "⚠️ Not logged in to Turso, skipping database cleanup"
-    fi
-else
-    echo "⚠️ Turso CLI not found, skipping database cleanup"
-fi
-`
-    : ''
-}
-
-${
-  config.database === 'supabase'
-    ? `
-# Stop local Supabase
-if command -v supabase &> /dev/null; then
-    echo "🗄️ Stopping local Supabase..."
-    supabase stop || true
-    echo "✅ Local Supabase stopped"
-fi
-`
-    : ''
-}
-
-# Remove environment files
-echo "📁 Cleaning up environment files..."
-rm -f .env.production .env.staging .env.development
-rm -rf .vercel
-
-echo ""
-echo "✅ Deployment destroyed!"
-echo ""
-echo "To redeploy, run:"${
-    config.database === 'turso'
-      ? `
-echo "   ${config.packageManager} run setup:turso:cloud"`
-      : config.database === 'supabase'
-        ? `
-echo "   ${config.packageManager} run setup:supabase"`
-        : ''
-  }
-echo "   ${config.packageManager} run deploy:setup"
-`;
-
-  const destroyScriptPath = path.join(config.projectPath, 'scripts', 'destroy-deployment.sh');
-  await fs.writeFile(destroyScriptPath, destroyScriptContent);
-  await fs.chmod(destroyScriptPath, '755');
+  const templatePath = path.join(
+    path.dirname(new URL(import.meta.url).pathname),
+    '../../templates/scripts/destroy-deployment.ts'
+  );
+  const scriptPath = path.join(config.projectPath, 'scripts', 'destroy-deployment.ts');
+  const content = await fs.readFile(templatePath, 'utf-8');
+  await fs.ensureDir(path.dirname(scriptPath));
+  await fs.writeFile(scriptPath, content);
 }
 
 async function createVercelAutomationScript(config: ProjectConfig) {
