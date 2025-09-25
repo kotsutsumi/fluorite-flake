@@ -355,7 +355,7 @@ model Organization {
   id         String       @id @default(cuid())
   name       String
   slug       String       @unique
-  metadata   Json?
+  metadata   String?      // JSON stored as string for SQLite compatibility
   createdAt  DateTime     @default(now())
   members    Member[]
   invitations Invitation[]

@@ -628,7 +628,7 @@ interface Organization {
   id: string;
   name: string;
   slug: string;
-  metadata: Record<string, any> | null;
+  metadata: string | null; // JSON stored as string for SQLite compatibility
   members: OrganizationMember[];
 }
 
@@ -643,7 +643,7 @@ export function OrganizationsClient({ initialOrganizations }: OrganizationsClien
   const [form, setForm] = useState({
     name: '',
     slug: '',
-    metadata: '',
+    metadata: '{}', // Initialize with empty JSON string
   });
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -655,7 +655,7 @@ export function OrganizationsClient({ initialOrganizations }: OrganizationsClien
 
   const openCreateDialog = () => {
     setEditing(null);
-    setForm({ name: '', slug: '', metadata: '' });
+    setForm({ name: '', slug: '', metadata: '{}' });
     setError('');
     setIsDialogOpen(true);
   };
@@ -665,7 +665,7 @@ export function OrganizationsClient({ initialOrganizations }: OrganizationsClien
     setForm({
       name: organization.name,
       slug: organization.slug,
-      metadata: JSON.stringify(organization.metadata ?? {}, null, 2),
+      metadata: organization.metadata || '{}',
     });
     setError('');
     setIsDialogOpen(true);
@@ -1641,7 +1641,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '組織名は必須です。' }, { status: 400 });
   }
 
-  const metadata = payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : undefined;
+  const metadata = payload.metadata && typeof payload.metadata === 'object'
+    ? JSON.stringify(payload.metadata)
+    : undefined;
 
   await prisma.organization.create({
     data: {
