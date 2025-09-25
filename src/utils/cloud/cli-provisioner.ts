@@ -67,10 +67,23 @@ export class CLIProvisioner implements CloudProvisioner {
     }
   }
 
+  private isUnsupportedBlobSubcommand(stderr: string | undefined): boolean {
+    if (!stderr) {
+      return false;
+    }
+    const normalized = stderr.toLowerCase();
+    return (
+      normalized.includes('unknown command') ||
+      normalized.includes('unknown argument') ||
+      normalized.includes('please specify a valid subcommand') ||
+      normalized.includes('did you mean')
+    );
+  }
+
   private async createAndConnectBlobStore(storeName: string, projectPath: string) {
     const createVariants: string[][] = [
-      ['blob', 'store', 'create', storeName],
       ['blob', 'store', 'add', storeName],
+      ['blob', 'store', 'create', storeName],
     ];
 
     let created = false;
@@ -84,9 +97,15 @@ export class CLIProvisioner implements CloudProvisioner {
         break;
       } catch (error) {
         const stderr = (error as { stderr?: string }).stderr ?? '';
-        if (!stderr.includes('unknown command')) {
-          throw error;
+        const normalized = stderr.toLowerCase();
+        if (normalized.includes('already exists')) {
+          created = true;
+          break;
         }
+        if (this.isUnsupportedBlobSubcommand(stderr)) {
+          continue;
+        }
+        throw error;
       }
     }
 
@@ -103,20 +122,33 @@ export class CLIProvisioner implements CloudProvisioner {
       ['blob', 'store', 'link', storeName],
     ];
 
+    let lastError: unknown;
+
     for (const args of connectVariants) {
       try {
         await execa('vercel', args, {
           cwd: projectPath,
           timeout: 30000,
-          reject: false,
         });
         return;
-      } catch {
-        // try next variant
+      } catch (error) {
+        const stderr = (error as { stderr?: string }).stderr ?? '';
+        const normalized = stderr.toLowerCase();
+        if (this.isUnsupportedBlobSubcommand(stderr)) {
+          continue;
+        }
+        if (normalized.includes('already linked') || normalized.includes('already connected')) {
+          return;
+        }
+        lastError = error;
       }
     }
 
-    throw new ProvisioningError('Vercel Blob store をプロジェクトに接続できませんでした。');
+    if (lastError) {
+      throw new ProvisioningError('Vercel Blob store をプロジェクトに接続できませんでした。', lastError);
+    }
+
+    console.log('  ℹ️  現在の Vercel CLI では Blob store の connect ステップが不要なためスキップしました。');
   }
 
   async provision(config: ProjectConfig): Promise<CloudProvisioningRecord> {
@@ -461,15 +493,28 @@ export class CLIProvisioner implements CloudProvisioner {
       // Check if blob store already exists
       let storeExists = false;
       try {
-        const { stdout: storeList } = await execa('vercel', ['blob', 'store', 'list'], {
+        const getResult = await execa('vercel', ['blob', 'store', 'get', storeName], {
           cwd: config.projectPath,
           timeout: 10000, // 10 second timeout
+          reject: false,
         });
-        if (storeList?.includes(storeName)) {
+        if (getResult.exitCode === 0) {
           storeExists = true;
+        } else if (this.isUnsupportedBlobSubcommand(getResult.stderr)) {
+          try {
+            const { stdout: storeList } = await execa('vercel', ['blob', 'store', 'list'], {
+              cwd: config.projectPath,
+              timeout: 10000,
+            });
+            if (storeList?.includes(storeName)) {
+              storeExists = true;
+            }
+          } catch {
+            // ignore fallback errors
+          }
         }
       } catch {
-        // Error checking stores, continue
+        // Ignore errors; creation step will surface actionable failures
       }
 
       if (storeExists) {
@@ -492,21 +537,28 @@ export class CLIProvisioner implements CloudProvisioner {
         if (action === 'recreate') {
           this.spinner = ora(`Deleting existing blob store ${storeName}...`).start();
           const deleteArgs: string[][] = [
-            ['blob', 'store', 'delete', storeName],
+            ['blob', 'store', 'remove', storeName],
             ['blob', 'store', 'rm', storeName],
+            ['blob', 'store', 'delete', storeName],
           ];
           let deleted = false;
           for (const args of deleteArgs) {
-            try {
-              await execa('vercel', args, {
-                cwd: config.projectPath,
-                timeout: 30000,
-                reject: false,
-              });
+            const result = await execa('vercel', args, {
+              cwd: config.projectPath,
+              timeout: 30000,
+              reject: false,
+            });
+            if (result.exitCode === 0) {
               deleted = true;
               break;
-            } catch {
-              // try next variant
+            }
+            if (this.isUnsupportedBlobSubcommand(result.stderr)) {
+              continue;
+            }
+            const normalized = (result.stderr ?? '').toLowerCase();
+            if (normalized.includes('not found')) {
+              deleted = true;
+              break;
             }
           }
           if (!deleted) {
