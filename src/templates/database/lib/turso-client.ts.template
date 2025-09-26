@@ -38,7 +38,7 @@ function getDatabaseUrl(): string {
     case 'local':
     default:
       // For local development, use the local file
-      return process.env.DATABASE_URL || 'file:./prisma/dev.db';
+      return process.env.DATABASE_URL || 'file://./prisma/dev.db';
   }
 }
 

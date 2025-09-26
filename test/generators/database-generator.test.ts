@@ -82,6 +82,8 @@ describe('setupDatabase', () => {
         const pkg = await readJson(projectPath, 'package.json');
         expect(pkg.scripts['setup:db']).toBe('bash scripts/setup-turso.sh');
         expect(pkg.scripts['db:push']).toBe('prisma db push');
+        expect(pkg.scripts['db:push:force']).toBe('prisma db push --force-reset --skip-generate');
+        expect(pkg.scripts.postinstall).toContain('prisma generate');
     });
 
     it('configures Supabase with Drizzle artifacts', async () => {

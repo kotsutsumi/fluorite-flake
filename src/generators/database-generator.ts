@@ -32,6 +32,10 @@ export async function setupDatabase(config: ProjectConfig) {
 
     await createSampleApiRoute(config);
     await createDatabaseDemoComponent(config);
+
+    if (config.orm === 'prisma') {
+        await addPostInstallScript(config);
+    }
 }
 
 async function setupTurso(config: ProjectConfig) {
@@ -103,6 +107,48 @@ async function setupPrisma(config: ProjectConfig) {
     const packageJsonPath = path.join(config.projectPath, 'package.json');
     const packageJson = await fs.readJSON(packageJsonPath);
 
+    const authMemberships = config.auth ? '\n  memberships   Member[]' : '';
+    const authModels = config.auth
+        ? `model Organization {
+  id         String       @id @default(cuid())
+  name       String
+  slug       String       @unique
+  metadata   String?      // JSON stored as string for SQLite compatibility
+  createdAt  DateTime     @default(now())
+  members    Member[]
+  invitations Invitation[]
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  email          String
+  role           String
+  status         String       @default("pending")
+  organizationId String
+  invitedBy      String?
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([organizationId])
+}`
+        : '';
+
     const schemaContent = await readTemplateWithReplacements(
         'database/prisma/schema.prisma.template',
         {
@@ -110,6 +156,11 @@ async function setupPrisma(config: ProjectConfig) {
             dialect: config.database === 'turso' ? 'sqlite' : 'postgresql',
             auth: config.auth ? 'true' : '',
             isTurso: config.database === 'turso' ? 'true' : '',
+            datasourceProvider: config.database === 'turso' ? 'sqlite' : 'postgresql',
+            datasourceUrl:
+                config.database === 'turso' ? 'env("DATABASE_URL")' : 'env("DATABASE_URL")',
+            authMemberships,
+            authModels,
         }
     );
 
@@ -117,6 +168,83 @@ async function setupPrisma(config: ProjectConfig) {
 
     const seedContent = await readTemplateWithReplacements('database/prisma/seed.ts.template', {
         auth: config.auth ? 'true' : '',
+        authImport: config.auth ? "\nimport bcrypt from 'bcryptjs';" : '',
+        authCleanup: config.auth
+            ? '    await prisma.invitation.deleteMany();\n    await prisma.member.deleteMany();\n    await prisma.organization.deleteMany();\n'
+            : '',
+        authPassword: config.auth
+            ? "\n  const hashedPassword = await bcrypt.hash('Demo123!', 12);\n"
+            : '',
+        authAccountAlice: config.auth
+            ? `\n      accounts: {
+        create: {
+          providerId: 'credential',
+          accountId: 'alice@example.com',
+          password: hashedPassword,
+        },
+      },`
+            : '',
+        authAccountBob: config.auth
+            ? `\n      accounts: {
+        create: {
+          providerId: 'credential',
+          accountId: 'bob@example.com',
+          password: hashedPassword,
+        },
+      },`
+            : '',
+        authAccountCharlie: config.auth
+            ? `\n      accounts: {
+        create: {
+          providerId: 'credential',
+          accountId: 'charlie@example.com',
+          password: hashedPassword,
+        },
+      },`
+            : '',
+        authOrganizations: config.auth
+            ? `
+  // Create organizations and memberships
+  const techCorp = await prisma.organization.create({
+    data: {
+      name: 'Tech Corp',
+      slug: 'tech-corp',
+      metadata: JSON.stringify({ industry: 'Technology' }),
+    },
+  });
+
+  const startupInc = await prisma.organization.create({
+    data: {
+      name: 'Startup Inc',
+      slug: 'startup-inc',
+      metadata: JSON.stringify({ industry: 'Software' }),
+    },
+  });
+
+  // Create memberships
+  await prisma.member.createMany({
+    data: [
+      { userId: alice.id, organizationId: techCorp.id, role: 'owner' },
+      { userId: bob.id, organizationId: techCorp.id, role: 'member' },
+      { userId: bob.id, organizationId: startupInc.id, role: 'owner' },
+      { userId: charlie.id, organizationId: startupInc.id, role: 'member' },
+    ],
+  });
+
+  // Create an invitation
+  await prisma.invitation.create({
+    data: {
+      email: 'dave@example.com',
+      role: 'member',
+      organizationId: techCorp.id,
+      invitedBy: alice.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    },
+  });`
+            : '',
+        authLogs: config.auth
+            ? `\n  console.log('   - 2 organizations');\n  console.log('   - 4 memberships');\n  console.log('   - 1 invitation');\n  console.log('');\n  console.log('🔐 Login credentials:');\n  console.log('   - alice@example.com / Demo123! (owner of Tech Corp)');\n  console.log('   - bob@example.com / Demo123! (member of Tech Corp, owner of Startup Inc)');\n  console.log('   - charlie@example.com / Demo123! (member of Startup Inc)');`
+            : '',
     });
     await fs.writeFile(path.join(prismaDir, 'seed.ts'), seedContent);
 
@@ -135,6 +263,7 @@ async function setupPrisma(config: ProjectConfig) {
     packageJson.scripts = {
         ...packageJson.scripts,
         'db:push': 'prisma db push',
+        'db:push:force': 'prisma db push --force-reset --skip-generate',
         'db:studio': 'prisma studio',
         'db:generate': 'prisma generate',
         'db:migrate': 'prisma migrate dev',

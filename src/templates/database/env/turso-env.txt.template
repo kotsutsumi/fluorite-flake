@@ -1,7 +1,7 @@
 # Turso Database - Local Development
-TURSO_DATABASE_URL="file://{{localDbPath}}"
+TURSO_DATABASE_URL="file://./prisma/dev.db"
 TURSO_AUTH_TOKEN=""
-DATABASE_URL="file://{{localDbPath}}"
+DATABASE_URL="file://./prisma/dev.db"
 
 # Turso Cloud - Production/Staging/Development
 # These will be automatically set during deployment
