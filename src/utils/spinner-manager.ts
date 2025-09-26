@@ -1,5 +1,5 @@
-import ora, { type Ora } from 'ora';
 import chalk from 'chalk';
+import ora, { type Ora } from 'ora';
 
 /**
  * Manages spinner lifecycle to prevent double spinners and interference with prompts

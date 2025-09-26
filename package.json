@@ -24,13 +24,7 @@
         "test:e2e:storybook": "playwright test --project=storybook-e2e",
         "test:e2e:ci": "playwright test --project=nextjs-e2e --project=storybook-e2e --shard=1/2"
     },
-    "keywords": [
-        "cli",
-        "utility",
-        "ansi",
-        "colors",
-        "terminal"
-    ],
+    "keywords": ["cli", "utility", "ansi", "colors", "terminal"],
     "author": "",
     "license": "MIT",
     "devDependencies": {
@@ -53,11 +47,7 @@
         "ora": "^8.1.0",
         "prompts": "^2.4.2"
     },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
+    "files": ["dist", "README.md", "LICENSE"],
     "engines": {
         "node": ">=20.0.0"
     },
