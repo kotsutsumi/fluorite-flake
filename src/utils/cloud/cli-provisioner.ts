@@ -148,7 +148,9 @@ export class CLIProvisioner implements CloudProvisioner {
 
                 // Try to extract token from output
                 const output = result.stdout || result.stderr || '';
-                const tokenMatch = output.match(/BLOB_READ_WRITE_TOKEN[=:"'\s]+((blob_|vercel_blob_)[\w-]+)/i);
+                const tokenMatch = output.match(
+                    /BLOB_READ_WRITE_TOKEN[=:"'\s]+((blob_|vercel_blob_)[\w-]+)/i
+                );
                 if (tokenMatch) {
                     return tokenMatch[1];
                 }
@@ -843,7 +845,8 @@ export class CLIProvisioner implements CloudProvisioner {
                             ? 'Enter your existing BLOB_READ_WRITE_TOKEN:'
                             : 'Paste the new BLOB_READ_WRITE_TOKEN here:',
                     validate: (value: string) =>
-                        value.startsWith('blob_') || value.startsWith('vercel_blob_') ||
+                        value.startsWith('blob_') ||
+                        value.startsWith('vercel_blob_') ||
                         'Token should start with "blob_" or "vercel_blob_"',
                 });
 
