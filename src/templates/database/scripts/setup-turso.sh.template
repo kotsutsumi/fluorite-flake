@@ -42,15 +42,14 @@ create_turso_db() {
     # Save to environment file
     echo "" >> .env.${env,,}
     echo "# Turso Database - ${env^^} Environment" >> .env.${env,,}
-    echo "TURSO_DATABASE_URL=\"$DB_URL\"" >> .env.${env,,}
-    echo "TURSO_AUTH_TOKEN=\"$AUTH_TOKEN\"" >> .env.${env,,}
-    echo "DATABASE_URL=\"$DB_URL?authToken=$AUTH_TOKEN\"" >> .env.${env,,}
+    echo "TURSO_DATABASE_URL_${env^^}=\"$DB_URL\"" >> .env.${env,,}
+    echo "TURSO_AUTH_TOKEN_${env^^}=\"$AUTH_TOKEN\"" >> .env.${env,,}
 
     echo "   ✅ Environment variables saved to .env.${env,,}"
 
     # Apply schema to cloud database
     echo "   📋 Applying schema to $db_name..."
-    DATABASE_URL="$DB_URL?authToken=$AUTH_TOKEN" {{packageManager}} run db:push
+    TURSO_DATABASE_URL="$DB_URL" TURSO_AUTH_TOKEN="$AUTH_TOKEN" DATABASE_URL="$DB_URL?authToken=$AUTH_TOKEN" {{packageManager}} run db:push
     echo "   ✅ Schema applied"
 }
 

@@ -76,9 +76,220 @@ export class CLIProvisioner implements CloudProvisioner {
         return (
             normalized.includes('unknown command') ||
             normalized.includes('unknown argument') ||
+            normalized.includes('unknown option') ||
             normalized.includes('please specify a valid subcommand') ||
             normalized.includes('did you mean')
         );
+    }
+
+    private parseBlobStoreList(output: string): string[] {
+        const stripAnsi = (value: string): string =>
+            value
+                // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes require control characters
+                .replace(/\u001B\[[0-9;]*m/g, '')
+                // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes require control characters
+                .replace(/\x1B\[[0-9;]*m/g, '')
+                .replace(/\r/g, '');
+
+        const names = new Set<string>();
+        const input = stripAnsi(output ?? '').trim();
+
+        if (!input) {
+            return [];
+        }
+
+        const addName = (value: string | undefined) => {
+            if (!value) {
+                return;
+            }
+            const normalized = value.trim();
+            if (normalized.length === 0 || /^(name|id|region|created)$/i.test(normalized)) {
+                return;
+            }
+            if (/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(normalized)) {
+                names.add(normalized);
+            }
+        };
+
+        const fromJsonEntry = (entry: unknown) => {
+            if (!entry) {
+                return;
+            }
+            if (typeof entry === 'string') {
+                addName(entry);
+                return;
+            }
+            if (typeof entry === 'object') {
+                const obj = entry as Record<string, unknown>;
+                const candidate =
+                    (typeof obj.slug === 'string' && obj.slug) ||
+                    (typeof obj.name === 'string' && obj.name) ||
+                    (typeof obj.id === 'string' && obj.id) ||
+                    (typeof obj.storeName === 'string' && obj.storeName);
+                if (candidate) {
+                    addName(candidate);
+                }
+            }
+        };
+
+        const attemptJsonParse = (raw: string): boolean => {
+            const variants: string[] = [];
+            const trimmed = raw.trim();
+            if (trimmed.length > 0) {
+                variants.push(trimmed);
+            }
+
+            const firstBrace = raw.indexOf('{');
+            const lastBrace = raw.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace > firstBrace) {
+                variants.push(raw.slice(firstBrace, lastBrace + 1));
+            }
+
+            const firstBracket = raw.indexOf('[');
+            const lastBracket = raw.lastIndexOf(']');
+            if (firstBracket !== -1 && lastBracket > firstBracket) {
+                variants.push(raw.slice(firstBracket, lastBracket + 1));
+            }
+
+            for (const variant of variants) {
+                try {
+                    const parsed = JSON.parse(variant);
+                    if (Array.isArray(parsed)) {
+                        for (const entry of parsed) {
+                            fromJsonEntry(entry);
+                        }
+                    } else if (typeof parsed === 'object' && parsed !== null) {
+                        const container = parsed as Record<string, unknown>;
+                        const nestedKeys = [
+                            'stores',
+                            'blobStores',
+                            'items',
+                            'data',
+                            'results',
+                            'store',
+                        ];
+                        let handled = false;
+                        for (const key of nestedKeys) {
+                            const nested = container[key];
+                            if (Array.isArray(nested)) {
+                                for (const entry of nested) {
+                                    fromJsonEntry(entry);
+                                }
+                                handled = true;
+                            } else if (nested && typeof nested === 'object') {
+                                fromJsonEntry(nested);
+                                handled = true;
+                            }
+                        }
+                        if (!handled) {
+                            fromJsonEntry(parsed);
+                        }
+                    }
+                    if (names.size > 0) {
+                        return true;
+                    }
+                } catch {
+                    // Ignore invalid JSON payloads
+                }
+            }
+
+            return names.size > 0;
+        };
+
+        if (attemptJsonParse(input)) {
+            return Array.from(names);
+        }
+
+        const lines = input
+            .split('\n')
+            .map((line) => stripAnsi(line).trim())
+            .filter((line) => line.length > 0);
+
+        for (const rawLine of lines) {
+            if (/no stores?/i.test(rawLine)) {
+                return [];
+            }
+            if (/^(name|id|region|created)\b/i.test(rawLine)) {
+                continue;
+            }
+            if (/^[┌└├│╔╚╟║─+]/.test(rawLine)) {
+                continue;
+            }
+
+            let candidateLine = rawLine;
+            if (candidateLine.includes('│') || candidateLine.includes('|')) {
+                candidateLine = candidateLine.split(/│|\|/)[0]?.trim() ?? '';
+            }
+            if (candidateLine.includes('—')) {
+                candidateLine = candidateLine.split('—')[0]?.trim() ?? candidateLine;
+            }
+            if (candidateLine.includes(' - ')) {
+                candidateLine = candidateLine.split(' - ')[0]?.trim() ?? candidateLine;
+            }
+            if (candidateLine.includes(':')) {
+                const segments = candidateLine.split(':');
+                candidateLine = segments[segments.length - 1]?.trim() ?? candidateLine;
+            }
+
+            candidateLine = candidateLine.replace(/^[>*•\-\u2022]+\s*/, '');
+
+            if (candidateLine.includes(',')) {
+                candidateLine = candidateLine.split(',')[0]?.trim() ?? candidateLine;
+            }
+            if (candidateLine.includes(' ')) {
+                candidateLine = candidateLine.split(/\s+/)[0] ?? candidateLine;
+            }
+
+            addName(candidateLine);
+        }
+
+        return Array.from(names);
+    }
+
+    private async listBlobStores(projectPath: string): Promise<string[]> {
+        const commandVariants: string[][] = [
+            ['blob', 'store', 'list', '--json'],
+            ['blob', 'store', 'ls', '--json'],
+            ['blob', 'store', 'list'],
+            ['blob', 'store', 'ls'],
+        ];
+
+        for (const args of commandVariants) {
+            try {
+                const result = await execa('vercel', args, {
+                    cwd: projectPath,
+                    timeout: 15000,
+                    reject: false,
+                });
+
+                const outputs = [result.stdout, result.stderr].filter((value): value is string =>
+                    Boolean(value?.trim())
+                );
+
+                for (const output of outputs) {
+                    const stores = this.parseBlobStoreList(output);
+                    if (stores.length > 0) {
+                        return stores;
+                    }
+                }
+
+                if (result.exitCode === 0 && outputs.length === 0) {
+                    continue;
+                }
+
+                const stderr = result.stderr ?? '';
+                if (this.isUnsupportedBlobSubcommand(stderr) || /unknown option/i.test(stderr)) {
+                    // Skip unsupported subcommand
+                }
+            } catch (error) {
+                const stderr = (error as { stderr?: string }).stderr ?? '';
+                if (this.isUnsupportedBlobSubcommand(stderr) || /unknown option/i.test(stderr)) {
+                    // Skip unsupported subcommand
+                }
+            }
+        }
+
+        return [];
     }
 
     private async createAndConnectBlobStore(
@@ -569,18 +780,6 @@ export class CLIProvisioner implements CloudProvisioner {
         config: ProjectConfig
     ): Promise<VercelBlobRecord> {
         this.spinner = ora('Setting up Vercel Blob storage...').start();
-
-        const parseStoreList = (output: string): string[] => {
-            const stores: string[] = [];
-            for (const line of output.split('\n')) {
-                const match = line.match(/^([\w-]+)/);
-                if (match?.[1] && !match[1].startsWith('Name')) {
-                    stores.push(match[1]);
-                }
-            }
-            return stores;
-        };
-
         const uniqueStoreName = (base: string, existing: string[]): string => {
             const taken = new Set(existing);
             let candidate = base;
@@ -601,16 +800,10 @@ export class CLIProvisioner implements CloudProvisioner {
                 reject: false,
                 timeout: 15000,
             });
-
             this.spinner.text = 'Checking existing blob stores...';
             let existingStores: string[] = [];
             try {
-                const { stdout } = await execa('vercel', ['blob', 'store', 'list'], {
-                    cwd: config.projectPath,
-                    timeout: 10000,
-                    reject: false,
-                });
-                existingStores = parseStoreList(stdout);
+                existingStores = await this.listBlobStores(config.projectPath);
             } catch {
                 // Best effort: continue with empty list
             }

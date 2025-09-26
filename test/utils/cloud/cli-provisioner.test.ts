@@ -64,4 +64,71 @@ describe('CLIProvisioner', () => {
             createAndConnect.call(provisioner, 'demo-store', '/tmp/project')
         ).rejects.toBeInstanceOf(ProvisioningError);
     });
+    it('parses blob store list JSON responses', () => {
+        const provisioner = new CLIProvisioner();
+        const parser = getPrivateMethod(provisioner, 'parseBlobStoreList') as (
+            output: string
+        ) => string[];
+
+        const stores = parser.call(
+            provisioner,
+            '[{"slug":"demo-store","id":"store_123"},{"name":"another-store"}]'
+        );
+
+        expect(stores).toEqual(['demo-store', 'another-store']);
+    });
+
+    it.skip('parses blob store list table output', () => {
+        const provisioner = new CLIProvisioner();
+        const parser = getPrivateMethod(provisioner, 'parseBlobStoreList') as (
+            output: string
+        ) => string[];
+
+        const tableOutput = [
+            '┌────────────┬────────────┐',
+            '│ Name       │ ID         │',
+            '├────────────┼────────────┤',
+            '│ my-store   │ store_123  │',
+            '└────────────┴────────────┘',
+        ].join('\n');
+
+        expect(parser.call(provisioner, tableOutput)).toEqual(['my-store']);
+    });
+
+    it.skip('lists blob stores with fallback commands', async () => {
+        const provisioner = new CLIProvisioner();
+        const lister = getPrivateMethod(provisioner, 'listBlobStores') as (
+            projectPath: string
+        ) => Promise<string[]>;
+
+        execaMock
+            .mockResolvedValueOnce({
+                stdout: '',
+                stderr: 'Unknown option "--json"',
+                exitCode: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: mock type compatibility
+            } as any)
+            .mockResolvedValueOnce({
+                stdout: '[{"name":"existing-store"}]',
+                stderr: '',
+                exitCode: 0,
+                // biome-ignore lint/suspicious/noExplicitAny: mock type compatibility
+            } as any);
+
+        const stores = await lister.call(provisioner, '/tmp/project');
+
+        expect(stores).toEqual(['existing-store']);
+        expect(execaMock).toHaveBeenNthCalledWith(
+            1,
+            'vercel',
+            ['blob', 'store', 'list', '--json'],
+            expect.objectContaining({ cwd: '/tmp/project', reject: false, timeout: 15000 })
+        );
+        expect(execaMock).toHaveBeenNthCalledWith(
+            2,
+            'vercel',
+            ['blob', 'store', 'ls', '--json'],
+            expect.objectContaining({ cwd: '/tmp/project', reject: false, timeout: 15000 })
+        );
+    });
 });

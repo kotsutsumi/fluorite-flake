@@ -270,6 +270,10 @@ model Invitation {
         'db:migrate:prod': 'prisma migrate deploy',
         'db:seed':
             config.packageManager === 'bun' ? 'bun run prisma/seed.ts' : 'tsx prisma/seed.ts',
+        'db:reset':
+            config.packageManager === 'bun'
+                ? 'prisma db push --force-reset && bun run prisma/seed.ts'
+                : 'prisma db push --force-reset && tsx prisma/seed.ts',
     };
 
     packageJson.prisma = {
