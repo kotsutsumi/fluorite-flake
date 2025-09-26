@@ -9,7 +9,11 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0, // Retry twice in CI
     workers: process.env.CI ? 2 : 1, // Multiple workers in CI for sharing optimization
     reporter: process.env.CI
-        ? [['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }], ['list']]
+        ? [
+              ['html', { open: 'never' }],
+              ['junit', { outputFile: 'test-results/junit.xml' }],
+              ['list'],
+          ]
         : [['html', { open: 'never' }], ['list']],
     use: {
         // Capture more debugging info
