@@ -1,8 +1,8 @@
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
-import { describe, expect, it } from 'vitest';
 import fs from 'fs-extra';
+import { describe, expect, it } from 'vitest';
 
 import {
     DIRECTORY_STRUCTURES,

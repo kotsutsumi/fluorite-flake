@@ -2,7 +2,7 @@
 set -e
 
 PROJECT_NAME="{{projectName}}"
-PROJECT_NAME_CLEAN=$(echo "$PROJECT_NAME" | tr '-' '_')
+PROJECT_NAME_CLEAN=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | tr -cs 'a-z0-9-' '-' | sed 's/^-*//; s/-*$//')
 
 echo "🚀 Setting up Turso database for $PROJECT_NAME..."
 
@@ -19,7 +19,7 @@ check_turso_auth() {
 # Function to create Turso Cloud database
 create_turso_db() {
     local env=$1
-    local db_name="${PROJECT_NAME_CLEAN}_${env}"
+    local db_name="${PROJECT_NAME_CLEAN}-${env}"
 
     echo "🗄️ Creating Turso Cloud database: $db_name..."
 

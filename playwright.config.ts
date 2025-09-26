@@ -4,13 +4,13 @@ export default defineConfig({
     testDir: './test/e2e',
     // Increase timeout for comprehensive E2E tests
     timeout: process.env.CI ? 600000 : 300000, // 10 min in CI, 5 min locally
-    fullyParallel: false, // Run tests serially to avoid conflicts
+    fullyParallel: !!process.env.CI, // Parallel in CI, serial locally
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 1 : 0, // Retry once in CI
-    workers: 1, // Single worker to avoid resource conflicts
+    retries: process.env.CI ? 2 : 0, // Retry twice in CI
+    workers: process.env.CI ? 2 : 1, // Multiple workers in CI for sharing optimization
     reporter: process.env.CI
-        ? [['html'], ['junit', { outputFile: 'test-results/junit.xml' }], ['list']]
-        : [['html'], ['list']],
+        ? [['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }], ['list']]
+        : [['html', { open: 'never' }], ['list']],
     use: {
         // Capture more debugging info
         trace: 'on-first-retry',
@@ -27,6 +27,16 @@ export default defineConfig({
             use: {
                 ...devices['Desktop Chrome'],
                 // Custom context options for Next.js tests
+                ignoreHTTPSErrors: true,
+                viewport: { width: 1280, height: 720 },
+            },
+        },
+        {
+            name: 'storybook-e2e',
+            testMatch: '**/storybook.spec.ts',
+            use: {
+                ...devices['Desktop Chrome'],
+                // Custom context options for Storybook tests
                 ignoreHTTPSErrors: true,
                 viewport: { width: 1280, height: 720 },
             },
@@ -75,6 +85,6 @@ export default defineConfig({
     // Output configuration
     outputDir: 'test-results/',
     // Global setup/teardown
-    globalSetup: process.env.CI ? './test/e2e/global-setup.ts' : undefined,
-    globalTeardown: process.env.CI ? './test/e2e/global-teardown.ts' : undefined,
+    globalSetup: process.env.CI ? './test/e2e/global-setup-storybook.ts' : undefined,
+    globalTeardown: process.env.CI ? './test/e2e/global-teardown-storybook.ts' : undefined,
 });

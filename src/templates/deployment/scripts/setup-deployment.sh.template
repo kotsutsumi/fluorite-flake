@@ -30,17 +30,22 @@ fi
 # Set environment-specific variables
 echo "🔐 Setting environment variables for $ENV..."
 
+BRANCH_FLAG=""
+
 if [ "$ENV" == "prod" ] || [ "$ENV" == "production" ]; then
     ENV_FILE=".env.production"
     ENV_FLAG="--environment=production"
+    BRANCH_FLAG=""
     ENV_NAME="production"
 elif [ "$ENV" == "stg" ] || [ "$ENV" == "staging" ]; then
     ENV_FILE=".env.staging"
     ENV_FLAG="--environment=preview"
+    BRANCH_FLAG="--git-branch=staging"
     ENV_NAME="staging"
 elif [ "$ENV" == "dev" ] || [ "$ENV" == "development" ]; then
     ENV_FILE=".env.development"
     ENV_FLAG="--environment=preview"
+    BRANCH_FLAG="--git-branch=development"
     ENV_NAME="development"
 else
     echo "❌ Invalid environment. Use: prod, staging, or dev"
@@ -63,7 +68,7 @@ if [ -f "$ENV_FILE" ]; then
 
             # Set the environment variable in Vercel
             echo "   Setting $KEY..."
-            echo "$VALUE" | vercel env add $KEY $ENV_FLAG --yes 2>/dev/null || true
+            echo "$VALUE" | vercel env add "$KEY" $ENV_FLAG $BRANCH_FLAG --yes 2>/dev/null || true
         fi
     done < "$ENV_FILE"
 

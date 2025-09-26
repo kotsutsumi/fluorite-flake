@@ -4,8 +4,8 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { setupAuth } from '../../src/generators/auth-generator.js';
 import type { ProjectConfig } from '../../src/commands/create/types.js';
+import { setupAuth } from '../../src/generators/auth-generator.js';
 
 type ConfigOverrides = Partial<ProjectConfig>;
 

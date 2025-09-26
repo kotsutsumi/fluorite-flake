@@ -1,9 +1,59 @@
 import { PrismaClient } from '@prisma/client';
 
-// For local development with Turso (SQLite), we use the standard Prisma client
-// No adapters needed for local SQLite files
+// Environment-aware database connection for Turso
+// Automatically switches between local development and cloud databases
+// based on the deployment environment
+
+function getEnvironment(): 'production' | 'staging' | 'development' | 'local' {
+  // On Vercel, use VERCEL_ENV to determine environment
+  if (process.env.VERCEL_ENV) {
+    if (process.env.VERCEL_ENV === 'production') return 'production';
+    if (process.env.VERCEL_ENV === 'preview') {
+      // For preview deployments, check branch or use staging as default
+      if (process.env.VERCEL_GIT_COMMIT_REF === 'develop' ||
+          process.env.VERCEL_GIT_COMMIT_REF === 'staging') {
+        return 'staging';
+      }
+      return 'development';
+    }
+  }
+
+  // For local development or other environments
+  if (process.env.NODE_ENV === 'development') return 'local';
+  if (process.env.NODE_ENV === 'production') return 'production';
+
+  return 'local'; // Default to local
+}
+
+function getDatabaseUrl(): string {
+  const env = getEnvironment();
+
+  switch (env) {
+    case 'production':
+      return process.env.TURSO_DATABASE_URL_PROD || process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL || '';
+    case 'staging':
+      return process.env.TURSO_DATABASE_URL_STG || process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL || '';
+    case 'development':
+      return process.env.TURSO_DATABASE_URL_DEV || process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL || '';
+    case 'local':
+    default:
+      // For local development, use the local file
+      return process.env.DATABASE_URL || 'file:./prisma/dev.db';
+  }
+}
+
+const databaseUrl = getDatabaseUrl();
+const environment = getEnvironment();
+
+console.log(`🗄️ Connecting to Turso database (${environment}):`, databaseUrl.replace(/authToken=[^&]+/, 'authToken=***'));
+
 const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: databaseUrl,
+    },
+  },
+  log: environment === 'local' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 export default prisma;

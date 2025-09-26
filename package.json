@@ -14,23 +14,26 @@
         "lint": "biome lint .",
         "check": "biome check .",
         "test": "vitest run",
+        "e2e": "playwright test --project=nextjs-e2e --project=storybook-e2e",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage",
-        "test:e2e": "playwright test --project=nextjs-e2e"
+        "test:e2e": "playwright test --project=nextjs-e2e --project=storybook-e2e",
+        "test:e2e:nextjs": "playwright test --project=nextjs-e2e",
+        "test:e2e:storybook": "playwright test --project=storybook-e2e",
+        "test:e2e:ci": "playwright test --project=nextjs-e2e --project=storybook-e2e --shard=1/2"
     },
     "keywords": ["cli", "utility", "ansi", "colors", "terminal"],
     "author": "",
     "license": "MIT",
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
-        "@playwright/test": "^1.55.0",
+        "@playwright/test": "^1.55.1",
         "@types/fs-extra": "^11.0.4",
         "@types/node": "^22.10.2",
         "@types/prompts": "^2.4.9",
         "@vitest/ui": "^3.2.4",
-        "husky": "^9.1.7",
-        "playwright": "^1.55.0",
+        "playwright": "^1.55.1",
         "tsx": "^4.19.2",
         "typescript": "^5.7.2",
         "vitest": "^3.2.4"
@@ -40,7 +43,6 @@
         "commander": "^12.1.0",
         "execa": "^9.6.0",
         "fs-extra": "^11.3.2",
-        "handlebars": "^4.7.8",
         "ora": "^8.1.0",
         "prompts": "^2.4.2"
     },

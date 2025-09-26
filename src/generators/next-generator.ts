@@ -3,12 +3,16 @@ import { execa } from 'execa';
 import fs from 'fs-extra';
 
 import type { ProjectConfig } from '../commands/create/types.js';
+import { createScopedLogger } from '../utils/logger.js';
 import { generatePackageJson } from '../utils/package-json.js';
+
+const logger = createScopedLogger('next');
 
 export async function generateNextProject(config: ProjectConfig) {
     await fs.ensureDir(config.projectPath);
 
     const isMinimal = config.mode === 'minimal';
+    const isTestMode = process.env.FLUORITE_TEST_MODE === 'true';
 
     await createNextAppStructure(config);
     await generatePackageJson(config);
@@ -20,7 +24,11 @@ export async function generateNextProject(config: ProjectConfig) {
     if (isMinimal) {
         await setupMinimalUILibraries(config);
     } else {
-        await installDependencies(config);
+        if (isTestMode) {
+            logger.info('Skipping dependency installation in test mode');
+        } else {
+            await installDependencies(config);
+        }
         await setupUILibraries(config);
     }
 
@@ -319,7 +327,7 @@ async function setupLinters(config: ProjectConfig) {
 }
 
 async function setupMinimalUILibraries(config: ProjectConfig) {
-    console.log('  • Creating minimal UI component stubs...');
+    logger.step('Creating minimal UI component stubs...');
 
     const utilsContent = `import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -856,7 +864,7 @@ export function cn(...inputs: ClassValue[]) {
 
     await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
 
-    console.log('  • Installing UI component library...');
+    logger.step('Installing UI component library...');
 
     // Copy pre-verified UI components from templates
     const templatesPath = path.join(
@@ -868,7 +876,7 @@ export function cn(...inputs: ClassValue[]) {
     await fs.ensureDir(targetPath);
     await fs.copy(templatesPath, targetPath, { overwrite: true });
 
-    console.log('  • Installed verified UI components');
+    logger.success('Installed verified UI components');
 }
 
 async function setupHooks(config: ProjectConfig) {
@@ -926,15 +934,21 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 
 async function setupHusky(config: ProjectConfig) {
+    const isTestMode = process.env.FLUORITE_TEST_MODE === 'true';
+
     // Initialize husky (prepare script is already in package.json)
-    try {
-        await execa(config.packageManager, ['run', 'prepare'], {
-            cwd: config.projectPath,
-            stdio: 'inherit',
-        });
-    } catch (_error) {
-        // If husky init fails, it's not critical - continue with setup
-        console.log('  • Note: Husky initialization will complete on next install');
+    if (!isTestMode) {
+        try {
+            await execa(config.packageManager, ['run', 'prepare'], {
+                cwd: config.projectPath,
+                stdio: 'inherit',
+            });
+        } catch (_error) {
+            // If husky init fails, it's not critical - continue with setup
+            logger.info('Note: Husky initialization will complete on next install');
+        }
+    } else {
+        logger.info('Skipping Husky prepare step in test mode');
     }
 
     // Create .husky directory
@@ -1178,7 +1192,7 @@ export default function Home() {
 }
 
 async function installDependencies(config: ProjectConfig) {
-    console.log('  • Installing dependencies...');
+    logger.step('Installing dependencies...');
 
     try {
         await execa(config.packageManager, ['install'], {

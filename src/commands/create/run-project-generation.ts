@@ -1,17 +1,18 @@
+import path from 'node:path';
 import chalk from 'chalk';
 import { execa } from 'execa';
 import fs from 'fs-extra';
-import path from 'node:path';
 import ora from 'ora';
 
 import { setupAuth } from '../../generators/auth-generator.js';
 import { setupDatabase } from '../../generators/database-generator.js';
 import { setupDeployment } from '../../generators/deployment-generator.js';
 import { setupStorage } from '../../generators/storage-generator.js';
+import { setupStorybook } from '../../generators/storybook-generator.js';
 import { isProvisioningEligible, provisionCloudResources } from '../../utils/cloud/index.js';
+import { generateFrameworkProject } from './generate-framework-project.js';
 import { getAuthText } from './get-auth-text.js';
 import { getDeploymentText } from './get-deployment-text.js';
-import { generateFrameworkProject } from './generate-framework-project.js';
 import type { ProjectConfig } from './types.js';
 
 export async function runProjectGeneration(config: ProjectConfig) {
@@ -49,11 +50,16 @@ export async function runProjectGeneration(config: ProjectConfig) {
         console.log(chalk.gray('  Authentication: ') + chalk.white(authText));
     }
 
+    if (config.storybook) {
+        console.log(chalk.gray('  Storybook: ') + chalk.white('Component development & testing'));
+    }
+
     if (config.packageManager) {
         console.log(chalk.gray('  Package Manager: ') + chalk.white(config.packageManager));
     }
 
     try {
+        const isTestMode = process.env.FLUORITE_TEST_MODE === 'true';
         let spinner = ora(`Creating ${config.framework} project...`).start();
         await generateFrameworkProject(config);
         spinner.succeed(`${config.framework} project created`);
@@ -90,45 +96,59 @@ export async function runProjectGeneration(config: ProjectConfig) {
             spinner.succeed('Authentication configured');
         }
 
+        if (config.storybook) {
+            spinner = ora('Setting up Storybook...').start();
+            await setupStorybook(config);
+            spinner.succeed('Storybook configured');
+        }
+
         if (config.framework !== 'flutter') {
-            spinner = ora('Installing dependencies...').start();
-            try {
-                const useInheritStdio =
-                    config.packageManager === 'pnpm' || config.packageManager === 'yarn';
+            if (isTestMode) {
+                ora('Skipping dependency installation in test mode').info();
+            } else {
+                spinner = ora('Installing dependencies...').start();
+                try {
+                    const useInheritStdio =
+                        config.packageManager === 'pnpm' || config.packageManager === 'yarn';
 
-                const childProcess = execa(config.packageManager, ['install'], {
-                    cwd: config.projectPath,
-                    stdio: useInheritStdio ? ['inherit', 'pipe', 'inherit'] : 'pipe',
-                    timeout: 180000,
-                });
+                    const childProcess = execa(config.packageManager, ['install'], {
+                        cwd: config.projectPath,
+                        stdio: useInheritStdio ? ['inherit', 'pipe', 'inherit'] : 'pipe',
+                        timeout: 180000,
+                    });
 
-                if (!useInheritStdio) {
-                    const progressInterval = setInterval(() => {
-                        const dots = spinner.text.endsWith('...') ? '' : '.';
-                        spinner.text = `Installing dependencies${dots ? '' : '.'}${dots}${dots}`;
-                    }, 1000);
+                    if (!useInheritStdio) {
+                        const progressInterval = setInterval(() => {
+                            const dots = spinner.text.endsWith('...') ? '' : '.';
+                            spinner.text = `Installing dependencies${dots ? '' : '.'}${dots}${dots}`;
+                        }, 1000);
 
-                    await childProcess;
-                    clearInterval(progressInterval);
-                } else {
-                    await childProcess;
+                        await childProcess;
+                        clearInterval(progressInterval);
+                    } else {
+                        await childProcess;
+                    }
+
+                    spinner.succeed('Dependencies installed');
+                } catch (error) {
+                    spinner.fail('Failed to install dependencies');
+                    console.error('Error:', (error as Error).message);
+                    console.log('You can manually install dependencies by running:');
+                    console.log(`  cd ${config.projectName}`);
+                    console.log(`  ${config.packageManager} install`);
                 }
-
-                spinner.succeed('Dependencies installed');
-            } catch (error) {
-                spinner.fail('Failed to install dependencies');
-                console.error('\nError:', (error as Error).message);
-                console.log('\nYou can manually install dependencies by running:');
-                console.log(`  cd ${config.projectName}`);
-                console.log(`  ${config.packageManager} install`);
             }
         } else {
-            spinner = ora('Installing Flutter dependencies...').start();
-            await execa('flutter', ['pub', 'get'], {
-                cwd: config.projectPath,
-                stdio: 'pipe',
-            });
-            spinner.succeed('Flutter dependencies installed');
+            if (isTestMode) {
+                ora('Skipping Flutter dependency installation in test mode').info();
+            } else {
+                spinner = ora('Installing Flutter dependencies...').start();
+                await execa('flutter', ['pub', 'get'], {
+                    cwd: config.projectPath,
+                    stdio: 'pipe',
+                });
+                spinner.succeed('Flutter dependencies installed');
+            }
         }
 
         if (
@@ -136,54 +156,61 @@ export async function runProjectGeneration(config: ProjectConfig) {
             config.orm === 'prisma' &&
             config.framework !== 'flutter'
         ) {
-            spinner = ora('Setting up database...').start();
-            try {
-                if (config.database === 'turso') {
-                    await fs.ensureDir(path.join(config.projectPath, 'prisma'));
-                    await fs.ensureFile(path.join(config.projectPath, 'prisma', 'dev.db'));
+            if (isTestMode) {
+                ora('Skipping Prisma database CLI tasks in test mode').info();
+            } else {
+                spinner = ora('Setting up database...').start();
+                try {
+                    if (config.database === 'turso') {
+                        await fs.ensureDir(path.join(config.projectPath, 'prisma'));
+                        await fs.ensureFile(path.join(config.projectPath, 'prisma', 'dev.db'));
+                    }
+
+                    spinner.text = 'Generating Prisma client...';
+                    await execa(config.packageManager, ['run', 'db:generate'], {
+                        cwd: config.projectPath,
+                        stdio: 'pipe',
+                    });
+
+                    spinner.text = 'Creating database tables...';
+                    await execa(config.packageManager, ['run', 'db:push:force'], {
+                        cwd: config.projectPath,
+                        stdio: 'pipe',
+                    });
+
+                    spinner.text = 'Seeding database with sample data...';
+                    await execa(config.packageManager, ['run', 'db:seed'], {
+                        cwd: config.projectPath,
+                        stdio: 'pipe',
+                    });
+
+                    spinner.succeed('Database initialized and seeded');
+                } catch (_error) {
+                    spinner.warn('Database setup incomplete. You can run it manually later with:');
+                    console.log(chalk.gray(`    cd ${config.projectName}`));
+                    console.log(chalk.gray(`    ${config.packageManager} run db:generate`));
+                    console.log(chalk.gray(`    ${config.packageManager} run db:push:force`));
+                    console.log(chalk.gray(`    ${config.packageManager} run db:seed`));
                 }
-
-                spinner.text = 'Generating Prisma client...';
-                await execa(config.packageManager, ['run', 'db:generate'], {
-                    cwd: config.projectPath,
-                    stdio: 'pipe',
-                });
-
-                spinner.text = 'Creating database tables...';
-                await execa(config.packageManager, ['run', 'db:push:force'], {
-                    cwd: config.projectPath,
-                    stdio: 'pipe',
-                });
-
-                spinner.text = 'Seeding database with sample data...';
-                await execa(config.packageManager, ['run', 'db:seed'], {
-                    cwd: config.projectPath,
-                    stdio: 'pipe',
-                });
-
-                spinner.succeed('Database initialized and seeded');
-            } catch (_error) {
-                spinner.warn('Database setup incomplete. You can run it manually later with:');
-                console.log(chalk.gray(`    cd ${config.projectName}`));
-                console.log(chalk.gray(`    ${config.packageManager} run db:generate`));
-                console.log(chalk.gray(`    ${config.packageManager} run db:push:force`));
-                console.log(chalk.gray(`    ${config.packageManager} run db:seed`));
             }
         }
 
         if (config.storage === 'vercel-blob' && config.framework === 'nextjs') {
-            spinner = ora('Setting up Vercel Blob storage...').start();
-            try {
+            if (isTestMode) {
+                ora('Skipping Vercel Blob provisioning in test mode').info();
+            } else {
+                spinner = ora('Setting up Vercel Blob storage...').start();
                 try {
-                    await execa('vercel', ['--version'], { stdio: 'pipe' });
-                } catch {
-                    spinner.text = 'Installing Vercel CLI...';
-                    await execa('npm', ['install', '-g', 'vercel'], { stdio: 'pipe' });
-                }
+                    try {
+                        await execa('vercel', ['--version'], { stdio: 'pipe' });
+                    } catch {
+                        spinner.text = 'Installing Vercel CLI...';
+                        await execa('npm', ['install', '-g', 'vercel'], { stdio: 'pipe' });
+                    }
 
-                spinner.text = 'Configuring Vercel Blob storage...';
+                    spinner.text = 'Configuring Vercel Blob storage...';
 
-                const autoSetupScript = `#!/bin/bash
+                    const autoSetupScript = `#!/bin/bash
 set -e
 
 # Check if already configured
@@ -221,39 +248,40 @@ echo ""
 echo "✔ Vercel Blob storage configured (manual token setup required)"
 `;
 
-                const autoSetupPath = path.join(config.projectPath, 'auto-blob-setup.sh');
-                await fs.writeFile(autoSetupPath, autoSetupScript, { mode: 0o755 });
+                    const autoSetupPath = path.join(config.projectPath, 'auto-blob-setup.sh');
+                    await fs.writeFile(autoSetupPath, autoSetupScript, { mode: 0o755 });
 
-                await execa('bash', [autoSetupPath], {
-                    cwd: config.projectPath,
-                    stdio: 'pipe',
-                });
+                    await execa('bash', [autoSetupPath], {
+                        cwd: config.projectPath,
+                        stdio: 'pipe',
+                    });
 
-                await fs.remove(autoSetupPath);
+                    await fs.remove(autoSetupPath);
 
-                spinner.succeed('Vercel Blob storage configured');
-                console.log(
-                    chalk.yellow(
-                        '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard:'
-                    )
-                );
-                console.log(chalk.gray('      1. Go to https://vercel.com/dashboard'));
-                console.log(chalk.gray('      2. Select your project'));
-                console.log(chalk.gray('      3. Go to Storage tab'));
-                console.log(chalk.gray('      4. Select your blob store'));
-                console.log(chalk.gray('      5. Create a read/write token'));
-                console.log(
-                    chalk.gray('      6. Add it as BLOB_READ_WRITE_TOKEN environment variable')
-                );
-            } catch (_error) {
-                spinner.warn(
-                    'Vercel Blob setup incomplete. You can set it up manually later with:'
-                );
-                console.log(chalk.gray(`    cd ${config.projectName}`));
-                console.log(chalk.gray(`    ${config.packageManager} run setup:blob`));
-                console.log(
-                    chalk.gray('    Or manually configure BLOB_READ_WRITE_TOKEN in .env.local')
-                );
+                    spinner.succeed('Vercel Blob storage configured');
+                    console.log(
+                        chalk.yellow(
+                            '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard:'
+                        )
+                    );
+                    console.log(chalk.gray('      1. Go to https://vercel.com/dashboard'));
+                    console.log(chalk.gray('      2. Select your project'));
+                    console.log(chalk.gray('      3. Go to Storage tab'));
+                    console.log(chalk.gray('      4. Select your blob store'));
+                    console.log(chalk.gray('      5. Create a read/write token'));
+                    console.log(
+                        chalk.gray('      6. Add it as BLOB_READ_WRITE_TOKEN environment variable')
+                    );
+                } catch (_error) {
+                    spinner.warn(
+                        'Vercel Blob setup incomplete. You can set it up manually later with:'
+                    );
+                    console.log(chalk.gray(`    cd ${config.projectName}`));
+                    console.log(chalk.gray(`    ${config.packageManager} run setup:blob`));
+                    console.log(
+                        chalk.gray('    Or manually configure BLOB_READ_WRITE_TOKEN in .env.local')
+                    );
+                }
             }
         }
 
@@ -299,6 +327,23 @@ echo "✔ Vercel Blob storage configured (manual token setup required)"
             );
             console.log(
                 chalk.gray(`  ${config.packageManager} run deploy:prod  # Deploy to production`)
+            );
+        }
+
+        if (config.storybook) {
+            console.log(chalk.cyan('\nStorybook commands:'));
+            console.log(
+                chalk.gray(
+                    `  ${config.packageManager} run storybook    # Start Storybook dev server`
+                )
+            );
+            console.log(
+                chalk.gray(
+                    `  ${config.packageManager} run build-storybook # Build Storybook for production`
+                )
+            );
+            console.log(
+                chalk.gray(`  ${config.packageManager} run test:storybook # Run Storybook tests`)
             );
         }
 

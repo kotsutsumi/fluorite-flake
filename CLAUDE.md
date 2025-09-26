@@ -52,7 +52,6 @@ pnpm publish         # Manual publish to npm (auto-runs build via prepublishOnly
 - **prompts** (v2.4.2): Interactive CLI prompts for project configuration
 - **fs-extra** (v11.2.0): Enhanced file system operations
 - **execa** (v9.5.2): Process execution for running commands
-- **handlebars** (v4.7.8): Template engine for code generation
 
 ### Code Quality
 - **Biome**: Handles both formatting and linting with strict rules

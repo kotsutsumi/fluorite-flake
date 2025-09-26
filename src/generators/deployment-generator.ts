@@ -95,7 +95,8 @@ async function addDeploymentScripts(config: ProjectConfig) {
         // Environment management
         'env:pull': 'vercel env pull',
         'env:pull:prod': 'vercel env pull --environment=production',
-        'env:pull:staging': 'vercel env pull --environment=preview',
+        'env:pull:staging': 'vercel env pull --environment=preview --git-branch=staging',
+        'env:pull:dev': 'vercel env pull --environment=preview --git-branch=development',
     };
 
     // Add database-specific deployment scripts

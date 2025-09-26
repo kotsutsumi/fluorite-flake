@@ -1,6 +1,6 @@
+import path from 'node:path';
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import path from 'node:path';
 import prompts from 'prompts';
 
 import { isConfigComplete } from './is-config-complete.js';
@@ -15,9 +15,7 @@ export async function createProject(providedConfig?: Partial<ProjectConfig>) {
             config.projectPath = path.join(process.cwd(), config.projectName);
         }
 
-        if (process.env.NODE_ENV === 'test') {
-            console.log(`[DEBUG] Creating project at: ${config.projectPath}`);
-        }
+        // Debug logging removed for cleaner output
 
         if (await fs.pathExists(config.projectPath)) {
             throw new Error(`Directory ${config.projectPath} already exists`);
@@ -156,6 +154,12 @@ export async function createProject(providedConfig?: Partial<ProjectConfig>) {
             initial: false,
         },
         {
+            type: (_prev, values) => (values.framework === 'nextjs' ? 'confirm' : null),
+            name: 'storybook',
+            message: 'Setup Storybook for component development and testing?',
+            initial: false,
+        },
+        {
             type: (_prev, values) => (values.framework !== 'flutter' ? 'select' : null),
             name: 'packageManager',
             message: 'Select package manager:',
@@ -179,6 +183,7 @@ export async function createProject(providedConfig?: Partial<ProjectConfig>) {
         database: answers.database ?? 'none',
         storage: (answers.storage ?? 'none') as ProjectConfig['storage'],
         auth: answers.auth ?? false,
+        storybook: answers.storybook ?? false,
         deployment: answers.deployment ?? false,
         packageManager: answers.packageManager ?? 'pnpm',
         projectPath: path.join(process.cwd(), answers.projectName),

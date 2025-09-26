@@ -1,29 +1,146 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🚀 Setting up Supabase project..."
+PROJECT_NAME="{{projectName}}"
+PROJECT_NAME_CLEAN=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | tr -cs 'a-z0-9-' '-' | sed 's/^-*//; s/-*$//')
+
+echo "🚀 Setting up Supabase project for $PROJECT_NAME..."
 
 # Check if supabase CLI is installed
 if ! command -v supabase &> /dev/null; then
     echo "❌ Supabase CLI not found. Please install it first:"
-    echo "   brew install supabase/tap/supabase"
+    echo "   npm install -g supabase"
+    echo "   or brew install supabase/tap/supabase"
     exit 1
 fi
 
-# Login to Supabase
-echo "📝 Logging in to Supabase..."
-supabase login
+# Function to check if logged in to Supabase
+check_supabase_auth() {
+    if ! supabase projects list &>/dev/null; then
+        echo "📝 Logging in to Supabase..."
+        supabase login
+    else
+        echo "✅ Already logged in to Supabase"
+    fi
+}
+
+# Function to create Supabase project
+create_supabase_project() {
+    local env=$1
+    local project_name="${PROJECT_NAME_CLEAN}-${env}"
+
+    echo "🗄️ Creating Supabase project: $project_name..."
+
+    # Create the project
+    PROJECT_REF=$(supabase projects create "$project_name" --interactive=false --org-id=$(supabase orgs list --format=json | head -n1 | grep -o '"id":"[^"]*' | cut -d'"' -f4) 2>/dev/null || echo "")
+
+    if [ -z "$PROJECT_REF" ]; then
+        echo "   ⚠️ Failed to create project $project_name automatically"
+        echo "   Please create the project manually and update the environment file"
+        return 1
+    fi
+
+    echo "   ✅ Project $project_name created with ref: $PROJECT_REF"
+
+    # Get project details
+    PROJECT_URL="https://${PROJECT_REF}.supabase.co"
+
+    # Get API keys (this might need manual intervention for production)
+    echo "   🔑 Getting API keys..."
+    PROJECT_DETAILS=$(supabase projects api-keys --project-ref="$PROJECT_REF" --format=json 2>/dev/null || echo "[]")
+
+    if [ "$PROJECT_DETAILS" = "[]" ]; then
+        echo "   ⚠️ Could not retrieve API keys automatically"
+        echo "   Please get the keys from https://supabase.com/dashboard/project/$PROJECT_REF/settings/api"
+        ANON_KEY="[GET_FROM_DASHBOARD]"
+        SERVICE_KEY="[GET_FROM_DASHBOARD]"
+    else
+        ANON_KEY=$(echo "$PROJECT_DETAILS" | grep -o '"anon":"[^"]*' | cut -d'"' -f4 || echo "[GET_FROM_DASHBOARD]")
+        SERVICE_KEY=$(echo "$PROJECT_DETAILS" | grep -o '"service_role":"[^"]*' | cut -d'"' -f4 || echo "[GET_FROM_DASHBOARD]")
+    fi
+
+    # Database URL for direct connections
+    DB_URL="postgresql://postgres:[YOUR_PASSWORD]@db.${PROJECT_REF}.supabase.co:5432/postgres"
+
+    # Save to environment file
+    local env_file=".env.${env,,}"
+    echo "" >> "$env_file"
+    echo "# Supabase - ${env^^} Environment" >> "$env_file"
+    echo "NEXT_PUBLIC_SUPABASE_URL=\"$PROJECT_URL\"" >> "$env_file"
+    echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=\"$ANON_KEY\"" >> "$env_file"
+    echo "SUPABASE_SERVICE_ROLE_KEY=\"$SERVICE_KEY\"" >> "$env_file"
+    echo "DATABASE_URL=\"$DB_URL\"" >> "$env_file"
+
+    echo "   ✅ Environment variables saved to $env_file"
+    echo "   ⚠️ Don't forget to set your database password in the Supabase dashboard"
+}
+
+# Setup local Supabase
+echo "📁 Setting up local development environment..."
 
 # Initialize Supabase project
-echo "🗄️ Initializing Supabase project..."
-supabase init
+if [ ! -f "supabase/config.toml" ]; then
+    echo "🗄️ Initializing Supabase project..."
+    supabase init
+else
+    echo "✅ Supabase project already initialized"
+fi
 
 # Start local Supabase
 echo "🚀 Starting local Supabase..."
 supabase start
 
+# Get local connection details
+echo "📋 Getting local connection details..."
+LOCAL_API_URL=$(supabase status | grep "API URL" | awk '{print $3}')
+LOCAL_ANON_KEY=$(supabase status | grep "anon key" | awk '{print $3}')
+LOCAL_SERVICE_KEY=$(supabase status | grep "service_role key" | awk '{print $3}')
+
+# Save local development variables to .env.local
+echo "" >> .env.local
+echo "# Supabase - Local Development" >> .env.local
+echo "NEXT_PUBLIC_SUPABASE_URL=\"$LOCAL_API_URL\"" >> .env.local
+echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=\"$LOCAL_ANON_KEY\"" >> .env.local
+echo "SUPABASE_SERVICE_ROLE_KEY=\"$LOCAL_SERVICE_KEY\"" >> .env.local
+
+echo "✅ Local Supabase setup complete!"
+
+# Check if we should set up cloud projects
+if [[ "$1" == "--cloud" ]]; then
+    check_supabase_auth
+
+    # Create environment files
+    touch .env.production
+    touch .env.staging
+    touch .env.development
+
+    echo ""
+    echo "🌐 Setting up Supabase Cloud projects..."
+
+    # Create projects
+    create_supabase_project "prod"
+    create_supabase_project "stg"
+    create_supabase_project "dev"
+
+    echo ""
+    echo "✅ All Supabase projects created!"
+    echo ""
+    echo "📝 Configuration has been saved to:"
+    echo "   - .env.production"
+    echo "   - .env.staging"
+    echo "   - .env.development"
+    echo ""
+    echo "⚠️ Important next steps:"
+    echo "   1. Set database passwords in each project dashboard"
+    echo "   2. Update DATABASE_URL with actual passwords"
+    echo "   3. Run database migrations for each environment"
+fi
+
+echo ""
 echo "✅ Supabase setup complete!"
 echo ""
-echo "To create a remote project:"
-echo "   supabase projects create {{projectName}}"
-echo "   supabase link --project-ref [project-id]"
+echo "📚 Next steps:"
+echo "   1. Run '{{packageManager}} run dev' to start development server"
+echo "   2. Visit http://localhost:3000 to see the database demo"
+echo "   3. Run '{{packageManager}} run setup:db --cloud' to set up cloud projects"
+echo "   4. Run '{{packageManager}} run deploy' to deploy to Vercel"

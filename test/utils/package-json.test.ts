@@ -1,8 +1,8 @@
+import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtemp } from 'node:fs/promises';
-import { describe, expect, it } from 'vitest';
 import fs from 'fs-extra';
+import { describe, expect, it } from 'vitest';
 
 import type { ProjectConfig } from '../../src/commands/create/types.js';
 import { generatePackageJson } from '../../src/utils/package-json.js';

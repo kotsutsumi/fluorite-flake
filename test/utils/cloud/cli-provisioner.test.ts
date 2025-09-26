@@ -38,11 +38,11 @@ describe('CLIProvisioner', () => {
         execaMock
             .mockRejectedValueOnce({ stderr: 'unknown command blob store add' })
             .mockResolvedValueOnce({ stdout: '' })
-            .mockResolvedValueOnce({ stdout: 'Created BLOB_READ_WRITE_TOKEN=blob_token_xyz' });
+            .mockResolvedValueOnce({ stdout: 'Created BLOB_READ_WRITE_TOKEN=blob_token-xyz' });
 
         const token = await createAndConnect.call(provisioner, 'demo-store', '/tmp/project');
 
-        expect(token).toBe('blob_token_xyz');
+        expect(token).toBe('blob_token-xyz');
         expect(execaMock).toHaveBeenCalledTimes(3);
         expect(execaMock.mock.calls[0][1]).toEqual(['blob', 'store', 'add', 'demo-store']);
         expect(execaMock.mock.calls[1][1]).toEqual(['blob', 'store', 'create', 'demo-store']);

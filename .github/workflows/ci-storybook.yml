@@ -1,0 +1,415 @@
+name: CI - Storybook Integration Tests
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'playwright.config.ts'
+      - '.github/workflows/**'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'playwright.config.ts'
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  CI: true
+  # Optimize for CI performance
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '0'
+  PLAYWRIGHT_BROWSERS_PATH: '${{ github.workspace }}/pw-browsers'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Setup and cache job for shared resources
+  setup:
+    name: Setup & Cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+      node-modules-hash: ${{ steps.hash.outputs.hash }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Generate hash for cache key
+        id: hash
+        run: |
+          echo "hash=${{ hashFiles('package.json', 'pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
+
+      - name: Cache node modules
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ steps.hash.outputs.hash }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+
+  # Unit tests job
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ needs.setup.outputs.node-modules-hash }}
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Run format & lint checks
+        run: |
+          pnpm run format --check
+          pnpm run lint
+
+      - name: Build project
+        run: pnpm run build
+
+  # Playwright browser installation with caching
+  playwright-setup:
+    name: Playwright Setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ needs.setup.outputs.node-modules-hash }}
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm playwright install chromium
+
+  # E2E tests with sharding for parallel execution
+  e2e-tests:
+    name: E2E Tests (Shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [setup, unit-tests, playwright-setup]
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+        total-shards: [4]
+    env:
+      # Enable Playwright sharding for performance
+      PLAYWRIGHT_SHARD: ${{ matrix.shard }}/${{ matrix.total-shards }}
+      # Enable shared Storybook build optimization
+      STORYBOOK_SHARING_ENABLED: 'true'
+      # Optimize for CI
+      SKIP_ENV_VALIDATION: 'true'
+      PLAYWRIGHT_HTML_REPORT: playwright-report-shard-${{ matrix.shard }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ needs.setup.outputs.node-modules-hash }}
+
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Create shared Storybook cache directory
+        run: |
+          mkdir -p .temp-shared-storybook
+          echo "Created shared Storybook cache directory"
+
+      - name: Cache Storybook builds (shared across shards)
+        uses: actions/cache@v4
+        with:
+          path: |
+            .temp-shared-storybook
+            .temp-storybook-e2e
+          key: ${{ runner.os }}-storybook-builds-${{ github.sha }}-${{ hashFiles('src/generators/storybook-generator.ts', 'src/generators/next-generator.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-storybook-builds-${{ github.sha }}-
+            ${{ runner.os }}-storybook-builds-
+
+      - name: Run E2E tests with sharding
+        run: |
+          echo "Running E2E tests for shard ${{ matrix.shard }}/${{ matrix.total-shards }}"
+          pnpm test:e2e --shard=${{ matrix.shard }}/${{ matrix.total-shards }} --reporter=html
+        env:
+          PLAYWRIGHT_HTML_REPORT: test-results/${{ env.PLAYWRIGHT_HTML_REPORT }}
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-results-shard-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report-shard-${{ matrix.shard }}/
+          retention-days: 7
+
+      - name: Upload E2E test videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-videos-shard-${{ matrix.shard }}
+          path: test-results/**/videos/
+          retention-days: 3
+
+  # Storybook-specific tests with optimized sharing
+  storybook-tests:
+    name: Storybook Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [setup, unit-tests, playwright-setup]
+    env:
+      SKIP_ENV_VALIDATION: 'true'
+      STORYBOOK_SHARING_ENABLED: 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ needs.setup.outputs.node-modules-hash }}
+
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Cache Storybook builds
+        uses: actions/cache@v4
+        with:
+          path: |
+            .temp-shared-storybook
+            .temp-storybook-e2e
+          key: ${{ runner.os }}-storybook-builds-${{ github.sha }}-${{ hashFiles('src/generators/storybook-generator.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-storybook-builds-${{ github.sha }}-
+            ${{ runner.os }}-storybook-builds-
+
+      - name: Run Storybook E2E tests
+        run: pnpm test:e2e:storybook
+        env:
+          PLAYWRIGHT_HTML_REPORT: test-results/storybook-html-report
+
+      - name: Upload Storybook test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storybook-test-results
+          path: |
+            test-results/storybook*
+            storybook-html-report/
+          retention-days: 7
+
+      - name: Upload Storybook test videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: storybook-test-videos
+          path: test-results/storybook**/videos/
+          retention-days: 3
+
+  # Performance benchmarks
+  performance-tests:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [setup, unit-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-pnpm-${{ needs.setup.outputs.node-modules-hash }}
+
+      - name: Run performance benchmarks
+        run: |
+          echo "📊 Running performance benchmarks..."
+          time pnpm run build
+
+          echo "📦 Analyzing bundle size..."
+          if [ -d "dist" ]; then
+            du -sh dist/
+            find dist/ -name "*.js" -exec ls -lh {} \;
+          fi
+
+          echo "⏱️ Testing project generation speed..."
+          time node dist/cli.js create --help || echo "CLI help completed"
+
+      - name: Report performance results
+        run: |
+          echo "Performance benchmark completed"
+          echo "Results are available in the CI logs above"
+
+  # Consolidate test results
+  test-results:
+    name: Test Results Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests, storybook-tests]
+    if: always()
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-test-results
+
+      - name: Generate test summary
+        run: |
+          echo "# 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
+            echo "✅ **Unit Tests**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Unit Tests**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+            echo "✅ **E2E Tests**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **E2E Tests**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.storybook-tests.result }}" == "success" ]; then
+            echo "✅ **Storybook Tests**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Storybook Tests**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frameworks**: Next.js (with/without Storybook), Expo, Tauri, Flutter" >> $GITHUB_STEP_SUMMARY
+          echo "- **Configurations**: Multiple database, storage, and auth combinations" >> $GITHUB_STEP_SUMMARY
+          echo "- **Components**: UI components with interaction tests" >> $GITHUB_STEP_SUMMARY
+          echo "- **Performance**: Build sharing and parallel execution optimization" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload consolidated results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: all-test-results
+          path: all-test-results/
+          retention-days: 14

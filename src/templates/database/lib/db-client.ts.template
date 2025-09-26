@@ -1,7 +1,58 @@
 import { PrismaClient } from '@prisma/client';
 
-function normalizeSqliteUrl(url: string | undefined | null) {
-  if (!url) return undefined;
-  if (url.startsWith('file://')) {
-    const raw = url.slice('file://'.length);
-    return raw.startsWith('/') ? \
+// Environment-aware database connection for Supabase with Prisma
+// Automatically switches between different Supabase projects
+// based on the deployment environment
+
+function getEnvironment(): 'production' | 'staging' | 'development' | 'local' {
+  // On Vercel, use VERCEL_ENV to determine environment
+  if (process.env.VERCEL_ENV) {
+    if (process.env.VERCEL_ENV === 'production') return 'production';
+    if (process.env.VERCEL_ENV === 'preview') {
+      // For preview deployments, check branch or use staging as default
+      if (process.env.VERCEL_GIT_COMMIT_REF === 'develop' ||
+          process.env.VERCEL_GIT_COMMIT_REF === 'staging') {
+        return 'staging';
+      }
+      return 'development';
+    }
+  }
+
+  // For local development or other environments
+  if (process.env.NODE_ENV === 'development') return 'local';
+  if (process.env.NODE_ENV === 'production') return 'production';
+
+  return 'local'; // Default to local
+}
+
+function getDatabaseUrl(): string {
+  const env = getEnvironment();
+
+  switch (env) {
+    case 'production':
+      return process.env.DATABASE_URL_PROD || process.env.DATABASE_URL || '';
+    case 'staging':
+      return process.env.DATABASE_URL_STG || process.env.DATABASE_URL || '';
+    case 'development':
+      return process.env.DATABASE_URL_DEV || process.env.DATABASE_URL || '';
+    case 'local':
+    default:
+      return process.env.DATABASE_URL || '';
+  }
+}
+
+const databaseUrl = getDatabaseUrl();
+const environment = getEnvironment();
+
+console.log(`🗄️ Connecting to database (${environment}):`, databaseUrl.replace(/:[^@]+@/, ':***@'));
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl,
+    },
+  },
+  log: environment === 'local' ? ['query', 'error', 'warn'] : ['error'],
+});
+
+export default prisma;

@@ -2,7 +2,7 @@
 set -e
 
 PROJECT_NAME="{{config.projectName}}"
-PROJECT_NAME_CLEAN=\$(echo "\$PROJECT_NAME" | tr '-' '_')
+PROJECT_NAME_CLEAN=\$(echo "\$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | tr -cs 'a-z0-9-' '-' | sed 's/^-*//; s/-*$//')
 
 echo "🎯 Automated Vercel + {{config.database === 'turso' ? 'Turso' : 'Supabase'}} deployment setup..."
 echo ""

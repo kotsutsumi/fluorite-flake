@@ -89,6 +89,8 @@ async function setupSupabase(config: ProjectConfig) {
     packageJson.scripts = {
         ...packageJson.scripts,
         'setup:db': 'bash scripts/setup-supabase.sh',
+        'setup:db:local': 'bash scripts/setup-supabase.sh --local',
+        'setup:db:cloud': 'bash scripts/setup-supabase.sh --cloud',
         supabase: 'supabase',
     };
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });

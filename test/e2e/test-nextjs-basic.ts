@@ -3,10 +3,10 @@
  * Direct test runner for Next.js basic project generation
  */
 
-import fs from 'fs-extra';
-import path from 'node:path';
 import { execSync } from 'node:child_process';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'fs-extra';
 import { createProject } from '../../dist/commands/create/index.js';
 
 const __filename = fileURLToPath(import.meta.url);

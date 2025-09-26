@@ -1,8 +1,8 @@
+import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtemp } from 'node:fs/promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'fs-extra';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('execa', () => ({ execa: vi.fn() }));
 

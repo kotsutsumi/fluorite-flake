@@ -4,13 +4,13 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { ProjectConfig } from '../../src/commands/create/types.js';
 import {
     addPostInstallScript,
     createDevelopmentBootstrapScript,
     createInitScript,
     setupDatabase,
 } from '../../src/generators/database-generator.js';
-import type { ProjectConfig } from '../../src/commands/create/types.js';
 
 type ConfigOverrides = Partial<ProjectConfig>;
 

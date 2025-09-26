@@ -2,6 +2,7 @@ import { execa } from 'execa';
 import ora, { type Ora } from 'ora';
 import prompts from 'prompts';
 import type { ProjectConfig } from '../../commands/create/types.js';
+import { upsertEnvFile } from '../env-file.js';
 import { slugify } from '../slugify.js';
 import { ProvisioningError } from './errors.js';
 import type {
@@ -147,7 +148,7 @@ export class CLIProvisioner implements CloudProvisioner {
 
                 // Try to extract token from output
                 const output = result.stdout || result.stderr || '';
-                const tokenMatch = output.match(/BLOB_READ_WRITE_TOKEN[=:"'\s]+(blob_[\w]+)/i);
+                const tokenMatch = output.match(/BLOB_READ_WRITE_TOKEN[=:"'\s]+(blob_[\w-]+)/i);
                 if (tokenMatch) {
                     return tokenMatch[1];
                 }
@@ -311,60 +312,100 @@ export class CLIProvisioner implements CloudProvisioner {
             // Check if logged in to Turso
             const { stdout: authStatus } = await execa('turso', ['auth', 'status'], {
                 reject: false,
+                stdout: 'pipe',
+                stderr: 'pipe',
             });
 
             if (!authStatus.includes('Logged in')) {
-                this.spinner.text = 'Logging in to Turso...';
+                this.spinner.stop();
+                console.log('  ℹ️  Logging in to Turso...');
                 await execa('turso', ['auth', 'login'], { stdio: 'inherit' });
+                this.spinner = ora('Setting up Turso databases...').start();
             }
 
             // Get organization
-            const { stdout: orgOutput } = await execa('turso', ['org', 'list']);
+            const { stdout: orgOutput } = await execa('turso', ['org', 'list'], {
+                stdout: 'pipe',
+                stderr: 'pipe',
+            });
             const orgMatch = orgOutput.match(/(\S+)\s+\(current\)/);
             const organization = orgMatch ? orgMatch[1] : 'default';
 
             const databases: TursoDatabaseRecord[] = [];
 
+            // Check existing databases for all environments first
+            const existingDatabases: Record<string, boolean> = {};
+            this.spinner.text = 'Checking existing databases...';
+
             for (const env of DB_ENVIRONMENTS) {
-                // Turso only accepts lowercase letters, numbers, and dashes (no underscores)
                 const dbName = `${slug}-${env}`;
-
-                // Check if database already exists
-                let databaseExists = false;
                 try {
-                    await execa('turso', ['db', 'show', dbName]);
-                    databaseExists = true;
-                } catch {
-                    // Database doesn't exist
-                }
-
-                if (databaseExists) {
-                    this.spinner.stop();
-                    const { action } = await prompts({
-                        type: 'select',
-                        name: 'action',
-                        message: `Turso database '${dbName}' already exists. What would you like to do?`,
-                        choices: [
-                            { title: 'Use existing database', value: 'use' },
-                            { title: 'Delete and recreate', value: 'recreate' },
-                            { title: 'Cancel', value: 'cancel' },
-                        ],
+                    // Use silent check to avoid spinner conflict
+                    await execa('turso', ['db', 'show', dbName], {
+                        reject: false,
+                        stdout: 'pipe',
+                        stderr: 'pipe',
                     });
+                    existingDatabases[env] = true;
+                } catch {
+                    existingDatabases[env] = false;
+                }
+            }
 
-                    if (action === 'cancel') {
-                        throw new ProvisioningError('User cancelled provisioning');
-                    }
+            // If any databases exist, ask once for all environments
+            const hasExisting = Object.values(existingDatabases).some((exists) => exists);
+            let action = 'create';
 
-                    if (action === 'recreate') {
-                        this.spinner = ora(`Recreating database ${dbName}...`).start();
-                        await execa('turso', ['db', 'destroy', dbName, '--yes']);
-                        await execa('turso', ['db', 'create', dbName]);
-                    } else {
-                        this.spinner = ora(`Using existing database ${dbName}...`).start();
-                    }
-                } else {
+            if (hasExisting) {
+                // Stop spinner before prompting to avoid visual conflicts
+                this.spinner.stop();
+
+                const existingList = DB_ENVIRONMENTS.filter((env) => existingDatabases[env])
+                    .map((env) => `${slug}-${env}`)
+                    .join(', ');
+
+                const response = await prompts({
+                    type: 'select',
+                    name: 'action',
+                    message: `Found existing Turso databases: ${existingList}\nWhat would you like to do for ALL environments?`,
+                    choices: [
+                        { title: 'Use existing databases (keep current data)', value: 'use' },
+                        {
+                            title: 'Recreate all databases (delete and create new)',
+                            value: 'recreate',
+                        },
+                    ],
+                });
+
+                action = response.action;
+
+                // Restart spinner after prompt
+                this.spinner = ora('Processing databases...').start();
+            }
+
+            // Process all databases with the same action
+            for (const env of DB_ENVIRONMENTS) {
+                const dbName = `${slug}-${env}`;
+                const exists = existingDatabases[env];
+
+                if (exists && action === 'recreate') {
+                    this.spinner.text = `Recreating database ${dbName}...`;
+                    await execa('turso', ['db', 'destroy', dbName, '--yes'], {
+                        stdout: 'pipe',
+                        stderr: 'pipe',
+                    });
+                    await execa('turso', ['db', 'create', dbName], {
+                        stdout: 'pipe',
+                        stderr: 'pipe',
+                    });
+                } else if (exists && action === 'use') {
+                    this.spinner.text = `Using existing database ${dbName}...`;
+                } else if (!exists) {
                     this.spinner.text = `Creating database ${dbName}...`;
-                    await execa('turso', ['db', 'create', dbName]);
+                    await execa('turso', ['db', 'create', dbName], {
+                        stdout: 'pipe',
+                        stderr: 'pipe',
+                    });
                 }
 
                 // Get database URL
@@ -527,124 +568,208 @@ export class CLIProvisioner implements CloudProvisioner {
     ): Promise<VercelBlobRecord> {
         this.spinner = ora('Setting up Vercel Blob storage...').start();
 
+        const parseStoreList = (output: string): string[] => {
+            const stores: string[] = [];
+            for (const line of output.split('\n')) {
+                const match = line.match(/^([\w-]+)/);
+                if (match?.[1] && !match[1].startsWith('Name')) {
+                    stores.push(match[1]);
+                }
+            }
+            return stores;
+        };
+
+        const uniqueStoreName = (base: string, existing: string[]): string => {
+            const taken = new Set(existing);
+            let candidate = base;
+            let counter = 1;
+            while (taken.has(candidate)) {
+                candidate = `${base}-${counter++}`;
+            }
+            return candidate;
+        };
+
         try {
-            const storeName = `${slug}-blob`;
+            let storeName = `${slug}-blob`;
             let readWriteToken = '';
 
-            // First, ensure we're linked to the Vercel project
             this.spinner.text = 'Ensuring Vercel project link...';
             await execa('vercel', ['link', '--yes'], {
                 cwd: config.projectPath,
                 reject: false,
-                timeout: 15000, // 15 second timeout
+                timeout: 15000,
             });
 
-            // Check if blob store already exists
-            let storeExists = false;
+            this.spinner.text = 'Checking existing blob stores...';
+            let existingStores: string[] = [];
             try {
-                const getResult = await execa('vercel', ['blob', 'store', 'get', storeName], {
+                const { stdout } = await execa('vercel', ['blob', 'store', 'list'], {
                     cwd: config.projectPath,
-                    timeout: 10000, // 10 second timeout
+                    timeout: 10000,
                     reject: false,
                 });
-                if (getResult.exitCode === 0) {
-                    storeExists = true;
-                } else if (this.isUnsupportedBlobSubcommand(getResult.stderr)) {
-                    try {
-                        const { stdout: storeList } = await execa(
-                            'vercel',
-                            ['blob', 'store', 'list'],
-                            {
-                                cwd: config.projectPath,
-                                timeout: 10000,
-                            }
-                        );
-                        if (storeList?.includes(storeName)) {
-                            storeExists = true;
-                        }
-                    } catch {
-                        // ignore fallback errors
-                    }
-                }
+                existingStores = parseStoreList(stdout);
             } catch {
-                // Ignore errors; creation step will surface actionable failures
+                // Best effort: continue with empty list
             }
 
-            if (storeExists) {
-                this.spinner.stop();
-                const { action } = await prompts({
+            this.spinner.stop();
+
+            const { storeAction } = await prompts({
+                type: 'select',
+                name: 'storeAction',
+                message: 'How would you like to set up Vercel Blob storage?',
+                choices: [
+                    { title: 'Create new blob store', value: 'create' },
+                    {
+                        title: 'Select from existing stores',
+                        value: 'select',
+                        disabled: existingStores.length === 0,
+                        description:
+                            existingStores.length === 0
+                                ? 'No existing blob stores found'
+                                : undefined,
+                    },
+                ],
+            });
+
+            if (!storeAction) {
+                throw new ProvisioningError('Vercel Blob storage setup was cancelled by the user.');
+            }
+
+            let action: 'create' | 'recreate' | 'use' = 'create';
+
+            if (storeAction === 'select') {
+                const { selectedStore } = await prompts({
                     type: 'select',
-                    name: 'action',
-                    message: `Vercel Blob store '${storeName}' already exists. What would you like to do?`,
-                    choices: [
-                        { title: 'Use existing store', value: 'use' },
-                        { title: 'Delete and recreate', value: 'recreate' },
-                        { title: 'Cancel', value: 'cancel' },
-                    ],
+                    name: 'selectedStore',
+                    message: 'Select an existing blob store:',
+                    choices: existingStores.map((store) => ({ title: store, value: store })),
                 });
 
-                if (action === 'cancel') {
-                    throw new ProvisioningError('User cancelled provisioning');
+                if (!selectedStore) {
+                    throw new ProvisioningError(
+                        'Vercel Blob storage setup was cancelled by the user.'
+                    );
                 }
 
-                if (action === 'recreate') {
-                    this.spinner = ora(`Deleting existing blob store ${storeName}...`).start();
-                    const deleteArgs: string[][] = [
-                        ['blob', 'store', 'remove', storeName],
-                        ['blob', 'store', 'rm', storeName],
-                        ['blob', 'store', 'delete', storeName],
-                    ];
-                    let deleted = false;
-                    for (const args of deleteArgs) {
-                        const result = await execa('vercel', args, {
-                            cwd: config.projectPath,
-                            timeout: 30000,
-                            reject: false,
-                        });
-                        if (result.exitCode === 0) {
-                            deleted = true;
-                            break;
-                        }
-                        if (this.isUnsupportedBlobSubcommand(result.stderr)) {
-                            continue;
-                        }
-                        const normalized = (result.stderr ?? '').toLowerCase();
-                        if (normalized.includes('not found')) {
-                            deleted = true;
-                            break;
-                        }
-                    }
-                    if (!deleted) {
+                storeName = selectedStore;
+                action = 'use';
+            } else {
+                const defaultName = uniqueStoreName(storeName, existingStores);
+                let nextInitial = defaultName;
+
+                while (true) {
+                    const { newStoreName } = await prompts({
+                        type: 'text',
+                        name: 'newStoreName',
+                        message: 'Enter a name for the new blob store:',
+                        initial: nextInitial,
+                        validate: (value: string) => {
+                            if (!value || value.trim().length === 0) {
+                                return 'Store name is required';
+                            }
+                            if (!/^[a-zA-Z0-9-]+$/.test(value.trim())) {
+                                return 'Use letters, numbers, or hyphen (-) only';
+                            }
+                            return true;
+                        },
+                    });
+
+                    if (!newStoreName) {
                         throw new ProvisioningError(
-                            '既存の Vercel Blob store を削除できませんでした。'
+                            'Vercel Blob storage setup was cancelled by the user.'
                         );
                     }
-                    this.spinner.text = 'Creating Vercel Blob store...';
-                    const token = await this.createAndConnectBlobStore(
-                        storeName,
-                        config.projectPath
-                    );
-                    if (token) {
-                        readWriteToken = token;
+
+                    const normalized = newStoreName.trim();
+
+                    if (existingStores.includes(normalized)) {
+                        const { conflict } = await prompts({
+                            type: 'select',
+                            name: 'conflict',
+                            message: `Blob store '${normalized}' already exists. How should we proceed?`,
+                            choices: [
+                                { title: 'Delete and recreate this store', value: 'recreate' },
+                                { title: 'Enter a different name', value: 'rename' },
+                                { title: 'Use the existing store instead', value: 'use' },
+                            ],
+                        });
+
+                        if (!conflict) {
+                            throw new ProvisioningError(
+                                'Vercel Blob storage setup was cancelled by the user.'
+                            );
+                        }
+
+                        if (conflict === 'rename') {
+                            nextInitial = `${normalized}-new`;
+                            continue;
+                        }
+
+                        storeName = normalized;
+                        action = conflict === 'use' ? 'use' : 'recreate';
+                        break;
                     }
-                } else {
-                    this.spinner = ora('Using existing Vercel Blob store...').start();
-                    const token = await this.connectBlobStore(storeName, config.projectPath);
-                    if (token) {
-                        readWriteToken = token;
+
+                    storeName = normalized;
+                    action = 'create';
+                    break;
+                }
+            }
+
+            this.spinner = ora('Configuring blob store...').start();
+
+            if (action === 'recreate') {
+                this.spinner.text = `Deleting existing blob store ${storeName}...`;
+                const deleteArgs: string[][] = [
+                    ['blob', 'store', 'remove', storeName],
+                    ['blob', 'store', 'rm', storeName],
+                    ['blob', 'store', 'delete', storeName],
+                ];
+                let deleted = false;
+                for (const args of deleteArgs) {
+                    const result = await execa('vercel', args, {
+                        cwd: config.projectPath,
+                        timeout: 30000,
+                        reject: false,
+                    });
+                    if (result.exitCode === 0) {
+                        deleted = true;
+                        break;
+                    }
+                    if (this.isUnsupportedBlobSubcommand(result.stderr)) {
+                        continue;
+                    }
+                    const normalizedErr = (result.stderr ?? '').toLowerCase();
+                    if (normalizedErr.includes('not found')) {
+                        deleted = true;
+                        break;
                     }
                 }
-            } else {
+                if (!deleted) {
+                    throw new ProvisioningError('Failed to delete existing Vercel Blob store');
+                }
                 this.spinner.text = 'Creating Vercel Blob store...';
                 const token = await this.createAndConnectBlobStore(storeName, config.projectPath);
                 if (token) {
                     readWriteToken = token;
                 }
+            } else if (action === 'create') {
+                this.spinner.text = 'Creating Vercel Blob store...';
+                const token = await this.createAndConnectBlobStore(storeName, config.projectPath);
+                if (token) {
+                    readWriteToken = token;
+                }
+            } else {
+                this.spinner.text = 'Connecting to existing Vercel Blob store...';
+                const token = await this.connectBlobStore(storeName, config.projectPath);
+                if (token) {
+                    readWriteToken = token;
+                }
             }
 
-            // Try to get or create a token if we don't have one
             if (!readWriteToken) {
-                // Try to create a token using CLI
                 try {
                     const { stdout: tokenOutput } = await execa(
                         'vercel',
@@ -655,39 +780,108 @@ export class CLIProvisioner implements CloudProvisioner {
                             reject: false,
                         }
                     );
-
-                    // Extract token from output
-                    const tokenMatch = tokenOutput.match(/blob_[\w]+/);
+                    const tokenMatch = tokenOutput.match(/blob_[\w-]+/);
                     if (tokenMatch) {
                         readWriteToken = tokenMatch[0];
                     }
                 } catch {
-                    // Token creation might not be available in CLI
+                    // CLI might not support token creation yet
                 }
             }
 
-            this.spinner.succeed('Vercel Blob storage configured');
-
-            if (readWriteToken) {
-                // Add token to environment
-                await this.addVercelEnv(
-                    'BLOB_READ_WRITE_TOKEN',
-                    readWriteToken,
-                    ['development', 'preview', 'production'],
-                    config.projectPath
-                );
-                console.log('  ✅  BLOB_READ_WRITE_TOKEN has been set in Vercel environment');
-            } else {
+            if (!readWriteToken) {
+                this.spinner.stop();
+                console.log('\n📝  Blob store connected but needs a read/write token.\n');
                 console.log(
-                    '  ℹ️  Note: Create a BLOB_READ_WRITE_TOKEN in the Vercel dashboard:\n' +
-                        '      1. Go to https://vercel.com/dashboard\n' +
-                        '      2. Select your project\n' +
-                        '      3. Go to Storage tab\n' +
-                        '      4. Select your blob store\n' +
-                        '      5. Create a read/write token\n' +
-                        '      6. Add it as BLOB_READ_WRITE_TOKEN environment variable'
+                    '  Generate a new token in the Vercel dashboard or provide an existing token.\n'
+                );
+
+                const { tokenFlow } = await prompts({
+                    type: 'select',
+                    name: 'tokenFlow',
+                    message: 'How would you like to continue?',
+                    choices: [
+                        { title: 'Open dashboard to generate a new token', value: 'dashboard' },
+                        { title: 'Enter an existing BLOB_READ_WRITE_TOKEN', value: 'manual' },
+                    ],
+                });
+
+                if (!tokenFlow) {
+                    throw new ProvisioningError(
+                        'BLOB_READ_WRITE_TOKEN is required to complete Vercel Blob setup.'
+                    );
+                }
+
+                if (tokenFlow === 'dashboard') {
+                    const dashboardUrl = 'https://vercel.com/dashboard/stores';
+                    console.log(`\n🌐  Dashboard URL: ${dashboardUrl}\n`);
+                    console.log('  Steps to generate token:');
+                    console.log(`  1. Navigate to ${dashboardUrl}`);
+                    console.log('  2. Select your project and blob store');
+                    console.log('  3. Open the .env.local tab');
+                    console.log('  4. Copy the BLOB_READ_WRITE_TOKEN value\n');
+
+                    try {
+                        const platform = process.platform;
+                        if (platform === 'darwin') {
+                            await execa('open', [dashboardUrl]);
+                        } else if (platform === 'win32') {
+                            await execa('start', [dashboardUrl], { shell: true });
+                        } else {
+                            await execa('xdg-open', [dashboardUrl]);
+                        }
+                    } catch {
+                        // Optional convenience only
+                    }
+                }
+
+                const { token } = await prompts({
+                    type: 'text',
+                    name: 'token',
+                    message:
+                        tokenFlow === 'manual'
+                            ? 'Enter your existing BLOB_READ_WRITE_TOKEN:'
+                            : 'Paste the new BLOB_READ_WRITE_TOKEN here:',
+                    validate: (value: string) =>
+                        value.startsWith('blob_') || 'Token should start with "blob_"',
+                });
+
+                if (!token) {
+                    throw new ProvisioningError(
+                        'BLOB_READ_WRITE_TOKEN is required to complete Vercel Blob setup.'
+                    );
+                }
+
+                readWriteToken = token.trim();
+                this.spinner = ora('Finalizing blob storage setup...').start();
+            } else {
+                this.spinner.text = 'Finalizing blob storage setup...';
+            }
+
+            await this.addVercelEnv(
+                'BLOB_READ_WRITE_TOKEN',
+                readWriteToken,
+                ['development', 'preview', 'production'],
+                config.projectPath
+            );
+
+            try {
+                await upsertEnvFile(config.projectPath, '.env.local', {
+                    BLOB_READ_WRITE_TOKEN: readWriteToken,
+                });
+                await upsertEnvFile(config.projectPath, '.env.development', {
+                    BLOB_READ_WRITE_TOKEN: readWriteToken,
+                });
+            } catch {
+                console.log(
+                    '  ⚠️  Failed to update local env files automatically. Please add BLOB_READ_WRITE_TOKEN manually if needed.'
                 );
             }
+
+            this.spinner.succeed('Vercel Blob storage configured');
+            console.log('  ✅  BLOB_READ_WRITE_TOKEN has been configured');
+            console.log('      - Added to Vercel environment');
+            console.log('      - Updated .env.local and .env.development for local development');
 
             return {
                 storeId: storeName,
