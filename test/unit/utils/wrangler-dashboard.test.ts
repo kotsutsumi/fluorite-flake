@@ -1,3 +1,8 @@
+/**
+ * Cloudflare Wrangler ダッシュボード周りのユーティリティが CLI 連携を正しく扱えるかを検証するユニットテスト。
+ * Wrangler の存在確認や認証状態、リソース一覧取得、デプロイ操作など多様なコマンド呼び出しをモックし、
+ * CLI からの各種操作結果が期待どおりに解析・整形されるかを網羅的にチェックする。
+ */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { execa } from 'execa';
 import {
@@ -9,6 +14,7 @@ import {
 
 vi.mock('execa');
 
+// WranglerDashboard クラス単体のメソッド検証をまとめたスイート
 describe('WranglerDashboard', () => {
     let dashboard: WranglerDashboard;
     const mockExeca = vi.mocked(execa);
@@ -18,7 +24,9 @@ describe('WranglerDashboard', () => {
         vi.clearAllMocks();
     });
 
+    // wrangler コマンドの存在を判定する isAvailable の挙動を確認する
     describe('isAvailable', () => {
+        // Wrangler がインストール済みの場合に true を返し、--version が呼ばれることを検証する
         it('should return true when wrangler is available', async () => {
             mockExeca.mockResolvedValue({
                 stdout: '⛅️ wrangler 3.0.0',
@@ -30,6 +38,7 @@ describe('WranglerDashboard', () => {
             expect(mockExeca).toHaveBeenCalledWith('wrangler', ['--version']);
         });
 
+        // コマンドが失敗した場合に false を返すことを確認し、エラー時のフォールバックを検証する
         it('should return false when wrangler is not available', async () => {
             mockExeca.mockRejectedValue(new Error('Command not found'));
 
@@ -38,7 +47,9 @@ describe('WranglerDashboard', () => {
         });
     });
 
+    // getVersion が実際のバージョン文字列を返すか、失敗時に null を返すかを検証する
     describe('getVersion', () => {
+        // 正常系で stdout のバージョン文字列が返却されることを確認する
         it('should return version string when available', async () => {
             mockExeca.mockResolvedValue({
                 stdout: '⛅️ wrangler 3.0.0',
@@ -49,6 +60,7 @@ describe('WranglerDashboard', () => {
             expect(result).toBe('⛅️ wrangler 3.0.0');
         });
 
+        // コマンドが失敗した場合に null が返ることを検証する
         it('should return null when command fails', async () => {
             mockExeca.mockRejectedValue(new Error('Command failed'));
 
@@ -57,7 +69,9 @@ describe('WranglerDashboard', () => {
         });
     });
 
+    // isAuthenticated がログイン状態を判定できるかをテストする
     describe('isAuthenticated', () => {
+        // 認証済みメッセージを解析して true を返すことを確認する
         it('should return true when authenticated', async () => {
             mockExeca.mockResolvedValue({
                 stdout: 'You are logged in as: user@example.com',
@@ -68,6 +82,7 @@ describe('WranglerDashboard', () => {
             expect(result).toBe(true);
         });
 
+        // 未認証メッセージでは false を返すことを検証する
         it('should return false when not authenticated', async () => {
             mockExeca.mockResolvedValue({
                 stdout: 'You are not authenticated',
@@ -79,7 +94,9 @@ describe('WranglerDashboard', () => {
         });
     });
 
+    // whoami がメールアドレスとアカウント ID を抽出できるか確認する
     describe('whoami', () => {
+        // 正常系でメールとアカウント ID をパースできることを検証する
         it('should parse email and account ID from output', async () => {
             mockExeca.mockResolvedValue({
                 stdout: 'You are logged in as: user@example.com\nAccount ID: 123456',
@@ -93,6 +110,7 @@ describe('WranglerDashboard', () => {
             });
         });
 
+        // 失敗時に null を返すことを確認する
         it('should return null on error', async () => {
             mockExeca.mockRejectedValue(new Error('Not authenticated'));
 
@@ -101,7 +119,9 @@ describe('WranglerDashboard', () => {
         });
     });
 
+    // R2 バケット一覧取得の解析ロジックを検証する
     describe('listR2Buckets', () => {
+        // テーブル形式の出力からバケット情報を配列化できることを確認する
         it('should parse bucket list from output', async () => {
             mockExeca.mockResolvedValue({
                 stdout: `Name           Created        Location
@@ -125,6 +145,7 @@ test-bucket    2024-01-02     eu-west-1`,
             });
         });
 
+        // エラー時に空配列を返すフォールバックを検証する
         it('should return empty array on error', async () => {
             mockExeca.mockRejectedValue(new Error('R2 not available'));
 
@@ -133,7 +154,9 @@ test-bucket    2024-01-02     eu-west-1`,
         });
     });
 
+    // KV Namespace 一覧の取得と解析ロジックを検証する
     describe('listKVNamespaces', () => {
+        // JSON 出力をパースして配列に変換できることを確認する
         it('should parse KV namespace list from JSON output', async () => {
             mockExeca.mockResolvedValue({
                 stdout: JSON.stringify([
@@ -152,6 +175,7 @@ test-bucket    2024-01-02     eu-west-1`,
             });
         });
 
+        // テキスト形式出力でもパースできることを検証する
         it('should parse KV namespace list from text output', async () => {
             mockExeca.mockResolvedValue({
                 stdout: `abc123: my-namespace
@@ -167,6 +191,7 @@ def456: test-namespace`,
             });
         });
 
+        // エラー時に空配列が返ることを確認する
         it('should return empty array on error', async () => {
             mockExeca.mockRejectedValue(new Error('KV not available'));
 
@@ -175,7 +200,9 @@ def456: test-namespace`,
         });
     });
 
+    // Workers デプロイの挙動を検証する
     describe('deployWorker', () => {
+        // デフォルトで dry-run デプロイを行い、成功レスポンスを整形することを確認する
         it('should deploy with dry run by default', async () => {
             mockExeca.mockResolvedValue({
                 stdout: 'Deployment successful (dry run)',
@@ -195,6 +222,7 @@ def456: test-namespace`,
             ]);
         });
 
+        // デプロイでエラーが発生した際のエラーメッセージ整形を検証する
         it('should handle deployment errors', async () => {
             mockExeca.mockRejectedValue({
                 stderr: 'Deployment failed',
@@ -209,7 +237,9 @@ def456: test-namespace`,
         });
     });
 
+    // R2 バケット作成の成否を確認する
     describe('createR2Bucket', () => {
+        // バケット作成成功時のレスポンス整形を検証する
         it('should create bucket successfully', async () => {
             mockExeca.mockResolvedValue({
                 stdout: 'Bucket created successfully',
@@ -229,6 +259,7 @@ def456: test-namespace`,
             ]);
         });
 
+        // 作成失敗時にエラーメッセージを保持して返すことを確認する
         it('should handle creation errors', async () => {
             mockExeca.mockRejectedValue({
                 stderr: 'Bucket already exists',
@@ -243,7 +274,9 @@ def456: test-namespace`,
         });
     });
 
+    // KV Namespace 作成時に ID 抽出ができるか検証する
     describe('createKVNamespace', () => {
+        // 作成結果の文字列から namespace ID を抜き出す処理を確認する
         it('should create namespace and extract ID', async () => {
             mockExeca.mockResolvedValue({
                 stdout: 'Created namespace with id = "xyz789"',
@@ -259,7 +292,9 @@ def456: test-namespace`,
         });
     });
 
+    // getDashboardData が複数の CLI 呼び出し結果を集約できるか検証する
     describe('getDashboardData', () => {
+        // Workers/R2/KV の情報をまとめて取得し、欠損時は空配列となることを確認する
         it('should aggregate all dashboard data', async () => {
             // Mock workers
             mockExeca.mockImplementation((_cmd, args) => {
@@ -294,19 +329,24 @@ def456: test-namespace`,
     });
 });
 
+// WranglerDashboard のファクトリ関数とデータ整形ヘルパーを検証するスイート
 describe('createWranglerDashboard', () => {
+    // デフォルト設定で WranglerDashboard インスタンスが生成されることを確認する
     it('should create a WranglerDashboard instance', () => {
         const dashboard = createWranglerDashboard();
         expect(dashboard).toBeInstanceOf(WranglerDashboard);
     });
 
+    // カスタムパスを指定した場合でもインスタンス化できることを検証する
     it('should accept custom wrangler path', () => {
         const dashboard = createWranglerDashboard('/custom/path/wrangler');
         expect(dashboard).toBeInstanceOf(WranglerDashboard);
     });
 });
 
+// ダッシュボード統合データのフォーマット関数を検証するスイート
 describe('formatDashboardData', () => {
+    // 各リソースを絵文字付きの可読な文字列へ整形できることを確認する
     it('should format dashboard data as readable string', () => {
         const data: WranglerDashboardData = {
             workers: [{ name: 'worker1', routes: ['example.com/*'] }, { name: 'worker2' }],
@@ -334,6 +374,7 @@ describe('formatDashboardData', () => {
         expect(result).toContain('105 (100 success, 5 error)');
     });
 
+    // リソースが空の場合に空文字列を返すフォールバックを検証する
     it('should handle empty data', () => {
         const data: WranglerDashboardData = {
             workers: [],

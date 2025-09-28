@@ -1,3 +1,7 @@
+/**
+ * プロジェクト構造ユーティリティ (`project-structure`) がディレクトリ生成・テンプレートコピー・命名変換などを
+ * 正しく行えるかを検証するユニットテスト。テンポラリ環境でファイル操作を行い、CLI が出力する骨組みの整合性を確認する。
+ */
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -16,7 +20,9 @@ import {
     writeFileWithDirs,
 } from '../../../src/utils/project-structure.js';
 
+// プロジェクトの土台を構築する各ユーティリティを検証するテストスイート
 describe('project-structure utilities', () => {
+    // ディレクトリの生成と空判定が正しく動作することを確認する
     it('creates directory structures and detects emptiness', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'structure-'));
         await createDirectoryStructure(dir, ['one', 'two']);
@@ -27,6 +33,7 @@ describe('project-structure utilities', () => {
         expect(await isDirectoryEmpty(path.join(dir, 'one'))).toBe(false);
     });
 
+    // フレームワーク別ディレクトリ構成が定義どおり作られることを検証する
     it('creates framework directories', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'structure-'));
         await createFrameworkDirectories(dir, 'nextjs');
@@ -35,6 +42,7 @@ describe('project-structure utilities', () => {
         }
     });
 
+    // removeDirectoryIfExists が安全にディレクトリを削除できることを確認する
     it('removes directories safely', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'structure-'));
         const target = path.join(dir, 'to-remove');
@@ -43,6 +51,7 @@ describe('project-structure utilities', () => {
         expect(await fs.pathExists(target)).toBe(false);
     });
 
+    // テンプレートコピーおよび親ディレクトリ込みでのファイル書き込みが行えることを検証する
     it('copies templates and writes files with parent directories', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'structure-'));
         const source = path.join(dir, 'src');
@@ -58,6 +67,7 @@ describe('project-structure utilities', () => {
         expect(await fs.pathExists(nestedFile)).toBe(true);
     });
 
+    // 相対パス算出と命名正規化ユーティリティが期待どおり機能することを確認する
     it('calculates relative paths and normalizes names', () => {
         const relative = getProjectRelativePath('/project', '/project/src/index.ts');
         expect(relative).toBe(path.join('src', 'index.ts'));

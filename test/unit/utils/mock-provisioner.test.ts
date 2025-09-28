@@ -1,3 +1,8 @@
+/**
+ * モックプロビジョナー (`MockProvisioner`) がクラウドリソース生成結果を模擬的に返す挙動を検証するユニットテスト。
+ * データベースやストレージの選択に応じてモックしたメタデータが構築されるかを確認し、
+ * CLI のクラウド連携フローで利用するダミー応答の整合性を保証する。
+ */
 import { describe, expect, it } from 'vitest';
 
 import type { ProjectConfig } from '../../../src/commands/create/types.js';
@@ -14,7 +19,9 @@ const baseConfig: ProjectConfig = {
     packageManager: 'pnpm',
 };
 
+// MockProvisioner が選択内容に応じたモックレコードを生成できるか確認するテスト群
 describe('MockProvisioner', () => {
+    // Turso を選択した際に 3 環境分のデータベース情報が生成されることを検証する
     it('provisions turso databases with three environments', async () => {
         const provisioner = new MockProvisioner();
         const record = await provisioner.provision({
@@ -28,6 +35,7 @@ describe('MockProvisioner', () => {
         expect(envs).toEqual(expect.arrayContaining(['dev', 'stg', 'prod']));
     });
 
+    // ストレージ種別に応じたモックメタデータ（S3 バケット名や Blob トークン）が生成されることを確認する
     it('provisions storage metadata based on selection', async () => {
         const provisioner = new MockProvisioner();
         const awsRecord = await provisioner.provision({

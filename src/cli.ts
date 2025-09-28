@@ -242,6 +242,26 @@ program
         });
     });
 
+// Add TUI dashboard command
+program
+    .command('tui')
+    .description('Launch interactive TUI dashboard for Cloudflare Workers monitoring')
+    .option('-p, --port <port>', 'IPC server port to connect to', '9123')
+    .option('-h, --host <host>', 'IPC server host to connect to', '127.0.0.1')
+    .option('-t, --token <token>', 'Authentication token for IPC server')
+    .option('-r, --refresh <interval>', 'Refresh interval in milliseconds', '5000')
+    .option('--theme <theme>', 'Color theme (dark or light)', 'dark')
+    .action(async (options) => {
+        const { startTUI } = await import('./commands/tui-dashboard.js');
+        await startTUI({
+            port: options.port ? Number.parseInt(options.port) : undefined,
+            host: options.host,
+            token: options.token,
+            refreshInterval: options.refresh ? Number.parseInt(options.refresh) : undefined,
+            theme: options.theme as 'dark' | 'light',
+        });
+    });
+
 // Parse command line arguments, accounting for pnpm's `--` forwarding.
 const sanitizedUserArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 

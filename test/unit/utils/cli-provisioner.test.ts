@@ -1,3 +1,7 @@
+/**
+ * Vercel CLI を用いたストレージプロビジョニング補助 (`CLIProvisioner`) の分岐とフォールバック動作を検証するユニットテスト。
+ * `execa` をモックし、未対応サブコマンドの判定・ Blob ストア作成フロー・リスト取得時のフォールバックを再現する。
+ */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('execa', () => ({ execa: vi.fn() }));
@@ -11,11 +15,13 @@ function getPrivateMethod<T extends object, K extends keyof T>(instance: T, key:
     return (instance as unknown as Record<string, unknown>)[key] as T[K];
 }
 
+// CLIProvisioner のプライベートロジックを含む挙動を検証するテストスイート
 describe('CLIProvisioner', () => {
     beforeEach(() => {
         execaMock.mockReset();
     });
 
+    // 未対応サブコマンドを検知するヘルパーが該当メッセージで true を返すことを確認する
     it('identifies unsupported blob subcommand errors', () => {
         const provisioner = new CLIProvisioner();
         const detector = getPrivateMethod(provisioner, 'isUnsupportedBlobSubcommand') as (
@@ -28,6 +34,7 @@ describe('CLIProvisioner', () => {
         expect(detector()).toBe(false);
     });
 
+    // 旧コマンドが失敗した場合にフォールバックを試し、最終的にトークンを取得する流れを検証する
     it('falls back to alternate blob commands and returns token', async () => {
         const provisioner = new CLIProvisioner();
         const createAndConnect = getPrivateMethod(provisioner, 'createAndConnectBlobStore') as (
@@ -49,6 +56,7 @@ describe('CLIProvisioner', () => {
         expect(execaMock.mock.calls[2][1]).toContain('connect');
     });
 
+    // すべてのフォールバックが失敗した場合に ProvisioningError として伝播することを検証する
     it('throws when blob store cannot be created', async () => {
         const provisioner = new CLIProvisioner();
         const createAndConnect = getPrivateMethod(provisioner, 'createAndConnectBlobStore') as (
@@ -64,6 +72,8 @@ describe('CLIProvisioner', () => {
             createAndConnect.call(provisioner, 'demo-store', '/tmp/project')
         ).rejects.toBeInstanceOf(ProvisioningError);
     });
+
+    // Blob ストア一覧の JSON 出力からスラッグを抽出できることを確認する
     it('parses blob store list JSON responses', () => {
         const provisioner = new CLIProvisioner();
         const parser = getPrivateMethod(provisioner, 'parseBlobStoreList') as (
@@ -78,6 +88,7 @@ describe('CLIProvisioner', () => {
         expect(stores).toEqual(['demo-store', 'another-store']);
     });
 
+    // テーブル出力に対するパーサーの挙動を確認する (現状はスキップ)
     it.skip('parses blob store list table output', () => {
         const provisioner = new CLIProvisioner();
         const parser = getPrivateMethod(provisioner, 'parseBlobStoreList') as (
@@ -95,6 +106,7 @@ describe('CLIProvisioner', () => {
         expect(parser.call(provisioner, tableOutput)).toEqual(['my-store']);
     });
 
+    // CLI オプションが変更された場合にフォールバックコマンドで一覧取得できることを確認する (スキップ)
     it.skip('lists blob stores with fallback commands', async () => {
         const provisioner = new CLIProvisioner();
         const lister = getPrivateMethod(provisioner, 'listBlobStores') as (
@@ -106,13 +118,13 @@ describe('CLIProvisioner', () => {
                 stdout: '',
                 stderr: 'Unknown option "--json"',
                 exitCode: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: mock type compatibility
+                // biome-ignore lint/suspicious/noExplicitAny: モックで型整合性を簡略化
             } as any)
             .mockResolvedValueOnce({
                 stdout: '[{"name":"existing-store"}]',
                 stderr: '',
                 exitCode: 0,
-                // biome-ignore lint/suspicious/noExplicitAny: mock type compatibility
+                // biome-ignore lint/suspicious/noExplicitAny: モックで型整合性を簡略化
             } as any);
 
         const stores = await lister.call(provisioner, '/tmp/project');

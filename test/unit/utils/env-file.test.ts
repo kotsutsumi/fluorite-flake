@@ -1,3 +1,7 @@
+/**
+ * `.env` ファイルへの追記・更新を行う `upsertEnvFile` の挙動を検証するユニットテスト。
+ * 既存キーの上書き、複数行値のクォート、空値設定による削除相当の動作などをテンポラリ環境で確認する。
+ */
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -5,7 +9,9 @@ import { describe, expect, it } from 'vitest';
 
 import { upsertEnvFile } from '../../../src/utils/env-file.js';
 
+// 環境変数ファイルの更新ロジックを検証するテストスイート
 describe('upsertEnvFile', () => {
+    // 既存値の上書きや複数行値のクォート、空文字設定が期待どおり反映されることを確認する
     it('adds and replaces environment variables with quoting', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'envfile-test-'));
         const envPath = path.join(dir, '.env');
@@ -26,6 +32,7 @@ describe('upsertEnvFile', () => {
         expect(contents).not.toContain('SHOULD_REMOVE=old');
     });
 
+    // 更新内容が空の場合にファイル生成をスキップし、結果が空文字列となることを検証する
     it('returns early when no updates provided', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'envfile-test-'));
         await upsertEnvFile(dir, '.env', {});

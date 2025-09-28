@@ -1,3 +1,8 @@
+/**
+ * クラウド関連ユーティリティのエントリーポイント (`utils/cloud/index`) が環境変数に応じた分岐と
+ * プロビジョニング処理を正しく制御できるかを検証するユニットテスト。モジュールを再読み込みしながら
+ * 自動プロビジョニングの判定やモックプロビジョナーでの資材出力を確認する。
+ */
 import os from 'node:os';
 import path from 'node:path';
 
@@ -18,21 +23,21 @@ async function importCloudModule() {
 
 function restoreEnv() {
     if (originalAutoProvision === undefined) {
-        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        // biome-ignore lint/performance/noDelete: テストでは環境変数を完全に削除する必要がある
         delete process.env.FLUORITE_AUTO_PROVISION;
     } else {
         process.env.FLUORITE_AUTO_PROVISION = originalAutoProvision;
     }
 
     if (originalCloudMode === undefined) {
-        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        // biome-ignore lint/performance/noDelete: テストでは環境変数を完全に削除する必要がある
         delete process.env.FLUORITE_CLOUD_MODE;
     } else {
         process.env.FLUORITE_CLOUD_MODE = originalCloudMode;
     }
 
     if (originalNodeEnv === undefined) {
-        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        // biome-ignore lint/performance/noDelete: テストでは環境変数を完全に削除する必要がある
         delete process.env.NODE_ENV;
     } else {
         process.env.NODE_ENV = originalNodeEnv;
@@ -59,7 +64,7 @@ async function createProvisioningProject(overrides: Partial<ProjectConfig> = {})
     const projectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'ff-cloud-'));
     cleanupPaths.push(projectPath);
 
-    // Create empty .env files that the cloud provisioning expects
+    // クラウドプロビジョニングで参照される .env ファイルを事前に作成する
     await fs.writeFile(path.join(projectPath, '.env.local'), '');
     await fs.writeFile(path.join(projectPath, '.env.production'), '');
 
@@ -72,10 +77,12 @@ afterEach(async () => {
     cleanupPaths.length = 0;
 });
 
+// 自動プロビジョニング判定ロジックを検証するテストスイート
 describe('isProvisioningEligible', () => {
+    // Next.js 以外のフレームワークやマネージドサービスなし構成では false になることを確認する
     it('requires auto provisioning to be enabled and a Next.js project with managed services', async () => {
         vi.resetModules();
-        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        // biome-ignore lint/performance/noDelete: テストでは環境変数を完全に削除する必要がある
         delete process.env.FLUORITE_AUTO_PROVISION;
         process.env.NODE_ENV = 'test';
 
@@ -104,6 +111,7 @@ describe('isProvisioningEligible', () => {
         ).toBe(true);
     });
 
+    // 環境変数で自動プロビジョニングが無効化された場合に常に false となることを検証する
     it('returns false when auto provisioning is disabled via environment variable', async () => {
         vi.resetModules();
         process.env.FLUORITE_AUTO_PROVISION = 'false';
@@ -114,10 +122,12 @@ describe('isProvisioningEligible', () => {
     });
 });
 
+// クラウドプロビジョニング実行の副作用を検証するテストスイート
 describe('provisionCloudResources', () => {
+    // モックモードでクラウド資材が書き出され、.env が更新されることを確認する
     it('uses the mock provisioner in tests and writes provisioning artifacts', async () => {
         vi.resetModules();
-        // biome-ignore lint/performance/noDelete: Need to actually delete env var for tests
+        // biome-ignore lint/performance/noDelete: テストでは環境変数を完全に削除する必要がある
         delete process.env.FLUORITE_AUTO_PROVISION;
         process.env.FLUORITE_CLOUD_MODE = 'mock';
         process.env.NODE_ENV = 'test';

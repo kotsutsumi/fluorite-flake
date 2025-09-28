@@ -1,3 +1,7 @@
+/**
+ * ダウンロード関連ユーティリティ (`download`) がアーカイブ展開・単体ファイル取得・Git クローンなどを
+ * 適切に実行できるかを検証するユニットテスト。`execa` をモックし、コマンド呼び出しと後片付けの挙動を確認する。
+ */
 import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,11 +15,13 @@ const execaMock = vi.mocked(execa);
 
 import { cloneRepository, downloadAndExtract, downloadFile } from '../../../src/utils/download.js';
 
+// ダウンロードユーティリティのシナリオ別挙動を検証するテストスイート
 describe('download utilities', () => {
     beforeEach(() => {
         execaMock.mockReset();
     });
 
+    // アーカイブ URL をダウンロードして展開し、一時ディレクトリが削除されることを確認する
     it('downloads and extracts archives', async () => {
         const baseDir = await mkdtemp(path.join(os.tmpdir(), 'download-test-'));
         const destination = path.join(baseDir, 'output');
@@ -45,6 +51,7 @@ describe('download utilities', () => {
         expect(await fs.pathExists(path.join(destination, '.temp'))).toBe(false);
     });
 
+    // アーカイブ展開途中で失敗した場合に一時ディレクトリがクリーンアップされることを検証する
     it('cleans up temp directory on failure', async () => {
         const baseDir = await mkdtemp(path.join(os.tmpdir(), 'download-test-'));
         const destination = path.join(baseDir, 'output');
@@ -60,6 +67,7 @@ describe('download utilities', () => {
         expect(await fs.pathExists(path.join(destination, '.temp'))).toBe(false);
     });
 
+    // 単一ファイルを curl で取得する際に正しいコマンドが実行されることを確認する
     it('downloads single files via curl', async () => {
         execaMock.mockResolvedValue({ stdout: '' });
         await downloadFile('https://example.com/file.txt', '/tmp/file.txt');
@@ -71,6 +79,7 @@ describe('download utilities', () => {
         );
     });
 
+    // Git リポジトリの浅いクローンと .git 削除が行われることを確認する
     it('clones repositories and removes git metadata', async () => {
         const removeSpy = vi.spyOn(fs, 'remove').mockResolvedValue();
         execaMock.mockResolvedValue({ stdout: '' });

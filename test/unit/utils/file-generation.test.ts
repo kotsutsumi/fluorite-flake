@@ -1,3 +1,8 @@
+/**
+ * ファイル生成ユーティリティ群 (`file-generation`) の挙動を網羅的に検証するユニットテスト。
+ * 設定ファイルやコードファイル、テンプレートレンダリング、package.json のマージ、.env/.gitignore 出力など
+ * CLI 生成物の基本動作をテンポラリディレクトリ上で再現し、形式や並び順が期待どおりであるかを確認する。
+ */
 import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,7 +20,9 @@ import {
     writeGitIgnore,
 } from '../../../src/utils/file-generation.js';
 
+// ファイル生成関連のユーティリティをケース別に検証するテストスイート
 describe('file-generation utilities', () => {
+    // JSON 設定ファイルをソート済みキーと指定スペースで出力できることを確認する
     it('writes config files with sorted keys when requested', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'filegen-'));
         const filePath = path.join(dir, 'config.json');
@@ -27,6 +34,7 @@ describe('file-generation utilities', () => {
         expect(await readFile(filePath, 'utf-8')).toContain('    ');
     });
 
+    // ヘッダーコメント付きでコードファイルを書き出せることを検証する
     it('writes code files with optional header', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'filegen-'));
         const filePath = path.join(dir, 'index.ts');
@@ -41,6 +49,7 @@ describe('file-generation utilities', () => {
         expect(content).toContain('export const value = 1;');
     });
 
+    // テンプレート文字列およびファイルの処理が期待どおり置換されることを確認する
     it('processes templates and template files', async () => {
         const rendered = processTemplate('Hello {{name}}', { name: 'World' });
         expect(rendered).toBe('Hello World');
@@ -54,6 +63,7 @@ describe('file-generation utilities', () => {
         expect(await readFile(outputPath, 'utf-8')).toBe('Value: 42');
     });
 
+    // 既存の package.json と差分マージできることを検証し、上書きと保持が両立するか確認する
     it('merges package.json content', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'filegen-'));
         const pkgPath = path.join(dir, 'package.json');
@@ -72,6 +82,7 @@ describe('file-generation utilities', () => {
         expect(merged.scripts.dev).toBe('next dev');
     });
 
+    // .env および .gitignore を所定のフォーマットで書き出せることを確認する
     it('writes env and gitignore files', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'filegen-'));
 

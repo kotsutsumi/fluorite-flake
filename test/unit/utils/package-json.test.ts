@@ -1,3 +1,7 @@
+/**
+ * `generatePackageJson` がプロジェクト設定に応じた依存関係とスクリプトを出力できるか検証するユニットテスト。
+ * 選択された機能 (データベース・ストレージ・認証など) を反映した package.json がテンポラリディレクトリに生成されることを確認する。
+ */
 import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,7 +23,9 @@ const baseConfig: ProjectConfig = {
     packageManager: 'pnpm',
 };
 
+// package.json 生成ロジックが機能選択を正しく反映するか確認するテスト
 describe('generatePackageJson', () => {
+    // フル機能構成で必要な依存関係と devDependencies が書き出されることを検証する
     it('writes package.json with selected features', async () => {
         const dir = await mkdtemp(path.join(os.tmpdir(), 'pkgjson-'));
         const config = { ...baseConfig, projectPath: dir };
