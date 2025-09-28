@@ -26,7 +26,7 @@ export async function setupStorage(config: ProjectConfig) {
             break;
     }
 
-    await createUploadRoute(config);
+    await createStorageApiRoutes(config);
     await createUploadComponent(config);
 }
 
@@ -46,12 +46,25 @@ async function setupVercelBlob(config: ProjectConfig) {
     // Add a minimal placeholder to .env.local
     await appendEnv(
         config.projectPath,
-        `\n# Vercel Blob Storage\n# Run 'npm run setup:blob' to automatically configure the token\nBLOB_READ_WRITE_TOKEN=""\n`
+        `# Vercel Blob Storage\n# Run 'npm run setup:blob' to automatically configure the token\nBLOB_READ_WRITE_TOKEN=""\nBLOB_STORE_ID=""`,
+        config.framework
     );
 
-    // Create storage library from template
+    // Create storage library from template (API-based access)
     const storageContent = await readTemplate('storage/vercel-blob/lib/storage.ts.template');
     await writeStorageLib(config, storageContent);
+
+    // Create local storage emulation library
+    const localStorageContent = await readTemplate(
+        'storage/vercel-blob/lib/storage-local.ts.template'
+    );
+    const localStoragePath = path.join(config.projectPath, 'src/lib/storage-local.ts');
+    await fs.writeFile(localStoragePath, localStorageContent);
+
+    // Create .storage directory for local emulation
+    const storageDir = path.join(config.projectPath, '.storage');
+    await fs.ensureDir(storageDir);
+    await fs.writeFile(path.join(storageDir, '.gitkeep'), '');
 
     // Add setup script to package.json
     const packageJsonPath = path.join(config.projectPath, 'package.json');
@@ -77,7 +90,8 @@ async function setupVercelBlob(config: ProjectConfig) {
 async function setupAwsS3(config: ProjectConfig) {
     await appendEnv(
         config.projectPath,
-        `\n# AWS S3\nAWS_REGION="us-east-1"\nAWS_ACCESS_KEY_ID="[your-access-key]"\nAWS_SECRET_ACCESS_KEY="[your-secret-key]"\nS3_BUCKET_NAME="[your-bucket-name]"\nAWS_S3_PUBLIC_URL="https://[your-bucket-name].s3.amazonaws.com"\n`
+        `\n# AWS S3\nAWS_REGION="us-east-1"\nAWS_ACCESS_KEY_ID="[your-access-key]"\nAWS_SECRET_ACCESS_KEY="[your-secret-key]"\nS3_BUCKET_NAME="[your-bucket-name]"\nAWS_S3_PUBLIC_URL="https://[your-bucket-name].s3.amazonaws.com"\n`,
+        config.framework
     );
 
     // Create storage library from template
@@ -88,7 +102,8 @@ async function setupAwsS3(config: ProjectConfig) {
 async function setupCloudflareR2(config: ProjectConfig) {
     await appendEnv(
         config.projectPath,
-        `\n# Cloudflare R2\nR2_ACCOUNT_ID="[your-account-id]"\nR2_ACCESS_KEY_ID="[your-access-key]"\nR2_SECRET_ACCESS_KEY="[your-secret-key]"\nR2_BUCKET_NAME="[your-bucket-name]"\nR2_PUBLIC_URL="https://[your-public-url]"\nR2_CUSTOM_ENDPOINT=""\n`
+        `\n# Cloudflare R2\nR2_ACCOUNT_ID="[your-account-id]"\nR2_ACCESS_KEY_ID="[your-access-key]"\nR2_SECRET_ACCESS_KEY="[your-secret-key]"\nR2_BUCKET_NAME="[your-bucket-name]"\nR2_PUBLIC_URL="https://[your-public-url]"\nR2_CUSTOM_ENDPOINT=""\n`,
+        config.framework
     );
 
     // Create storage library from template
@@ -99,7 +114,8 @@ async function setupCloudflareR2(config: ProjectConfig) {
 async function setupSupabaseStorage(config: ProjectConfig) {
     await appendEnv(
         config.projectPath,
-        `\n# Supabase Storage\nNEXT_PUBLIC_SUPABASE_URL="https://[project-id].supabase.co"\nNEXT_PUBLIC_SUPABASE_ANON_KEY="[anon-key]"\nSUPABASE_SERVICE_ROLE_KEY="[service-role-key]"\nSUPABASE_STORAGE_BUCKET="uploads"\n`
+        `\n# Supabase Storage\nNEXT_PUBLIC_SUPABASE_URL="https://[project-id].supabase.co"\nNEXT_PUBLIC_SUPABASE_ANON_KEY="[anon-key]"\nSUPABASE_SERVICE_ROLE_KEY="[service-role-key]"\nSUPABASE_STORAGE_BUCKET="uploads"\n`,
+        config.framework
     );
 
     await ensureSupabaseClient(config);
@@ -121,12 +137,24 @@ async function ensureSupabaseClient(config: ProjectConfig) {
     await fs.writeFile(supabasePath, clientContent);
 }
 
-async function createUploadRoute(config: ProjectConfig) {
+async function createStorageApiRoutes(config: ProjectConfig) {
     // Create upload route from template
-    const routeContent = await readTemplate('storage/common/api/upload-route.ts.template');
-    const routeDir = path.join(config.projectPath, 'src/app/api/upload');
-    await fs.ensureDir(routeDir);
-    await fs.writeFile(path.join(routeDir, 'route.ts'), routeContent);
+    const uploadRouteContent = await readTemplate('storage/common/api/upload-route.ts.template');
+    const uploadRouteDir = path.join(config.projectPath, 'src/app/api/upload');
+    await fs.ensureDir(uploadRouteDir);
+    await fs.writeFile(path.join(uploadRouteDir, 'route.ts'), uploadRouteContent);
+
+    // Create storage catch-all route for API access
+    const catchAllContent = await readTemplate('storage/common/api/storage-catch-all.ts.template');
+    const catchAllDir = path.join(config.projectPath, 'src/app/api/storage/[...path]');
+    await fs.ensureDir(catchAllDir);
+    await fs.writeFile(path.join(catchAllDir, 'route.ts'), catchAllContent);
+
+    // Create storage debug route for development
+    const debugContent = await readTemplate('storage/common/api/storage-debug.ts.template');
+    const debugDir = path.join(config.projectPath, 'src/app/api/storage/debug');
+    await fs.ensureDir(debugDir);
+    await fs.writeFile(path.join(debugDir, 'route.ts'), debugContent);
 }
 
 async function createUploadComponent(config: ProjectConfig) {
@@ -145,15 +173,34 @@ async function writeStorageLib(config: ProjectConfig, contents: string) {
     await fs.writeFile(storagePath, contents);
 }
 
-async function appendEnv(projectPath: string, content: string) {
-    const envPath = path.join(projectPath, '.env.local');
-    const envDevPath = path.join(projectPath, '.env.development');
+const ENV_TARGET_FILES = [
+    '.env',
+    '.env.local',
+    '.env.development',
+    '.env.staging',
+    '.env.production',
+    '.env.prod',
+];
 
-    // Append to .env.local if it exists or create it
-    await fs.appendFile(envPath, content);
+async function appendEnv(projectPath: string, content: string, framework?: string) {
+    // For Next.js, append to all environment files that exist
+    if (framework === 'nextjs') {
+        for (const file of ENV_TARGET_FILES) {
+            const envPath = path.join(projectPath, file);
+            // Only append if file exists
+            if (await fs.pathExists(envPath)) {
+                await fs.appendFile(envPath, `\n${content}`);
+            }
+        }
+    } else {
+        // For other frameworks, maintain original behavior - create .env.local if needed
+        const envPath = path.join(projectPath, '.env.local');
+        await fs.appendFile(envPath, content);
 
-    // If we have a .env.development file as well, append there too
-    if (await fs.pathExists(envDevPath)) {
-        await fs.appendFile(envDevPath, content);
+        // Also append to .env.development if it exists (for frameworks that use it)
+        const envDevPath = path.join(projectPath, '.env.development');
+        if (await fs.pathExists(envDevPath)) {
+            await fs.appendFile(envDevPath, content);
+        }
     }
 }

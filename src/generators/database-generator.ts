@@ -380,9 +380,30 @@ async function createDatabaseDemoComponent(config: ProjectConfig) {
     await fs.writeFile(path.join(componentsDir, 'database-demo.tsx'), demoComponentContent);
 }
 
+const ENV_TARGET_FILES = [
+    '.env',
+    '.env.local',
+    '.env.development',
+    '.env.staging',
+    '.env.production',
+    '.env.prod',
+];
+
 async function appendEnvLocal(config: ProjectConfig, content: string) {
-    const envPath = path.join(config.projectPath, '.env.local');
-    await fs.appendFile(envPath, content);
+    // For Next.js, append to all environment files that exist
+    if (config.framework === 'nextjs') {
+        for (const file of ENV_TARGET_FILES) {
+            const envPath = path.join(config.projectPath, file);
+            // Only append if file exists
+            if (await fs.pathExists(envPath)) {
+                await fs.appendFile(envPath, `\n${content}`);
+            }
+        }
+    } else {
+        // For other frameworks, maintain original behavior - create .env.local if needed
+        const envPath = path.join(config.projectPath, '.env.local');
+        await fs.appendFile(envPath, content);
+    }
 }
 
 export async function addPostInstallScript(config: ProjectConfig) {

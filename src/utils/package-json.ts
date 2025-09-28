@@ -37,6 +37,8 @@ export async function generatePackageJson(config: ProjectConfig) {
             'format:check': 'biome format .',
             check: 'biome check .',
             'check:fix': 'biome check --fix .',
+            'env:encrypt': 'tsx scripts/env-tools.ts encrypt',
+            'env:decrypt': 'tsx scripts/env-tools.ts decrypt',
             prepare: 'husky',
         },
         dependencies: getPackageVersions([
@@ -52,6 +54,7 @@ export async function generatePackageJson(config: ProjectConfig) {
             'tailwindcss-animate',
             'husky',
             '@biomejs/biome',
+            'tsx',
         ]),
     };
 

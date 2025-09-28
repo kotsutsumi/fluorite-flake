@@ -5,8 +5,22 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create/types.js';
 import { createScopedLogger } from '../utils/logger.js';
 import { generatePackageJson } from '../utils/package-json.js';
+import { readTemplate, readTemplateWithReplacements } from '../utils/template-reader.js';
+import { slugify } from '../utils/slugify.js';
 
 const logger = createScopedLogger('next');
+
+function toKebab(value: string) {
+    return slugify(value) || 'app';
+}
+
+function getProjectSlugs(name: string) {
+    const kebab = toKebab(name);
+    return {
+        kebab,
+        underscore: kebab.replace(/-/g, '_'),
+    };
+}
 
 export async function generateNextProject(config: ProjectConfig) {
     await fs.ensureDir(config.projectPath);
@@ -40,6 +54,7 @@ export async function generateNextProject(config: ProjectConfig) {
     }
 
     await createInitialPages(config);
+    await createEnvToolkitScripts(config);
 }
 
 async function createNextAppStructure(config: ProjectConfig) {
@@ -996,12 +1011,8 @@ export default nextConfig;
 
     await fs.writeFile(path.join(config.projectPath, 'next.config.mjs'), nextConfigContent);
 
-    // Environment variables
-    const envContent = `# Environment variables
-NODE_ENV=development
-`;
-
-    await fs.writeFile(path.join(config.projectPath, '.env.local'), envContent);
+    // Generate environment files
+    await writeEnvironmentFiles(config);
 
     // Gitignore
     const gitignoreContent = `# Dependencies
@@ -1024,6 +1035,9 @@ NODE_ENV=development
 .DS_Store
 *.pem
 fluorite-cloud.json
+env-files.zip
+.env*.zip
+.storage/
 
 # Debug
 npm-debug.log*
@@ -1042,6 +1056,40 @@ next-env.d.ts
 `;
 
     await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
+}
+
+async function writeEnvironmentFiles(config: ProjectConfig) {
+    const { kebab, underscore } = getProjectSlugs(config.projectName);
+    const replacements = {
+        packageManager: config.packageManager,
+        projectName: config.projectName,
+        projectSlug: kebab,
+        projectSlugUnderscore: underscore,
+        usesTurso: String(config.database === 'turso'),
+        usesSupabase: String(config.database === 'supabase'),
+        storageProvider: config.storage,
+    };
+
+    const envTemplates: Record<string, string> = {
+        '.env': 'next/env/base.env.template',
+        '.env.local': 'next/env/local.env.template',
+        '.env.development': 'next/env/development.env.template',
+        '.env.staging': 'next/env/staging.env.template',
+        '.env.production': 'next/env/production.env.template',
+        '.env.prod': 'next/env/prod.env.template',
+    };
+
+    for (const [filename, template] of Object.entries(envTemplates)) {
+        const content = await readTemplateWithReplacements(template, replacements);
+        await fs.writeFile(path.join(config.projectPath, filename), content);
+    }
+}
+
+async function createEnvToolkitScripts(config: ProjectConfig) {
+    const script = await readTemplate('next/scripts/env-tools.ts.template');
+    const scriptsDir = path.join(config.projectPath, 'scripts');
+    await fs.ensureDir(scriptsDir);
+    await fs.writeFile(path.join(scriptsDir, 'env-tools.ts'), script);
 }
 
 async function createInitialPages(config: ProjectConfig) {
