@@ -6,9 +6,35 @@ import { Command } from 'commander';
 
 import { createProject } from './commands/create/index.js';
 import type { ProjectConfig } from './commands/create/types.js';
+import {
+    setLocale,
+    getCliDescription,
+    getCreateCommandDescription,
+    getLocaleOptionDescription,
+    formatInvalidOption,
+    getMissingArgsMessage,
+    getOrmRequiredMessage,
+    getInvalidR2ActionMessage,
+} from './utils/i18n.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+function findLocaleArgument(argv: string[]): string | undefined {
+    for (let index = 0; index < argv.length; index += 1) {
+        const arg = argv[index];
+        if (arg === '--locale' && index + 1 < argv.length) {
+            return argv[index + 1];
+        }
+        if (arg?.startsWith('--locale=')) {
+            return arg.split('=')[1];
+        }
+    }
+    return undefined;
+}
+
+const forcedLocaleFromArgv = findLocaleArgument(process.argv);
+setLocale(forcedLocaleFromArgv);
 
 // Read package.json for version
 const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
@@ -18,14 +44,25 @@ const program = new Command();
 // Configure the CLI
 program
     .name('fluorite-flake')
-    .description('Multi-framework project generator')
-    .version(packageJson.version);
+    .description(getCliDescription())
+    .version(packageJson.version)
+    .option('--locale <locale>', getLocaleOptionDescription());
+
+program.hook('preAction', (thisCommand) => {
+    const opts =
+        typeof thisCommand.optsWithGlobals === 'function'
+            ? thisCommand.optsWithGlobals()
+            : thisCommand.opts();
+    if (opts?.locale) {
+        setLocale(opts.locale);
+    }
+});
 
 // Add create command for Next.js boilerplate generator
 program
     .command('create')
     .alias('new')
-    .description('Create a new project with interactive options (Next.js, Expo, Tauri, Flutter)')
+    .description(getCreateCommandDescription())
     .option('--name <name>', 'Project name')
     .option('--path <path>', 'Project path')
     .option('--framework <framework>', 'Framework (nextjs, expo, tauri, flutter)')
@@ -53,7 +90,7 @@ program
             if (['nextjs', 'expo', 'tauri', 'flutter'].includes(options.framework)) {
                 config.framework = options.framework as ProjectConfig['framework'];
             } else {
-                console.error(`Invalid framework: ${options.framework}`);
+                console.error(formatInvalidOption('framework', options.framework));
                 process.exit(1);
             }
         }
@@ -61,7 +98,7 @@ program
             if (['none', 'turso', 'supabase'].includes(options.database)) {
                 config.database = options.database as ProjectConfig['database'];
             } else {
-                console.error(`Invalid database: ${options.database}`);
+                console.error(formatInvalidOption('database', options.database));
                 process.exit(1);
             }
         }
@@ -69,7 +106,7 @@ program
             if (['prisma', 'drizzle'].includes(options.orm)) {
                 config.orm = options.orm as ProjectConfig['orm'];
             } else {
-                console.error(`Invalid ORM: ${options.orm}`);
+                console.error(formatInvalidOption('orm', options.orm));
                 process.exit(1);
             }
         }
@@ -81,7 +118,7 @@ program
             ) {
                 config.storage = options.storage as ProjectConfig['storage'];
             } else {
-                console.error(`Invalid storage: ${options.storage}`);
+                console.error(formatInvalidOption('storage', options.storage));
                 process.exit(1);
             }
         }
@@ -95,7 +132,7 @@ program
             if (['npm', 'pnpm', 'yarn', 'bun'].includes(options.packageManager)) {
                 config.packageManager = options.packageManager as ProjectConfig['packageManager'];
             } else {
-                console.error(`Invalid package manager: ${options.packageManager}`);
+                console.error(formatInvalidOption('packageManager', options.packageManager));
                 process.exit(1);
             }
         }
@@ -104,7 +141,7 @@ program
                 config.mode =
                     options.mode === 'test' ? 'minimal' : (options.mode as ProjectConfig['mode']);
             } else {
-                console.error(`Invalid mode: ${options.mode}`);
+                console.error(formatInvalidOption('mode', options.mode));
                 process.exit(1);
             }
         }
@@ -123,14 +160,12 @@ program
                 options.storage === undefined ||
                 options.packageManager === undefined
             ) {
-                console.error(
-                    'When using CLI arguments, --name, --path, --framework, --database, --storage, and --package-manager are required'
-                );
+                console.error(getMissingArgsMessage());
                 process.exit(1);
             }
             // If database is specified and not none, orm is required
             if (options.database && options.database !== 'none' && !options.orm) {
-                console.error('When database is not "none", --orm is required');
+                console.error(getOrmRequiredMessage());
                 process.exit(1);
             }
         }
@@ -180,7 +215,7 @@ program
     .action(async (action, bucketName) => {
         const { manageR2Bucket } = await import('./commands/dashboard.js');
         if (!['list', 'create', 'delete'].includes(action)) {
-            console.error('Invalid action. Use: list, create, or delete');
+            console.error(getInvalidR2ActionMessage());
             process.exit(1);
         }
         await manageR2Bucket(action as 'list' | 'create' | 'delete', bucketName);
