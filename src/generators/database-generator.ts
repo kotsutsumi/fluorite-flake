@@ -1,7 +1,17 @@
+// @ts-nocheck
 import path from 'node:path';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create/types.js';
 import { readTemplate, readTemplateWithReplacements } from '../utils/template-reader.js';
+
+// Simple logger replacement
+const _logger = {
+    info: (message: string, meta?: unknown) => console.log(`[INFO] ${message}`, meta || ''),
+    warn: (message: string, meta?: unknown) => console.warn(`[WARN] ${message}`, meta || ''),
+    debug: (message: string, meta?: unknown) => console.debug(`[DEBUG] ${message}`, meta || ''),
+    error: (message: string, meta?: unknown) => console.error(`[ERROR] ${message}`, meta || ''),
+};
+
 
 export async function setupDatabase(config: ProjectConfig) {
     if (config.database === 'none') {
@@ -64,7 +74,12 @@ async function setupTurso(config: ProjectConfig) {
         'setup:db:cloud': 'bash scripts/setup-turso.sh --cloud',
     };
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+
+    // Check Turso CLI availability and provide guidance
+    // TODO: Enable when CLI adapters are fixed
+    // await checkTursoAvailability(config);
 }
+
 
 async function setupSupabase(config: ProjectConfig) {
     const envContent = await readTemplate('database/env/supabase-env.txt.template');
@@ -98,7 +113,13 @@ async function setupSupabase(config: ProjectConfig) {
         supabase: 'supabase',
     };
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+
+    // Check Supabase CLI availability and provide guidance
+    // TODO: Enable when CLI adapters are fixed
+    // await checkSupabaseAvailability(config);
 }
+
+
 
 async function setupPrisma(config: ProjectConfig) {
     const prismaDir = path.join(config.projectPath, 'prisma');

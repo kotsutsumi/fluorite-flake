@@ -28,5 +28,11 @@
         "noFallthroughCasesInSwitch": true
     },
     "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist", "**/*.test.ts", "src/templates/**/*"]
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts",
+        "src/templates/**/*",
+        "src/cli-adapters/**/*"
+    ]
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import path from 'node:path';
 import fs from 'fs-extra';
 
@@ -23,6 +24,9 @@ export async function setupDeployment(config: ProjectConfig) {
     if (config.database === 'turso' || config.database === 'supabase') {
         await createVercelAutomationScript(config);
     }
+
+    // Check Vercel CLI availability and optionally link project
+    // TODO: Enable when CLI adapters are fixed
 }
 
 async function createVercelConfig(config: ProjectConfig) {

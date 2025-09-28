@@ -1,3 +1,9 @@
+/**
+ * CLI の `create`/`new` コマンドに関する機能テスト。
+ * Next.js などのプロジェクト生成フローにおいて、ヘルプ表示・必須引数の検証・
+ * フレームワークごとの入力制約など、ユーザーが実行時に遭遇し得るケースを網羅的に確認する。
+ * テストでは一時ディレクトリを利用して生成物の有無を検証し、副作用を残さないようにしている。
+ */
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import {
     runCli,
@@ -8,7 +14,7 @@ import {
 } from '../../helpers/cli-runner.js';
 import { createTempDir, cleanupAllTempDirs, projectFileExists } from '../../helpers/temp-dir.js';
 
-describe('CLI create command', () => {
+describe('CLI create コマンドの機能確認', () => {
     let tempDir: string;
 
     beforeEach(async () => {
@@ -19,15 +25,15 @@ describe('CLI create command', () => {
         await cleanupAllTempDirs();
     });
 
-    describe('help and usage', () => {
-        it('should display help for create command', async () => {
+    describe('ヘルプ表示と基本的な使い方', () => {
+        it('create コマンドのヘルプを表示できること', async () => {
             const result = await runCli(['create', '--help']);
 
             expectSuccess(result);
             expectOutput(result, 'Create a new project');
         });
 
-        it('should display help for new command (alias)', async () => {
+        it('エイリアス new コマンドでもヘルプが表示されること', async () => {
             const result = await runCli(['new', '--help']);
 
             expectSuccess(result);
@@ -35,8 +41,8 @@ describe('CLI create command', () => {
         });
     });
 
-    describe('command line arguments', () => {
-        it('should create project with all required flags', async () => {
+    describe('コマンドライン引数の検証', () => {
+        it('必須オプションを全て指定するとプロジェクトが生成されること', async () => {
             const projectPath = `${tempDir}/test-project`;
             const result = await runCli([
                 'create',
@@ -55,22 +61,22 @@ describe('CLI create command', () => {
                 '--package-manager',
                 'pnpm',
                 '--mode',
-                'test', // Use test mode to skip actual installation
+                'test', // 実際の依存関係インストールを避けるためテストモードを利用する
             ]);
 
             expectSuccess(result);
             expectOutput(result, /test-project/);
 
-            // Verify project was created
+            // 生成されたプロジェクトに package.json が存在することを確認する
             expect(await projectFileExists(projectPath, 'package.json')).toBe(true);
         });
 
-        it('should validate required arguments', async () => {
+        it('必須オプション不足の場合はエラーになること', async () => {
             const result = await runCli([
                 'create',
                 '--name',
                 'test-project',
-                // Missing required arguments
+                // 必須引数を欠如させてバリデーションエラーを誘発する
                 '--framework',
                 'nextjs',
             ]);
@@ -78,7 +84,7 @@ describe('CLI create command', () => {
             expectFailure(result);
         });
 
-        it('should reject invalid framework', async () => {
+        it('存在しないフレームワーク指定を拒否すること', async () => {
             const result = await runCli([
                 'create',
                 '--name',
@@ -100,7 +106,7 @@ describe('CLI create command', () => {
             expectFailure(result);
         });
 
-        it('should reject invalid database option', async () => {
+        it('不正なデータベース種別を拒否すること', async () => {
             const result = await runCli([
                 'create',
                 '--name',
@@ -123,8 +129,8 @@ describe('CLI create command', () => {
         });
     });
 
-    describe('framework-specific constraints', () => {
-        it('should not allow database for flutter framework', async () => {
+    describe('フレームワーク固有の制約', () => {
+        it('Flutter ではデータベース選択ができないこと', async () => {
             const result = await runCli([
                 'create',
                 '--name',
@@ -132,7 +138,7 @@ describe('CLI create command', () => {
                 '--framework',
                 'flutter',
                 '--database',
-                'turso', // Should fail - Flutter doesn't support database
+                'turso', // Flutter ではデータベースオプションをサポートしないためエラーになることを確認する
                 '--path',
                 `${tempDir}/test`,
                 '--storage',
@@ -146,7 +152,7 @@ describe('CLI create command', () => {
             expectFailure(result);
         });
 
-        it('should not allow storage for tauri framework', async () => {
+        it('Tauri ではストレージ選択ができないこと', async () => {
             const result = await runCli([
                 'create',
                 '--name',
@@ -156,7 +162,7 @@ describe('CLI create command', () => {
                 '--database',
                 'none',
                 '--storage',
-                'vercel-blob', // Should fail - Tauri doesn't support storage
+                'vercel-blob', // Tauri ではストレージオプションをサポートしないためエラーになることを確認する
                 '--path',
                 `${tempDir}/test`,
                 '--no-deployment',
@@ -168,7 +174,7 @@ describe('CLI create command', () => {
             expectFailure(result);
         });
 
-        it('should require orm when database is selected', async () => {
+        it('データベース選択時は ORM の指定を必須とすること', async () => {
             const result = await runCli([
                 'create',
                 '--name',
@@ -177,7 +183,7 @@ describe('CLI create command', () => {
                 'nextjs',
                 '--database',
                 'turso',
-                // Missing --orm flag
+                // --orm フラグを意図的に省略しバリデーションエラーを発生させる
                 '--path',
                 `${tempDir}/test`,
                 '--storage',
@@ -191,7 +197,7 @@ describe('CLI create command', () => {
             expectFailure(result);
         });
 
-        it('should accept orm when database is selected', async () => {
+        it('データベースと ORM を併用した場合に成功すること', async () => {
             const projectPath = `${tempDir}/test-project`;
             const result = await runCli([
                 'create',
@@ -202,7 +208,7 @@ describe('CLI create command', () => {
                 '--database',
                 'turso',
                 '--orm',
-                'prisma', // Now includes ORM
+                'prisma', // ORM を正しく指定したパターン
                 '--path',
                 projectPath,
                 '--storage',

@@ -74,7 +74,11 @@ program
             }
         }
         if (options.storage) {
-            if (['none', 'vercel-blob', 'cloudflare-r2', 'aws-s3', 'supabase-storage'].includes(options.storage)) {
+            if (
+                ['none', 'vercel-blob', 'cloudflare-r2', 'aws-s3', 'supabase-storage'].includes(
+                    options.storage
+                )
+            ) {
                 config.storage = options.storage as ProjectConfig['storage'];
             } else {
                 console.error(`Invalid storage: ${options.storage}`);
@@ -97,7 +101,8 @@ program
         }
         if (options.mode) {
             if (['full', 'minimal', 'test'].includes(options.mode)) {
-                config.mode = options.mode === 'test' ? 'minimal' : options.mode as ProjectConfig['mode'];
+                config.mode =
+                    options.mode === 'test' ? 'minimal' : (options.mode as ProjectConfig['mode']);
             } else {
                 console.error(`Invalid mode: ${options.mode}`);
                 process.exit(1);
@@ -105,13 +110,22 @@ program
         }
 
         // If any CLI arguments were provided, validate that minimum required ones are present
-        const hasCliArgs = Object.keys(options).some(key => key !== 'deployment' && key !== 'auth' && options[key] !== undefined);
+        const hasCliArgs = Object.keys(options).some(
+            (key) => key !== 'deployment' && key !== 'auth' && options[key] !== undefined
+        );
         if (hasCliArgs) {
             // Check if minimum required arguments are present for CLI mode
-            if (!options.name || !options.framework || !options.path ||
-                options.database === undefined || options.storage === undefined ||
-                options.packageManager === undefined) {
-                console.error('When using CLI arguments, --name, --path, --framework, --database, --storage, and --package-manager are required');
+            if (
+                !options.name ||
+                !options.framework ||
+                !options.path ||
+                options.database === undefined ||
+                options.storage === undefined ||
+                options.packageManager === undefined
+            ) {
+                console.error(
+                    'When using CLI arguments, --name, --path, --framework, --database, --storage, and --package-manager are required'
+                );
                 process.exit(1);
             }
             // If database is specified and not none, orm is required
