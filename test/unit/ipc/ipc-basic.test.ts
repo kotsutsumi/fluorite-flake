@@ -1,7 +1,7 @@
 /**
- * IPC サーバー / クライアントの基本的なライフサイクルとユーティリティ機能を検証するユニットテスト。
- * サーバーの起動停止・メソッド登録・トークン生成・ブロードキャスト実行・クライアント初期化など
- * CLI 内の IPC インフラが期待どおり動作するかを網羅的に確認する。
+ * IPC サーバー / クライアントの基礎的なライフサイクルと補助機能を網羅的に検証するユニットテスト。
+ * サーバーの起動・停止状態、メソッド登録とトークン生成、通知ブロードキャスト、クライアント初期化など
+ * CLI 内部で利用する IPC インフラが仕様どおり動作し続けるかを確認することを目的としている。
  */
 import { describe, expect, it, afterEach } from 'vitest';
 import { createIPCServer } from '../../../src/ipc/ipc-server.js';
@@ -11,7 +11,10 @@ describe('IPC Basic Functionality', () => {
     let server: ReturnType<typeof createIPCServer> | undefined;
     let client: ReturnType<typeof createIPCClient> | undefined;
 
-    // 各テスト後にクライアント切断とサーバー停止を実施し、副作用を残さない
+    /**
+     * 各テストが終了したら、クライアント切断とサーバー停止を確実に行い状態汚染を防ぐ。
+     * `getInfo().isRunning` で起動中か判定し、安全に stop を呼び出す。
+     */
     afterEach(async () => {
         if (client?.isConnected()) {
             client.disconnect();
@@ -21,7 +24,10 @@ describe('IPC Basic Functionality', () => {
         }
     });
 
-    // サーバー・クライアントのインスタンス生成が成功し、主要メソッドが存在することを確認する
+    /**
+     * createIPCServer / createIPCClient が最低限の API を備えたインスタンスを返すことを確認する。
+     * 具体的には `getInfo`, `connect` などの主要メソッドの有無を検査する。
+     */
     it('should create server and client instances', () => {
         server = createIPCServer();
         expect(server).toBeDefined();
@@ -32,7 +38,10 @@ describe('IPC Basic Functionality', () => {
         expect(client.connect).toBeDefined();
     });
 
-    // サーバーを起動してランタイム情報の変化を確認し、停止後に isRunning が false に戻ることを検証する
+    /**
+     * サーバーの start → stop フローが `isRunning` フラグに反映されることを検証する。
+     * `port: 0` でポート自動割当を行い、副作用なく起動可能なことも確認する。
+     */
     it('should start and stop server', async () => {
         server = createIPCServer({ port: 0 });
 
@@ -44,19 +53,25 @@ describe('IPC Basic Functionality', () => {
         expect(server.getInfo().isRunning).toBe(false);
     });
 
-    // メソッド登録 API が指定キーでハンドラを保持することを確認する
+    /**
+     * `registerMethod` により任意のメソッド ID が内部レジストリへ追加されるかを確認する。
+     * テストでは単純な非同期ハンドラを登録し、methods マップにキーが存在することを検証する。
+     */
     it('should register and list methods', () => {
         server = createIPCServer();
 
         const testMethod = async () => ({ result: 'test' });
         server.registerMethod('test.method', testMethod);
 
-        // メソッド登録が内部マップに反映されていることを検証する
+        // プライベート相当のコレクションに直接アクセスし、登録済みかどうかを確認する
         // @ts-expect-error - テスト目的で private 相当のプロパティへアクセス
         expect(server.methods.has('test.method')).toBe(true);
     });
 
-    // 認証用トークンが自動生成され、空文字ではないことを保証する
+    /**
+     * サーバー生成時に認証トークンが自動生成され、空文字列でないことを保証する。
+     * セキュリティ上トークンは必須であるため、存在チェックと長さチェックを行う。
+     */
     it('should generate authentication token', () => {
         server = createIPCServer();
         const info = server.getInfo();
@@ -65,12 +80,14 @@ describe('IPC Basic Functionality', () => {
         expect(info.token.length).toBeGreaterThan(0);
     });
 
-    // ブロードキャスト API を呼び出した際に例外を投げず実行できることを確認する
+    /**
+     * `broadcast` API が接続クライアント不在でも例外を投げず完了することを検証する。
+     * 実際の通知内容は検証しないが、通知処理がサーバーの状態を壊さないことが目的。
+     */
     it('should support broadcasting', async () => {
         server = createIPCServer({ port: 0 });
         await server.start();
 
-        // ブロードキャスト呼び出しが例外なく実行されることを検証
         expect(() => {
             server.broadcast('test.notification', { data: 'test' });
         }).not.toThrow();
@@ -78,7 +95,10 @@ describe('IPC Basic Functionality', () => {
         await server.stop();
     });
 
-    // サーバー情報オブジェクトが起動前後で正しい状態値を返すことを確認する
+    /**
+     * `getInfo` が起動前・起動後で適切に情報を返すか検証する。
+     * 起動前は `isRunning=false` / `clients=0` であり、起動後は `address` が設定されることを確認する。
+     */
     it('should handle server info correctly', async () => {
         server = createIPCServer({ port: 0 });
 
@@ -95,7 +115,10 @@ describe('IPC Basic Functionality', () => {
         await server.stop();
     });
 
-    // クライアント生成時に指定オプションが反映され、接続前は未接続かつ未認証であることを検証する
+    /**
+     * クライアント生成時に各種オプションが受け入れられ、接続前は `isConnected=false` かつ
+     * 認証未完了状態であることを確認する。接続トークン指定などオプション受け取りの基本動作を担保する。
+     */
     it('should handle client creation with options', () => {
         const options = {
             port: 9999,

@@ -1,3 +1,7 @@
+/**
+ * プロジェクト生成テスト用ヘルパー群。`create` コマンドを直接呼び出して一時ディレクトリへ出力し、
+ * 生成物の構成確認や依存関係検証を補助する。複数構成の生成・検証ユーティリティも併せて提供する。
+ */
 import path from 'node:path';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../../src/commands/create/types.js';
@@ -5,13 +9,13 @@ import { createProject } from '../../src/commands/create/index.js';
 import { createTempDir } from './temp-dir.js';
 
 /**
- * Generate a project using the create command directly
- * This is useful for testing the actual project generation logic
+ * `create` コマンドを使ってプロジェクトを生成し、設定と生成先パスを返す。
+ * 実際のテンプレート展開を検証する際に利用する。
  */
 export async function generateProject(
     config: Partial<ProjectConfig>
 ): Promise<{ projectPath: string; config: ProjectConfig }> {
-    // Create a temporary directory for the project
+    // プロジェクト用の一時ディレクトリを作成する
     const tempDir = await createTempDir('ff-gen-');
     const projectName = config.projectName || 'test-project';
     const projectPath = path.join(tempDir, projectName);
@@ -29,7 +33,7 @@ export async function generateProject(
         ...config,
     } as ProjectConfig;
 
-    // Set test environment
+    // テスト用の環境変数を差し替える
     const originalEnv = { ...process.env };
     process.env.FLUORITE_TEST_MODE = 'true';
     process.env.FLUORITE_CLOUD_MODE = 'mock';
@@ -39,13 +43,13 @@ export async function generateProject(
         await createProject(fullConfig);
         return { projectPath, config: fullConfig };
     } finally {
-        // Restore original environment
+        // 実行前の環境変数へ復元する
         Object.assign(process.env, originalEnv);
     }
 }
 
 /**
- * Generate multiple projects with different configurations
+ * 複数パターンの設定でプロジェクトを連続生成し、結果をまとめて返す。
  */
 export async function generateProjects(
     configs: Array<Partial<ProjectConfig> & { name: string }>
@@ -66,7 +70,7 @@ export async function generateProjects(
 }
 
 /**
- * Verify that a generated project has expected files and structure
+ * 生成されたプロジェクトに想定ファイルが揃っているか検証する。
  */
 export async function verifyProjectStructure(
     projectPath: string,
@@ -88,7 +92,7 @@ export async function verifyProjectStructure(
 }
 
 /**
- * Verify package.json dependencies
+ * package.json に必要な依存関係が記載されているかを検証する。
  */
 export async function verifyDependencies(
     projectPath: string,
@@ -125,7 +129,7 @@ export async function verifyDependencies(
 }
 
 /**
- * Verify environment files for Next.js projects
+ * Next.js プロジェクト向けの環境変数ファイルが揃っているか確認する。
  */
 export async function verifyEnvFiles(
     projectPath: string,
@@ -157,10 +161,10 @@ export async function verifyEnvFiles(
 }
 
 /**
- * Test project configuration presets
+ * テストで利用するプリセット設定群。
  */
 export const TEST_CONFIGS = {
-    // Minimal configurations
+    // 最小構成パターン
     minimal: {
         nextjs: {
             framework: 'nextjs' as const,
@@ -192,7 +196,7 @@ export const TEST_CONFIGS = {
         },
     },
 
-    // With database configurations
+    // データベースを含む構成
     withDatabase: {
         nextjsTurso: {
             framework: 'nextjs' as const,
@@ -212,7 +216,7 @@ export const TEST_CONFIGS = {
         },
     },
 
-    // With storage configurations
+    // ストレージを含む構成
     withStorage: {
         nextjsVercelBlob: {
             framework: 'nextjs' as const,
@@ -230,7 +234,7 @@ export const TEST_CONFIGS = {
         },
     },
 
-    // Full-featured configurations
+    // フル機能構成
     fullFeatured: {
         nextjs: {
             framework: 'nextjs' as const,

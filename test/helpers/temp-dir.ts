@@ -1,15 +1,18 @@
+/**
+ * テストで利用するテンポラリディレクトリやフィクスチャ操作を管理するユーティリティ群。
+ * 生成したパスを記録してクリーンアップを自動化し、プロジェクトファイルの読み書きヘルパーも提供する。
+ */
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 
 /**
- * Track cleanup paths for automatic cleanup after tests
+ * 作成した一時ディレクトリを追跡し、テスト終了時に一括削除するための集合。
  */
 const cleanupPaths = new Set<string>();
 
 /**
- * Create a temporary directory for testing
- * Directory will be automatically cleaned up after tests
+ * テスト用の一時ディレクトリを作成し、自動クリーンアップ対象として登録する。
  */
 export async function createTempDir(prefix = 'ff-test-'): Promise<string> {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -18,7 +21,8 @@ export async function createTempDir(prefix = 'ff-test-'): Promise<string> {
 }
 
 /**
- * Create a temporary project directory with basic package.json
+ * 簡易的な `package.json` を含む一時プロジェクトを作成する。
+ * フレームワーク種別に応じた初期ファイルも必要に応じて用意する。
  */
 export async function createTempProject(
     projectName = 'test-project',
@@ -29,7 +33,7 @@ export async function createTempProject(
 ): Promise<string> {
     const projectPath = await createTempDir(`ff-${projectName}-`);
 
-    // Create basic package.json
+    // ベースとなる package.json を生成する
     const packageJson = {
         name: projectName,
         version: '0.0.0',
@@ -42,15 +46,14 @@ export async function createTempProject(
 
     await fs.writeJSON(path.join(projectPath, 'package.json'), packageJson, { spaces: 2 });
 
-    // Create framework-specific files if needed
+    // Next.js プロジェクト向けに .env 系ファイルを作成する
     if (options.framework === 'nextjs') {
-        // Create .env.local for Next.js projects
         await fs.writeFile(path.join(projectPath, '.env.local'), '');
         await fs.writeFile(path.join(projectPath, '.env'), '');
     }
 
+    // Flutter プロジェクト向けに pubspec.yaml を用意する
     if (options.framework === 'flutter') {
-        // Create pubspec.yaml for Flutter projects
         await fs.writeFile(
             path.join(projectPath, 'pubspec.yaml'),
             `name: ${projectName}
@@ -67,7 +70,7 @@ environment:
 }
 
 /**
- * Clean up a specific temporary directory
+ * 指定された一時ディレクトリを削除し、追跡リストからも除外する。
  */
 export async function cleanupTempDir(dirPath: string): Promise<void> {
     if (cleanupPaths.has(dirPath)) {
@@ -81,8 +84,8 @@ export async function cleanupTempDir(dirPath: string): Promise<void> {
 }
 
 /**
- * Clean up all temporary directories created during tests
- * Call this in afterAll or global teardown
+ * テスト中に作成したすべての一時ディレクトリを削除する。
+ * グローバルテアダウンで呼び出す想定。
  */
 export async function cleanupAllTempDirs(): Promise<void> {
     const promises = Array.from(cleanupPaths).map((dirPath) =>
@@ -93,14 +96,14 @@ export async function cleanupAllTempDirs(): Promise<void> {
 }
 
 /**
- * Read file content from a project
+ * プロジェクトパス以下のファイルを読み取るユーティリティ。
  */
 export async function readProjectFile(projectPath: string, filePath: string): Promise<string> {
     return fs.readFile(path.join(projectPath, filePath), 'utf8');
 }
 
 /**
- * Read JSON file from a project
+ * プロジェクト内の JSON ファイルを読み取ってパースする。
  */
 export async function readProjectJson<T = Record<string, unknown>>(
     projectPath: string,
@@ -110,14 +113,14 @@ export async function readProjectJson<T = Record<string, unknown>>(
 }
 
 /**
- * Check if a file exists in the project
+ * 指定ファイルがプロジェクト内に存在するか判定する。
  */
 export async function projectFileExists(projectPath: string, filePath: string): Promise<boolean> {
     return fs.pathExists(path.join(projectPath, filePath));
 }
 
 /**
- * List files in a project directory
+ * プロジェクト配下のディレクトリに含まれるファイル一覧を取得する。
  */
 export async function listProjectFiles(projectPath: string, dirPath = '.'): Promise<string[]> {
     const fullPath = path.join(projectPath, dirPath);
@@ -130,7 +133,7 @@ export async function listProjectFiles(projectPath: string, dirPath = '.'): Prom
 }
 
 /**
- * Write a file to the project
+ * 指定内容でファイルを書き込み、親ディレクトリがなければ自動で作成する。
  */
 export async function writeProjectFile(
     projectPath: string,
@@ -143,7 +146,7 @@ export async function writeProjectFile(
 }
 
 /**
- * Copy test fixtures to a project
+ * テスト用フィクスチャをプロジェクトにコピーする。存在しない場合はエラーを投げる。
  */
 export async function copyFixture(
     fixtureName: string,

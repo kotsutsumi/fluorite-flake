@@ -1,172 +1,171 @@
-# Test Infrastructure Documentation
+# テスト基盤ドキュメント
 
-## Overview
+## 概要
 
-The Fluorite-flake test infrastructure follows a 3-tier testing approach to ensure comprehensive validation of the CLI tool and generated projects.
+Fluorite-flake のテスト基盤は CLI と生成プロジェクトを多面的に検証するため、3 つのレイヤー（ユニット / 機能 / シナリオ）で構成されています。
 
-## Test Structure
+## ディレクトリ構成
 
 ```
 test/
-├── unit/           # Module-level unit tests
-├── functional/     # CLI feature tests
-├── scenario/       # Full project generation tests
-├── helpers/        # Test utilities and helpers
-└── fixtures/       # Test data and mock files
+├── unit/           # モジュール単位のユニットテスト
+├── functional/     # CLI 機能テスト
+├── scenario/       # プロジェクト生成シナリオテスト
+├── helpers/        # テスト用ヘルパー群
+└── fixtures/       # テストデータ・モック
 ```
 
-## Test Tiers
+## テストレイヤー
 
-### 1. Unit Tests (`test/unit/`)
-- **Purpose**: Test individual modules and functions in isolation
-- **Timeout**: 10 seconds
-- **Coverage**: All utility functions, generators, configuration modules
-- **Run**: `pnpm test:unit`
+### 1. ユニットテスト (`test/unit/`)
+- **目的**: モジュール／関数を単体で検証
+- **タイムアウト**: 10 秒
+- **対象**: ユーティリティ関数、ジェネレーター、設定モジュール など
+- **実行コマンド**: `pnpm test:unit`
 
-#### Structure:
-- `utils/` - Utility function tests
-- `config/` - Configuration module tests
-- `generators/` - Generator module tests
-- `commands/` - Command helper function tests
+構成例:
+- `utils/` – ユーティリティ関数
+- `config/` – 設定モジュール
+- `generators/` – ジェネレーター
+- `commands/` – コマンド補助ロジック
 
-### 2. Functional Tests (`test/functional/`)
-- **Purpose**: Test CLI commands and features
-- **Timeout**: 30 seconds
-- **Coverage**: CLI commands, arguments, interactive prompts
-- **Run**: `pnpm test:functional`
+### 2. 機能テスト (`test/functional/`)
+- **目的**: CLI コマンド・フラグ・対話挙動の検証
+- **タイムアウト**: 30 秒
+- **対象**: CLI コマンド、引数解決、プロンプト応答
+- **実行コマンド**: `pnpm test:functional`
 
-#### Structure:
-- `cli/` - CLI command tests
-- `commands/` - Command execution tests
-- `features/` - Feature integration tests
+構成例:
+- `cli/` – CLI コマンド単体
+- `commands/` – サブコマンド実行
+- `features/` – 機能統合テスト
 
-### 3. Scenario Tests (`test/scenario/`)
-- **Purpose**: Test complete project generation scenarios
-- **Timeout**: 5 minutes
-- **Coverage**: Full project generation for all frameworks
-- **Run**: `pnpm test:scenario`
-- **Concurrency**: Sequential execution (prevents conflicts)
+### 3. シナリオテスト (`test/scenario/`)
+- **目的**: フレームワーク別のプロジェクト生成を丸ごと検証
+- **タイムアウト**: 5 分
+- **対象**: 各フレームワークのテンプレート生成、関連設定の整合性
+- **実行コマンド**: `pnpm test:scenario`
+- **実行方式**: 競合回避のため逐次実行
 
-#### Structure:
-- `nextjs/` - Next.js project generation tests
-- `expo/` - Expo (React Native) project tests
-- `tauri/` - Tauri desktop app tests
-- `flutter/` - Flutter cross-platform tests
+構成例:
+- `nextjs/` – Next.js プロジェクト
+- `expo/` – Expo (React Native)
+- `tauri/` – Tauri デスクトップ
+- `flutter/` – Flutter クロスプラットフォーム
 
-## Test Commands
+## よく使うコマンド
 
 ```bash
-# Run all tests
+# すべてのテストを実行
 pnpm test
 
-# Run specific test tier
-pnpm test:unit          # Unit tests only
-pnpm test:functional    # Functional tests only
-pnpm test:scenario      # Scenario tests only
+# レイヤー別
+pnpm test:unit          # ユニットテストのみ
+pnpm test:functional    # 機能テストのみ
+pnpm test:scenario      # シナリオテストのみ
 
-# Development
-pnpm test:watch         # Watch mode for all tests
-pnpm test:coverage      # Run with coverage report
-pnpm test:ui            # Open Vitest UI
+# 開発時
+pnpm test:watch         # ウォッチモード
+pnpm test:coverage      # カバレッジ出力付き
+pnpm test:ui            # Vitest UI を起動
 
-# Run single test file (without workspace)
+# 単一ファイルを直接指定（workspace を介さない）
 pnpm test:single path/to/test.ts
 ```
 
-## Test Helpers
+## テストヘルパー
 
-### Temporary Directory Management (`test/helpers/temp-dir.ts`)
+### 一時ディレクトリ管理 (`test/helpers/temp-dir.ts`)
 ```typescript
 import { createTempDir, createTempProject, cleanupAllTempDirs } from './helpers/temp-dir.js';
 
-// Create temporary directory
+// 一時ディレクトリの作成
 const tempDir = await createTempDir('test-prefix-');
 
-// Create temporary project with package.json
+// package.json 付きの一時プロジェクト生成
 const projectPath = await createTempProject('test-project', {
     framework: 'nextjs',
-    packageManager: 'pnpm'
+    packageManager: 'pnpm',
 });
 
-// Cleanup after tests
+// 後片付け
 afterAll(async () => {
     await cleanupAllTempDirs();
 });
 ```
 
-### CLI Runner (`test/helpers/cli-runner.ts`)
+### CLI ランナー (`test/helpers/cli-runner.ts`)
 ```typescript
 import { runCli, expectSuccess, expectOutput } from './helpers/cli-runner.js';
 
-// Run CLI command
+// CLI の実行
 const result = await runCli(['create', '--help']);
 
-// Check results
+// 検証
 expectSuccess(result);
 expectOutput(result, 'Create a new project');
 ```
 
-### Project Generator (`test/helpers/project-generator.ts`)
+### プロジェクトジェネレーター (`test/helpers/project-generator.ts`)
 ```typescript
 import { generateProject, verifyProjectStructure, TEST_CONFIGS } from './helpers/project-generator.js';
 
-// Generate project
+// プロジェクト生成
 const { projectPath, config } = await generateProject({
     projectName: 'test-app',
     framework: 'nextjs',
     database: 'turso',
-    orm: 'prisma'
+    orm: 'prisma',
 });
 
-// Verify structure
+// ファイル構成の検証
 const { valid, missingFiles } = await verifyProjectStructure(projectPath, [
     'package.json',
     'tsconfig.json',
-    'next.config.mjs'
+    'next.config.mjs',
 ]);
 ```
 
-## CI/CD Integration
+## CI/CD 連携
 
-### GitHub Actions Workflows
+### GitHub Actions ワークフロー
 
 1. **Main CI** (`.github/workflows/ci.yml`)
-   - Runs on: Push and PR to main/develop
-   - Tests: Unit + Functional tests
-   - Matrix: Node.js 20, 22
+   - トリガー: main / develop への push と PR
+   - 実行内容: ユニット + 機能テスト
+   - マトリクス: Node.js 20 / 22
 
 2. **Scenario Tests** (`.github/workflows/scenario-tests.yml`)
-   - Runs on: Push, PR, and daily schedule
-   - Tests: Full project generation scenarios
-   - Matrix: OS (Ubuntu, macOS, Windows) × Framework (Next.js, Expo, Tauri, Flutter)
+   - トリガー: push, PR, 日次スケジュール
+  - 実行内容: フレームワーク別シナリオテスト
+   - マトリクス: OS (Ubuntu, macOS, Windows) × Framework (Next.js, Expo, Tauri, Flutter)
 
 3. **Test Coverage** (`.github/workflows/test-coverage.yml`)
-   - Runs on: Push and PR
-   - Reports: Coverage to Codecov
-   - Artifacts: Coverage reports
+   - トリガー: push, PR
+   - 生成物: Codecov へカバレッジ送信 & レポート成果物
 
-## Writing Tests
+## テスト作成ガイド
 
-### Unit Test Example
+### ユニットテスト例
 ```typescript
 import { describe, expect, it } from 'vitest';
 import { myFunction } from '../../../src/utils/my-function.js';
 
 describe('myFunction', () => {
-    it('should handle basic case', () => {
+    it('基本ケースを処理する', () => {
         const result = myFunction('input');
         expect(result).toBe('expected');
     });
 });
 ```
 
-### Functional Test Example
+### 機能テスト例
 ```typescript
 import { describe, expect, it } from 'vitest';
-import { runCli, expectSuccess } from '../../helpers/cli-runner.js';
+import { runCli, expectSuccess, expectOutput } from '../../helpers/cli-runner.js';
 
-describe('CLI create command', () => {
-    it('should display help', async () => {
+describe('CLI create コマンド', () => {
+    it('ヘルプを表示する', async () => {
         const result = await runCli(['create', '--help']);
         expectSuccess(result);
         expectOutput(result, 'Create a new project');
@@ -174,28 +173,28 @@ describe('CLI create command', () => {
 });
 ```
 
-### Scenario Test Example
+### シナリオテスト例
 ```typescript
 import { describe, expect, it, afterAll } from 'vitest';
 import { generateProject, verifyProjectStructure } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 
-describe('Next.js project generation', () => {
+describe('Next.js プロジェクト生成', () => {
     afterAll(async () => {
         await cleanupAllTempDirs();
     });
 
-    it('should generate Next.js project with Turso', async () => {
+    it('Turso を利用した Next.js プロジェクトを生成する', async () => {
         const { projectPath } = await generateProject({
             projectName: 'test-app',
             framework: 'nextjs',
             database: 'turso',
-            orm: 'prisma'
+            orm: 'prisma',
         });
 
         const { valid, missingFiles } = await verifyProjectStructure(projectPath, [
             'package.json',
-            'prisma/schema.prisma'
+            'prisma/schema.prisma',
         ]);
 
         expect(valid).toBe(true);
@@ -204,51 +203,49 @@ describe('Next.js project generation', () => {
 });
 ```
 
-## Environment Variables
+## テスト時に設定される環境変数
 
-Tests automatically set these environment variables:
-- `FLUORITE_TEST_MODE=true` - Enables test mode
-- `FLUORITE_CLOUD_MODE=mock` - Uses mock cloud provisioning
-- `FLUORITE_AUTO_PROVISION=false` - Disables auto-provisioning
-- `NODE_ENV=test` - Sets Node environment to test
+- `FLUORITE_TEST_MODE=true` – テストモードを有効化
+- `FLUORITE_CLOUD_MODE=mock` – モックプロビジョナーを使用
+- `FLUORITE_AUTO_PROVISION=false` – 自動プロビジョニングを無効化
+- `NODE_ENV=test` – Node.js 実行環境を test に設定
 
-## Best Practices
+## ベストプラクティス
 
-1. **Isolation**: Each test should be independent and not rely on others
-2. **Cleanup**: Always clean up temporary files and directories
-3. **Mocking**: Use test mode to avoid real API calls and installations
-4. **Timeouts**: Set appropriate timeouts for different test types
-5. **Coverage**: Aim for >80% code coverage
-6. **Naming**: Use descriptive test names that explain what is being tested
-7. **Organization**: Group related tests using `describe` blocks
+1. **独立性**: テスト同士に依存関係を作らない
+2. **クリーンアップ**: 一時ファイル・ディレクトリは必ず削除する
+3. **モック活用**: 実環境への API 呼び出しやインストールを避ける
+4. **タイムアウト**: テスト種別に応じて適切な値を設定
+5. **カバレッジ**: 80% 以上を目標に維持する
+6. **命名**: 何を検証するかが伝わるテスト名を付ける
+7. **構造化**: 関連ケースは `describe` ブロックでまとめる
 
-## Troubleshooting
+## トラブルシューティング
 
-### Common Issues
+### よくある問題
 
-1. **Timeout errors**: Increase timeout in test configuration
-2. **File not found**: Ensure proper cleanup between tests
-3. **Port conflicts**: Tests should use dynamic ports
-4. **CI failures**: Check OS-specific requirements
+1. **タイムアウト**: テスト設定のタイムアウトを延長する
+2. **ファイル未検出**: クリーンアップ漏れがないか確認する
+3. **ポート競合**: テストでは動的ポートを使用する
+4. **CI 失敗**: OS 依存の要件 (権限・依存パッケージ) を確認する
 
-### Debug Mode
+### デバッグ実行例
 
 ```bash
-# Run tests with verbose output
+# 詳細ログを出して実行
 DEBUG=* pnpm test
 
-# Run specific test file
+# 特定ファイルのみ実行
 pnpm vitest run test/unit/utils/slugify.test.ts
 
-# Run tests matching pattern
+# テスト名でフィルタ
 pnpm vitest run -t "should generate Next.js"
 ```
 
-## Migration from Old Structure
+## 旧構成からの移行
 
-The test infrastructure has been migrated from:
-- Playwright E2E tests → Vitest scenario tests
-- Storybook tests → Removed (not needed for CLI)
-- Scattered tests → Organized into 3 tiers
+- Playwright E2E テスト → Vitest シナリオテストに統合
+- Storybook 関連テスト → 現状不要のため廃止
+- 分散していたテスト資産 → 3 レイヤー体系へ再配置
 
-All tests now use Vitest for consistency and better integration.
+現在はすべてのテストが Vitest ベースで統一され、CLI プロジェクトに適した軽量な検証フローを実現しています。
