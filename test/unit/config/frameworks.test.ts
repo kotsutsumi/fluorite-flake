@@ -1,3 +1,8 @@
+/**
+ * `FRAMEWORK_CONFIGS` の内容を検証するユニットテスト。
+ * 各フレームワーク設定が想定どおりのプロパティ・サポート機能・依存関係を持つか、
+ * またデータベース/ORM/ストレージの許容値が正しいかなどを広範囲にチェックする。
+ */
 import { describe, expect, it } from 'vitest';
 
 import { FRAMEWORK_CONFIGS } from '../../../src/config/framework-configs/frameworks.js';
@@ -8,7 +13,7 @@ import type {
     StorageType,
 } from '../../../src/config/framework-configs/types.js';
 
-describe('FRAMEWORK_CONFIGS', () => {
+describe('FRAMEWORK_CONFIGS の構成確認', () => {
     const _validFrameworks: FrameworkType[] = ['nextjs', 'expo', 'tauri', 'flutter'];
     const validDatabases: DatabaseType[] = ['none', 'turso', 'supabase'];
     const validOrms: OrmType[] = ['prisma', 'drizzle'];

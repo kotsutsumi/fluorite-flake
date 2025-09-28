@@ -1,3 +1,8 @@
+/**
+ * `storage-generator` が選択されたストレージオプションに応じて Next.js プロジェクトへ必要な資材を配置する挙動を検証するユニットテスト。
+ * 環境変数ファイルの追記やセットアップスクリプトの生成、UI コンポーネントの追加までをテンポラリ環境で確認し、
+ * ストレージ種別ごとの前提条件が崩れていないかを継続的に監視する目的で実施している。
+ */
 import os from 'node:os';
 import path from 'node:path';
 
@@ -11,6 +16,7 @@ type ConfigOverrides = Partial<ProjectConfig>;
 
 const cleanupPaths: string[] = [];
 
+// テストごとに隔離された一時プロジェクトを作成し、標準的な ProjectConfig を用意する
 async function createProject(overrides: ConfigOverrides = {}) {
     const projectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'ff-storage-'));
     cleanupPaths.push(projectPath);
@@ -39,12 +45,15 @@ async function createProject(overrides: ConfigOverrides = {}) {
     return { config, projectPath };
 }
 
+// 生成したテンポラリディレクトリを毎テスト後に削除し、状態が残らないようにする
 afterEach(async () => {
     await Promise.all(cleanupPaths.map((dir) => fs.remove(dir)));
     cleanupPaths.length = 0;
 });
 
+// setupStorage の分岐ごとにファイル生成と環境変数の書き込みが行われるかを検証する
 describe('setupStorage', () => {
+    // storage: none の場合は追加ファイルを生成しないことを確認し、余計な副作用を防ぐ
     it('skips work when storage is none', async () => {
         const { config, projectPath } = await createProject({ storage: 'none' });
         await setupStorage(config);
@@ -52,6 +61,7 @@ describe('setupStorage', () => {
         expect(await fs.pathExists(path.join(projectPath, 'src', 'lib', 'storage.ts'))).toBe(false);
     });
 
+    // Vercel Blob を選択した際にセットアップスクリプトと環境変数の雛形が揃うことを検査する
     it('configures Vercel Blob storage scaffolding', async () => {
         const { config, projectPath } = await createProject({ storage: 'vercel-blob' });
         await setupStorage(config);
@@ -80,6 +90,7 @@ describe('setupStorage', () => {
         ).toBe(true);
     });
 
+    // Cloudflare R2 を選択した場合に必要な環境変数とストレージ helper が作成されることを確認する
     it('adds Cloudflare R2 helper files and env entries', async () => {
         const { config, projectPath } = await createProject({ storage: 'cloudflare-r2' });
         await setupStorage(config);
@@ -89,6 +100,7 @@ describe('setupStorage', () => {
         expect(await fs.pathExists(path.join(projectPath, 'src', 'lib', 'storage.ts'))).toBe(true);
     });
 
+    // Supabase Storage を選んだときに Supabase クライアントと環境変数が揃うかを検証する
     it('creates Supabase storage client when missing', async () => {
         const { config, projectPath } = await createProject({ storage: 'supabase-storage' });
         await setupStorage(config);

@@ -204,6 +204,44 @@ program
         });
     });
 
+// Add IPC server command
+program
+    .command('ipc')
+    .description('Start IPC server for inter-process communication')
+    .option('-p, --port <port>', 'Port to listen on', '9123')
+    .option('-s, --socket <path>', 'Unix socket path')
+    .option('-d, --daemon', 'Run as daemon')
+    .option('-v, --verbose', 'Verbose output')
+    .option('-t, --token <token>', 'Authentication token')
+    .action(async (options) => {
+        const { startIPC } = await import('./commands/ipc.js');
+        await startIPC({
+            port: options.port ? Number.parseInt(options.port) : undefined,
+            socketPath: options.socket,
+            daemon: options.daemon,
+            verbose: options.verbose,
+            authToken: options.token,
+        });
+    });
+
+// Add IPC test command
+program
+    .command('ipc-test')
+    .description('Test connection to IPC server')
+    .option('-p, --port <port>', 'Port to connect to', '9123')
+    .option('-s, --socket <path>', 'Unix socket path')
+    .option('-h, --host <host>', 'Host to connect to', '127.0.0.1')
+    .option('-t, --token <token>', 'Authentication token')
+    .action(async (options) => {
+        const { testIPC } = await import('./commands/ipc.js');
+        await testIPC({
+            port: options.port ? Number.parseInt(options.port) : undefined,
+            socketPath: options.socket,
+            host: options.host,
+            authToken: options.token,
+        });
+    });
+
 // Parse command line arguments, accounting for pnpm's `--` forwarding.
 const sanitizedUserArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 

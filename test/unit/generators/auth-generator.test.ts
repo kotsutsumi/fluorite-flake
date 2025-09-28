@@ -1,3 +1,8 @@
+/**
+ * `auth-generator` が Next.js プロジェクト向けに Better Auth のスキャフォールディングを適用する際の挙動を検証するユニットテスト。
+ * フレームワーク / ORM の組み合わせによる分岐や、package.json・ソースファイル・依存関係の更新が
+ * 期待どおり行われるかをテンポラリプロジェクトで再現し、設定条件の逸脱を早期に検知する。
+ */
 import os from 'node:os';
 import path from 'node:path';
 
@@ -11,6 +16,7 @@ type ConfigOverrides = Partial<ProjectConfig>;
 
 const cleanupPaths: string[] = [];
 
+// テスト専用に一時ディレクトリを作成し、必要なデフォルト値で ProjectConfig を構築する
 async function createProject(overrides: ConfigOverrides = {}) {
     const projectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'ff-auth-'));
     cleanupPaths.push(projectPath);
@@ -39,12 +45,15 @@ async function createProject(overrides: ConfigOverrides = {}) {
     return { config, projectPath };
 }
 
+// 各テスト後に生成したディレクトリを削除し、状態が汚染されないようにする
 afterEach(async () => {
     await Promise.all(cleanupPaths.map((dir) => fs.remove(dir)));
     cleanupPaths.length = 0;
 });
 
+// setupAuth が選択条件に応じた分岐と副作用を実行できるかを検証する
 describe('setupAuth', () => {
+    // Next.js 以外のフレームワークでは何も変更しないことを確認する
     it('returns early for non-Next.js frameworks', async () => {
         const { config, projectPath } = await createProject({ framework: 'expo' });
         await setupAuth(config);
@@ -52,6 +61,7 @@ describe('setupAuth', () => {
         expect(pkg.dependencies['better-auth']).toBeUndefined();
     });
 
+    // Prisma 以外の ORM が選択された場合に明示的な例外を投げることを検証する
     it('throws when Prisma is not selected as ORM', async () => {
         const { config } = await createProject({ orm: 'drizzle' });
         await expect(setupAuth(config)).rejects.toThrow(
@@ -59,6 +69,7 @@ describe('setupAuth', () => {
         );
     });
 
+    // Next.js + Prisma の構成で依存関係・テンプレートファイルがすべて配置されることを確認する
     it('adds auth scaffolding and dependencies for Next.js projects', async () => {
         const { config, projectPath } = await createProject();
         await setupAuth(config);

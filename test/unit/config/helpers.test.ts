@@ -1,3 +1,7 @@
+/**
+ * パッケージバージョン取得ヘルパー (`getPackageVersion`, `getPackageVersions`) の挙動を確認するテスト。
+ * 既知パッケージの固定バージョン、未知パッケージのフォールバック、複数取得時のマップ生成を検証する。
+ */
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,16 +9,16 @@ import {
     getPackageVersions,
 } from '../../../src/config/package-versions/helpers.js';
 
-describe('package version helpers', () => {
-    it('returns known versions when available', () => {
+describe('パッケージバージョン取得ヘルパー', () => {
+    it('既知パッケージでは固定バージョンを返すこと', () => {
         expect(getPackageVersion('react')).toBe('19.0.0');
     });
 
-    it('falls back to latest for unknown packages', () => {
+    it('未知パッケージでは latest にフォールバックすること', () => {
         expect(getPackageVersion('totally-made-up-package')).toBe('latest');
     });
 
-    it('builds version maps for multiple packages', () => {
+    it('複数パッケージ指定時にバージョンマップを構築できること', () => {
         const versions = getPackageVersions(['next', 'react']);
         expect(versions).toEqual({
             next: '15.5.4',
