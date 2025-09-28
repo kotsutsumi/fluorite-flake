@@ -1,3 +1,9 @@
+/**
+ * Next.js プロジェクト生成に関するシナリオテスト。
+ * Fluorite Flake の CLI で生成される Next.js テンプレートが、各オプションの組み合わせに応じて
+ * 必要なファイル・依存関係・環境変数を正しく出力できるかを網羅的に確認する。
+ * テストでは実際にテンポラリディレクトリへプロジェクトを生成し、構成ファイルの存在や依存関係を検証する。
+ */
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import path from 'node:path';
 import {
@@ -10,13 +16,13 @@ import {
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 import type { ProjectConfig } from '../../../src/commands/create/types.js';
 
-describe('Next.js project generation scenarios', () => {
+describe('Next.js プロジェクト生成のシナリオ検証', () => {
     afterAll(async () => {
         await cleanupAllTempDirs();
     });
 
-    describe('Basic Next.js project', () => {
-        it('should generate minimal Next.js project without database', async () => {
+    describe('基本的な Next.js プロジェクト生成', () => {
+        it('データベース未使用の最小構成 Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-basic',
                 framework: 'nextjs',
@@ -27,7 +33,7 @@ describe('Next.js project generation scenarios', () => {
                 packageManager: 'pnpm',
             });
 
-            // Verify basic structure
+            // 最低限の構成ファイルが揃っているか確認する
             const { valid, missingFiles } = await verifyProjectStructure(projectPath, [
                 'package.json',
                 'tsconfig.json',
@@ -46,7 +52,7 @@ describe('Next.js project generation scenarios', () => {
             expect(valid).toBe(true);
             expect(missingFiles).toHaveLength(0);
 
-            // Verify dependencies
+            // 必要な依存パッケージが package.json に含まれているか確認する
             const { valid: depsValid, missing } = await verifyDependencies(projectPath, {
                 dependencies: ['next', 'react', 'react-dom'],
                 devDependencies: ['typescript', '@types/node', '@types/react'],
@@ -55,7 +61,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
             expect(missing).toHaveLength(0);
 
-            // Verify environment files
+            // 環境変数ファイルが全て生成されているか確認する
             const envResult = await verifyEnvFiles(projectPath, 'nextjs');
             expect(envResult.valid).toBe(true);
             expect(envResult.files).toContain('.env');
@@ -66,7 +72,7 @@ describe('Next.js project generation scenarios', () => {
             expect(envResult.files).toContain('.env.prod');
         });
 
-        it('should generate Next.js project with Vercel deployment', async () => {
+        it('Vercel デプロイ設定付きの Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-vercel',
                 framework: 'nextjs',
@@ -89,8 +95,8 @@ describe('Next.js project generation scenarios', () => {
         });
     });
 
-    describe('Next.js with Turso database', () => {
-        it('should generate Next.js project with Turso + Prisma', async () => {
+    describe('Next.js + Turso データベース構成', () => {
+        it('Turso + Prisma 構成の Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-turso-prisma',
                 framework: 'nextjs',
@@ -123,7 +129,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Next.js project with Turso + Drizzle', async () => {
+        it('Turso + Drizzle 構成の Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-turso-drizzle',
                 framework: 'nextjs',
@@ -154,7 +160,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Next.js project with Turso + Auth', async () => {
+        it('Turso + Better Auth 構成の Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-turso-auth',
                 framework: 'nextjs',
@@ -186,8 +192,8 @@ describe('Next.js project generation scenarios', () => {
         });
     });
 
-    describe('Next.js with Supabase database', () => {
-        it('should generate Next.js project with Supabase + Prisma', async () => {
+    describe('Next.js + Supabase データベース構成', () => {
+        it('Supabase + Prisma 構成の Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-supabase-prisma',
                 framework: 'nextjs',
@@ -217,7 +223,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Next.js project with Supabase + Drizzle', async () => {
+        it('Supabase + Drizzle 構成の Next.js プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-supabase-drizzle',
                 framework: 'nextjs',
@@ -249,8 +255,8 @@ describe('Next.js project generation scenarios', () => {
         });
     });
 
-    describe('Next.js with storage options', () => {
-        it('should generate Next.js project with Vercel Blob storage', async () => {
+    describe('Next.js + 各種ストレージ構成', () => {
+        it('Vercel Blob を用いたストレージ構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-blob',
                 framework: 'nextjs',
@@ -282,7 +288,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Next.js project with AWS S3 storage', async () => {
+        it('AWS S3 を用いたストレージ構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-s3',
                 framework: 'nextjs',
@@ -310,7 +316,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Next.js project with Cloudflare R2 storage', async () => {
+        it('Cloudflare R2 を用いたストレージ構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-r2',
                 framework: 'nextjs',
@@ -338,7 +344,7 @@ describe('Next.js project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Next.js project with Supabase storage', async () => {
+        it('Supabase Storage を用いたストレージ構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-supabase-storage',
                 framework: 'nextjs',
@@ -368,8 +374,8 @@ describe('Next.js project generation scenarios', () => {
         });
     });
 
-    describe('Full-featured Next.js project', () => {
-        it('should generate complete Next.js project with all features', async () => {
+    describe('フル機能搭載の Next.js プロジェクト生成', () => {
+        it('データベース・ストレージ・認証・デプロイなど全機能を有する構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-nextjs-full',
                 framework: 'nextjs',

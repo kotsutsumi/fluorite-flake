@@ -13,7 +13,6 @@ const _logger = {
     error: (message: string, meta?: unknown) => console.error(`[ERROR] ${message}`, meta || ''),
 };
 
-
 export async function setupStorage(config: ProjectConfig) {
     if (config.storage === 'none') {
         return;
@@ -101,7 +100,6 @@ async function setupVercelBlob(config: ProjectConfig) {
     // await checkVercelStorageAvailability(config);
 }
 
-
 async function setupAwsS3(config: ProjectConfig) {
     await appendEnv(
         config.projectPath,
@@ -118,8 +116,6 @@ async function setupAwsS3(config: ProjectConfig) {
     // await checkAwsAvailability(config);
 }
 
-
-
 async function setupCloudflareR2(config: ProjectConfig) {
     await appendEnv(
         config.projectPath,
@@ -135,8 +131,6 @@ async function setupCloudflareR2(config: ProjectConfig) {
     // TODO: Enable when CLI adapters are fixed
     // await checkWranglerAvailability(config);
 }
-
-
 
 async function setupSupabaseStorage(config: ProjectConfig) {
     await appendEnv(

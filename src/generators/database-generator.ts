@@ -12,7 +12,6 @@ const _logger = {
     error: (message: string, meta?: unknown) => console.error(`[ERROR] ${message}`, meta || ''),
 };
 
-
 export async function setupDatabase(config: ProjectConfig) {
     if (config.database === 'none') {
         return;
@@ -80,7 +79,6 @@ async function setupTurso(config: ProjectConfig) {
     // await checkTursoAvailability(config);
 }
 
-
 async function setupSupabase(config: ProjectConfig) {
     const envContent = await readTemplate('database/env/supabase-env.txt.template');
     await appendEnvLocal(config, envContent);
@@ -118,8 +116,6 @@ async function setupSupabase(config: ProjectConfig) {
     // TODO: Enable when CLI adapters are fixed
     // await checkSupabaseAvailability(config);
 }
-
-
 
 async function setupPrisma(config: ProjectConfig) {
     const prismaDir = path.join(config.projectPath, 'prisma');

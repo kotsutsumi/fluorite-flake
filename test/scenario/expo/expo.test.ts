@@ -1,3 +1,8 @@
+/**
+ * Expo プロジェクト生成に関するシナリオテスト。
+ * データベース・ストレージ・認証の各オプションを切り替えながら、生成物の構成ファイルや依存関係が
+ * 期待どおりに出力されるかを検証する。テストは一時ディレクトリ上に実際のプロジェクトを生成して確認する。
+ */
 import { describe, expect, it, afterAll } from 'vitest';
 import {
     generateProject,
@@ -6,13 +11,13 @@ import {
 } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 
-describe('Expo project generation scenarios', () => {
+describe('Expo プロジェクト生成のシナリオ検証', () => {
     afterAll(async () => {
         await cleanupAllTempDirs();
     });
 
-    describe('Basic Expo project', () => {
-        it('should generate minimal Expo project without database', async () => {
+    describe('基本的な Expo プロジェクト生成', () => {
+        it('データベース未使用の最小構成 Expo プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-expo-basic',
                 framework: 'expo',
@@ -51,8 +56,8 @@ describe('Expo project generation scenarios', () => {
         });
     });
 
-    describe('Expo with database', () => {
-        it('should generate Expo project with Turso + Prisma', async () => {
+    describe('Expo + データベース構成', () => {
+        it('Turso + Prisma 構成の Expo プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-expo-turso',
                 framework: 'expo',
@@ -81,7 +86,7 @@ describe('Expo project generation scenarios', () => {
             expect(depsValid).toBe(true);
         });
 
-        it('should generate Expo project with Supabase + Drizzle', async () => {
+        it('Supabase + Drizzle 構成の Expo プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-expo-supabase',
                 framework: 'expo',
@@ -111,8 +116,8 @@ describe('Expo project generation scenarios', () => {
         });
     });
 
-    describe('Expo with storage', () => {
-        it('should generate Expo project with Vercel Blob storage', async () => {
+    describe('Expo + ストレージ構成', () => {
+        it('Vercel Blob を用いたストレージ構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-expo-blob',
                 framework: 'expo',
@@ -132,7 +137,7 @@ describe('Expo project generation scenarios', () => {
             expect(valid).toBe(true);
         });
 
-        it('should generate Expo project with Supabase storage', async () => {
+        it('Supabase Storage を用いたストレージ構成が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-expo-supabase-storage',
                 framework: 'expo',
@@ -160,8 +165,8 @@ describe('Expo project generation scenarios', () => {
         });
     });
 
-    describe('Expo with authentication', () => {
-        it('should generate Expo project with authentication', async () => {
+    describe('Expo + 認証機能構成', () => {
+        it('Supabase 認証を伴う Expo プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-expo-auth',
                 framework: 'expo',

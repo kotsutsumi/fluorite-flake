@@ -138,6 +138,72 @@ program
         await createProject(config);
     });
 
+// Add dashboard command for Cloudflare Workers management
+program
+    .command('dashboard')
+    .description('View and manage Cloudflare Workers dashboard')
+    .option('--json', 'Output as JSON')
+    .option('--workers', 'Show only workers')
+    .option('--r2', 'Show only R2 buckets')
+    .option('--kv', 'Show only KV namespaces')
+    .option('--analytics <worker>', 'Show analytics for a specific worker')
+    .action(async (options) => {
+        const { showDashboard } = await import('./commands/dashboard.js');
+        await showDashboard({
+            json: options.json,
+            workers: options.workers,
+            r2: options.r2,
+            kv: options.kv,
+            analytics: !!options.analytics,
+            workerName: options.analytics,
+        });
+    });
+
+// Add deploy command for Workers
+program
+    .command('deploy [name]')
+    .description('Deploy a Cloudflare Worker')
+    .option('--env <environment>', 'Target environment')
+    .option('--no-dry-run', 'Skip dry run and deploy immediately')
+    .action(async (name, options) => {
+        const { deployWorker } = await import('./commands/dashboard.js');
+        await deployWorker(name, {
+            env: options.env,
+            dryRun: options.dryRun,
+        });
+    });
+
+// Add R2 management commands
+program
+    .command('r2 <action> [bucket-name]')
+    .description('Manage R2 buckets (actions: list, create, delete)')
+    .action(async (action, bucketName) => {
+        const { manageR2Bucket } = await import('./commands/dashboard.js');
+        if (!['list', 'create', 'delete'].includes(action)) {
+            console.error('Invalid action. Use: list, create, or delete');
+            process.exit(1);
+        }
+        await manageR2Bucket(action as 'list' | 'create' | 'delete', bucketName);
+    });
+
+// Add log tailing command
+program
+    .command('logs [worker-name]')
+    .description('Tail worker logs in real-time')
+    .option('--format <format>', 'Output format (json or pretty)', 'pretty')
+    .option('--status <status>', 'Filter by status (ok or error)')
+    .option('--method <method>', 'Filter by HTTP method')
+    .option('--search <term>', 'Search logs for specific term')
+    .action(async (workerName, options) => {
+        const { tailWorkerLogs } = await import('./commands/dashboard.js');
+        await tailWorkerLogs(workerName, {
+            format: options.format as 'json' | 'pretty',
+            status: options.status as 'ok' | 'error' | undefined,
+            method: options.method,
+            search: options.search,
+        });
+    });
+
 // Parse command line arguments, accounting for pnpm's `--` forwarding.
 const sanitizedUserArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 

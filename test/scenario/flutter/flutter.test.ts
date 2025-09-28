@@ -1,17 +1,22 @@
+/**
+ * Flutter プロジェクト生成に関するシナリオテスト。
+ * プラットフォーム別の出力や命名規則、サポート対象外オプションの拒否など、
+ * Flutter 特有の制約が正しく反映されているかをテンポラリディレクトリ上で検証する。
+ */
 import { describe, expect, it, afterAll } from 'vitest';
 import path from 'node:path';
 import { generateProject, verifyProjectStructure } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs, readProjectFile } from '../../helpers/temp-dir.js';
 
-describe('Flutter project generation scenarios', () => {
+describe('Flutter プロジェクト生成のシナリオ検証', () => {
     afterAll(async () => {
         await cleanupAllTempDirs();
     });
 
-    describe('Basic Flutter project', () => {
-        it('should generate minimal Flutter project', async () => {
+    describe('基本的な Flutter プロジェクト生成', () => {
+        it('最小構成の Flutter プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
-                projectName: 'test_flutter_basic', // Flutter uses snake_case
+                projectName: 'test_flutter_basic', // Flutter ではスネークケースに変換される仕様を確認するコメント
                 framework: 'flutter',
                 database: 'none',
                 storage: 'none',
@@ -41,7 +46,7 @@ describe('Flutter project generation scenarios', () => {
             expect(valid).toBe(true);
             expect(missingFiles).toHaveLength(0);
 
-            // Verify pubspec.yaml content
+            // pubspec.yaml にアプリ名や Flutter 依存が正しく記載されているか確認する
             const pubspecContent = await readProjectFile(projectPath, 'pubspec.yaml');
             expect(pubspecContent).toContain('name: test_flutter_basic');
             expect(pubspecContent).toContain('flutter:');
@@ -75,7 +80,7 @@ describe('Flutter project generation scenarios', () => {
         });
     });
 
-    describe('Flutter platform support', () => {
+    describe('ターゲットプラットフォームごとの出力確認', () => {
         it('should generate Flutter project with mobile platform files', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test_flutter_mobile',
@@ -165,8 +170,8 @@ describe('Flutter project generation scenarios', () => {
         });
     });
 
-    describe('Flutter project structure', () => {
-        it('should follow Flutter naming conventions', async () => {
+    describe('Flutter プロジェクト構造の検証', () => {
+        it('プロジェクト名が自動的にスネークケースへ変換されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'MyAwesomeApp', // Should be converted to snake_case
                 framework: 'flutter',
@@ -193,7 +198,7 @@ describe('Flutter project generation scenarios', () => {
                 packageManager: 'pnpm',
             });
 
-            // Check main.dart content
+            // main.dart の初期構成が Flutter 標準に従っているか確認する
             const mainContent = await readProjectFile(projectPath, 'lib/main.dart');
             expect(mainContent).toContain("import 'package:flutter/material.dart'");
             expect(mainContent).toContain('void main()');
@@ -202,14 +207,14 @@ describe('Flutter project generation scenarios', () => {
         });
     });
 
-    describe('Flutter project constraints', () => {
+    describe('Flutter 固有の制約検証', () => {
         it('should not allow database for Flutter', () => {
             expect(() => {
                 const config = {
                     framework: 'flutter' as const,
                     database: 'turso' as const,
                 };
-                // Flutter doesn't support database configuration
+                // Flutter はデータベース構成をサポートしない
                 if (config.framework === 'flutter' && config.database !== 'none') {
                     throw new Error('Flutter does not support database configuration');
                 }
@@ -222,7 +227,7 @@ describe('Flutter project generation scenarios', () => {
                     framework: 'flutter' as const,
                     storage: 'vercel-blob' as const,
                 };
-                // Flutter doesn't support cloud storage configuration
+                // Flutter はクラウドストレージ構成をサポートしない
                 if (config.framework === 'flutter' && config.storage !== 'none') {
                     throw new Error('Flutter does not support cloud storage configuration');
                 }
@@ -235,7 +240,7 @@ describe('Flutter project generation scenarios', () => {
                     framework: 'flutter' as const,
                     packageManager: 'pnpm' as const,
                 };
-                // Flutter uses pub, not JavaScript package managers
+                // Flutter は pub を使用し、JavaScript のパッケージマネージャー設定は無視される
                 if (config.framework === 'flutter') {
                     // Package manager is ignored for Flutter
                     return 'pub';

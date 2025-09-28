@@ -1,3 +1,8 @@
+/**
+ * Tauri プロジェクト生成に関するシナリオテスト。
+ * 各種パッケージマネージャーやデプロイ設定の違いに応じて生成物が正しく揃うか、
+ * また Tauri がサポートしない構成（DB やクラウドストレージ）を拒否できているかを検証する。
+ */
 import { describe, expect, it, afterAll } from 'vitest';
 import {
     generateProject,
@@ -6,13 +11,13 @@ import {
 } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 
-describe('Tauri project generation scenarios', () => {
+describe('Tauri プロジェクト生成のシナリオ検証', () => {
     afterAll(async () => {
         await cleanupAllTempDirs();
     });
 
-    describe('Basic Tauri project', () => {
-        it('should generate minimal Tauri project', async () => {
+    describe('基本的な Tauri プロジェクト生成', () => {
+        it('最小構成の Tauri プロジェクトが生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-tauri-basic',
                 framework: 'tauri',
@@ -73,8 +78,8 @@ describe('Tauri project generation scenarios', () => {
         });
     });
 
-    describe('Tauri with different package managers', () => {
-        it('should generate Tauri project with npm', async () => {
+    describe('パッケージマネージャー別の出力差異', () => {
+        it('npm 選択時に package-lock.json が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-tauri-npm',
                 framework: 'tauri',
@@ -93,7 +98,7 @@ describe('Tauri project generation scenarios', () => {
             expect(valid).toBe(true);
         });
 
-        it('should generate Tauri project with yarn', async () => {
+        it('yarn 選択時に yarn.lock が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-tauri-yarn',
                 framework: 'tauri',
@@ -112,7 +117,7 @@ describe('Tauri project generation scenarios', () => {
             expect(valid).toBe(true);
         });
 
-        it('should generate Tauri project with bun', async () => {
+        it('bun 選択時に bun.lockb が生成されること', async () => {
             const { projectPath } = await generateProject({
                 projectName: 'test-tauri-bun',
                 framework: 'tauri',
@@ -132,17 +137,17 @@ describe('Tauri project generation scenarios', () => {
         });
     });
 
-    describe('Tauri project constraints', () => {
+    describe('Tauri 固有の制約検証', () => {
         it('should not allow database for Tauri', () => {
-            // This test verifies that the generator properly rejects invalid configs
-            // In actual implementation, this would throw an error
-            // For now, we'll just verify the constraint exists
+            // ジェネレーターが不正な構成を拒否することを確認するための検証
+            // 実装では例外が投げられる想定
+            // テストではエラー発生を確認する
             expect(() => {
                 const config = {
                     framework: 'tauri' as const,
                     database: 'turso' as const,
                 };
-                // Tauri doesn't support database configuration
+                // Tauri はデータベース構成をサポートしない
                 if (config.framework === 'tauri' && config.database !== 'none') {
                     throw new Error('Tauri does not support database configuration');
                 }
@@ -155,7 +160,7 @@ describe('Tauri project generation scenarios', () => {
                     framework: 'tauri' as const,
                     storage: 'vercel-blob' as const,
                 };
-                // Tauri doesn't support cloud storage configuration
+                // Tauri はクラウドストレージ構成をサポートしない
                 if (config.framework === 'tauri' && config.storage !== 'none') {
                     throw new Error('Tauri does not support cloud storage configuration');
                 }
