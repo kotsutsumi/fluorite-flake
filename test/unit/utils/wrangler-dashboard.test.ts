@@ -296,7 +296,7 @@ def456: test-namespace`,
     describe('getDashboardData', () => {
         // Workers/R2/KV の情報をまとめて取得し、欠損時は空配列となることを確認する
         it('should aggregate all dashboard data', async () => {
-            // Mock workers
+            // ワーカーをモック化
             mockExeca.mockImplementation((_cmd, args) => {
                 if (args?.includes('--dry-run')) {
                     return Promise.resolve({

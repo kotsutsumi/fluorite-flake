@@ -74,6 +74,68 @@ tests/
 - 命名規則: 変数/関数 `camelCase`、型/クラス `PascalCase`、CLI コマンド `kebab-case`。
 - エラー処理は丁寧に行い、CLI ではユーザーに分かりやすいメッセージを返すよう徹底してください。
 - I/O（CLI 入出力・ファイル書き込みなど）と純粋ロジックを分離し、テストを書きやすくすること。
+- **コメントは日本語で記載**: ソースコード内のコメントは、開発チーム内での理解を促進するため、できるだけ詳しく日本語で記載してください。
+- **テストの同時更新必須**: コードを修正した場合は、必ず対応するテストも記載・修正し、`pnpm test` が成功することを確認してください。
+- **1ファイル1定義の原則（厳守）**: 各モジュールは1つの主要な定義（関数、クラス、定数など）のみをエクスポートし、単一責任原則を徹底してください。複数のエクスポートがある場合は、機能別に個別ファイルに分割し、index.ts で統合エクスポートを行ってください。
+
+  **基本原則**:
+  - 1ファイルにつき1つの主要な責任を持つ
+  - 関連するヘルパー関数や型は許可されるが、メインの定義に直接関連するもののみ
+  - 大きなファイル（>200行または>10エクスポート）は必ず分割する
+  - 型定義とロジックは分離する
+
+  ```typescript
+  // ❌ 避けるべき構造（複数の責任）
+  // utils/helpers.ts
+  export function getPackageVersion() { ... }
+  export function getPackageVersions() { ... }
+  export function validateEmail() { ... }
+  export function parseUrl() { ... }
+  export interface ApiResponse { ... }
+  export interface UserData { ... }
+
+  // ✅ 推奨される構造（機能別分割）
+  // utils/package-version/getPackageVersion.ts
+  export function getPackageVersion() { ... }
+
+  // utils/package-version/getPackageVersions.ts
+  export function getPackageVersions() { ... }
+
+  // utils/validation/validateEmail.ts
+  export function validateEmail() { ... }
+
+  // utils/parsing/parseUrl.ts
+  export function parseUrl() { ... }
+
+  // types/api-types.ts
+  export interface ApiResponse { ... }
+
+  // types/user-types.ts
+  export interface UserData { ... }
+
+  // utils/package-version/index.ts
+  export { getPackageVersion } from './getPackageVersion.js';
+  export { getPackageVersions } from './getPackageVersions.js';
+
+  // utils/index.ts
+  export * from './package-version/index.js';
+  export * from './validation/index.js';
+  export * from './parsing/index.js';
+  ```
+
+  **許可される例外**:
+  - 密接に関連する型とその実装（例：クラスとそのオプション型）
+  - メイン関数とそのヘルパー関数（プライベートな性質のもの）
+  - 定数群（テーマ、設定値など、論理的にグループ化されるもの）
+
+  **分割の判断基準**:
+  - ファイルサイズ: >200行
+  - エクスポート数: >10個
+  - 機能的関連性: 異なるドメインの機能が混在
+  - 単体テストの複雑さ: 1ファイルで複数の異なる機能をテストする必要がある
+
+  **適用対象**: `src/commands/`, `src/config/`, `src/utils/`, `src/generators/`, `src/services/`, `src/ipc/`, `src/tauri/`, `src/types/`, `src/tui/` ディレクトリは厳守が必要です。
+- **一時ファイルの管理**: 一時的なスクリプトは `temp/scripts/` 、一時的なドキュメントは `temp/docs/` に配置し、本番コードと明確に分離してください。
 
 ## 作業時のベストプラクティス
 

@@ -1,18 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const isCi = !!process.env.CI;
+const _isCi = !!process.env.CI;
 
 export default defineConfig({
     testDir: './test/e2e',
     fullyParallel: false,
     workers: 1,
-    timeout: 900_000,
+    timeout: 120_000, // 2 minutes per test to allow for Next.js compilation
     expect: {
         timeout: 15_000,
     },
     reporter: [['list']],
     use: {
-        headless: isCi ? true : undefined,
+        headless: true, // Always run headless for faster execution
         trace: 'on-first-retry',
         video: 'retain-on-failure',
     },

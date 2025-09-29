@@ -16,12 +16,14 @@ import type {
     ServiceAction,
     ActionResult,
     HealthStatus,
+    HealthCheck,
     ServiceStatus,
     DashboardDataOptions,
     MetricsOptions,
     LogOptions,
     ServiceFactory,
-} from '../services/base-service-adapter.js';
+} from '../services/base-service-adapter/index.js';
+import { serviceFactory as defaultServiceFactory } from '../services/service-factory/index.js';
 
 export interface DashboardConfig {
     /** ダッシュボードデータのデフォルト更新間隔 */
@@ -95,13 +97,82 @@ export interface DashboardInsight {
     priority: 'low' | 'medium' | 'high' | 'critical';
 }
 
+const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
+    refreshInterval: 30000,
+    autoInitServices: [],
+    auth: {},
+    protocol: {
+        primary: 'rest',
+        wsPort: 8080,
+        httpPort: 3000,
+        authToken: undefined,
+    },
+    display: {
+        theme: 'dark',
+        layout: 'grid',
+        autoRefresh: false,
+    },
+};
+
+interface AggregatedMetricsSummary {
+    timestamp: number;
+    services: Record<string, ServiceMetrics>;
+    totals: {
+        requests: number;
+        errors: number;
+        throughput: number;
+        avgResponseTime: number;
+        activeConnections: number;
+    };
+}
+
+interface AggregatedAlertEntry {
+    service: string;
+    [key: string]: unknown;
+}
+
+interface FailedHealthCheck {
+    status: 'error';
+    timestamp: number;
+    responseTime: number;
+    checks: HealthCheck[];
+    error: string;
+    metadata?: Record<string, unknown>;
+}
+
+type HealthState = HealthStatus | FailedHealthCheck;
+
+function resolveDashboardConfig(config?: Partial<DashboardConfig>): DashboardConfig {
+    return {
+        refreshInterval: config?.refreshInterval ?? DEFAULT_DASHBOARD_CONFIG.refreshInterval,
+        autoInitServices: [
+            ...(config?.autoInitServices ?? DEFAULT_DASHBOARD_CONFIG.autoInitServices),
+        ],
+        auth: config?.auth
+            ? { ...config.auth }
+            : DEFAULT_DASHBOARD_CONFIG.auth && { ...DEFAULT_DASHBOARD_CONFIG.auth },
+        protocol: {
+            primary: config?.protocol?.primary ?? DEFAULT_DASHBOARD_CONFIG.protocol.primary,
+            wsPort: config?.protocol?.wsPort ?? DEFAULT_DASHBOARD_CONFIG.protocol.wsPort,
+            httpPort: config?.protocol?.httpPort ?? DEFAULT_DASHBOARD_CONFIG.protocol.httpPort,
+            authToken: config?.protocol?.authToken ?? DEFAULT_DASHBOARD_CONFIG.protocol.authToken,
+        },
+        display: {
+            theme: config?.display?.theme ?? DEFAULT_DASHBOARD_CONFIG.display.theme,
+            layout: config?.display?.layout ?? DEFAULT_DASHBOARD_CONFIG.display.layout,
+            autoRefresh:
+                config?.display?.autoRefresh ?? DEFAULT_DASHBOARD_CONFIG.display.autoRefresh,
+        },
+    };
+}
+
 export interface ServiceRegistry {
     /** 登録されたサービスアダプター */
     services: Map<string, ServiceAdapter>;
     /** サービス設定 */
     configs: Map<string, ServiceConfig>;
     /** サービス健全性ステータス */
-    health: Map<string, HealthStatus>;
+    health: Map<string, HealthState>;
 }
 
 /**
@@ -111,20 +182,24 @@ export interface ServiceRegistry {
  * サービスライフサイクル、データ集約、リアルタイム更新を処理します。
  */
 export class DashboardOrchestrator extends EventEmitter {
-    private registry: ServiceRegistry = {
+    private readonly registry: ServiceRegistry = {
         services: new Map(),
         configs: new Map(),
         health: new Map(),
     };
 
-    private refreshTimers: Map<string, NodeJS.Timeout> = new Map();
+    private readonly refreshTimers: Map<string, NodeJS.Timeout> = new Map();
+    private readonly config: DashboardConfig;
+    private readonly serviceFactory: ServiceFactory;
     private isInitialized = false;
 
     constructor(
-        private config: DashboardConfig,
-        private serviceFactory: ServiceFactory
+        config: Partial<DashboardConfig> = {},
+        serviceFactory: ServiceFactory = defaultServiceFactory
     ) {
         super();
+        this.config = resolveDashboardConfig(config);
+        this.serviceFactory = serviceFactory;
         this.setupEventHandlers();
     }
 
@@ -210,7 +285,7 @@ export class DashboardOrchestrator extends EventEmitter {
     async removeService(serviceName: string): Promise<void> {
         const service = this.registry.services.get(serviceName);
         if (!service) {
-            return;
+            throw new Error(`Service ${serviceName} not found`);
         }
 
         try {
@@ -269,7 +344,7 @@ export class DashboardOrchestrator extends EventEmitter {
         // 集約されたメトリクスを生成
         const aggregated = this.aggregateMetrics(serviceData);
 
-        // Generate insights
+        // インサイトを生成
         const insights = this.generateInsights(serviceData, aggregated);
 
         return {
@@ -278,6 +353,109 @@ export class DashboardOrchestrator extends EventEmitter {
             aggregated,
             insights,
         };
+    }
+
+    /**
+     * 全サービスのメトリクスを集約
+     */
+    async getAggregatedMetrics(options?: MetricsOptions): Promise<AggregatedMetricsSummary> {
+        const services: Record<string, ServiceMetrics> = {};
+        let totalRequests = 0;
+        let totalErrors = 0;
+        let cumulativeResponseTime = 0;
+        let totalThroughput = 0;
+        let totalActiveConnections = 0;
+        let serviceCount = 0;
+
+        for (const [serviceName, service] of this.registry.services) {
+            try {
+                const metrics = await service.getMetrics(options);
+                services[serviceName] = metrics;
+                totalRequests += metrics.usage?.requests ?? 0;
+                totalErrors += metrics.errors?.totalErrors ?? 0;
+                cumulativeResponseTime += metrics.performance?.avgResponseTime ?? 0;
+                totalThroughput += metrics.performance?.throughput ?? 0;
+                totalActiveConnections += metrics.performance?.activeConnections ?? 0;
+                serviceCount += 1;
+            } catch (error) {
+                this.emit('service:error', serviceName, error);
+            }
+        }
+
+        const avgResponseTime = serviceCount > 0 ? cumulativeResponseTime / serviceCount : 0;
+
+        return {
+            timestamp: Date.now(),
+            services,
+            totals: {
+                requests: totalRequests,
+                errors: totalErrors,
+                throughput: totalThroughput,
+                avgResponseTime,
+                activeConnections: totalActiveConnections,
+            },
+        };
+    }
+
+    /**
+     * 全サービスのアラートを集約
+     */
+    async getAggregatedAlerts(options?: DashboardDataOptions): Promise<AggregatedAlertEntry[]> {
+        const alerts: AggregatedAlertEntry[] = [];
+
+        for (const [serviceName, service] of this.registry.services) {
+            try {
+                const dashboardData = await service.getDashboardData(options);
+                const serviceAlerts = (dashboardData as { alerts?: unknown }).alerts;
+
+                if (Array.isArray(serviceAlerts)) {
+                    for (const alert of serviceAlerts) {
+                        alerts.push({
+                            service: serviceName,
+                            ...(alert as Record<string, unknown>),
+                        });
+                    }
+                }
+            } catch (error) {
+                alerts.push({
+                    service: serviceName,
+                    level: 'error',
+                    message: `Failed to retrieve alerts: ${error instanceof Error ? error.message : String(error)}`,
+                });
+                this.emit('service:error', serviceName, error);
+            }
+        }
+
+        return alerts;
+    }
+
+    /**
+     * 全サービスのヘルスチェックを実行
+     */
+    async healthCheckAll(): Promise<Record<string, HealthState>> {
+        const results: Record<string, HealthState> = {};
+
+        for (const [serviceName, service] of this.registry.services) {
+            try {
+                const health = await service.healthCheck();
+                this.registry.health.set(serviceName, health);
+                results[serviceName] = health;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                const failure: FailedHealthCheck = {
+                    status: 'error',
+                    timestamp: Date.now(),
+                    responseTime: 0,
+                    checks: [],
+                    error: errorMessage,
+                };
+                this.registry.health.set(serviceName, failure);
+                results[serviceName] = failure;
+                this.emit('service:error', serviceName, error);
+            }
+        }
+
+        return results;
     }
 
     /**
@@ -316,7 +494,7 @@ export class DashboardOrchestrator extends EventEmitter {
     ): AsyncIterable<LogEntry & { service: string }> {
         const services = serviceNames || Array.from(this.registry.services.keys());
 
-        // Create async iterators for each service
+        // サービスごとの非同期イテレーターを作成
         const iterators = services.map(
             async function* (this: DashboardOrchestrator, serviceName: string) {
                 const service = this.registry.services.get(serviceName);
@@ -328,7 +506,7 @@ export class DashboardOrchestrator extends EventEmitter {
             }.bind(this)
         );
 
-        // Merge logs from all services (simple time-based ordering)
+        // 全サービスのログを統合（単純な時間順）
         const buffer: (LogEntry & { service: string })[] = [];
 
         for (const iterator of iterators) {
@@ -337,7 +515,7 @@ export class DashboardOrchestrator extends EventEmitter {
             }
         }
 
-        // Sort by timestamp and yield
+        // タイムスタンプで並べ替えて出力
         buffer.sort((a, b) => a.timestamp - b.timestamp);
         for (const log of buffer) {
             yield log;
@@ -372,8 +550,8 @@ export class DashboardOrchestrator extends EventEmitter {
     /**
      * Get health status of all services
      */
-    getServicesHealth(): Record<string, HealthStatus> {
-        const health: Record<string, HealthStatus> = {};
+    getServicesHealth(): Record<string, HealthState> {
+        const health: Record<string, HealthState> = {};
 
         for (const [serviceName, healthStatus] of this.registry.health) {
             health[serviceName] = healthStatus;
@@ -400,20 +578,20 @@ export class DashboardOrchestrator extends EventEmitter {
      * Shutdown all services and cleanup
      */
     async shutdown(): Promise<void> {
-        // Stop all auto-refresh timers
+        // すべての自動更新タイマーを停止
         for (const timer of this.refreshTimers.values()) {
             clearInterval(timer);
         }
         this.refreshTimers.clear();
 
-        // Disconnect all services
+        // すべてのサービスとの接続を解除
         const disconnectPromises = Array.from(this.registry.services.values()).map((service) =>
             service.disconnect().catch((error) => this.emit('error', error))
         );
 
         await Promise.all(disconnectPromises);
 
-        // Clear registry
+        // レジストリをクリア
         this.registry.services.clear();
         this.registry.configs.clear();
         this.registry.health.clear();
@@ -422,17 +600,17 @@ export class DashboardOrchestrator extends EventEmitter {
         this.emit('shutdown');
     }
 
-    // Private helper methods
+    // プライベートヘルパーメソッド
 
     private setupEventHandlers(): void {
-        // Handle unhandled errors
+        // 処理されないエラーを扱う
         this.on('error', (error) => {
             console.error('Dashboard orchestrator error:', error);
         });
     }
 
     private setupServiceEventHandlers(service: ServiceAdapter): void {
-        // Forward service events with service name
+        // サービス名付きでイベントを転送
         service.on('connection:changed', (status) => {
             this.emit('service:connection', service.name, status);
         });
@@ -483,10 +661,10 @@ export class DashboardOrchestrator extends EventEmitter {
             }
         };
 
-        // Initial health check
+        // 初回のヘルスチェック
         await checkHealth();
 
-        // Schedule periodic health checks
+        // 定期的なヘルスチェックをスケジュール
         const healthTimer = setInterval(checkHealth, 30000); // Every 30 seconds
         this.refreshTimers.set(`health:${serviceName}`, healthTimer);
     }
@@ -536,7 +714,7 @@ export class DashboardOrchestrator extends EventEmitter {
                 totalResources += data.resources.length;
             }
 
-            // Aggregate metrics if available
+            // 利用できる指標を集約
             if (data.metrics) {
                 const metrics = data.metrics as Record<string, unknown>;
                 if (metrics.performance && typeof metrics.performance === 'object') {
@@ -551,20 +729,20 @@ export class DashboardOrchestrator extends EventEmitter {
                 }
             }
 
-            // Check health
+            // ヘルスチェックを実施
             const health = this.registry.health.get(serviceName);
             if (health?.status === 'healthy') {
                 healthyServices++;
             }
         }
 
-        // Calculate averages
+        // 平均値を計算
         if (totalServices > 0) {
             avgResponseTime /= totalServices;
             combinedErrorRate /= totalServices;
         }
 
-        // Determine overall health
+        // 全体の健全性を判定
         let overallHealth: 'healthy' | 'degraded' | 'unhealthy';
         const healthRatio = healthyServices / totalServices;
         if (healthRatio >= 0.8) {
@@ -593,7 +771,7 @@ export class DashboardOrchestrator extends EventEmitter {
     ): DashboardInsight[] {
         const insights: DashboardInsight[] = [];
 
-        // Overall health insight
+        // 全体健全性のインサイト
         if (aggregated.overallHealth === 'unhealthy') {
             insights.push({
                 type: 'error',
@@ -614,7 +792,7 @@ export class DashboardOrchestrator extends EventEmitter {
             });
         }
 
-        // High error rate insight
+        // エラーレートが高い場合のインサイト
         if (aggregated.performance.combinedErrorRate > 5) {
             insights.push({
                 type: 'warning',
@@ -626,7 +804,7 @@ export class DashboardOrchestrator extends EventEmitter {
             });
         }
 
-        // Performance insight
+        // パフォーマンスに関するインサイト
         if (aggregated.performance.avgResponseTime > 1000) {
             insights.push({
                 type: 'warning',
@@ -663,7 +841,7 @@ export class DashboardOrchestrator extends EventEmitter {
      * Stop the orchestrator and disconnect all services
      */
     async stop(): Promise<void> {
-        // Disconnect all services
+        // すべてのサービスとの接続を解除
         for (const [name, service] of this.registry.services) {
             try {
                 await service.disconnect();
@@ -675,17 +853,17 @@ export class DashboardOrchestrator extends EventEmitter {
             }
         }
 
-        // Clear registry
+        // レジストリをクリア
         this.registry.services.clear();
         this.registry.configs.clear();
         this.registry.health.clear();
 
-        // Emit stopped event
+        // 停止イベントを送出
         this.emit(ORCHESTRATOR_EVENTS.STOPPED);
     }
 }
 
-// Events emitted by the orchestrator
+// オーケストレーターが発行するイベント
 export const ORCHESTRATOR_EVENTS = {
     INITIALIZED: 'initialized',
     SERVICE_ADDED: 'serviceAdded',

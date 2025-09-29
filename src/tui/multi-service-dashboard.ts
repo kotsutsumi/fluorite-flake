@@ -54,7 +54,7 @@ export async function startTUIDashboard(options: TUIDashboardOptions): Promise<v
         try {
             const status = options.orchestrator.getServicesStatus();
             console.log(
-                `🔗 Service status:`,
+                '🔗 Service status:',
                 Object.keys(status)
                     .map((s) => `${s}: ${status[s].connected ? '✅' : '❌'}`)
                     .join(', ')
@@ -72,5 +72,8 @@ export async function startTUIDashboard(options: TUIDashboardOptions): Promise<v
     });
 
     // プロセスを実行続行
-    await new Promise(() => {}); // 永続実行
+    // 永続実行のため無限に待機
+    await new Promise(() => {
+        // 無限に待機するための空の実装
+    });
 }

@@ -23,7 +23,58 @@ import {
     // LAYOUTS
 } from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
+
+// Widget interface definition
+interface BlessedWidget {
+    setData(data: unknown): void;
+    setPercent?(percent: number): void;
+    log?(message: string): void;
+    focus?(): void;
+    destroy?(): void;
+}
+
+// GitHub Dashboard data interfaces
+interface GitHubRepository {
+    name: string;
+    stargazers_count: number;
+    forks_count: number;
+    language?: string;
+    updated_at: string;
+}
+
+interface GitHubPullRequest {
+    title: string;
+    user?: { login: string };
+    created_at: string;
+    state: string;
+}
+
+interface GitHubIssue {
+    title: string;
+    user?: { login: string };
+    created_at: string;
+    state: string;
+}
+
+interface GitHubAction {
+    name?: string;
+    workflow_name?: string;
+    status: string;
+    created_at: string;
+    actor?: { login: string };
+}
+
+interface GitHubContributor {
+    login: string;
+    contributions: number;
+}
+
+interface GitHubActivity {
+    commits: number;
+    pullRequests: number;
+    issues: number;
+}
 
 export interface GitHubDashboardConfig {
     orchestrator: DashboardOrchestrator;
@@ -34,16 +85,16 @@ export interface GitHubDashboardConfig {
 
 export class GitHubDashboard {
     private screen: blessed.Widgets.Screen;
-    private grid: any;
+    private grid: contrib.grid;
     private widgets: {
-        repositories?: any;
-        pullRequests?: any;
-        issues?: any;
-        actions?: any;
-        activity?: any;
-        contributors?: any;
-        logs?: any;
-        statusBar?: any;
+        repositories?: BlessedWidget;
+        pullRequests?: BlessedWidget;
+        issues?: BlessedWidget;
+        actions?: BlessedWidget;
+        activity?: BlessedWidget;
+        contributors?: BlessedWidget;
+        logs?: BlessedWidget;
+        statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
     private theme: (typeof THEMES)[keyof typeof THEMES] = THEMES.dark;
@@ -53,7 +104,7 @@ export class GitHubDashboard {
         private orchestrator: DashboardOrchestrator,
         private config: GitHubDashboardConfig
     ) {
-        // Initialize screen
+        // 画面を初期化
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'GitHub Dashboard',
@@ -61,11 +112,11 @@ export class GitHubDashboard {
             dockBorders: true,
         });
 
-        // Set theme and organization
+        // テーマを設定 and organization
         this.theme = config.theme === 'light' ? THEMES.light : THEMES.dark;
         this.organization = config.organization;
 
-        // Create grid
+        // グリッドを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -78,7 +129,7 @@ export class GitHubDashboard {
     }
 
     private setupWidgets(): void {
-        // Repositories table (top left)
+        // リポジトリのテーブル（左上）
         this.widgets.repositories = createTableWidget(this.grid, {
             position: [0, 0, 4, 6],
             title: '📚 Repositories',
@@ -92,7 +143,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Pull requests table (top right)
+        // プルリクエストのテーブル（右上）
         this.widgets.pullRequests = createTableWidget(this.grid, {
             position: [0, 6, 4, 6],
             title: '🔀 Pull Requests',
@@ -106,7 +157,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Activity chart (middle left)
+        // アクティビティチャート（中央左）
         this.widgets.activity = createLineChartWidget(this.grid, {
             position: [4, 0, 4, 6],
             title: '📈 Activity Metrics',
@@ -116,7 +167,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // GitHub Actions status (middle right upper)
+        // GitHub Actions ステータス（中央右上）
         this.widgets.actions = createTableWidget(this.grid, {
             position: [4, 6, 2, 6],
             title: '⚙️ GitHub Actions',
@@ -130,7 +181,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Contributors donut (middle right lower)
+        // コントリビュータードーナツチャート（中央右下）
         this.widgets.contributors = createDonutWidget(this.grid, {
             position: [6, 6, 2, 6],
             title: '👥 Top Contributors',
@@ -140,7 +191,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Issues table (bottom left)
+        // 課題テーブル（左下）
         this.widgets.issues = createTableWidget(this.grid, {
             position: [8, 0, 3, 6],
             title: '🐛 Open Issues',
@@ -154,7 +205,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Logs (bottom right)
+        // ログ（右下）
         this.widgets.logs = createLogWidget(this.grid, {
             position: [8, 6, 3, 6],
             title: '📝 Activity Feed',
@@ -163,7 +214,7 @@ export class GitHubDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = blessed.box({
             parent: this.screen,
             bottom: 0,
@@ -177,71 +228,71 @@ export class GitHubDashboard {
             },
             border: {
                 type: 'line',
-                fg: this.theme.border as any,
+                fg: this.theme.border as string,
             },
         });
     }
 
     private setupKeyBindings(): void {
-        // Quit
+        // 終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Refresh
+        // 更新
         this.screen.key(['r', 'R'], () => {
             addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
             this.refresh();
         });
 
-        // Navigate widgets
+        // ウィジェットを操作
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help
+        // ヘルプ
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
 
-        // Create issue
+        // 課題を作成
         this.screen.key(['i', 'I'], () => {
             this.showCreateIssue();
         });
 
-        // Create PR
+        // プルリクエストを作成
         this.screen.key(['p', 'P'], () => {
             this.showCreatePR();
         });
 
-        // View notifications
+        // 通知を表示
         this.screen.key(['n', 'N'], () => {
             this.showNotifications();
         });
 
-        // Switch organization
+        // 組織を切り替え
         this.screen.key(['o', 'O'], () => {
             this.showOrgSelector();
         });
     }
 
     private setupEventListeners(): void {
-        // Listen for dashboard updates
+        // ダッシュボード更新を監視
         this.orchestrator.on('service:dashboardUpdate', (serviceName, data) => {
             if (serviceName === 'github') {
                 this.updateDashboard(data);
             }
         });
 
-        // Listen for log entries
+        // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'github') {
                 addLogEntry(this.widgets.logs, entry.message, true);
             }
         });
 
-        // Listen for errors
+        // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'github') {
                 addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
@@ -250,7 +301,7 @@ export class GitHubDashboard {
     }
 
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダー
         this.screen.render();
         addLogEntry(
             this.widgets.logs,
@@ -258,10 +309,10 @@ export class GitHubDashboard {
             true
         );
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         if (this.config.refreshInterval) {
             this.refreshTimer = setInterval(() => {
                 this.refresh();
@@ -293,9 +344,9 @@ export class GitHubDashboard {
     }
 
     private updateDashboard(data: ServiceDashboardData): void {
-        // Update repositories table
+        // リポジトリのテーブルを更新
         if (this.widgets.repositories && data.repositories) {
-            const repos = data.repositories as any[];
+            const repos = data.repositories as GitHubRepository[];
             const repoData = repos
                 .slice(0, 10)
                 .map((r) => [
@@ -311,9 +362,9 @@ export class GitHubDashboard {
             );
         }
 
-        // Update pull requests table
+        // プルリクエストのテーブルを更新
         if (this.widgets.pullRequests && data.pullRequests) {
-            const prs = data.pullRequests as any[];
+            const prs = data.pullRequests as GitHubPullRequest[];
             const prData = prs
                 .slice(0, 10)
                 .map((pr) => [
@@ -329,9 +380,9 @@ export class GitHubDashboard {
             );
         }
 
-        // Update activity chart
+        // アクティビティチャートを更新
         if (this.widgets.activity && data.activity) {
-            const activity = data.activity as any;
+            const activity = data.activity as GitHubActivity;
             const last7Days = [...Array(7)]
                 .map((_, i) => {
                     const date = new Date();
@@ -362,9 +413,9 @@ export class GitHubDashboard {
             ]);
         }
 
-        // Update GitHub Actions table
+        // GitHub Actions のテーブルを更新
         if (this.widgets.actions && data.actions) {
-            const actions = data.actions as any[];
+            const actions = data.actions as GitHubAction[];
             const actionData = actions
                 .slice(0, 5)
                 .map((a) => [
@@ -375,9 +426,9 @@ export class GitHubDashboard {
             updateTableData(this.widgets.actions, ['Workflow', 'Status', 'Duration'], actionData);
         }
 
-        // Update contributors donut
+        // コントリビュータードーナツチャートを更新
         if (this.widgets.contributors && data.contributors) {
-            const contributors = data.contributors as any[];
+            const contributors = data.contributors as GitHubContributor[];
             const total = contributors.reduce((sum, c) => sum + (c.contributions || 0), 0) || 1;
             const topContributors = contributors.slice(0, 5);
 
@@ -393,7 +444,7 @@ export class GitHubDashboard {
 
         // Update issues table
         if (this.widgets.issues && data.issues) {
-            const issues = data.issues as any[];
+            const issues = data.issues as GitHubIssue[];
             const issueData = issues
                 .slice(0, 10)
                 .map((i) => [
@@ -657,19 +708,27 @@ export class GitHubDashboard {
     }
 
     private formatDuration(seconds?: number): string {
-        if (!seconds) return 'N/A';
+        if (!seconds) {
+            return 'N/A';
+        }
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}m ${secs}s`;
     }
 
     private formatAge(dateStr?: string): string {
-        if (!dateStr) return 'Unknown';
+        if (!dateStr) {
+            return 'Unknown';
+        }
         const date = new Date(dateStr);
         const now = new Date();
         const days = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-        if (days === 0) return 'Today';
-        if (days === 1) return '1 day';
+        if (days === 0) {
+            return 'Today';
+        }
+        if (days === 1) {
+            return '1 day';
+        }
         return `${days} days`;
     }
 }

@@ -21,7 +21,48 @@ import {
     // LAYOUTS
 } from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
+
+// Widget interface definition
+interface BlessedWidget {
+    setData(data: unknown): void;
+    setPercent?(percent: number): void;
+    log?(message: string): void;
+    focus?(): void;
+    destroy?(): void;
+}
+
+// Cloudflare Dashboard data interfaces
+interface CloudflareWorker {
+    name: string;
+    deployed?: boolean;
+    route?: string;
+}
+
+interface CloudflareAnalytics {
+    requests: number[];
+    bandwidth: number[];
+}
+
+interface CloudflarePerformance {
+    avgResponseTime: number;
+}
+
+interface CloudflareErrors {
+    errors4xx: number;
+    errors5xx: number;
+    timeouts: number;
+}
+
+interface CloudflareKVNamespace {
+    title: string;
+    id: string;
+}
+
+interface CloudflareR2Bucket {
+    name: string;
+    creation_date: string;
+}
 
 export interface CloudflareDashboardConfig {
     orchestrator: DashboardOrchestrator;
@@ -31,16 +72,16 @@ export interface CloudflareDashboardConfig {
 
 export class CloudflareDashboard {
     private screen: blessed.Widgets.Screen;
-    private grid: any;
+    private grid: contrib.grid;
     private widgets: {
-        workers?: any;
-        requests?: any;
-        performance?: any;
-        kvNamespaces?: any;
-        r2Buckets?: any;
-        errors?: any;
-        logs?: any;
-        statusBar?: any;
+        workers?: BlessedWidget;
+        requests?: BlessedWidget;
+        performance?: BlessedWidget;
+        kvNamespaces?: BlessedWidget;
+        r2Buckets?: BlessedWidget;
+        errors?: BlessedWidget;
+        logs?: BlessedWidget;
+        statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
     private theme: (typeof THEMES)[keyof typeof THEMES] = THEMES.dark;
@@ -49,7 +90,7 @@ export class CloudflareDashboard {
         private orchestrator: DashboardOrchestrator,
         private config: CloudflareDashboardConfig
     ) {
-        // Initialize screen
+        // 画面を初期化
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'Cloudflare Dashboard',
@@ -57,10 +98,10 @@ export class CloudflareDashboard {
             dockBorders: true,
         });
 
-        // Set theme
+        // テーマを設定
         this.theme = config.theme === 'light' ? THEMES.light : THEMES.dark;
 
-        // Create grid
+        // グリッドを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -73,7 +114,7 @@ export class CloudflareDashboard {
     }
 
     private setupWidgets(): void {
-        // Workers table (top left)
+        // ワーカーのテーブル（左上）
         this.widgets.workers = createTableWidget(this.grid, {
             position: [0, 0, 4, 6],
             title: '⚙️ Workers',
@@ -87,7 +128,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Requests chart (top right)
+        // リクエストチャート（右上）
         this.widgets.requests = createLineChartWidget(this.grid, {
             position: [0, 6, 4, 6],
             title: '📊 Request Analytics',
@@ -97,7 +138,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Performance gauges (middle left)
+        // パフォーマンスゲージ（中央左）
         this.widgets.performance = createGaugeWidget(this.grid, {
             position: [4, 0, 4, 4],
             title: '⚡ Performance',
@@ -107,7 +148,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Error rate bar chart (middle center)
+        // エラーレートの棒グラフ（中央）
         this.widgets.errors = createBarChartWidget(this.grid, {
             position: [4, 4, 4, 4],
             title: '❌ Error Rates',
@@ -116,7 +157,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // KV Namespaces table (middle right)
+        // KV ネームスペースのテーブル（中央右）
         this.widgets.kvNamespaces = createTableWidget(this.grid, {
             position: [4, 8, 4, 4],
             title: '🗄️ KV Namespaces',
@@ -130,7 +171,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // R2 Buckets table (bottom left)
+        // R2 バケットのテーブル（左下）
         this.widgets.r2Buckets = createTableWidget(this.grid, {
             position: [8, 0, 3, 6],
             title: '🪣 R2 Buckets',
@@ -144,7 +185,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Logs (bottom right)
+        // ログ（右下）
         this.widgets.logs = createLogWidget(this.grid, {
             position: [8, 6, 3, 6],
             title: '📝 Activity Logs',
@@ -153,7 +194,7 @@ export class CloudflareDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = blessed.box({
             parent: this.screen,
             bottom: 0,
@@ -167,61 +208,61 @@ export class CloudflareDashboard {
             },
             border: {
                 type: 'line',
-                fg: this.theme.border as any,
+                fg: this.theme.border as string,
             },
         });
     }
 
     private setupKeyBindings(): void {
-        // Quit
+        // 終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Refresh
+        // 更新
         this.screen.key(['r', 'R'], () => {
             addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
             this.refresh();
         });
 
-        // Navigate widgets
+        // ウィジェットを操作
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help
+        // ヘルプ
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
 
-        // Deploy
+        // デプロイ
         this.screen.key(['d', 'D'], () => {
             this.showDeployDialog();
         });
 
-        // Tail logs
+        // ログを追跡
         this.screen.key(['l', 'L'], () => {
             this.showLogsDialog();
         });
     }
 
     private setupEventListeners(): void {
-        // Listen for dashboard updates
+        // ダッシュボード更新を監視
         this.orchestrator.on('service:dashboardUpdate', (serviceName, data) => {
             if (serviceName === 'cloudflare') {
                 this.updateDashboard(data);
             }
         });
 
-        // Listen for log entries
+        // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'cloudflare') {
                 addLogEntry(this.widgets.logs, entry.message, true);
             }
         });
 
-        // Listen for errors
+        // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'cloudflare') {
                 addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
@@ -230,14 +271,14 @@ export class CloudflareDashboard {
     }
 
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダー
         this.screen.render();
         addLogEntry(this.widgets.logs, '🚀 Starting Cloudflare Dashboard...', true);
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         if (this.config.refreshInterval) {
             this.refreshTimer = setInterval(() => {
                 this.refresh();
@@ -271,7 +312,7 @@ export class CloudflareDashboard {
     private updateDashboard(data: ServiceDashboardData): void {
         // Update workers table
         if (this.widgets.workers && data.workers) {
-            const workers = data.workers as any[];
+            const workers = data.workers as CloudflareWorker[];
             const workerData = workers
                 .slice(0, 10)
                 .map((w) => [
@@ -287,14 +328,14 @@ export class CloudflareDashboard {
             );
         }
 
-        // Update request analytics chart
+        // リクエスト分析チャートを更新
         if (this.widgets.requests && data.analytics) {
-            const analytics = data.analytics as any;
+            const analytics = data.analytics as CloudflareAnalytics;
             const last24Hours = [...Array(24)]
                 .map((_, i) => {
                     const hour = new Date();
                     hour.setHours(hour.getHours() - i);
-                    return hour.getHours().toString() + ':00';
+                    return `${hour.getHours().toString()}:00`;
                 })
                 .reverse();
 
@@ -314,18 +355,18 @@ export class CloudflareDashboard {
             ]);
         }
 
-        // Update performance gauge
+        // パフォーマンスゲージを更新
         if (this.widgets.performance && data.performance) {
-            const perf = data.performance as any;
+            const perf = data.performance as CloudflarePerformance;
             const avgResponseTime = perf.avgResponseTime || 0;
             // Convert to percentage (assuming 1000ms = 100%)
             const percent = Math.min(100, (avgResponseTime / 1000) * 100);
             updateGaugeData(this.widgets.performance, 100 - percent); // Invert for better UX
         }
 
-        // Update error rates
+        // エラーレートを更新
         if (this.widgets.errors && data.errors) {
-            const errors = data.errors as any;
+            const errors = data.errors as CloudflareErrors;
             const errorData = {
                 barCategory: ['4xx', '5xx', 'Timeout'],
                 stackedCategory: ['Errors'],
@@ -334,18 +375,18 @@ export class CloudflareDashboard {
             this.widgets.errors.setData(errorData);
         }
 
-        // Update KV namespaces table
+        // KV ネームスペースのテーブルを更新
         if (this.widgets.kvNamespaces && data.kvNamespaces) {
-            const namespaces = data.kvNamespaces as any[];
+            const namespaces = data.kvNamespaces as CloudflareKVNamespace[];
             const kvData = namespaces
                 .slice(0, 10)
                 .map((kv) => [kv.name || 'Unknown', kv.keys?.toString() || '0']);
             updateTableData(this.widgets.kvNamespaces, ['Name', 'Keys'], kvData);
         }
 
-        // Update R2 buckets table
+        // R2 バケットのテーブルを更新
         if (this.widgets.r2Buckets && data.r2Buckets) {
-            const buckets = data.r2Buckets as any[];
+            const buckets = data.r2Buckets as CloudflareR2Bucket[];
             const bucketData = buckets
                 .slice(0, 10)
                 .map((b) => [
@@ -512,10 +553,12 @@ export class CloudflareDashboard {
     }
 
     private formatBytes(bytes: number): string {
-        if (bytes === 0) return '0 B';
+        if (bytes === 0) {
+            return '0 B';
+        }
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
     }
 }

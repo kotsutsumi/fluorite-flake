@@ -22,7 +22,7 @@ import {
     // LAYOUTS
 } from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
 export interface SupabaseDashboardConfig {
     orchestrator: DashboardOrchestrator;
@@ -32,16 +32,24 @@ export interface SupabaseDashboardConfig {
 
 export class SupabaseDashboard {
     private screen: blessed.Widgets.Screen;
+    // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib grid uses any types
     private grid: any;
     private widgets: {
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         database?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         auth?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         storage?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         functions?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         realtime?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         queries?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         logs?: any;
-        statusBar?: any;
+        statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
     private theme: (typeof THEMES)[keyof typeof THEMES] = THEMES.dark;
@@ -50,7 +58,7 @@ export class SupabaseDashboard {
         private orchestrator: DashboardOrchestrator,
         private config: SupabaseDashboardConfig
     ) {
-        // Initialize screen
+        // 画面を初期化
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'Supabase Dashboard',
@@ -58,10 +66,10 @@ export class SupabaseDashboard {
             dockBorders: true,
         });
 
-        // Set theme
+        // テーマを設定
         this.theme = config.theme === 'light' ? THEMES.light : THEMES.dark;
 
-        // Create grid
+        // グリッドを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -74,7 +82,7 @@ export class SupabaseDashboard {
     }
 
     private setupWidgets(): void {
-        // Database metrics (top left)
+        // データベース指標（左上）
         this.widgets.database = createGaugeWidget(this.grid, {
             position: [0, 0, 4, 4],
             title: '🗄️ Database Usage',
@@ -84,7 +92,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Auth users table (top center)
+        // 認証ユーザーのテーブル（中央上）
         this.widgets.auth = createTableWidget(this.grid, {
             position: [0, 4, 4, 4],
             title: '👤 Auth Users',
@@ -98,7 +106,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Storage buckets (top right)
+        // ストレージバケットのテーブル（右上）
         this.widgets.storage = createTableWidget(this.grid, {
             position: [0, 8, 4, 4],
             title: '📦 Storage Buckets',
@@ -112,7 +120,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Query analytics (middle left)
+        // クエリ分析（中央左）
         this.widgets.queries = createLineChartWidget(this.grid, {
             position: [4, 0, 4, 6],
             title: '📊 Query Analytics',
@@ -122,7 +130,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Functions status (middle right)
+        // 関数ステータス（中央右）
         this.widgets.functions = createTableWidget(this.grid, {
             position: [4, 6, 4, 6],
             title: '⚡ Edge Functions',
@@ -136,7 +144,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Realtime connections (bottom left)
+        // リアルタイム接続（左下）
         this.widgets.realtime = createDonutWidget(this.grid, {
             position: [8, 0, 3, 6],
             title: '🔄 Realtime Connections',
@@ -146,7 +154,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Logs (bottom right)
+        // ログ（右下）
         this.widgets.logs = createLogWidget(this.grid, {
             position: [8, 6, 3, 6],
             title: '📝 Activity Logs',
@@ -155,7 +163,7 @@ export class SupabaseDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = blessed.box({
             parent: this.screen,
             bottom: 0,
@@ -169,66 +177,66 @@ export class SupabaseDashboard {
             },
             border: {
                 type: 'line',
-                fg: this.theme.border as any,
+                fg: this.theme.border,
             },
         });
     }
 
     private setupKeyBindings(): void {
-        // Quit
+        // 終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Refresh
+        // 更新
         this.screen.key(['r', 'R'], () => {
             addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
             this.refresh();
         });
 
-        // Navigate widgets
+        // ウィジェットを操作
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help
+        // ヘルプ
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
 
-        // SQL Editor
+        // SQL エディター
         this.screen.key(['s', 'S'], () => {
             this.showSQLEditor();
         });
 
-        // User management
+        // ユーザー管理
         this.screen.key(['u', 'U'], () => {
             this.showUserManagement();
         });
 
-        // Function logs
+        // 関数ログ
         this.screen.key(['f', 'F'], () => {
             this.showFunctionLogs();
         });
     }
 
     private setupEventListeners(): void {
-        // Listen for dashboard updates
+        // ダッシュボード更新を監視
         this.orchestrator.on('service:dashboardUpdate', (serviceName, data) => {
             if (serviceName === 'supabase') {
                 this.updateDashboard(data);
             }
         });
 
-        // Listen for log entries
+        // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'supabase') {
                 addLogEntry(this.widgets.logs, entry.message, true);
             }
         });
 
-        // Listen for errors
+        // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'supabase') {
                 addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
@@ -237,14 +245,14 @@ export class SupabaseDashboard {
     }
 
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダー
         this.screen.render();
         addLogEntry(this.widgets.logs, '🚀 Starting Supabase Dashboard...', true);
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         if (this.config.refreshInterval) {
             this.refreshTimer = setInterval(() => {
                 this.refresh();
@@ -276,15 +284,17 @@ export class SupabaseDashboard {
     }
 
     private updateDashboard(data: ServiceDashboardData): void {
-        // Update database gauge
+        // データベースゲージを更新
         if (this.widgets.database && data.database) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const db = data.database as any;
             const usagePercent = db.usagePercent || 0;
             updateGaugeData(this.widgets.database, usagePercent);
         }
 
-        // Update auth users table
+        // 認証ユーザーのテーブルを更新
         if (this.widgets.auth && data.authUsers) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const users = data.authUsers as any[];
             const userData = users
                 .slice(0, 10)
@@ -296,8 +306,9 @@ export class SupabaseDashboard {
             updateTableData(this.widgets.auth, ['Email', 'Provider', 'Last Login'], userData);
         }
 
-        // Update storage buckets table
+        // ストレージバケットのテーブルを更新
         if (this.widgets.storage && data.storageBuckets) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const buckets = data.storageBuckets as any[];
             const bucketData = buckets
                 .slice(0, 10)
@@ -309,14 +320,15 @@ export class SupabaseDashboard {
             updateTableData(this.widgets.storage, ['Bucket', 'Files', 'Size'], bucketData);
         }
 
-        // Update query analytics chart
+        // クエリ分析チャートを更新
         if (this.widgets.queries && data.queryMetrics) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const metrics = data.queryMetrics as any;
             const last24Hours = [...Array(24)]
                 .map((_, i) => {
                     const hour = new Date();
                     hour.setHours(hour.getHours() - i);
-                    return hour.getHours().toString() + ':00';
+                    return `${hour.getHours().toString()}:00`;
                 })
                 .reverse();
 
@@ -336,8 +348,9 @@ export class SupabaseDashboard {
             ]);
         }
 
-        // Update functions table
+        // 関数テーブルを更新
         if (this.widgets.functions && data.functions) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const functions = data.functions as any[];
             const functionData = functions
                 .slice(0, 10)
@@ -354,8 +367,9 @@ export class SupabaseDashboard {
             );
         }
 
-        // Update realtime connections donut
+        // リアルタイム接続のドーナツチャートを更新
         if (this.widgets.realtime && data.realtime) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const rt = data.realtime as any;
             const total = rt.total || 1;
             const active = rt.active || 0;
@@ -573,10 +587,12 @@ export class SupabaseDashboard {
     }
 
     private formatBytes(bytes: number): string {
-        if (bytes === 0) return '0 B';
+        if (bytes === 0) {
+            return '0 B';
+        }
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
     }
 }

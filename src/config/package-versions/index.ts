@@ -8,4 +8,4 @@ export { PACKAGE_VERSIONS } from './package-versions.js'; // 統合パッケー�
 export { PACKAGE_CATEGORIES } from './categories.js'; // パッケージカテゴリ定義
 
 // ヘルパー関数のエクスポート
-export { getPackageVersion, getPackageVersions } from './helpers.js'; // バージョン取得ユーティリティ
+export { getPackageVersion, getPackageVersions } from './helpers/index.js'; // バージョン取得ユーティリティ

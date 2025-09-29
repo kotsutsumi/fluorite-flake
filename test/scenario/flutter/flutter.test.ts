@@ -182,7 +182,7 @@ describe('Flutter プロジェクト生成のシナリオ検証', () => {
                 packageManager: 'pnpm',
             });
 
-            // Flutter should convert to snake_case
+            // Flutter では snake_case に変換されるべき
             const pubspecContent = await readProjectFile(projectPath, 'pubspec.yaml');
             expect(pubspecContent).toContain('name: my_awesome_app');
         });
@@ -242,7 +242,7 @@ describe('Flutter プロジェクト生成のシナリオ検証', () => {
                 };
                 // Flutter は pub を使用し、JavaScript のパッケージマネージャー設定は無視される
                 if (config.framework === 'flutter') {
-                    // Package manager is ignored for Flutter
+                    // Flutter ではパッケージマネージャーを無視
                     return 'pub';
                 }
                 return config.packageManager;

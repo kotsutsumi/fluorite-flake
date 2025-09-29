@@ -51,9 +51,20 @@ export default defineConfig({
                     testTimeout: 300000, // 5 minutes for scenario tests
                     hookTimeout: 300000,
                     maxConcurrency: 1, // Run scenario tests sequentially
+                    pool: 'threads', // Use single threaded execution
+                    poolOptions: {
+                        threads: {
+                            maxThreads: 1, // Force single thread
+                            minThreads: 1,
+                        },
+                    },
                     globalSetup: './test/helpers/global-setup.ts',
                     globals: true,
                     environment: 'node',
+                    sequence: {
+                        concurrent: false, // Disable concurrent execution
+                        shuffle: false, // Run tests in order
+                    },
                 },
             },
         ],

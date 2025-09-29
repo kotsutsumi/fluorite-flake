@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ProjectConfig } from '../../../src/commands/create/types.js';
-import { setupStorage } from '../../../src/generators/storage-generator.js';
+import { setupStorage } from '../../../src/generators/storage-generator/index.js';
 
 type ConfigOverrides = Partial<ProjectConfig>;
 

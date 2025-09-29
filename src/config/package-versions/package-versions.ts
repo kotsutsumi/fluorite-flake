@@ -23,7 +23,7 @@ import {
     TYPESCRIPT_AND_TYPES_VERSIONS, // TypeScriptと型定義パッケージ
     UI_COMPONENT_VERSIONS, // UIコンポーネントパッケージ
     UI_LIBRARY_VERSIONS, // UIライブラリパッケージ
-} from './version-groups.js';
+} from './version-groups/index.js';
 
 /**
  * 統合パッケージバージョンマップ

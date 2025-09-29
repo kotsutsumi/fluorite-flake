@@ -10,7 +10,7 @@ import {
     isDatabaseError,
     isErrorWithMessage,
     toErrorWithMessage,
-} from '../../../src/utils/error-types.js';
+} from '../../../src/utils/error-types/index.js';
 
 // エラー判定・変換ユーティリティを個別に検証するテストスイート
 describe('error-types utilities', () => {

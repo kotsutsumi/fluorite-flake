@@ -21,7 +21,7 @@ import {
     // LAYOUTS
 } from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
 export interface TursoDashboardConfig {
     orchestrator: DashboardOrchestrator;
@@ -31,16 +31,24 @@ export interface TursoDashboardConfig {
 
 export class TursoDashboard {
     private screen: blessed.Widgets.Screen;
+    // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib grid uses any types
     private grid: any;
     private widgets: {
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         databases?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         replicas?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         queries?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         connections?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         performance?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         storage?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         logs?: any;
-        statusBar?: any;
+        statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
     private theme: (typeof THEMES)[keyof typeof THEMES] = THEMES.dark;
@@ -49,7 +57,7 @@ export class TursoDashboard {
         private orchestrator: DashboardOrchestrator,
         private config: TursoDashboardConfig
     ) {
-        // Initialize screen
+        // 画面を初期化
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'Turso Dashboard',
@@ -57,10 +65,10 @@ export class TursoDashboard {
             dockBorders: true,
         });
 
-        // Set theme
+        // テーマを設定
         this.theme = config.theme === 'light' ? THEMES.light : THEMES.dark;
 
-        // Create grid
+        // グリッドを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -131,7 +139,7 @@ export class TursoDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Performance metrics (bottom left)
+        // パフォーマンス指標（左下）
         this.widgets.performance = createBarChartWidget(this.grid, {
             position: [8, 0, 3, 6],
             title: '⚡ Performance Metrics',
@@ -140,7 +148,7 @@ export class TursoDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Logs (bottom right)
+        // ログ（右下）
         this.widgets.logs = createLogWidget(this.grid, {
             position: [8, 6, 3, 6],
             title: '📝 Activity Logs',
@@ -149,7 +157,7 @@ export class TursoDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = blessed.box({
             parent: this.screen,
             bottom: 0,
@@ -163,35 +171,35 @@ export class TursoDashboard {
             },
             border: {
                 type: 'line',
-                fg: this.theme.border as any,
+                fg: this.theme.border,
             },
         });
     }
 
     private setupKeyBindings(): void {
-        // Quit
+        // 終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Refresh
+        // 更新
         this.screen.key(['r', 'R'], () => {
             addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
             this.refresh();
         });
 
-        // Navigate widgets
+        // ウィジェットを操作
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help
+        // ヘルプ
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
 
-        // Database shell
+        // データベースシェル
         this.screen.key(['s', 'S'], () => {
             this.showDatabaseShell();
         });
@@ -201,28 +209,28 @@ export class TursoDashboard {
             this.showCreateDatabase();
         });
 
-        // Replica management
+        // レプリカ管理
         this.screen.key(['p', 'P'], () => {
             this.showReplicaManagement();
         });
     }
 
     private setupEventListeners(): void {
-        // Listen for dashboard updates
+        // ダッシュボード更新を監視
         this.orchestrator.on('service:dashboardUpdate', (serviceName, data) => {
             if (serviceName === 'turso') {
                 this.updateDashboard(data);
             }
         });
 
-        // Listen for log entries
+        // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'turso') {
                 addLogEntry(this.widgets.logs, entry.message, true);
             }
         });
 
-        // Listen for errors
+        // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'turso') {
                 addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
@@ -231,14 +239,14 @@ export class TursoDashboard {
     }
 
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダー
         this.screen.render();
         addLogEntry(this.widgets.logs, '🚀 Starting Turso Dashboard...', true);
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         if (this.config.refreshInterval) {
             this.refreshTimer = setInterval(() => {
                 this.refresh();
@@ -270,8 +278,9 @@ export class TursoDashboard {
     }
 
     private updateDashboard(data: ServiceDashboardData): void {
-        // Update databases table
+        // データベースのテーブルを更新
         if (this.widgets.databases && data.databases) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const databases = data.databases as any[];
             const dbData = databases
                 .slice(0, 10)
@@ -284,8 +293,9 @@ export class TursoDashboard {
             updateTableData(this.widgets.databases, ['Name', 'Region', 'Size', 'Status'], dbData);
         }
 
-        // Update replicas table
+        // レプリカのテーブルを更新
         if (this.widgets.replicas && data.replicas) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const replicas = data.replicas as any[];
             const replicaData = replicas
                 .slice(0, 10)
@@ -302,14 +312,15 @@ export class TursoDashboard {
             );
         }
 
-        // Update query performance chart
+        // クエリ性能チャートを更新
         if (this.widgets.queries && data.queryMetrics) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const metrics = data.queryMetrics as any;
             const last24Hours = [...Array(24)]
                 .map((_, i) => {
                     const hour = new Date();
                     hour.setHours(hour.getHours() - i);
-                    return hour.getHours().toString() + ':00';
+                    return `${hour.getHours().toString()}:00`;
                 })
                 .reverse();
 
@@ -329,22 +340,25 @@ export class TursoDashboard {
             ]);
         }
 
-        // Update connections gauge
+        // 接続ゲージを更新
         if (this.widgets.connections && data.connections) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const conn = data.connections as any;
             const activePercent = Math.min(100, (conn.active / conn.max) * 100);
             updateGaugeData(this.widgets.connections, activePercent);
         }
 
-        // Update storage gauge
+        // ストレージゲージを更新
         if (this.widgets.storage && data.storage) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const storage = data.storage as any;
             const usedPercent = Math.min(100, (storage.used / storage.total) * 100);
             updateGaugeData(this.widgets.storage, usedPercent);
         }
 
-        // Update performance metrics
+        // パフォーマンス指標を更新
         if (this.widgets.performance && data.performance) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const perf = data.performance as any;
             const perfData = {
                 barCategory: ['Read', 'Write', 'Connect'],
@@ -545,10 +559,12 @@ export class TursoDashboard {
     }
 
     private formatBytes(bytes: number): string {
-        if (bytes === 0) return '0 B';
+        if (bytes === 0) {
+            return '0 B';
+        }
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
     }
 }

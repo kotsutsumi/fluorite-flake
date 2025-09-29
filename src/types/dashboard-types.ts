@@ -36,10 +36,10 @@ export type {
     BaseServiceAdapter,
     ServiceFactory,
     ServiceInfo,
-} from '../services/base-service-adapter.js';
+} from '../services/base-service-adapter/index.js';
 
 // Import ServiceMetrics separately to avoid circular dependency
-import type { ServiceMetrics } from '../services/base-service-adapter.js';
+import type { ServiceMetrics } from '../services/base-service-adapter/index.js';
 
 // ダッシュボードオーケストレーター型の再エクスポート
 export type {
@@ -56,7 +56,7 @@ export type {
     DefaultServiceFactory,
     ServiceRegistry as ServiceRegistryClass,
     SupportedService,
-} from '../services/service-factory.js';
+} from '../services/service-factory/index.js';
 
 // ServiceMetricsとServiceStatusは上記で既に再エクスポート済み
 

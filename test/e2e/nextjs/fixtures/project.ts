@@ -221,7 +221,7 @@ async function ensureDatabaseReady(
 
         let hasDatabaseFile = false;
         for (const candidate of prismaDbCandidates) {
-            // eslint-disable-next-line no-await-in-loop -- serial existence check is negligible here
+            // eslint-disable-next-line no-await-in-loop -- ここでは逐次チェックのコストが小さい
             const exists = await fs
                 .stat(candidate)
                 .then(() => true)
@@ -350,7 +350,8 @@ export const test = base.extend<{
                     } catch (error) {
                         const ignorable = error as { code?: number };
                         if (ignorable?.code && ignorable.code !== 0 && ignorable.code !== 1) {
-                            throw error;
+                            // Log the error instead of throwing in finally block
+                            console.error('Dev server shutdown error:', error);
                         }
                     }
                 }

@@ -36,7 +36,7 @@ export {
     type ServiceEvent,
     type ServiceFactory,
     type ServiceInfo,
-} from './base-service-adapter.js';
+} from './base-service-adapter/index.js';
 
 // サービスファクトリーのエクスポート
 export {
@@ -45,10 +45,10 @@ export {
     serviceFactory,
     SERVICE_INFO,
     type SupportedService,
-} from './service-factory.js';
+} from './service-factory/index.js';
 
 // サービスアダプターのエクスポート
-export { VercelAdapter } from './adapters/vercel-adapter.js';
+export { VercelAdapter } from './adapters/vercel-adapter/index.js';
 
 // ダッシュボードオーケストレーターのエクスポート
 export {

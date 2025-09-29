@@ -110,19 +110,19 @@ async function deleteTurso(record: CloudProvisioningRecord) {
     }
 
     try {
-        // Check if turso CLI is available
+        // turso CLIが利用可能かどうかをチェック
         await run('turso', ['--version'], process.env);
     } catch {
         console.warn('\n⚠️  Skipping Turso cleanup because Turso CLI is not installed.');
         return;
     }
 
-    // Check if logged in - turso auth status exits with non-zero when not logged in
+    // ログイン状態をチェック - turso auth statusは未ログイン時に非ゼロで終了する
     try {
         await run('turso', ['auth', 'status'], process.env);
-        // If we got here, we're logged in (command succeeded)
+        // ここに到達した場合、ログイン済み（コマンド成功）
     } catch {
-        // Command failed, which means not logged in
+        // コマンド失敗、つまり未ログイン
         console.warn('\n⚠️  Skipping Turso cleanup because you are not logged in to Turso.');
         console.log('   Run "turso auth login" to log in.');
         return;
@@ -145,14 +145,14 @@ async function deleteVercelProject(record: CloudProvisioningRecord) {
     }
 
     try {
-        // Check if vercel CLI is available
+        // vercel CLIが利用可能かどうかをチェック
         await run('vercel', ['--version'], process.env);
     } catch {
         console.warn('\n⚠️  Skipping Vercel project removal because Vercel CLI is not installed.');
         return;
     }
 
-    // Check if logged in
+    // ログイン状態をチェック
     try {
         const whoami = await run('vercel', ['whoami'], process.env);
         if (!whoami || whoami.includes('Error')) {
@@ -185,15 +185,15 @@ async function deleteVercelBlob(record: CloudProvisioningRecord) {
     }
 
     try {
-        // Check if vercel CLI is available
+        // vercel CLIが利用可能かどうかをチェック
         await run('vercel', ['--version'], process.env);
     } catch {
-        // CLI not available, already warned in project deletion
+        // CLIが利用できない、プロジェクト削除で既に警告済み
         return;
     }
 
     try {
-        // Use vercel blob store remove to delete the store
+        // vercel blob store removeを使用してストアを削除
         const args = ['blob', 'store', 'remove', store.storeName];
         if (record.vercel?.teamId) {
             args.push('--scope', record.vercel.teamId);
@@ -213,7 +213,7 @@ async function deleteCloudflareR2(record: CloudProvisioningRecord) {
     }
 
     try {
-        // Check if wrangler CLI is available
+        // wrangler CLIが利用可能かどうかをチェック
         await run('wrangler', ['--version'], process.env);
     } catch {
         console.warn('\n⚠️  Skipping Cloudflare R2 cleanup because Wrangler CLI is not installed.');
@@ -221,7 +221,7 @@ async function deleteCloudflareR2(record: CloudProvisioningRecord) {
         return;
     }
 
-    // Check if logged in
+    // ログイン状態をチェック
     try {
         await run('wrangler', ['whoami'], process.env);
     } catch {
@@ -291,7 +291,7 @@ async function deleteAwsS3(record: CloudProvisioningRecord) {
     }
 
     try {
-        // Check if AWS CLI is available
+        // AWS CLIが利用可能かどうかをチェック
         await run('aws', ['--version'], process.env);
     } catch {
         console.warn('\n⚠️  Skipping AWS S3 cleanup because AWS CLI is not installed.');
@@ -299,7 +299,7 @@ async function deleteAwsS3(record: CloudProvisioningRecord) {
         return;
     }
 
-    // Check if configured
+    // 設定が済んでいるかどうかをチェック
     try {
         await run('aws', ['sts', 'get-caller-identity'], process.env);
     } catch {
@@ -309,18 +309,18 @@ async function deleteAwsS3(record: CloudProvisioningRecord) {
     }
 
     try {
-        // Force delete the bucket and all its contents
+        // バケットとその内容を強制削除
         await run('aws', ['s3', 'rb', `s3://${s3.bucketName}`, '--force'], process.env);
         console.log(`🗑️  Removed AWS S3 bucket ${s3.bucketName}`);
 
-        // Try to delete the IAM user and policy if they exist
+        // IAMユーザーとポリシーが存在する場合、削除を試みる
         if (record.projectName) {
             const slug = record.projectName.toLowerCase().replace(/\s+/g, '-');
             const iamUserName = `${slug}-s3-user`;
             const policyName = `${slug}-s3-policy`;
 
             try {
-                // Delete access keys first
+                // 最初にアクセスキーを削除
                 const keysOutput = await run(
                     'aws',
                     ['iam', 'list-access-keys', '--user-name', iamUserName, '--output', 'json'],
@@ -342,7 +342,7 @@ async function deleteAwsS3(record: CloudProvisioningRecord) {
                     );
                 }
 
-                // Delete user policy
+                // ユーザーポリシーを削除
                 await run(
                     'aws',
                     [
@@ -356,11 +356,11 @@ async function deleteAwsS3(record: CloudProvisioningRecord) {
                     process.env
                 );
 
-                // Delete the user
+                // ユーザーを削除
                 await run('aws', ['iam', 'delete-user', '--user-name', iamUserName], process.env);
                 console.log(`🗑️  Removed IAM user ${iamUserName}`);
             } catch {
-                // IAM user might not exist or already deleted
+                // IAMユーザーが存在しないか既に削除済み
             }
         }
     } catch (error) {

@@ -9,7 +9,7 @@ import {
     CORE_FRAMEWORK_VERSIONS,
     DATABASE_AND_ORM_VERSIONS,
     DEV_TOOL_VERSIONS,
-} from '../../../src/config/package-versions/version-groups.js';
+} from '../../../src/config/package-versions/version-groups/index.js';
 
 describe('version groups', () => {
     // Next.js などの主要フレームワークが所定のバージョンで定義されていることを確認する

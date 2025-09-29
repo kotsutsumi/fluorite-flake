@@ -151,7 +151,7 @@ export class TUIDashboard {
             columnWidth: [20, 15, 15],
         });
 
-        // KV Namespaces table (middle left)
+        // KV ネームスペースのテーブル（中央左）
         this.widgets.kvTable = this.grid.set(4, 0, 4, 6, contrib.table, {
             keys: true,
             fg: 'white',
@@ -166,7 +166,7 @@ export class TUIDashboard {
             columnWidth: [15, 25, 10],
         });
 
-        // Analytics line chart (middle right)
+        // 分析ラインチャート（中央右）
         this.widgets.analyticsLine = this.grid.set(4, 6, 4, 6, contrib.line, {
             style: {
                 line: 'yellow',
@@ -181,7 +181,7 @@ export class TUIDashboard {
             border: { type: 'line', fg: 'cyan' },
         });
 
-        // Resource gauge (bottom left)
+        // リソースゲージ（左下）
         this.widgets.resourceGauge = this.grid.set(8, 0, 3, 3, contrib.gauge, {
             label: '🔋 Resource Usage',
             stroke: 'green',
@@ -189,7 +189,7 @@ export class TUIDashboard {
             border: { type: 'line', fg: 'cyan' },
         });
 
-        // Log box (bottom middle and right)
+        // ログボックス（下部中央と右）
         this.widgets.logBox = this.grid.set(8, 3, 3, 9, blessed.log, {
             fg: 'green',
             selectedFg: 'green',
@@ -202,7 +202,7 @@ export class TUIDashboard {
             vi: true,
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = this.grid.set(11, 0, 1, 12, blessed.box, {
             content: ' Press q to quit | r to refresh | ↑↓ to navigate | Enter to select ',
             border: { type: 'line', fg: 'cyan' },
@@ -386,7 +386,7 @@ export class TUIDashboard {
             this.widgets.workersTable.setData(workersData);
         }
 
-        // Update R2 buckets table
+        // R2 バケットのテーブルを更新
         if (this.widgets.r2Table) {
             const r2Data = {
                 headers: ['Name', 'Location', 'Created'],
@@ -399,7 +399,7 @@ export class TUIDashboard {
             this.widgets.r2Table.setData(r2Data);
         }
 
-        // Update KV namespaces table
+        // KV ネームスペースのテーブルを更新
         if (this.widgets.kvTable) {
             const kvData = {
                 headers: ['ID', 'Title', 'Encoding'],
@@ -412,7 +412,7 @@ export class TUIDashboard {
             this.widgets.kvTable.setData(kvData);
         }
 
-        // Update analytics if available
+        // 利用可能な場合は分析情報を更新
         if (data.analytics && this.widgets.analyticsLine) {
             const series = {
                 title: 'Requests',
@@ -422,7 +422,7 @@ export class TUIDashboard {
             this.widgets.analyticsLine.setData([series]);
         }
 
-        // Update resource gauge (mock data for now)
+        // リソースゲージを更新（現在はモックデータ）
         if (this.widgets.resourceGauge) {
             const usage = Math.round(Math.random() * 100);
             this.widgets.resourceGauge.setPercent(usage);

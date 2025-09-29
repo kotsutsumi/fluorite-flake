@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../../src/commands/create/types.js';
 import { createProject } from '../../src/commands/create/index.js';
 import { createTempDir } from './temp-dir.js';
+import { withProjectLock } from './project-lock.js';
 
 /**
  * `create` コマンドを使ってプロジェクトを生成し、設定と生成先パスを返す。
@@ -15,37 +16,39 @@ import { createTempDir } from './temp-dir.js';
 export async function generateProject(
     config: Partial<ProjectConfig>
 ): Promise<{ projectPath: string; config: ProjectConfig }> {
-    // プロジェクト用の一時ディレクトリを作成する
-    const tempDir = await createTempDir('ff-gen-');
-    const projectName = config.projectName || 'test-project';
-    const projectPath = path.join(tempDir, projectName);
+    return await withProjectLock(async () => {
+        // プロジェクト用の一時ディレクトリを作成する
+        const tempDir = await createTempDir('ff-gen-');
+        const projectName = config.projectName || 'test-project';
+        const projectPath = path.join(tempDir, projectName);
 
-    const fullConfig: ProjectConfig = {
-        projectName,
-        projectPath,
-        framework: 'nextjs',
-        database: 'none',
-        deployment: false,
-        storage: 'none',
-        auth: false,
-        packageManager: 'pnpm',
-        mode: 'full',
-        ...config,
-    } as ProjectConfig;
+        const fullConfig: ProjectConfig = {
+            projectName,
+            projectPath,
+            framework: 'nextjs',
+            database: 'none',
+            deployment: false,
+            storage: 'none',
+            auth: false,
+            packageManager: 'pnpm',
+            mode: 'full',
+            ...config,
+        } as ProjectConfig;
 
-    // テスト用の環境変数を差し替える
-    const originalEnv = { ...process.env };
-    process.env.FLUORITE_TEST_MODE = 'true';
-    process.env.FLUORITE_CLOUD_MODE = 'mock';
-    process.env.FLUORITE_AUTO_PROVISION = 'false';
+        // テスト用の環境変数を差し替える
+        const originalEnv = { ...process.env };
+        process.env.FLUORITE_TEST_MODE = 'true';
+        process.env.FLUORITE_CLOUD_MODE = 'mock';
+        process.env.FLUORITE_AUTO_PROVISION = 'false';
 
-    try {
-        await createProject(fullConfig);
-        return { projectPath, config: fullConfig };
-    } finally {
-        // 実行前の環境変数へ復元する
-        Object.assign(process.env, originalEnv);
-    }
+        try {
+            await createProject(fullConfig);
+            return { projectPath, config: fullConfig };
+        } finally {
+            // 実行前の環境変数へ復元する
+            Object.assign(process.env, originalEnv);
+        }
+    });
 }
 
 /**

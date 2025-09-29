@@ -4,15 +4,15 @@ import { execa } from 'execa';
 import fs from 'fs-extra';
 import ora from 'ora';
 
-import { setupAuth } from '../../generators/auth-generator.js';
-import { setupDatabase } from '../../generators/database-generator.js';
-import { setupDeployment } from '../../generators/deployment-generator.js';
+import { setupAuth } from '../../generators/auth-generator/index.js';
+import { setupDatabase } from '../../generators/database-generator/index.js';
+import { setupDeployment } from '../../generators/deployment-generator/index.js';
 import {
     generateMonorepoProject,
     type MonorepoConfig,
-} from '../../generators/monorepo-generator.js';
-import { setupStorage } from '../../generators/storage-generator.js';
-import { setupStorybook } from '../../generators/storybook-generator.js';
+} from '../../generators/monorepo-generator/index.js';
+import { setupStorage } from '../../generators/storage-generator/index.js';
+import { setupStorybook } from '../../generators/storybook-generator/index.js';
 import { isProvisioningEligible, provisionCloudResources } from '../../utils/cloud/index.js';
 import { generateFrameworkProject } from './generate-framework-project.js';
 import { getAuthText } from './get-auth-text.js';

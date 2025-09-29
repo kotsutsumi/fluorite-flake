@@ -10,7 +10,7 @@ import { PACKAGE_VERSIONS } from '../../../src/config/package-versions/package-v
 import {
     CORE_FRAMEWORK_VERSIONS,
     STORAGE_VERSIONS,
-} from '../../../src/config/package-versions/version-groups.js';
+} from '../../../src/config/package-versions/version-groups/index.js';
 
 describe('PACKAGE_VERSIONS aggregation', () => {
     // version-groups で宣言されたキーがすべて統合結果に含まれているかをチェックする

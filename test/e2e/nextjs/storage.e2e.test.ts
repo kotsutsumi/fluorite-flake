@@ -1,5 +1,4 @@
 import path from 'node:path';
-import path from 'node:path';
 import fs from 'node:fs/promises';
 import { test, expect } from './fixtures/project.js';
 import { createUniqueSuffix, login, logout, SAMPLE_AVATAR_PNG } from './utils.js';

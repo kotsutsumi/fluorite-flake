@@ -17,7 +17,7 @@
         "test": "vitest run --project unit --project functional",
         "test:unit": "vitest run --project unit",
         "test:functional": "vitest run --project functional",
-        "test:scenario": "vitest run --project scenario",
+        "test:scenario": "vitest run --project scenario --max-concurrency=1",
         "test:all": "vitest run",
         "test:watch": "vitest watch",
         "test:coverage": "vitest run --coverage",

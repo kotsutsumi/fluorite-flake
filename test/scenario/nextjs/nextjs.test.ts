@@ -47,7 +47,7 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
                 '.env.prod',
                 'src/app/layout.tsx',
                 'src/app/page.tsx',
-                'src/styles/globals.css',
+                'src/app/globals.css',
             ]);
 
             expect(valid).toBe(true);
@@ -389,29 +389,29 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
             });
 
             const { valid, missingFiles } = await verifyProjectStructure(projectPath, [
-                // Core files
+                // コアファイル
                 'package.json',
                 'tsconfig.json',
                 'next.config.mjs',
-                // Environment files
+                // 環境設定ファイル
                 '.env',
                 '.env.local',
                 '.env.development',
                 '.env.staging',
                 '.env.production',
                 '.env.prod',
-                // Database files
+                // データベース関連ファイル
                 'prisma/schema.prisma',
                 'src/lib/db.ts',
                 'scripts/setup-turso.sh',
-                // Storage files
+                // ストレージ関連ファイル
                 'src/lib/storage.ts',
                 'src/lib/storage-local.ts',
                 'src/app/api/upload/route.ts',
-                // Auth files
+                // 認証関連ファイル
                 'src/lib/auth.ts',
                 'src/app/api/auth/[...all]/route.ts',
-                // Deployment files
+                // デプロイ関連ファイル
                 'scripts/deploy-to-vercel.sh',
                 'scripts/env-tools.ts',
             ]);
@@ -441,17 +441,13 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
         runE2ETest(
             'Playwright E2E フローが成功すること',
             async () => {
-                const subprocess = execa(
-                    'pnpm',
-                    ['test:e2e', '--', 'test/e2e/nextjs.e2e.test.ts'],
-                    {
-                        env: {
-                            ...process.env,
-                            HUSKY: '0',
-                            NEXT_TELEMETRY_DISABLED: '1',
-                        },
-                    }
-                );
+                const subprocess = execa('pnpm', ['test:e2e', '--', 'test/e2e/nextjs'], {
+                    env: {
+                        ...process.env,
+                        HUSKY: '0',
+                        NEXT_TELEMETRY_DISABLED: '1',
+                    },
+                });
 
                 subprocess.stdout?.on('data', (chunk) => process.stdout.write(chunk));
                 subprocess.stderr?.on('data', (chunk) => process.stderr.write(chunk));

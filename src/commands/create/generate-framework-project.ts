@@ -1,7 +1,7 @@
-import { generateExpoProject } from '../../generators/expo-generator.js';
-import { generateFlutterProject } from '../../generators/flutter-generator.js';
-import { generateNextProject } from '../../generators/next-generator.js';
-import { generateTauriProject } from '../../generators/tauri-generator.js';
+import { generateExpoProject } from '../../generators/expo-generator/index.js';
+import { generateFlutterProject } from '../../generators/flutter-generator/index.js';
+import { generateNextProject } from '../../generators/next-generator/index.js';
+import { generateTauriProject } from '../../generators/tauri-generator/index.js';
 import type { ProjectConfig } from './types.js';
 
 export async function generateFrameworkProject(config: ProjectConfig) {

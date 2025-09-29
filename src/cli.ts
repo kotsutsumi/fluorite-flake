@@ -223,7 +223,7 @@ const dashboardCommand = program
     .option('--env <environment>', 'Environment filter')
     .action(async (service, options) => {
         const { showServiceStatus, launchServiceDashboard } = await import(
-            './commands/multi-dashboard.js'
+            './commands/multi-dashboard/index.js'
         );
 
         // サービス指定がない場合はマルチサービスダッシュボードを表示
@@ -269,7 +269,7 @@ dashboardCommand
     .option('--sync', 'サービス間でのデータ同期を有効化')
     .option('--aggregate', 'メトリクス集約を有効化')
     .action(async (services, options) => {
-        const { launchMultiServiceDashboard } = await import('./commands/multi-dashboard.js');
+        const { launchMultiServiceDashboard } = await import('./commands/multi-dashboard/index.js');
 
         // --jsonフラグをモードオーバーライドとして処理
         if (options.json) {
@@ -308,7 +308,7 @@ dashboardCommand
     .option('--sync', 'サービス間でのデータ同期を有効化')
     .option('--aggregate', 'メトリクス集約を有効化')
     .action(async (options) => {
-        const { launchMultiServiceDashboard } = await import('./commands/multi-dashboard.js');
+        const { launchMultiServiceDashboard } = await import('./commands/multi-dashboard/index.js');
 
         // --jsonフラグをモードオーバーライドとして処理
         if (options.json) {
@@ -343,7 +343,7 @@ dashboardCommand
     .option('--token <token>', '認証トークン')
     .option('--services <services>', '初期化するサービスのカンマ区切りリスト')
     .action(async (options) => {
-        const { launchSidecarMode } = await import('./commands/multi-dashboard.js');
+        const { launchSidecarMode } = await import('./commands/multi-dashboard/index.js');
 
         const services = options.services
             ? options.services.split(',').map((s: string) => s.trim())
@@ -367,7 +367,7 @@ program
     .option('--env <environment>', 'ターゲット環境')
     .option('--no-dry-run', 'ドライランをスキップして即座にデプロイ')
     .action(async (name, options) => {
-        const { deployWorker } = await import('./commands/dashboard.js');
+        const { deployWorker } = await import('./commands/dashboard/index.js');
         await deployWorker(name, {
             env: options.env,
             dryRun: options.dryRun,
@@ -382,7 +382,7 @@ program
     .command('r2 <action> [bucket-name]')
     .description('R2バケットの管理（アクション: list, create, delete）')
     .action(async (action, bucketName) => {
-        const { manageR2Bucket } = await import('./commands/dashboard.js');
+        const { manageR2Bucket } = await import('./commands/dashboard/index.js');
         if (!['list', 'create', 'delete'].includes(action)) {
             console.error(getInvalidR2ActionMessage());
             process.exit(1);
@@ -402,7 +402,7 @@ program
     .option('--method <method>', 'HTTPメソッドでフィルタリング')
     .option('--search <term>', '特定の用語でログを検索')
     .action(async (workerName, options) => {
-        const { tailWorkerLogs } = await import('./commands/dashboard.js');
+        const { tailWorkerLogs } = await import('./commands/dashboard/index.js');
         await tailWorkerLogs(workerName, {
             format: options.format as 'json' | 'pretty',
             status: options.status as 'ok' | 'error' | undefined,
@@ -424,7 +424,7 @@ program
     .option('-v, --verbose', '詳細出力')
     .option('-t, --token <token>', 'Authentication token')
     .action(async (options) => {
-        const { startIPC } = await import('./commands/ipc.js');
+        const { startIPC } = await import('./commands/ipc/index.js');
         await startIPC({
             port: options.port ? Number.parseInt(options.port) : undefined,
             socketPath: options.socket,
@@ -446,7 +446,7 @@ program
     .option('-h, --host <host>', '接続先ホスト', '127.0.0.1')
     .option('-t, --token <token>', 'Authentication token')
     .action(async (options) => {
-        const { testIPC } = await import('./commands/ipc.js');
+        const { testIPC } = await import('./commands/ipc/index.js');
         await testIPC({
             port: options.port ? Number.parseInt(options.port) : undefined,
             socketPath: options.socket,
@@ -478,7 +478,7 @@ program
         console.log(chalk.gray('   このコマンドは将来のバージョンで削除されます\n'));
 
         // 新しいダッシュボードコマンドにリダイレクト
-        const { launchServiceDashboard } = await import('./commands/multi-dashboard.js');
+        const { launchServiceDashboard } = await import('./commands/multi-dashboard/index.js');
         await launchServiceDashboard('cloudflare', {
             mode: 'tui',
             host: options.host,

@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ProjectConfig } from '../../../src/commands/create/types.js';
-import { setupAuth } from '../../../src/generators/auth-generator.js';
+import { setupAuth } from '../../../src/generators/auth-generator/index.js';
 
 type ConfigOverrides = Partial<ProjectConfig>;
 

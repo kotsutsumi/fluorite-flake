@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
     getPackageVersion,
     getPackageVersions,
-} from '../../../src/config/package-versions/helpers.js';
+} from '../../../src/config/package-versions/helpers/index.js';
 
 describe('パッケージバージョン取得ヘルパー', () => {
     it('既知パッケージでは固定バージョンを返すこと', () => {

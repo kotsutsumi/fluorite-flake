@@ -15,7 +15,7 @@ export {
     getSupportedStorage, // サポート対象ストレージ取得
     supportsFeature, // 機能サポートチェック
     validateConfiguration, // 設定組み合わせ検証
-} from './helpers.js';
+} from './helpers/index.js';
 
 // 型定義のエクスポート
 export type {

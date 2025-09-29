@@ -13,7 +13,7 @@ import { TauriSidecar, SidecarState, createTauriSidecar } from '../../../src/tau
 vi.mock('node:child_process', () => ({
     spawn: vi.fn(() => {
         const mockProcess = new EventEmitter();
-        // biome-ignore lint/suspicious/noExplicitAny: Mock process needs any type
+        // biome-ignore lint/suspicious/noExplicitAny: モック処理には any 型が必要
         (mockProcess as any).kill = vi.fn();
         return mockProcess;
     }),

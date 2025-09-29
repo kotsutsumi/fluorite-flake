@@ -22,7 +22,7 @@ import {
     // LAYOUTS
 } from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
 export interface VercelDashboardConfig {
     orchestrator: DashboardOrchestrator;
@@ -32,15 +32,22 @@ export interface VercelDashboardConfig {
 
 export class VercelDashboard {
     private screen: blessed.Widgets.Screen;
+    // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib grid uses any types
     private grid: any;
     private widgets: {
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         deployments?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         projects?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         domains?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         analytics?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         buildStatus?: any;
+        // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widgets use any types
         logs?: any;
-        statusBar?: any;
+        statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
     private theme: (typeof THEMES)[keyof typeof THEMES] = THEMES.dark;
@@ -49,7 +56,7 @@ export class VercelDashboard {
         private orchestrator: DashboardOrchestrator,
         private config: VercelDashboardConfig
     ) {
-        // Initialize screen
+        // 画面を初期化
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'Vercel Dashboard',
@@ -57,10 +64,10 @@ export class VercelDashboard {
             dockBorders: true,
         });
 
-        // Set theme
+        // テーマを設定
         this.theme = config.theme === 'light' ? THEMES.light : THEMES.dark;
 
-        // Create grid
+        // グリッドを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -73,7 +80,7 @@ export class VercelDashboard {
     }
 
     private setupWidgets(): void {
-        // Deployments table (top left)
+        // デプロイments table (top left)
         this.widgets.deployments = createTableWidget(this.grid, {
             position: [0, 0, 4, 6],
             title: '🚀 Deployments',
@@ -87,7 +94,7 @@ export class VercelDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Projects table (top right)
+        // プロジェクトのテーブル（右上）
         this.widgets.projects = createTableWidget(this.grid, {
             position: [0, 6, 4, 6],
             title: '📦 Projects',
@@ -101,7 +108,7 @@ export class VercelDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Analytics chart (middle left)
+        // 分析チャート（中央左）
         this.widgets.analytics = createLineChartWidget(this.grid, {
             position: [4, 0, 4, 6],
             title: '📊 Deployment Analytics',
@@ -111,7 +118,7 @@ export class VercelDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Build status donut (middle right)
+        // ビルド状況ドーナツチャート（中央右）
         this.widgets.buildStatus = createDonutWidget(this.grid, {
             position: [4, 6, 4, 6],
             title: '🎯 Build Status',
@@ -121,7 +128,7 @@ export class VercelDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Domains table (bottom left)
+        // ドメインのテーブル（左下）
         this.widgets.domains = createTableWidget(this.grid, {
             position: [8, 0, 3, 6],
             title: '🌐 Domains',
@@ -135,7 +142,7 @@ export class VercelDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Logs (bottom right)
+        // ログ（右下）
         this.widgets.logs = createLogWidget(this.grid, {
             position: [8, 6, 3, 6],
             title: '📝 Activity Logs',
@@ -144,7 +151,7 @@ export class VercelDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = blessed.box({
             parent: this.screen,
             bottom: 0,
@@ -158,56 +165,56 @@ export class VercelDashboard {
             },
             border: {
                 type: 'line',
-                fg: this.theme.border as any,
+                fg: this.theme.border,
             },
         });
     }
 
     private setupKeyBindings(): void {
-        // Quit
+        // 終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Refresh
+        // 更新
         this.screen.key(['r', 'R'], () => {
             addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
             this.refresh();
         });
 
-        // Navigate widgets
+        // ウィジェットを操作
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help
+        // ヘルプ
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
 
-        // Deploy
+        // デプロイ
         this.screen.key(['d', 'D'], () => {
             this.showDeployDialog();
         });
     }
 
     private setupEventListeners(): void {
-        // Listen for dashboard updates
+        // ダッシュボード更新を監視
         this.orchestrator.on('service:dashboardUpdate', (serviceName, data) => {
             if (serviceName === 'vercel') {
                 this.updateDashboard(data);
             }
         });
 
-        // Listen for log entries
+        // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'vercel') {
                 addLogEntry(this.widgets.logs, entry.message, true);
             }
         });
 
-        // Listen for errors
+        // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'vercel') {
                 addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
@@ -216,14 +223,14 @@ export class VercelDashboard {
     }
 
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダー
         this.screen.render();
         addLogEntry(this.widgets.logs, '🚀 Starting Vercel Dashboard...', true);
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         if (this.config.refreshInterval) {
             this.refreshTimer = setInterval(() => {
                 this.refresh();
@@ -255,8 +262,9 @@ export class VercelDashboard {
     }
 
     private updateDashboard(data: ServiceDashboardData): void {
-        // Update deployments table
+        // デプロイメントのテーブルを更新
         if (this.widgets.deployments && data.deployments) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const deployments = data.deployments as any[];
             const deploymentData = deployments
                 .slice(0, 10)
@@ -273,8 +281,9 @@ export class VercelDashboard {
             );
         }
 
-        // Update projects table
+        // プロジェクトのテーブルを更新
         if (this.widgets.projects && data.projects) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const projects = data.projects as any[];
             const projectData = projects
                 .slice(0, 10)
@@ -286,8 +295,9 @@ export class VercelDashboard {
             updateTableData(this.widgets.projects, ['Name', 'Framework', 'Updated'], projectData);
         }
 
-        // Update domains table
+        // ドメインのテーブルを更新
         if (this.widgets.domains && data.domains) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const domains = data.domains as any[];
             const domainData = domains.slice(0, 10).map((d) => [
                 d.name || 'Unknown',
@@ -297,7 +307,7 @@ export class VercelDashboard {
             updateTableData(this.widgets.domains, ['Domain', 'Status', 'SSL'], domainData);
         }
 
-        // Update analytics chart (mock data for now)
+        // 分析チャートを更新（現在はモックデータ）
         if (this.widgets.analytics && data.deployments) {
             // const _deployments = data.deployments as any[];
             const last7Days = [...Array(7)]
@@ -320,6 +330,7 @@ export class VercelDashboard {
 
         // Update build status donut
         if (this.widgets.buildStatus && data.deployments) {
+            // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const deployments = data.deployments as any[];
             const ready = deployments.filter((d) => d.state === 'READY').length;
             const failed = deployments.filter((d) => d.state === 'ERROR').length;

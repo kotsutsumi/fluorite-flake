@@ -13,7 +13,7 @@ import {
     createDevelopmentBootstrapScript,
     createInitScript,
     setupDatabase,
-} from '../../../src/generators/database-generator.js';
+} from '../../../src/generators/database-generator/index.js';
 import {
     createTempProject,
     cleanupAllTempDirs,

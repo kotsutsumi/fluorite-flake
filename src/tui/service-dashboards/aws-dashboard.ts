@@ -19,7 +19,63 @@ import {
     THEMES,
 } from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
+
+// Widget interface definition
+interface BlessedWidget {
+    setData(data: unknown): void;
+    setPercent?(percent: number): void;
+    log?(message: string): void;
+    focus?(): void;
+    destroy?(): void;
+}
+
+// AWS Dashboard data interfaces
+interface EC2Instance {
+    name?: string;
+    instanceId: string;
+    instanceType: string;
+    state: string;
+    publicIp?: string;
+}
+
+interface LambdaFunction {
+    functionName: string;
+    runtime: string;
+    memorySize: number;
+    timeout: number;
+    invocations?: number;
+}
+
+interface S3Bucket {
+    name: string;
+    createdAt: string;
+    objectCount?: number;
+    size?: number;
+}
+
+interface RDSDatabase {
+    dbInstanceIdentifier: string;
+    engine: string;
+    engineVersion: string;
+    status: string;
+    allocatedStorage: number;
+}
+
+interface CloudwatchMetrics {
+    cpuUsage: number[];
+    networkIn: number[];
+    networkOut: number[];
+}
+
+interface CostBreakdown {
+    total: number;
+    ec2: number;
+    s3: number;
+    rds: number;
+    lambda: number;
+    other: number;
+}
 
 export interface AWSDashboardConfig {
     orchestrator: DashboardOrchestrator;
@@ -30,16 +86,16 @@ export interface AWSDashboardConfig {
 
 export class AWSDashboard {
     private screen: blessed.Widgets.Screen;
-    private grid: any;
+    private grid: contrib.grid;
     private widgets: {
-        ec2?: any;
-        lambda?: any;
-        s3?: any;
-        rds?: any;
-        cloudwatch?: any;
-        costs?: any;
-        logs?: any;
-        statusBar?: any;
+        ec2?: BlessedWidget;
+        lambda?: BlessedWidget;
+        s3?: BlessedWidget;
+        rds?: BlessedWidget;
+        cloudwatch?: BlessedWidget;
+        costs?: BlessedWidget;
+        logs?: BlessedWidget;
+        statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
     private theme: (typeof THEMES)[keyof typeof THEMES] = THEMES.dark;
@@ -49,7 +105,7 @@ export class AWSDashboard {
         private orchestrator: DashboardOrchestrator,
         private config: AWSDashboardConfig
     ) {
-        // Initialize screen
+        // 画面を初期化
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'AWS Dashboard',
@@ -57,11 +113,11 @@ export class AWSDashboard {
             dockBorders: true,
         });
 
-        // Set theme and region
+        // テーマを設定 and region
         this.theme = config.theme === 'light' ? THEMES.light : THEMES.dark;
         this.region = config.region || 'us-east-1';
 
-        // Create grid
+        // グリッドを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -150,7 +206,7 @@ export class AWSDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Logs (bottom right)
+        // ログ（右下）
         this.widgets.logs = createLogWidget(this.grid, {
             position: [8, 8, 3, 4],
             title: '📝 CloudTrail',
@@ -159,7 +215,7 @@ export class AWSDashboard {
             border: { fg: this.theme.border },
         });
 
-        // Status bar (bottom)
+        // ステータスバー（下部）
         this.widgets.statusBar = blessed.box({
             parent: this.screen,
             bottom: 0,
@@ -173,40 +229,40 @@ export class AWSDashboard {
             },
             border: {
                 type: 'line',
-                fg: this.theme.border as any,
+                fg: this.theme.border as string,
             },
         });
     }
 
     private setupKeyBindings(): void {
-        // Quit
+        // 終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Refresh
+        // 更新
         this.screen.key(['r', 'R'], () => {
             addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
             this.refresh();
         });
 
-        // Navigate widgets
+        // ウィジェットを操作
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help
+        // ヘルプ
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
 
-        // EC2 console
+        // EC2 コンソール
         this.screen.key(['e', 'E'], () => {
             this.showEC2Console();
         });
 
-        // Lambda console
+        // Lambda コンソール
         this.screen.key(['l', 'L'], () => {
             this.showLambdaConsole();
         });
@@ -216,28 +272,28 @@ export class AWSDashboard {
             this.showCloudFormation();
         });
 
-        // Switch region
+        // リージョンを切り替え
         this.screen.key(['g', 'G'], () => {
             this.showRegionSelector();
         });
     }
 
     private setupEventListeners(): void {
-        // Listen for dashboard updates
+        // ダッシュボード更新を監視
         this.orchestrator.on('service:dashboardUpdate', (serviceName, data) => {
             if (serviceName === 'aws') {
                 this.updateDashboard(data);
             }
         });
 
-        // Listen for log entries
+        // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'aws') {
                 addLogEntry(this.widgets.logs, entry.message, true);
             }
         });
 
-        // Listen for errors
+        // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'aws') {
                 addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
@@ -246,14 +302,14 @@ export class AWSDashboard {
     }
 
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダー
         this.screen.render();
         addLogEntry(this.widgets.logs, `🚀 Starting AWS Dashboard (${this.region})...`, true);
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         if (this.config.refreshInterval) {
             this.refreshTimer = setInterval(() => {
                 this.refresh();
@@ -285,9 +341,9 @@ export class AWSDashboard {
     }
 
     private updateDashboard(data: ServiceDashboardData): void {
-        // Update EC2 instances table
+        // EC2 インスタンスのテーブルを更新
         if (this.widgets.ec2 && data.ec2Instances) {
-            const instances = data.ec2Instances as any[];
+            const instances = data.ec2Instances as EC2Instance[];
             const ec2Data = instances
                 .slice(0, 10)
                 .map((i) => [
@@ -299,9 +355,9 @@ export class AWSDashboard {
             updateTableData(this.widgets.ec2, ['Name', 'Type', 'State', 'IP'], ec2Data);
         }
 
-        // Update Lambda functions table
+        // Lambda 関数のテーブルを更新
         if (this.widgets.lambda && data.lambdaFunctions) {
-            const functions = data.lambdaFunctions as any[];
+            const functions = data.lambdaFunctions as LambdaFunction[];
             const lambdaData = functions
                 .slice(0, 10)
                 .map((f) => [
@@ -317,14 +373,14 @@ export class AWSDashboard {
             );
         }
 
-        // Update CloudWatch metrics chart
+        // CloudWatch 指標チャートを更新
         if (this.widgets.cloudwatch && data.cloudwatchMetrics) {
-            const metrics = data.cloudwatchMetrics as any;
+            const metrics = data.cloudwatchMetrics as CloudwatchMetrics;
             const last24Hours = [...Array(24)]
                 .map((_, i) => {
                     const hour = new Date();
                     hour.setHours(hour.getHours() - i);
-                    return hour.getHours().toString() + ':00';
+                    return `${hour.getHours().toString()}:00`;
                 })
                 .reverse();
 
@@ -344,9 +400,9 @@ export class AWSDashboard {
             ]);
         }
 
-        // Update cost breakdown donut
+        // コスト内訳ドーナツチャートを更新
         if (this.widgets.costs && data.costs) {
-            const costs = data.costs as any;
+            const costs = data.costs as CostBreakdown;
             const total = costs.total || 1;
 
             updateDonutData(this.widgets.costs, [
@@ -378,9 +434,9 @@ export class AWSDashboard {
             ]);
         }
 
-        // Update S3 buckets table
+        // S3 バケットのテーブルを更新
         if (this.widgets.s3 && data.s3Buckets) {
-            const buckets = data.s3Buckets as any[];
+            const buckets = data.s3Buckets as S3Bucket[];
             const s3Data = buckets
                 .slice(0, 10)
                 .map((b) => [
@@ -391,9 +447,9 @@ export class AWSDashboard {
             updateTableData(this.widgets.s3, ['Bucket', 'Objects', 'Size'], s3Data);
         }
 
-        // Update RDS databases table
+        // RDS データベースのテーブルを更新
         if (this.widgets.rds && data.rdsDatabases) {
-            const databases = data.rdsDatabases as any[];
+            const databases = data.rdsDatabases as RDSDatabase[];
             const rdsData = databases
                 .slice(0, 10)
                 .map((db) => [
@@ -635,10 +691,12 @@ export class AWSDashboard {
     }
 
     private formatBytes(bytes: number): string {
-        if (bytes === 0) return '0 B';
+        if (bytes === 0) {
+            return '0 B';
+        }
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
     }
 }

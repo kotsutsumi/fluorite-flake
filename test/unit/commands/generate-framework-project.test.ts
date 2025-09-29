@@ -16,16 +16,16 @@ const spies = vi.hoisted(() => ({
     flutter: vi.fn(),
 }));
 
-vi.mock('../../../src/generators/next-generator.js', () => ({
+vi.mock('../../../src/generators/next-generator/index.js', () => ({
     generateNextProject: spies.next,
 }));
-vi.mock('../../../src/generators/expo-generator.js', () => ({
+vi.mock('../../../src/generators/expo-generator/index.js', () => ({
     generateExpoProject: spies.expo,
 }));
-vi.mock('../../../src/generators/tauri-generator.js', () => ({
+vi.mock('../../../src/generators/tauri-generator/index.js', () => ({
     generateTauriProject: spies.tauri,
 }));
-vi.mock('../../../src/generators/flutter-generator.js', () => ({
+vi.mock('../../../src/generators/flutter-generator/index.js', () => ({
     generateFlutterProject: spies.flutter,
 }));
 
@@ -76,7 +76,7 @@ describe('generateFrameworkProject の委譲先判定', () => {
         await expect(
             generateFrameworkProject({
                 ...baseConfig,
-                // @ts-expect-error intentional invalid framework for test
+                // @ts-expect-error テスト用の意図的な無効フレームワーク
                 framework: 'sveltekit',
             })
         ).rejects.toThrowError('Unsupported framework: sveltekit');

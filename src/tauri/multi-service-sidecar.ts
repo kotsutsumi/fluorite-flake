@@ -10,8 +10,12 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { EventEmitter } from 'node:events';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardOrchestrator } from '../dashboard/dashboard-orchestrator.js';
-import { DefaultServiceFactory } from '../services/service-factory.js';
-import type { ServiceConfig, AuthConfig } from '../services/base-service-adapter.js';
+import { DefaultServiceFactory } from '../services/service-factory/index.js';
+import type {
+    ServiceConfig,
+    AuthConfig,
+    ServiceAction,
+} from '../services/base-service-adapter/index.js';
 import type { DashboardConfig } from '../dashboard/dashboard-orchestrator.js';
 
 /**
@@ -20,13 +24,13 @@ import type { DashboardConfig } from '../dashboard/dashboard-orchestrator.js';
 interface JsonRpcRequest {
     jsonrpc: '2.0';
     method: string;
-    params?: any;
+    params?: Record<string, unknown>;
     id?: string | number | null;
 }
 
 interface JsonRpcResponse {
     jsonrpc: '2.0';
-    result?: any;
+    result?: Record<string, unknown>;
     error?: JsonRpcError;
     id: string | number | null;
 }
@@ -34,26 +38,26 @@ interface JsonRpcResponse {
 interface JsonRpcError {
     code: number;
     message: string;
-    data?: any;
+    data?: Record<string, unknown>;
 }
 
 /**
  * マルチサービスサイドカー設定
  */
 export interface MultiServiceSidecarConfig {
-    /** WebSocket server port */
+    /** WebSocketサーバーポート */
     port?: number;
-    /** WebSocket server host */
+    /** WebSocketサーバーホスト */
     host?: string;
-    /** Authentication token */
+    /** 認証トークン */
     authToken?: string;
-    /** Enable debug logging */
+    /** デバッグログを有効にする */
     debug?: boolean;
-    /** Dashboard refresh interval (ms) */
+    /** ダッシュボード更新間隔（ミリ秒） */
     refreshInterval?: number;
-    /** Service configurations */
+    /** サービス設定 */
     services?: Record<string, ServiceConfig>;
-    /** Enable MessagePack for binary data */
+    /** バイナリデータ用MessagePackを有効にする */
     enableMessagePack?: boolean;
 }
 
@@ -62,7 +66,7 @@ export interface MultiServiceSidecarConfig {
  */
 interface ServiceMethod {
     service: string;
-    handler: (params: any) => Promise<any>;
+    handler: (params: Record<string, unknown>) => Promise<Record<string, unknown>>;
 }
 
 /**
@@ -112,7 +116,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Register JSON-RPC methods
+     * JSON-RPCメソッドを登録
      */
     private registerMethods(): void {
         // システムメソッド
@@ -128,106 +132,122 @@ export class MultiServiceTauriSidecar extends EventEmitter {
         }));
 
         // サービス管理メソッド
-        this.registerMethod(
-            'service.add',
-            async (params: {
+        this.registerMethod('service.add', async (params: Record<string, unknown>) => {
+            const typedParams = params as {
                 name: string;
                 config?: ServiceConfig;
                 authConfig?: AuthConfig;
-            }) => {
-                await this.orchestrator.addService(params.name, params.config, params.authConfig);
-                return { success: true, service: params.name };
-            }
-        );
+            };
+            await this.orchestrator.addService(
+                typedParams.name,
+                typedParams.config,
+                typedParams.authConfig
+            );
+            return { success: true, service: typedParams.name };
+        });
 
-        this.registerMethod('service.remove', async (params: { name: string }) => {
-            await this.orchestrator.removeService(params.name);
-            return { success: true, service: params.name };
+        this.registerMethod('service.remove', async (params: Record<string, unknown>) => {
+            const typedParams = params as { name: string };
+            await this.orchestrator.removeService(typedParams.name);
+            return { success: true, service: typedParams.name };
         });
 
         this.registerMethod('service.list', async () => {
             return { services: this.orchestrator.getServices() };
         });
 
-        this.registerMethod('service.status', async (params: { name: string }) => {
-            const adapter = this.orchestrator.getService(params.name);
+        this.registerMethod('service.status', async (params: Record<string, unknown>) => {
+            const typedParams = params as { name: string };
+            const adapter = this.orchestrator.getService(typedParams.name);
             if (!adapter) {
-                throw new Error(`Service ${params.name} not found`);
+                throw new Error(`Service ${typedParams.name} not found`);
             }
-            return adapter.getStatus();
+            return adapter.getStatus() as unknown as Promise<Record<string, unknown>>;
         });
 
         // ダッシュボードデータメソッド
-        this.registerMethod('dashboard.getData', async (params?: { service?: string }) => {
-            if (params?.service) {
-                return await this.orchestrator.getServiceDashboardData(params.service);
+        this.registerMethod('dashboard.getData', async (params: Record<string, unknown>) => {
+            const typedParams = params as { service?: string } | undefined;
+            if (typedParams?.service) {
+                return (await this.orchestrator.getServiceDashboardData(
+                    typedParams.service
+                )) as Record<string, unknown>;
             }
-            return await this.orchestrator.getMultiServiceDashboardData();
+            return (await this.orchestrator.getMultiServiceDashboardData()) as unknown as Record<
+                string,
+                unknown
+            >;
         });
 
-        this.registerMethod('dashboard.getMetrics', async (params?: { service?: string }) => {
-            if (params?.service) {
-                const adapter = this.orchestrator.getService(params.service);
+        this.registerMethod('dashboard.getMetrics', async (params: Record<string, unknown>) => {
+            const typedParams = params as { service?: string } | undefined;
+            if (typedParams?.service) {
+                const adapter = this.orchestrator.getService(typedParams.service);
                 if (!adapter) {
-                    throw new Error(`Service ${params.service} not found`);
+                    throw new Error(`Service ${typedParams.service} not found`);
                 }
-                return await adapter.getMetrics();
+                return (await adapter.getMetrics()) as unknown as Record<string, unknown>;
             }
             // すべてのサービスの集約メトリクスを返す
-            const metrics: Record<string, any> = {};
+            const metrics: Record<string, Record<string, unknown>> = {};
             const services = this.orchestrator.getServices();
             for (const name of services) {
                 const adapter = this.orchestrator.getService(name);
                 if (adapter) {
-                    metrics[name] = await adapter.getMetrics();
+                    metrics[name] = (await adapter.getMetrics()) as unknown as Record<
+                        string,
+                        unknown
+                    >;
                 }
             }
             return metrics;
         });
 
         // リソース管理メソッド
-        this.registerMethod(
-            'resource.list',
-            async (params: {
+        this.registerMethod('resource.list', async (params: Record<string, unknown>) => {
+            const typedParams = params as {
                 service: string;
                 type?: string;
-            }) => {
-                const adapter = this.orchestrator.getService(params.service);
-                if (!adapter) {
-                    throw new Error(`Service ${params.service} not found`);
-                }
-                return await adapter.listResources(params.type);
+            };
+            const adapter = this.orchestrator.getService(typedParams.service);
+            if (!adapter) {
+                throw new Error(`Service ${typedParams.service} not found`);
             }
-        );
+            return (await adapter.listResources(typedParams.type)) as unknown as Record<
+                string,
+                unknown
+            >;
+        });
 
-        this.registerMethod(
-            'resource.get',
-            async (params: {
+        this.registerMethod('resource.get', async (params: Record<string, unknown>) => {
+            const typedParams = params as {
                 service: string;
                 id: string;
                 type: string;
-            }) => {
-                const adapter = this.orchestrator.getService(params.service);
-                if (!adapter) {
-                    throw new Error(`Service ${params.service} not found`);
-                }
-                return await adapter.getResource(params.id, params.type);
+            };
+            const adapter = this.orchestrator.getService(typedParams.service);
+            if (!adapter) {
+                throw new Error(`Service ${typedParams.service} not found`);
             }
-        );
+            return (await adapter.getResource(
+                typedParams.id,
+                typedParams.type
+            )) as unknown as Record<string, unknown>;
+        });
 
-        this.registerMethod(
-            'resource.action',
-            async (params: {
+        this.registerMethod('resource.action', async (params: Record<string, unknown>) => {
+            const typedParams = params as {
                 service: string;
-                action: any;
-            }) => {
-                const adapter = this.orchestrator.getService(params.service);
-                if (!adapter) {
-                    throw new Error(`Service ${params.service} not found`);
-                }
-                return await adapter.executeAction(params.action);
+                action: Record<string, unknown>;
+            };
+            const adapter = this.orchestrator.getService(typedParams.service);
+            if (!adapter) {
+                throw new Error(`Service ${typedParams.service} not found`);
             }
-        );
+            return (await adapter.executeAction(
+                typedParams.action as unknown as ServiceAction
+            )) as unknown as Record<string, unknown>;
+        });
 
         // サービス固有メソッド
         this.registerServiceMethods('vercel', [
@@ -274,11 +294,11 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Register service-specific methods
+     * サービス固有メソッドを登録
      */
     private registerServiceMethods(service: string, methods: string[]): void {
         for (const method of methods) {
-            this.registerMethod(`${service}.${method}`, async (params: any) => {
+            this.registerMethod(`${service}.${method}`, async (params: Record<string, unknown>) => {
                 const adapter = this.orchestrator.getService(service);
                 if (!adapter) {
                     throw new Error(`Service ${service} not found`);
@@ -290,21 +310,24 @@ export class MultiServiceTauriSidecar extends EventEmitter {
                     params,
                 };
 
-                return await adapter.executeAction(action);
+                return (await adapter.executeAction(action)) as unknown as Record<string, unknown>;
             });
         }
     }
 
     /**
-     * Register a JSON-RPC method
+     * JSON-RPCメソッドを登録
      */
-    private registerMethod(name: string, handler: (params: any) => Promise<any>): void {
+    private registerMethod(
+        name: string,
+        handler: (params: Record<string, unknown>) => Promise<Record<string, unknown>>
+    ): void {
         const [service] = name.split('.');
         this.methods.set(name, { service, handler });
     }
 
     /**
-     * Start the WebSocket server
+     * WebSocketサーバーを開始
      */
     async start(): Promise<void> {
         if (this.isRunning) {
@@ -317,7 +340,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
             host: this.config.host,
         });
 
-        this.server.on('connection', (ws: WebSocket, req: any) => {
+        this.server.on('connection', (ws: WebSocket, req: Record<string, unknown>) => {
             this.handleConnection(ws, req);
         });
 
@@ -353,7 +376,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Stop the WebSocket server
+     * WebSocketサーバーを停止
      */
     async stop(): Promise<void> {
         if (!this.isRunning) {
@@ -369,7 +392,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
         // サーバーを閉じる
         if (this.server) {
             await new Promise<void>((resolve) => {
-                this.server!.close(() => resolve());
+                this.server?.close(() => resolve());
             });
             this.server = undefined;
         }
@@ -386,12 +409,13 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Handle WebSocket connection
+     * WebSocket接続を処理
      */
-    private handleConnection(ws: WebSocket, req: any): void {
+    private handleConnection(ws: WebSocket, req: Record<string, unknown>): void {
         // トークンが設定されている場合は認証をチェック
         if (this.config.authToken) {
-            const token = req.headers['authorization']?.replace('Bearer ', '');
+            // biome-ignore lint/suspicious/noExplicitAny: WebSocket request headers are loosely typed
+            const token = (req.headers as any)?.authorization?.replace('Bearer ', '');
             if (token !== this.config.authToken) {
                 ws.close(1008, 'Unauthorized');
                 return;
@@ -405,11 +429,11 @@ export class MultiServiceTauriSidecar extends EventEmitter {
             console.log(`[Sidecar] Client connected: ${clientId}`);
         }
 
-        ws.on('message', async (data: any) => {
+        ws.on('message', async (data: Buffer | string) => {
             try {
                 const message = JSON.parse(data.toString());
                 await this.handleMessage(ws, message);
-            } catch (error) {
+            } catch (_error) {
                 this.sendError(ws, null, -32700, 'Parse error');
             }
         });
@@ -435,7 +459,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Handle JSON-RPC message
+     * JSON-RPCメッセージを処理
      */
     private async handleMessage(ws: WebSocket, message: JsonRpcRequest): Promise<void> {
         // JSON-RPCフォーマットを検証
@@ -452,7 +476,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
             } catch (error) {
                 // エラーをログ出力するが、通知に対しては応答を送信しない
                 if (this.config.debug) {
-                    console.error(`[Sidecar] Notification error:`, error);
+                    console.error('[Sidecar] Notification error:', error);
                 }
             }
             return;
@@ -469,21 +493,28 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Execute a registered method
+     * 登録されたメソッドを実行
      */
-    private async executeMethod(method: string, params?: any): Promise<any> {
+    private async executeMethod(
+        method: string,
+        params?: Record<string, unknown>
+    ): Promise<Record<string, unknown>> {
         const methodDef = this.methods.get(method);
         if (!methodDef) {
             throw new Error(`Method not found: ${method}`);
         }
 
-        return await methodDef.handler(params);
+        return await methodDef.handler(params || {});
     }
 
     /**
-     * Send JSON-RPC response
+     * JSON-RPC応答を送信
      */
-    private sendResponse(ws: WebSocket, id: string | number, result: any): void {
+    private sendResponse(
+        ws: WebSocket,
+        id: string | number,
+        result: Record<string, unknown>
+    ): void {
         const response: JsonRpcResponse = {
             jsonrpc: '2.0',
             result,
@@ -493,14 +524,14 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Send JSON-RPC error
+     * JSON-RPCエラーを送信
      */
     private sendError(
         ws: WebSocket,
         id: string | number | null,
         code: number,
         message: string,
-        data?: any
+        data?: Record<string, unknown>
     ): void {
         const response: JsonRpcResponse = {
             jsonrpc: '2.0',
@@ -511,9 +542,13 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Send JSON-RPC notification
+     * JSON-RPC通知を送信
      */
-    private sendNotification(ws: WebSocket, method: string, params?: any): void {
+    private sendNotification(
+        ws: WebSocket,
+        method: string,
+        params?: Record<string, unknown>
+    ): void {
         const notification: JsonRpcRequest = {
             jsonrpc: '2.0',
             method,
@@ -523,7 +558,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     }
 
     /**
-     * Broadcast notification to all clients
+     * 全クライアントに通知をブロードキャスト
      */
     // private _broadcast(_method: string, _params?: any): void {
     //   for (const client of this.clients) {
@@ -534,7 +569,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
     // }
 
     /**
-     * Get server status
+     * サーバーステータスを取得
      */
     getStatus(): {
         running: boolean;
@@ -550,7 +585,7 @@ export class MultiServiceTauriSidecar extends EventEmitter {
 }
 
 /**
- * Create and start a multi-service Tauri sidecar
+ * マルチサービスTauriサイドカーを作成して開始
  */
 export async function createMultiServiceSidecar(
     config?: MultiServiceSidecarConfig
@@ -564,7 +599,7 @@ export async function createMultiServiceSidecar(
 let globalSidecar: MultiServiceTauriSidecar | null = null;
 
 /**
- * Initialize multi-service sidecar for Tauri
+ * Tauri用マルチサービスサイドカーを初期化
  */
 export async function initializeMultiServiceSidecar(
     config?: MultiServiceSidecarConfig
@@ -577,7 +612,7 @@ export async function initializeMultiServiceSidecar(
 }
 
 /**
- * Shutdown multi-service sidecar
+ * マルチサービスサイドカーをシャットダウン
  */
 export async function shutdownMultiServiceSidecar(): Promise<void> {
     if (globalSidecar) {
@@ -587,9 +622,9 @@ export async function shutdownMultiServiceSidecar(): Promise<void> {
 }
 
 /**
- * Get multi-service sidecar status
+ * マルチサービスサイドカーのステータスを取得
  */
-export function getMultiServiceSidecarStatus(): any {
+export function getMultiServiceSidecarStatus(): Record<string, unknown> {
     return (
         globalSidecar?.getStatus() || {
             running: false,
