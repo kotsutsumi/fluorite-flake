@@ -59,7 +59,7 @@ describe('STORAGE_CONFIGS', () => {
         // CLI で表示される名称と説明文が仕様どおりであることを検証し、翻訳ミスを検知する
         it('should have correct name and description', () => {
             expect(vercelBlobConfig.name).toBe('Vercel Blob');
-            expect(vercelBlobConfig.description).toBe('Simple file storage with CDN');
+            expect(vercelBlobConfig.description).toBe('CDN付きシンプルファイルストレージ');
         });
 
         // 必要な環境変数が 1 つのトークンに限定されていることを確認し、テンプレートとの不整合を防止する
@@ -84,7 +84,7 @@ describe('STORAGE_CONFIGS', () => {
         // 表示名と説明が Cloudflare R2 の提供内容を正しく伝えているかチェックする
         it('should have correct name and description', () => {
             expect(cloudflareR2Config.name).toBe('Cloudflare R2');
-            expect(cloudflareR2Config.description).toBe('S3-compatible object storage');
+            expect(cloudflareR2Config.description).toBe('S3互換オブジェクトストレージ');
         });
 
         // R2 の接続に必要な認証情報が網羅されているかを環境変数一覧で検証する
@@ -115,7 +115,7 @@ describe('STORAGE_CONFIGS', () => {
         // 表示名と説明文が AWS S3 を示すシンプルな文言になっているかを確認する
         it('should have correct name and description', () => {
             expect(awsS3Config.name).toBe('AWS S3');
-            expect(awsS3Config.description).toBe('Industry-standard object storage');
+            expect(awsS3Config.description).toBe('業界標準オブジェクトストレージ');
         });
 
         // AWS SDK 利用時に最低限必要となる認証情報が揃っているか検証する
@@ -147,7 +147,7 @@ describe('STORAGE_CONFIGS', () => {
         it('should have correct name and description', () => {
             expect(supabaseStorageConfig.name).toBe('Supabase Storage');
             expect(supabaseStorageConfig.description).toBe(
-                'Integrated with Supabase auth/database'
+                'Supabase認証/データベース統合ストレージ'
             );
         });
 

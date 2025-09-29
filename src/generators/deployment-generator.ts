@@ -5,31 +5,42 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create/types.js';
 import { readTemplate, readTemplateWithReplacements } from '../utils/template-reader.js';
 
+/**
+ * デプロイメント環境をセットアップするメイン関数
+ * Vercel設定ファイル、デプロイメントスクリプト、自動化スクリプトを作成
+ * @param config プロジェクト設定
+ */
 export async function setupDeployment(config: ProjectConfig) {
-    // Flutter has its own deployment configuration
+    // Flutterは独自のデプロイメント設定を持つためスキップ
     if (config.framework === 'flutter') {
         return;
     }
 
-    // Create Vercel configuration
+    // Vercel設定ファイルの作成
     await createVercelConfig(config);
 
-    // Add deployment scripts
+    // デプロイメントスクリプトの追加
     await addDeploymentScripts(config);
 
-    // Create comprehensive deployment scripts
+    // 包括的なデプロイメントスクリプトの作成
     await createDeploymentScripts(config);
 
-    // Create Vercel deployment automation script
+    // Vercelデプロイメント自動化スクリプトの作成
     if (config.database === 'turso' || config.database === 'supabase') {
         await createVercelAutomationScript(config);
     }
 
-    // Check Vercel CLI availability and optionally link project
-    // TODO: Enable when CLI adapters are fixed
+    // Vercel CLIの可用性チェックとプロジェクトリンクのオプション
+    // TODO: CLIアダプターが修正されたら有効化
 }
 
+/**
+ * Vercel設定ファイル（vercel.json）を作成する関数
+ * ビルドコマンド、環境変数、データベース、ストレージ設定を含む
+ * @param config プロジェクト設定
+ */
 async function createVercelConfig(config: ProjectConfig) {
+    // Vercel設定オブジェクトの作成
     const vercelConfig: {
         buildCommand: string;
         devCommand: string;
@@ -51,7 +62,7 @@ async function createVercelConfig(config: ProjectConfig) {
         envFilesystem: ['.env.production', '.env.staging', '.env.development'],
     };
 
-    // Add database environment variables
+    // データベースの環境変数を追加
     if (config.database === 'turso') {
         vercelConfig.env = {
             ...vercelConfig.env,
@@ -69,54 +80,69 @@ async function createVercelConfig(config: ProjectConfig) {
         };
     }
 
-    // Add storage environment variables
+    // ストレージの環境変数を追加
     vercelConfig.env = {
         ...vercelConfig.env,
         ...getStorageEnvPlaceholders(config.storage),
     };
 
+    // vercel.jsonファイルを書き込み
     await fs.writeJSON(path.join(config.projectPath, 'vercel.json'), vercelConfig, { spaces: 2 });
 }
 
+/**
+ * package.jsonにデプロイメント関連のスクリプトを追加する関数
+ * 基本デプロイ、環境別デプロイ、環境変数管理コマンドを追加
+ * @param config プロジェクト設定
+ */
 async function addDeploymentScripts(config: ProjectConfig) {
     const packageJsonPath = path.join(config.projectPath, 'package.json');
     const packageJson = await fs.readJSON(packageJsonPath);
 
+    // デプロイメント関連スクリプトの定義
     const deployScripts: Record<string, string> = {
-        // Basic deployment commands
+        // 基本デプロイメントコマンド
         deploy: 'vercel',
         'deploy:prod': 'vercel --prod',
         'deploy:staging': 'vercel --preview',
         'deploy:dev': 'vercel --preview',
         'deploy:destroy': 'tsx scripts/destroy-deployment.ts',
 
-        // Automated deployment with environment setup
+        // 環境セットアップ付き自動デプロイメント
         'deploy:setup': 'bash scripts/setup-deployment.sh',
         'deploy:setup:prod': 'bash scripts/setup-deployment.sh prod',
         'deploy:setup:staging': 'bash scripts/setup-deployment.sh staging',
         'deploy:setup:dev': 'bash scripts/setup-deployment.sh dev',
 
-        // Environment management
+        // 環境変数管理
         'env:pull': 'vercel env pull',
         'env:pull:prod': 'vercel env pull --environment=production',
         'env:pull:staging': 'vercel env pull --environment=preview --git-branch=staging',
         'env:pull:dev': 'vercel env pull --environment=preview --git-branch=development',
     };
 
-    // Add database-specific deployment scripts
+    // データベース固有のデプロイメントスクリプトを追加
     if (config.database === 'turso') {
         deployScripts['deploy:full'] =
             'bash scripts/setup-turso.sh --cloud && bash scripts/setup-deployment.sh';
     }
 
+    // 既存のスクリプトとマージ
     packageJson.scripts = {
         ...packageJson.scripts,
         ...deployScripts,
     };
 
+    // 更新されたpackage.jsonを書き込み
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }
 
+/**
+ * ストレージサービスごとの環境変数プレースホルダーを取得する関数
+ * Vercelデプロイメント時に必要な環境変数のプレースホルダーを返す
+ * @param storage ストレージサービスの種類
+ * @returns 環境変数名とプレースホルダーのマッピング
+ */
 function getStorageEnvPlaceholders(storage: ProjectConfig['storage']): Record<string, string> {
     switch (storage) {
         case 'vercel-blob':
@@ -150,13 +176,23 @@ function getStorageEnvPlaceholders(storage: ProjectConfig['storage']): Record<st
     }
 }
 
+/**
+ * デプロイメント関連のスクリプトファイルを作成する関数
+ * セットアップスクリプトと破棄スクリプトを作成
+ * @param config プロジェクト設定
+ */
 async function createDeploymentScripts(config: ProjectConfig) {
     await createSetupDeploymentScript(config);
     await createDestroyDeploymentScript(config);
 }
 
+/**
+ * デプロイメントセットアップスクリプトを作成する関数
+ * 環境変数設定、ストレージ設定、データベースマイグレーションを含む
+ * @param config プロジェクト設定
+ */
 async function createSetupDeploymentScript(config: ProjectConfig) {
-    // Build blob storage setup section
+    // Blobストレージセットアップセクションを構築
     let blobStorageSetup = '';
     if (config.storage === 'vercel-blob') {
         blobStorageSetup = `# Setup Vercel Blob Storage automatically
@@ -179,7 +215,7 @@ fi
 `;
     }
 
-    // Build database migrations section
+    // データベースマイグレーションセクションを構築
     let databaseMigrations = '';
     if (config.database !== 'none' && config.orm === 'prisma') {
         databaseMigrations = `
@@ -191,6 +227,7 @@ fi
 `;
     }
 
+    // テンプレートからデプロイメントスクリプトを作成
     const deployScriptContent = await readTemplateWithReplacements(
         'deployment/scripts/setup-deployment.sh.template',
         {
@@ -201,21 +238,33 @@ fi
         }
     );
 
+    // スクリプトファイルを書き込み、実行権限を付与
     const scriptPath = path.join(config.projectPath, 'scripts', 'setup-deployment.sh');
     await fs.ensureDir(path.dirname(scriptPath));
     await fs.writeFile(scriptPath, deployScriptContent);
     await fs.chmod(scriptPath, '755');
 }
 
+/**
+ * デプロイメント破棄スクリプトを作成する関数
+ * Vercelプロジェクトや関連リソースを削除するためのスクリプト
+ * @param config プロジェクト設定
+ */
 async function createDestroyDeploymentScript(config: ProjectConfig) {
+    // テンプレートから破棄スクリプトを読み込み
     const content = await readTemplate('scripts/destroy-deployment.ts.template');
     const scriptPath = path.join(config.projectPath, 'scripts', 'destroy-deployment.ts');
     await fs.ensureDir(path.dirname(scriptPath));
     await fs.writeFile(scriptPath, content);
 }
 
+/**
+ * Vercelデプロイメント自動化スクリプトを作成する関数
+ * データベースセットアップからデプロイまでを一気に実行するスクリプト
+ * @param config プロジェクト設定
+ */
 async function createVercelAutomationScript(config: ProjectConfig) {
-    // Build Turso setup section
+    // Tursoセットアップセクションを構築
     let tursoSetup = '';
     if (config.database === 'turso') {
         tursoSetup = `
@@ -231,8 +280,10 @@ fi
 `;
     }
 
+    // データベースタイプを決定
     const databaseType = config.database === 'turso' ? 'Turso' : 'Supabase';
 
+    // テンプレートから自動化スクリプトを作成
     const automationScriptContent = await readTemplateWithReplacements(
         'deployment/scripts/automated-deployment.sh.template',
         {
@@ -243,12 +294,13 @@ fi
         }
     );
 
+    // スクリプトファイルを書き込み、実行権限を付与
     const scriptPath = path.join(config.projectPath, 'scripts', 'automated-deployment.sh');
     await fs.ensureDir(path.dirname(scriptPath));
     await fs.writeFile(scriptPath, automationScriptContent);
     await fs.chmod(scriptPath, '755');
 
-    // Also update package.json with the automated deployment script
+    // package.jsonに自動デプロイメントスクリプトを追加
     const packageJsonPath = path.join(config.projectPath, 'package.json');
     const packageJson = await fs.readJSON(packageJsonPath);
 
@@ -257,5 +309,6 @@ fi
         'deploy:auto': 'bash scripts/automated-deployment.sh',
     };
 
+    // 更新されたpackage.jsonを書き込み
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }

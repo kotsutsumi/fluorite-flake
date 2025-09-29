@@ -10,4 +10,14 @@ export interface ProjectConfig {
     storybook?: boolean;
     packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
     mode?: 'full' | 'minimal';
+    // Monorepo specific fields
+    isMonorepo?: boolean;
+    workspaceTool?: 'turborepo' | 'nx' | 'pnpm-workspace';
+    includeBackend?: boolean;
+    frontendFramework?: 'expo' | 'flutter' | 'tauri';
+    backendConfig?: Omit<
+        ProjectConfig,
+        'isMonorepo' | 'workspaceTool' | 'includeBackend' | 'frontendFramework' | 'backendConfig'
+    >;
+    isMonorepoChild?: boolean; // Flag to indicate this is a child project in a monorepo
 }

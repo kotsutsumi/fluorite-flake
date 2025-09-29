@@ -1,8 +1,14 @@
 /**
- * TUI Dashboard for Cloudflare Workers monitoring
+ * Cloudflare Workers監視用TUIダッシュボード
  *
- * Interactive terminal dashboard for real-time monitoring
- * of Cloudflare Workers, R2 buckets, and KV namespaces.
+ * Cloudflare Workers、R2バケット、KVネームスペースのリアルタイム監視用の
+ * インタラクティブターミナルダッシュボードです。
+ *
+ * blessedとblessed-contribライブラリを使用して美しいUIを提供し、
+ * キーボードショートカット、マウス操作、ライブデータ更新をサポートします。
+ * IPC経由でFluorite Flake CLIと連携し、Cloudflare APIのデータを取得します。
+ *
+ * @module TUIDashboard
  */
 
 import blessed from 'blessed';
@@ -11,39 +17,75 @@ import { createIPCClient, type IPCClient } from '../ipc/ipc-client.js';
 import type { WranglerDashboardData } from '../utils/wrangler-dashboard.js';
 
 /**
- * Dashboard configuration options
+ * ダッシュボードの設定オプション
+ *
+ * @interface DashboardOptions
  */
 export interface DashboardOptions {
+    /** ダッシュボードの自動更新間隔（ミリ秒、デフォルト: 5000） */
     refreshInterval?: number;
+    /** IPCサーバーのTCPポート番号（デフォルト: 9123） */
     ipcPort?: number;
+    /** IPCサーバーのホスト名（デフォルト: 127.0.0.1） */
     ipcHost?: string;
+    /** IPCサーバーの認証トークン */
     ipcToken?: string;
+    /** UIテーマ（'dark' | 'light'、デフォルト: 'dark'） */
     theme?: 'dark' | 'light';
 }
 
 /**
- * TUI Dashboard implementation
+ * TUIダッシュボードの実装
+ *
+ * blessedライブラリを使用したターミナルユーザーインターフェースで、
+ * Cloudflareリソースのリアルタイム監視を提供します。
+ *
+ * グリッドレイアウトで構成されたウィジェット（テーブル、グラフ、ログボックス）を
+ * 配置し、キーボードショートカットで操作できます。
+ * IPCクライアントを使用してバックエンドからデータを取得し、
+ * 定期的に更新して最新の情報を表示します。
+ *
+ * @class TUIDashboard
+ *
+ * @example
+ * ```typescript
+ * const dashboard = new TUIDashboard({ refreshInterval: 3000 });
+ * await dashboard.start();
+ * ```
  */
 export class TUIDashboard {
+    /** Blessedスクリーンインスタンス */
     private screen: blessed.Widgets.Screen;
+    /** グリッドレイアウトマネージャ */
     // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib types are not available
     private grid: any;
+    /** IPCクライアント接続 */
     private ipcClient: IPCClient | null = null;
+    /** データ更新の間隔時間（ミリ秒） */
     private refreshInterval: number;
+    /** 自動更新用タイマー */
     private refreshTimer?: NodeJS.Timeout;
+    /** ダッシュボードのウィジェット群 */
     private widgets: {
+        /** Workers情報表示テーブル */
         // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widget types are not available
         workersTable?: any;
+        /** R2バケット情報表示テーブル */
         // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widget types are not available
         r2Table?: any;
+        /** KVネームスペース情報表示テーブル */
         // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widget types are not available
         kvTable?: any;
+        /** ログ表示ボックス */
         // biome-ignore lint/suspicious/noExplicitAny: blessed widget types are not available
         logBox?: any;
+        /** ステータスバー */
         // biome-ignore lint/suspicious/noExplicitAny: blessed widget types are not available
         statusBar?: any;
+        /** アナリティクスグラフ */
         // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widget types are not available
         analyticsLine?: any;
+        /** リソース使用率ゲージ */
         // biome-ignore lint/suspicious/noExplicitAny: blessed-contrib widget types are not available
         resourceGauge?: any;
     } = {};
@@ -51,14 +93,14 @@ export class TUIDashboard {
     constructor(private options: DashboardOptions = {}) {
         this.refreshInterval = options.refreshInterval || 5000;
 
-        // Create blessed screen
+        // Blessedスクリーンを作成
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'Fluorite Flake - Cloudflare Dashboard',
             fullUnicode: true,
         });
 
-        // Create grid layout
+        // グリッドレイアウトを作成
         this.grid = new contrib.grid({
             rows: 12,
             cols: 12,
@@ -70,10 +112,16 @@ export class TUIDashboard {
     }
 
     /**
-     * Setup dashboard widgets
+     * ダッシュボードウィジェットのセットアップ
+     *
+     * グリッドレイアウト上に各種ウィジェット（テーブル、グラフ、ログボックス）を
+     * 配置し、それぞれのスタイルと動作を設定します。
+     * キーボードナビゲーション、マウス操作、色テーマなども設定します。
+     *
+     * @private
      */
     private setupWidgets(): void {
-        // Workers table (top left)
+        // Workersテーブル（左上）
         this.widgets.workersTable = this.grid.set(0, 0, 4, 6, contrib.table, {
             keys: true,
             fg: 'white',
@@ -88,7 +136,7 @@ export class TUIDashboard {
             columnWidth: [20, 15, 25],
         });
 
-        // R2 Buckets table (top right)
+        // R2バケットテーブル（右上）
         this.widgets.r2Table = this.grid.set(0, 6, 4, 6, contrib.table, {
             keys: true,
             fg: 'white',
@@ -166,34 +214,47 @@ export class TUIDashboard {
     }
 
     /**
-     * Setup keyboard shortcuts
+     * キーボードショートカットのセットアップ
+     *
+     * ダッシュボードの操作に必要なキーボードショートカットを設定します。
+     * 終了、更新、ナビゲーション、ヘルプ表示などの機能を
+     * 直感的なキー操作で利用できるようにします。
+     *
+     * @private
      */
     private setupKeyBindings(): void {
-        // Quit on q or ESC
+        // qまESCで終了
         this.screen.key(['q', 'C-c', 'escape'], () => {
             this.stop();
             process.exit(0);
         });
 
-        // Manual refresh on r
+        // rで手動更新
         this.screen.key(['r', 'R'], () => {
             this.logMessage('Manual refresh triggered...');
             this.refresh();
         });
 
-        // Tab between widgets
+        // Tabでウィジェット間を移動
         this.screen.key(['tab'], () => {
             this.focusNext();
         });
 
-        // Help on h or ?
+        // hまたは?でヘルプ表示
         this.screen.key(['h', '?'], () => {
             this.showHelp();
         });
     }
 
     /**
-     * Connect to IPC server
+     * IPCサーバーへの接続
+     *
+     * 設定されたホストとポートでIPCサーバーに接続し、
+     * ダッシュボードデータの取得を可能にします。
+     * 接続状態のイベントハンドラも設定し、自動再接続機能を提供します。
+     *
+     * @private
+     * @returns Promise<void> 接続が完了したら解決されるPromise
      */
     async connect(): Promise<void> {
         try {
@@ -208,7 +269,7 @@ export class TUIDashboard {
             await this.ipcClient.connect();
             this.logMessage('✅ Connected to IPC server');
 
-            // Setup event handlers
+            // イベントハンドラの設定
             this.ipcClient.on('disconnected', () => {
                 this.logMessage('⚠️ Disconnected from IPC server');
                 this.updateStatusBar('Disconnected - Attempting reconnection...');
@@ -229,22 +290,28 @@ export class TUIDashboard {
     }
 
     /**
-     * Start the dashboard
+     * ダッシュボードの起動
+     *
+     * TUIダッシュボードを初期化し、IPCサーバーに接続して
+     * データの取得と表示を開始します。自動更新タイマーを設定し、
+     * ユーザーがダッシュボードを操作できる状態にします。
+     *
+     * @returns Promise<void> ダッシュボードが起動したら解決されるPromise
      */
     async start(): Promise<void> {
-        // Initial render
+        // 初期レンダリング
         this.screen.render();
 
         this.logMessage('🚀 Starting Fluorite Flake TUI Dashboard...');
         this.logMessage('📡 Connecting to IPC server...');
 
-        // Connect to IPC server
+        // IPCサーバーに接続
         await this.connect();
 
-        // Initial data load
+        // 初期データ読み込み
         await this.refresh();
 
-        // Start auto-refresh
+        // 自動更新を開始
         this.refreshTimer = setInterval(() => {
             this.refresh();
         }, this.refreshInterval);
@@ -253,7 +320,16 @@ export class TUIDashboard {
     }
 
     /**
-     * Stop the dashboard
+     * ダッシュボードの停止
+     *
+     * 自動更新タイマーを停止し、IPC接続を切断し、
+     * スクリーンをクリーンアップしてダッシュボードを終了します。
+     * リソースの解放とクリーンアップを確実に実行します。
+     *
+     * @example
+     * ```typescript
+     * dashboard.stop();
+     * ```
      */
     stop(): void {
         if (this.refreshTimer) {
@@ -268,7 +344,14 @@ export class TUIDashboard {
     }
 
     /**
-     * Refresh dashboard data
+     * ダッシュボードデータの更新
+     *
+     * IPCサーバーから最新のダッシュボードデータを取得し、
+     * 全てのウィジェットを更新して最新の情報を表示します。
+     * 接続状態を確認し、エラーハンドリングも行います。
+     *
+     * @private
+     * @returns Promise<void> 更新が完了したら解決されるPromise
      */
     private async refresh(): Promise<void> {
         if (!this.ipcClient?.isConnected()) {
@@ -442,7 +525,33 @@ export class TUIDashboard {
 }
 
 /**
- * Create and start TUI dashboard
+ * TUIダッシュボードの作成と起動
+ *
+ * 新しいTUIダッシュボードインスタンスを作成し、初期化と起動を行います。
+ * この関数は便利なファクトリ関数として機能し、ダッシュボードの作成から
+ * 起動までを一度に実行します。戻り値として起動済みのダッシュボードインスタンスを返します。
+ *
+ * @param options - ダッシュボードの設定オプション（オプション）
+ * @returns Promise<TUIDashboard> 起動済みのTUIダッシュボードインスタンス
+ *
+ * @example
+ * ```typescript
+ * // デフォルト設定で起動
+ * const dashboard = await startTUIDashboard();
+ *
+ * // カスタム設定で起動
+ * const dashboard = await startTUIDashboard({
+ *   refreshInterval: 3000,
+ *   ipcPort: 9123,
+ *   theme: 'light'
+ * });
+ *
+ * // 認証付きで起動
+ * const dashboard = await startTUIDashboard({
+ *   ipcToken: 'my-secret-token',
+ *   ipcHost: 'remote-host'
+ * });
+ * ```
  */
 export async function startTUIDashboard(options?: DashboardOptions): Promise<TUIDashboard> {
     const dashboard = new TUIDashboard(options);

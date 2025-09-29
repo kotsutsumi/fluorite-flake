@@ -16,7 +16,7 @@ describe('DATABASE_CONFIGS の構成確認', () => {
         // Turso の表示名と説明文が UI やドキュメントの表記と一致しているかを検証する
         it('名称と説明が期待どおりであること', () => {
             expect(tursoConfig.name).toBe('Turso');
-            expect(tursoConfig.description).toBe('SQLite at the edge with libSQL');
+            expect(tursoConfig.description).toBe('libSQLでエッジで動作するSQLiteデータベース');
         });
 
         // Turso に接続するために必要な環境変数が完全に揃っているかを確認する
@@ -43,7 +43,7 @@ describe('DATABASE_CONFIGS の構成確認', () => {
         // Supabase の表示名と説明文が仕様どおりかを確認し、テキスト変更の取りこぼしを防ぐ
         it('名称と説明が期待どおりであること', () => {
             expect(supabaseConfig.name).toBe('Supabase');
-            expect(supabaseConfig.description).toBe('PostgreSQL with built-in auth');
+            expect(supabaseConfig.description).toBe('認証機能内蔵のPostgreSQLデータベース');
         });
 
         // Supabase を利用するために求められる公開キー・サービスロールキーが全て揃っているか検証する

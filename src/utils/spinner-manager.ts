@@ -2,15 +2,23 @@ import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 
 /**
- * Manages spinner lifecycle to prevent double spinners and interference with prompts
+ * スピナーのライフサイクルを管理し、重複やプロンプトとの干渉を防ぎます
  */
 export class SpinnerManager {
+    /** シングルトンインスタンス */
     private static instance: SpinnerManager;
+    /** 現在アクティブなスピナー */
     private activeSpinner?: Ora;
+    /** スピナーが一時停止中かどうか */
     private suspended = false;
 
+    /** プライベートコンストラクタ（シングルトン実装） */
     private constructor() {}
 
+    /**
+     * シングルトンインスタンスを取得します
+     * @returns SpinnerManagerのインスタンス
+     */
     static getInstance(): SpinnerManager {
         if (!SpinnerManager.instance) {
             SpinnerManager.instance = new SpinnerManager();
@@ -19,27 +27,29 @@ export class SpinnerManager {
     }
 
     /**
-     * Start a spinner with the given message
-     * If a spinner is already active, updates its text instead
+     * 指定されたメッセージでスピナーを開始します
+     * 既にアクティブなスピナーがある場合は、テキストを更新します
+     * @param message 表示するメッセージ
      */
     start(message: string): void {
         if (this.suspended) {
-            // Just print the message when suspended (for interactive prompts)
+            // 一時停止中は単純にメッセージを表示（対話式プロンプト用）
             console.log(chalk.cyan(`\n${message}`));
             return;
         }
 
         if (this.activeSpinner) {
-            // Update existing spinner text instead of creating a new one
+            // 新しいスピナーを作成する代わりに既存のテキストを更新
             this.activeSpinner.text = message;
         } else {
-            // Create new spinner
+            // 新しいスピナーを作成
             this.activeSpinner = ora(message).start();
         }
     }
 
     /**
-     * Update spinner text
+     * スピナーのテキストを更新します
+     * @param message 更新するメッセージ
      */
     update(message: string): void {
         if (this.suspended) {
@@ -55,7 +65,8 @@ export class SpinnerManager {
     }
 
     /**
-     * Stop spinner with success message
+     * 成功メッセージでスピナーを停止します
+     * @param message 表示する成功メッセージ
      */
     succeed(message?: string): void {
         if (this.suspended) {
@@ -72,7 +83,8 @@ export class SpinnerManager {
     }
 
     /**
-     * Stop spinner with failure message
+     * 失敗メッセージでスピナーを停止します
+     * @param message 表示する失敗メッセージ
      */
     fail(message?: string): void {
         if (this.suspended) {
@@ -89,7 +101,8 @@ export class SpinnerManager {
     }
 
     /**
-     * Stop spinner with warning message
+     * 警告メッセージでスピナーを停止します
+     * @param message 表示する警告メッセージ
      */
     warn(message?: string): void {
         if (this.suspended) {
@@ -106,7 +119,8 @@ export class SpinnerManager {
     }
 
     /**
-     * Stop spinner with info message
+     * 情報メッセージでスピナーを停止します
+     * @param message 表示する情報メッセージ
      */
     info(message?: string): void {
         if (this.suspended) {
@@ -123,7 +137,7 @@ export class SpinnerManager {
     }
 
     /**
-     * Stop spinner without any message
+     * メッセージなしでスピナーを停止します
      */
     stop(): void {
         if (this.activeSpinner) {
@@ -133,7 +147,7 @@ export class SpinnerManager {
     }
 
     /**
-     * Temporarily stop spinner for interactive prompts
+     * 対話式プロンプトのためにスピナーを一時的に停止します
      */
     suspend(): void {
         if (this.activeSpinner) {
@@ -144,7 +158,8 @@ export class SpinnerManager {
     }
 
     /**
-     * Resume spinner after interactive prompts
+     * 対話式プロンプト後にスピナーを再開します
+     * @param message 再開時に表示するメッセージ
      */
     resume(message?: string): void {
         this.suspended = false;
@@ -154,21 +169,23 @@ export class SpinnerManager {
     }
 
     /**
-     * Check if spinner is currently active
+     * スピナーが現在アクティブかどうかをチェックします
+     * @returns アクティブな場合はtrue
      */
     isActive(): boolean {
         return !!this.activeSpinner && !this.suspended;
     }
 
     /**
-     * Check if spinner is suspended
+     * スピナーが一時停止中かどうかをチェックします
+     * @returns 一時停止中の場合はtrue
      */
     isSuspended(): boolean {
         return this.suspended;
     }
 
     /**
-     * Clear any active spinner and reset state
+     * アクティブなスピナーをクリアし、状態をリセットします
      */
     clear(): void {
         this.stop();
@@ -176,5 +193,8 @@ export class SpinnerManager {
     }
 }
 
-// Export singleton instance
+/**
+ * シングルトンインスタンスをエクスポート
+ * 全体で統一されたスピナー管理を提供します
+ */
 export const spinner = SpinnerManager.getInstance();

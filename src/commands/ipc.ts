@@ -1,5 +1,11 @@
 /**
- * IPC command for starting the inter-process communication server
+ * プロセス間通信サーバー起動用のIPCコマンド
+ *
+ * Fluorite Flake CLIのIPCサーバーを起動し、外部プロセス（GUI、TUI、
+ * Tauriアプリケーション）からCLI機能にアクセスできるようにします。
+ * フォアグラウンドまたはデーモンモードでの起動をサポートします。
+ *
+ * @module IPCCommand
  */
 
 import chalk from 'chalk';
@@ -8,7 +14,27 @@ import { startIPCDaemon, setupIPCServer } from '../ipc/ipc-integration.js';
 import { createIPCClient } from '../ipc/ipc-client.js';
 
 /**
- * Start the IPC server daemon
+ * IPCサーバーデーモンの起動
+ *
+ * 指定されたオプションでIPCサーバーを起動します。
+ * デーモンモードではバックグラウンドで実行され、
+ * フォアグラウンドモードではインタラクティブな状態表示を行います。
+ *
+ * @param options - IPCサーバーの起動オプション
+ * @param options.port - TCPポート番号（デフォルト: 9123）
+ * @param options.socketPath - UNIXソケットパス
+ * @param options.daemon - デーモンモードで起動するか
+ * @param options.verbose - 詳細なログ出力を有効にするか
+ * @param options.authToken - クライアント認証用トークン
+ *
+ * @example
+ * ```typescript
+ * // フォアグラウンドで起動
+ * await startIPC({ port: 9123, verbose: true });
+ *
+ * // デーモンで起動
+ * await startIPC({ daemon: true, authToken: 'secret' });
+ * ```
  */
 export async function startIPC(options: {
     port?: number;
@@ -18,7 +44,7 @@ export async function startIPC(options: {
     authToken?: string;
 }) {
     if (options.daemon) {
-        // Start as daemon
+        // デーモンとして起動
         await startIPCDaemon({
             port: options.port,
             socketPath: options.socketPath,
@@ -26,7 +52,7 @@ export async function startIPC(options: {
             verbose: options.verbose,
         });
     } else {
-        // Start in foreground
+        // フォアグラウンドで起動
         const spinner = ora('Starting IPC server...').start();
 
         try {
@@ -65,7 +91,7 @@ export async function startIPC(options: {
 
             await server.start();
 
-            // Handle shutdown
+            // シャットダウンハンドリング
             process.on('SIGINT', async () => {
                 console.log(`\n${chalk.yellow('Shutting down server...')}`);
                 await server.stop();
@@ -80,7 +106,26 @@ export async function startIPC(options: {
 }
 
 /**
- * Test IPC connection
+ * IPC接続のテスト
+ *
+ * 指定されたIPCサーバーに接続し、基本的な機能をテストします。
+ * pingテスト、バージョン情報取得、ダッシュボードデータ取得を実行し、
+ * サーバーの動作状態を確認します。
+ *
+ * @param options - テスト用の接続オプション
+ * @param options.port - TCPポート番号（デフォルト: 9123）
+ * @param options.socketPath - UNIXソケットパス
+ * @param options.host - ホスト名またはIPアドレス
+ * @param options.authToken - 認証トークン
+ *
+ * @example
+ * ```typescript
+ * // ローカルサーバーのテスト
+ * await testIPC({ port: 9123 });
+ *
+ * // 認証付きテスト
+ * await testIPC({ port: 9123, authToken: 'token' });
+ * ```
  */
 export async function testIPC(options: {
     port?: number;
@@ -102,17 +147,17 @@ export async function testIPC(options: {
         await client.connect();
         spinner.succeed('Connected to IPC server');
 
-        // Test ping
+        // pingテストの実行
         const pingSpinner = ora('Testing ping...').start();
         const pingResult = await client.call('system.ping');
         pingSpinner.succeed(`Ping successful: ${JSON.stringify(pingResult)}`);
 
-        // Get version
+        // バージョン情報の取得
         const versionSpinner = ora('Getting version...').start();
         const versionResult = await client.call('system.version');
         versionSpinner.succeed(`Version: ${versionResult.version} (Node ${versionResult.node})`);
 
-        // Get dashboard data
+        // ダッシュボードデータの取得テスト
         const dashboardSpinner = ora('Getting dashboard data...').start();
         try {
             const dashboardData = await client.call('dashboard.getData');

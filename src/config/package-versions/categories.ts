@@ -1,43 +1,74 @@
+/**
+ * パッケージカテゴリ定義
+ * フレームワークや機能別にパッケージを分類したカテゴリマップ
+ */
 export const PACKAGE_CATEGORIES = {
+    // Next.js フレームワーク関連パッケージ
     nextjs: {
-        dependencies: ['next', 'react', 'react-dom'],
+        dependencies: ['next', 'react', 'react-dom'], // Next.jsコア依存関係
         devDependencies: [
-            'typescript',
-            '@types/node',
-            '@types/react',
-            '@types/react-dom',
-            '@types/color',
-            '@types/lodash.throttle',
-            '@types/qrcode',
-            '@types/culori',
+            // 開発時に必要な型定義
+            'typescript', // TypeScriptコンパイラ
+            '@types/node', // Node.js型定義
+            '@types/react', // React型定義
+            '@types/react-dom', // React DOM型定義
+            '@types/color', // Colorライブラリ型定義
+            '@types/lodash.throttle', // Lodash throttle型定義
+            '@types/qrcode', // QRCodeライブラリ型定義
+            '@types/culori', // Culoriカラーライブラリ型定義
         ],
     },
+    // Expo フレームワーク関連パッケージ
     expo: {
-        dependencies: ['expo', 'react', 'react-native', 'expo-router', '@expo/vector-icons'],
-        devDependencies: ['typescript', '@types/react'],
+        dependencies: [
+            // Expoコア依存関係
+            'expo', // Expo SDK
+            'react', // Reactライブラリ
+            'react-native', // React Native
+            'expo-router', // Expoナビゲーション
+            '@expo/vector-icons', // Expoアイコンセット
+        ],
+        devDependencies: ['typescript', '@types/react'], // 開発時依存関係
     },
+    // Tauri フレームワーク関連パッケージ
     tauri: {
-        dependencies: ['@tauri-apps/api', '@tauri-apps/plugin-shell', 'react', 'react-dom'],
+        dependencies: [
+            // Tauriコア依存関係
+            '@tauri-apps/api', // Tauri API
+            '@tauri-apps/plugin-shell', // Tauri Shellプラグイン
+            'react', // Reactライブラリ
+            'react-dom', // React DOMレンダリング
+        ],
         devDependencies: [
-            'vite',
-            '@vitejs/plugin-react',
-            'typescript',
-            '@types/react',
-            '@types/react-dom',
+            // 開発時依存関係
+            'vite', // Viteビルドツール
+            '@vitejs/plugin-react', // Vite Reactプラグイン
+            'typescript', // TypeScriptコンパイラ
+            '@types/react', // React型定義
+            '@types/react-dom', // React DOM型定義
         ],
     },
+    // データベース関連パッケージ
     database: {
-        prisma: ['prisma', '@prisma/client'],
-        drizzle: ['drizzle-orm', 'drizzle-kit'],
-        turso: ['@libsql/client', '@prisma/adapter-libsql'],
-        supabase: ['@supabase/supabase-js'],
+        prisma: ['prisma', '@prisma/client'], // Prisma ORMコアパッケージ
+        drizzle: ['drizzle-orm', 'drizzle-kit'], // Drizzle ORMコアパッケージ
+        turso: ['@libsql/client', '@prisma/adapter-libsql'], // Tursoデータベースクライアント
+        supabase: ['@supabase/supabase-js'], // Supabaseクライアント
     },
-    auth: ['better-auth', 'bcryptjs', 'zod', '@types/bcryptjs'],
+    // 認証関連パッケージ
+    auth: [
+        'better-auth', // モダン認証ライブラリ
+        'bcryptjs', // パスワードハッシュ化
+        'zod', // スキーマ検証
+        '@types/bcryptjs', // bcryptjs型定義
+    ],
+    // ストレージ関連パッケージ
     storage: {
-        'vercel-blob': ['@vercel/blob'],
-        'aws-s3': ['@aws-sdk/client-s3'],
-        'supabase-storage': ['@supabase/supabase-js'],
+        'vercel-blob': ['@vercel/blob'], // Vercel Blobストレージ
+        'aws-s3': ['@aws-sdk/client-s3'], // AWS S3クライアント
+        'supabase-storage': ['@supabase/supabase-js'], // Supabaseストレージ
     },
+    // UI関連パッケージ - コンポーネント、アイコン、ユーティリティの包括的セット
     ui: [
         'lucide-react',
         'react-icons',
@@ -125,5 +156,9 @@ export const PACKAGE_CATEGORIES = {
         'qrcode',
         'media-chrome',
     ],
-    styling: ['tailwindcss', '@tailwindcss/typography'],
+    // スタイリング関連パッケージ
+    styling: [
+        'tailwindcss', // Tailwind CSSフレームワーク
+        '@tailwindcss/typography', // Tailwindタイポグラフィプラグイン
+    ],
 } as const;

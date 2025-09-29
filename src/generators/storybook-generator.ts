@@ -3,32 +3,45 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create/types.js';
 import { createScopedLogger } from '../utils/logger.js';
 
+// Storybook用のスコープ付きロガーを作成
 const logger = createScopedLogger('storybook');
 
+/**
+ * Storybookをセットアップするメイン関数
+ * Next.jsプロジェクト用のStorybook 8.x設定、コンポーネントストーリー、Playwright統合を実装
+ * @param config プロジェクト設定
+ */
 export async function setupStorybook(config: ProjectConfig) {
+    // Storybookが有効でかつNext.jsプロジェクトのみ処理
     if (!config.storybook || config.framework !== 'nextjs') {
         return;
     }
 
     logger.step('Setting up Storybook with modern configuration...');
 
-    await createStorybookConfig(config);
-    await createStorybookMain(config);
-    await createStorybookPreview(config);
-    await createStorybookManager(config);
-    await createExampleStories(config);
-    await setupStorybookScripts(config);
-    await createStorybookTests(config);
+    // Storybookの各種設定ファイルとコンポーネントを作成
+    await createStorybookConfig(config); // メイン設定ファイル
+    await createStorybookMain(config); // メイン設定（代替）
+    await createStorybookPreview(config); // プレビュー設定
+    await createStorybookManager(config); // マネージャー設定
+    await createExampleStories(config); // サンプルストーリー
+    await setupStorybookScripts(config); // スクリプトと依存関係
+    await createStorybookTests(config); // テスト設定
 
     logger.success('Storybook configured with Playwright integration');
 }
 
+/**
+ * Storybookのメイン設定ファイルを作成する関数
+ * Storybook 8.x用のモダン設定、Next.js統合、アドオン設定を含む
+ * @param config プロジェクト設定
+ */
 async function createStorybookConfig(config: ProjectConfig) {
-    // Storybook directory structure
+    // Storybookディレクトリ構造を作成
     const storybookDir = path.join(config.projectPath, '.storybook');
     await fs.ensureDir(storybookDir);
 
-    // Main configuration for Storybook 8.x with Vite
+    // Viteを使用したStorybook 8.xのメイン設定
     const mainConfig = `import type { StorybookConfig } from '@storybook/nextjs';
 
 const config: StorybookConfig = {
@@ -94,7 +107,7 @@ const config: StorybookConfig = {
   },
   env: (config) => ({
     ...config,
-    // Environment variables for Storybook
+    // Storybook用の環境変数
     STORYBOOK_ENV: 'true',
   }),
 };
@@ -102,14 +115,26 @@ const config: StorybookConfig = {
 export default config;
 `;
 
+    // メイン設定ファイルを書き込み
     await fs.writeFile(path.join(storybookDir, 'main.ts'), mainConfig);
 }
 
+/**
+ * Storybookメイン設定関数（代替）
+ * 現在はcreateStorybookConfigで処理されている
+ * 将来の関心の分離のために保持
+ * @param _config プロジェクト設定（未使用）
+ */
 async function createStorybookMain(_config: ProjectConfig) {
-    // This function is already handled by createStorybookConfig
-    // Keeping for potential future separation of concerns
+    // この関数は既にcreateStorybookConfigで処理されている
+    // 将来の関心の分離のために保持
 }
 
+/**
+ * Storybookプレビュー設定ファイルを作成する関数
+ * テーマ、ビューポート、グローバルスタイル、デコレーター設定を含む
+ * @param config プロジェクト設定
+ */
 async function createStorybookPreview(config: ProjectConfig) {
     const storybookDir = path.join(config.projectPath, '.storybook');
 
@@ -169,9 +194,15 @@ const preview: Preview = {
 export default preview;
 `;
 
+    // プレビュー設定ファイルを書き込み
     await fs.writeFile(path.join(storybookDir, 'preview.ts'), previewConfig);
 }
 
+/**
+ * Storybookマネージャー設定ファイルを作成する関数
+ * UIテーマ、ブランド設定、サイドバー、ツールバーのカスタマイズ
+ * @param config プロジェクト設定
+ */
 async function createStorybookManager(config: ProjectConfig) {
     const storybookDir = path.join(config.projectPath, '.storybook');
 
@@ -200,14 +231,21 @@ addons.setConfig({
 });
 `;
 
+    // マネージャー設定ファイルを書き込み
     await fs.writeFile(path.join(storybookDir, 'manager.ts'), managerConfig);
 }
 
+/**
+ * サンプルストーリーファイルを作成する関数
+ * Button、Card、Introductionストーリーを含む包括的なサンプル
+ * @param config プロジェクト設定
+ */
 async function createExampleStories(config: ProjectConfig) {
+    // ストーリーディレクトリを作成
     const storiesDir = path.join(config.projectPath, 'src/stories');
     await fs.ensureDir(storiesDir);
 
-    // Button component story
+    // Buttonコンポーネントストーリー
     const buttonStory = `import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 import { Button } from '../components/ui/button';
@@ -308,7 +346,7 @@ export const Disabled: Story = {
   },
 };
 
-// Interactive test example
+// インタラクティブテストの例
 export const InteractiveTest: Story = {
   args: {
     children: 'Click me!',
@@ -326,9 +364,10 @@ export const InteractiveTest: Story = {
 };
 `;
 
+    // Buttonストーリーファイルを書き込み
     await fs.writeFile(path.join(storiesDir, 'Button.stories.tsx'), buttonStory);
 
-    // Card component story
+    // Cardコンポーネントストーリー
     const cardStory = `import type { Meta, StoryObj } from '@storybook/react';
 import {
   Card,
@@ -427,9 +466,10 @@ export const Interactive: Story = {
 };
 `;
 
+    // Cardストーリーファイルを書き込み
     await fs.writeFile(path.join(storiesDir, 'Card.stories.tsx'), cardStory);
 
-    // Introduction story
+    // イントロダクションストーリー
     const introStory = `import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
@@ -490,70 +530,82 @@ type Story = StoryObj<typeof meta>;
 export const Welcome: Story = {};
 `;
 
+    // イントロダクションストーリーファイルを書き込み
     await fs.writeFile(path.join(storiesDir, 'Introduction.stories.tsx'), introStory);
 }
 
+/**
+ * Storybook関連のスクリプトと依存関係をセットアップする関数
+ * package.jsonにスクリプトとdevDependenciesを追加
+ * @param config プロジェクト設定
+ */
 async function setupStorybookScripts(config: ProjectConfig) {
     const packageJsonPath = path.join(config.projectPath, 'package.json');
 
     if (await fs.pathExists(packageJsonPath)) {
         const packageJson = await fs.readJSON(packageJsonPath);
 
-        // Add Storybook scripts
+        // Storybookスクリプトを追加
         packageJson.scripts = {
             ...packageJson.scripts,
-            storybook: 'storybook dev -p 6006',
-            'build-storybook': 'storybook build',
-            'test:storybook': 'test-storybook',
-            'test:storybook:ci':
+            storybook: 'storybook dev -p 6006', // 開発サーバー起動
+            'build-storybook': 'storybook build', // プロダクションビルド
+            'test:storybook': 'test-storybook', // ストーリーテスト実行
+            'test:storybook:ci': // CI環境用テスト
                 'concurrently -k -s first -n "SB,TEST" -c "magenta,blue" "pnpm build-storybook --quiet" "wait-on tcp:6006 && test-storybook"',
         };
 
-        // Add Storybook dependencies to devDependencies
+        // Storybook依存関係をdevDependenciesに追加
         packageJson.devDependencies = {
             ...packageJson.devDependencies,
-            '@storybook/addon-a11y': '^8.4.6',
-            '@storybook/addon-coverage': '^1.0.4',
-            '@storybook/addon-docs': '^8.4.6',
-            '@storybook/addon-essentials': '^8.4.6',
-            '@storybook/addon-interactions': '^8.4.6',
-            '@storybook/addon-styling-webpack': '^1.0.0',
-            '@storybook/addon-themes': '^8.4.6',
-            '@storybook/addon-viewport': '^8.4.6',
-            '@storybook/blocks': '^8.4.6',
-            '@storybook/nextjs': '^8.4.6',
-            '@storybook/react': '^8.4.6',
-            '@storybook/test': '^8.4.6',
-            '@storybook/test-runner': '^0.19.1',
-            concurrently: '^9.1.0',
-            'wait-on': '^8.0.1',
-            storybook: '^8.4.6',
+            '@storybook/addon-a11y': '^8.4.6', // アクセシビリティアドオン
+            '@storybook/addon-coverage': '^1.0.4', // コードカバレッジアドオン
+            '@storybook/addon-docs': '^8.4.6', // ドキュメント生成アドオン
+            '@storybook/addon-essentials': '^8.4.6', // 基本アドオン集
+            '@storybook/addon-interactions': '^8.4.6', // インタラクションテスト
+            '@storybook/addon-styling-webpack': '^1.0.0', // CSSスタイリング
+            '@storybook/addon-themes': '^8.4.6', // テーマ切り替え
+            '@storybook/addon-viewport': '^8.4.6', // ビューポート設定
+            '@storybook/blocks': '^8.4.6', // ドキュメントブロック
+            '@storybook/nextjs': '^8.4.6', // Next.jsフレームワーク
+            '@storybook/react': '^8.4.6', // Reactサポート
+            '@storybook/test': '^8.4.6', // テストユーティリティ
+            '@storybook/test-runner': '^0.19.1', // テストランナー
+            concurrently: '^9.1.0', // 並行コマンド実行
+            'wait-on': '^8.0.1', // サービス待機ユーティリティ
+            storybook: '^8.4.6', // Storybookコア
         };
 
+        // 更新されたpackage.jsonを書き込み
         await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
     }
 }
 
+/**
+ * Storybookテスト設定を作成する関数
+ * test-runner設定とPlaywright統合設定を作成
+ * @param config プロジェクト設定
+ */
 async function createStorybookTests(config: ProjectConfig) {
-    // Create test-runner configuration
+    // テストランナー設定を作成
     const testRunnerConfig = `import type { TestRunnerConfig } from '@storybook/test-runner';
 
 const config: TestRunnerConfig = {
   setup() {
-    // Global test setup
+    // グローバルテストセットアップ
   },
   async preVisit(page, context) {
-    // Actions to perform before visiting each story
+    // 各ストーリー訪問前に実行するアクション
     await page.setViewportSize({ width: 1280, height: 720 });
   },
   async postVisit(page, context) {
-    // Actions to perform after visiting each story
-    // Check for console errors
+    // 各ストーリー訪問後に実行するアクション
+    // コンソールエラーをチェック
     const logs = await page.evaluate(() => {
       return window.console;
     });
 
-    // You can add custom assertions here
+    // ここにカスタムアサーションを追加できます
   },
   tags: {
     include: ['test'],
@@ -565,12 +617,13 @@ const config: TestRunnerConfig = {
 export default config;
 `;
 
+    // テストランナー設定ファイルを書き込み
     await fs.writeFile(
         path.join(config.projectPath, '.storybook/test-runner.ts'),
         testRunnerConfig
     );
 
-    // Create Playwright configuration for Storybook
+    // Storybook用Playwright設定を作成
     const storybookPlaywrightConfig = `import { defineConfig } from '@playwright/test';
 
 /**
@@ -605,6 +658,7 @@ export default defineConfig({
 });
 `;
 
+    // Storybook用Playwright設定ファイルを書き込み
     await fs.writeFile(
         path.join(config.projectPath, 'playwright-storybook.config.ts'),
         storybookPlaywrightConfig

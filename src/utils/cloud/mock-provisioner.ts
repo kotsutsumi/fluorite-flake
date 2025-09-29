@@ -13,11 +13,17 @@ import type {
     VercelBlobRecord,
 } from './types.js';
 
+/** プロビジョニング対象の環境一覧 */
 const ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
 
+/**
+ * Tursoデータベースのモックレコードを生成します
+ * @param slug プロジェクトのスラッグ名
+ * @returns 各環境のTursoデータベースレコード配列
+ */
 function createMockDatabaseRecords(slug: string): TursoDatabaseRecord[] {
     return ENVIRONMENTS.map((env) => {
-        // Use dashes instead of underscores for consistency with Turso naming requirements
+        // Tursoの命名要件に合わせてアンダースコアではなくダッシュを使用
         const dbName = `${slug}-${env}`;
         const hostname = `${dbName}.mock.turso.dev`;
         return {
@@ -30,6 +36,11 @@ function createMockDatabaseRecords(slug: string): TursoDatabaseRecord[] {
     });
 }
 
+/**
+ * Supabaseデータベースのモックレコードを生成します
+ * @param slug プロジェクトのスラッグ名
+ * @returns 各環境のSupabaseデータベースレコード配列
+ */
 function createMockSupabaseRecords(slug: string): SupabaseDatabaseRecord[] {
     return ENVIRONMENTS.map((env) => {
         const projectRef = `mock-${slug}-${env}-${randomUUID().substring(0, 8)}`;
@@ -45,19 +56,28 @@ function createMockSupabaseRecords(slug: string): SupabaseDatabaseRecord[] {
     });
 }
 
+/**
+ * テスト環境向けのモッククラウドプロビジョナー
+ * 実際のクラウドサービスを呼び出さず、モックデータを生成します
+ */
 export class MockProvisioner implements CloudProvisioner {
     readonly mode = 'mock' as const;
 
+    /**
+     * プロジェクト設定に基づいてモッククラウドリソースを生成します
+     * @param config プロジェクトの設定
+     * @returns モックプロビジョニングレコード
+     */
     async provision(config: ProjectConfig): Promise<CloudProvisioningRecord> {
         const projectSlug = slugify(config.projectName);
 
-        // Create database records based on selection
+        // 選択されたデータベースに基づいてモックレコードを作成
         const tursoDatabases =
             config.database === 'turso' ? createMockDatabaseRecords(projectSlug) : undefined;
         const supabaseDatabases =
             config.database === 'supabase' ? createMockSupabaseRecords(projectSlug) : undefined;
 
-        // Create storage record based on selection
+        // 選択されたストレージサービスに基づいてモックレコードを作成
         let vercelBlob: VercelBlobRecord | undefined;
         let cloudflareR2: CloudflareR2Record | undefined;
         let awsS3: AwsS3Record | undefined;

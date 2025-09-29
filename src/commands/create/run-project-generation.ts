@@ -7,6 +7,10 @@ import ora from 'ora';
 import { setupAuth } from '../../generators/auth-generator.js';
 import { setupDatabase } from '../../generators/database-generator.js';
 import { setupDeployment } from '../../generators/deployment-generator.js';
+import {
+    generateMonorepoProject,
+    type MonorepoConfig,
+} from '../../generators/monorepo-generator.js';
 import { setupStorage } from '../../generators/storage-generator.js';
 import { setupStorybook } from '../../generators/storybook-generator.js';
 import { isProvisioningEligible, provisionCloudResources } from '../../utils/cloud/index.js';
@@ -16,6 +20,39 @@ import { getDeploymentText } from './get-deployment-text.js';
 import type { ProjectConfig } from './types.js';
 
 export async function runProjectGeneration(config: ProjectConfig) {
+    // モノレポプロジェクトかどうかをチェック
+    if (config.isMonorepo) {
+        console.log(chalk.cyan('\n📦 Creating monorepo project with the following configuration:'));
+        console.log(chalk.gray('  Project: ') + chalk.white(config.projectName));
+        console.log(chalk.gray('  Structure: ') + chalk.white('Monorepo (Backend + Frontend)'));
+        console.log(chalk.gray('  Backend: ') + chalk.white('Next.js with GraphQL'));
+        console.log(
+            chalk.gray('  Frontend: ') +
+                chalk.white(
+                    config.frontendFramework?.toUpperCase() || config.framework.toUpperCase()
+                )
+        );
+        console.log(
+            chalk.gray('  Workspace Tool: ') + chalk.white(config.workspaceTool || 'turborepo')
+        );
+
+        const monorepoConfig: MonorepoConfig = config as MonorepoConfig;
+        await generateMonorepoProject(monorepoConfig);
+
+        // モノレポ用の開始手順を表示
+        console.log(chalk.green('\n✅ Monorepo project created successfully!\n'));
+        console.log(chalk.cyan('To get started:'));
+        console.log(chalk.gray(`  cd ${config.projectName}`));
+        console.log(chalk.gray(`  ${config.packageManager} install`));
+        console.log(chalk.gray(`  ${config.packageManager} dev  # Start all apps`));
+        console.log('');
+        console.log(chalk.cyan('Or run specific apps:'));
+        console.log(chalk.gray(`  ${config.packageManager} dev:backend  # Start backend only`));
+        console.log(chalk.gray(`  ${config.packageManager} dev:frontend # Start frontend only`));
+        return;
+    }
+
+    // 通常のプロジェクト生成（モノレポではない）
     if (config.auth && config.orm !== 'prisma') {
         console.log(
             chalk.yellow(
@@ -65,7 +102,7 @@ export async function runProjectGeneration(config: ProjectConfig) {
         mainSpinner.succeed(`${config.framework} project created`);
 
         if (config.database !== 'none') {
-            // Stop spinner before potentially interactive database setup
+            // 対話型データベースセットアップの前にスピナーを停止
             console.log(
                 chalk.cyan(`\nSetting up ${config.database} database with ${config.orm}...`)
             );
@@ -74,14 +111,14 @@ export async function runProjectGeneration(config: ProjectConfig) {
         }
 
         if (config.storage !== 'none') {
-            // Don't use spinner for storage setup since it may need interactive prompts
+            // ストレージセットアップは対話的プロンプトが必要な場合があるためスピナーを使用しない
             console.log(chalk.cyan(`\nSetting up ${config.storage} storage...`));
             await setupStorage(config);
             console.log(chalk.green(`✅ ${config.storage} storage configured`));
         }
 
         if (config.deployment) {
-            // Don't use spinner for deployment setup since it may need interactive prompts
+            // デプロイメントセットアップは対話的プロンプトが必要な場合があるためスピナーを使用しない
             const deploymentText = getDeploymentText(config.framework);
             console.log(chalk.cyan(`\nSetting up ${deploymentText} deployment...`));
             await setupDeployment(config);
@@ -89,14 +126,14 @@ export async function runProjectGeneration(config: ProjectConfig) {
         }
 
         if (isProvisioningEligible(config)) {
-            // Don't use spinner for provisioning since it may need interactive prompts
+            // プロビジョニングは対話的プロンプトが必要な場合があるためスピナーを使用しない
             console.log(chalk.cyan('\nProvisioning managed services...'));
             await provisionCloudResources(config);
             console.log(chalk.green('✅ Managed services provisioned'));
         }
 
         if (config.auth) {
-            // Don't use spinner for auth setup since it may need interactive prompts
+            // 認証セットアップは対話的プロンプトが必要な場合があるためスピナーを使用しない
             const authText = getAuthText(config.framework);
             console.log(chalk.cyan(`\nSetting up ${authText}...`));
             await setupAuth(config);
@@ -104,7 +141,7 @@ export async function runProjectGeneration(config: ProjectConfig) {
         }
 
         if (config.storybook) {
-            // Use separate spinner for Storybook since it doesn't have interactive prompts
+            // Storybookは対話的プロンプトがないため別のスピナーを使用
             const storybookSpinner = ora('Setting up Storybook...').start();
             await setupStorybook(config);
             storybookSpinner.succeed('Storybook configured');

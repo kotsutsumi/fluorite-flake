@@ -11,6 +11,8 @@ test/
 ├── unit/           # モジュール単位のユニットテスト
 ├── functional/     # CLI 機能テスト
 ├── scenario/       # プロジェクト生成シナリオテスト
+├── e2e/            # Playwright ベースのエンドツーエンドテスト
+│   └── nextjs/     # Next.js テンプレート用フィクスチャと各機能別スペック
 ├── helpers/        # テスト用ヘルパー群
 └── fixtures/       # テストデータ・モック
 ```
@@ -46,6 +48,8 @@ test/
 - **対象**: 各フレームワークのテンプレート生成、関連設定の整合性
 - **実行コマンド**: `pnpm test:scenario`
 - **実行方式**: 競合回避のため逐次実行
+- **検証内容補足**: Next.js シナリオは生成物のファイル／依存関係のみを検証し、アプリ起動や UI 操作は E2E レイヤーへ委譲しました。
+- **スキップ**: シナリオレイヤーは CI では既定で実行しないため、必要なタイミングで手動実行してください。
 
 構成例:
 - `nextjs/` – Next.js プロジェクト
@@ -53,7 +57,18 @@ test/
 - `tauri/` – Tauri デスクトップ
 - `flutter/` – Flutter クロスプラットフォーム
 
+### 補助: E2E テスト (`test/e2e/`)
+- **目的**: Next.js テンプレートを実際に起動し、ログイン・投稿・組織／ユーザー管理・ローカルストレージ書き込みまでのユースケースを Playwright で検証します。
+- **構成**: `test/e2e/nextjs/fixtures/project.ts` でプロジェクト生成〜Next.js 起動を担うフィクスチャを提供し、`auth` / `organization` / `users` / `content` / `storage` といった機能別スペックへ分割しています。
+- **タグ運用**: Turso/Prisma 系のテストは `@turso`、Supabase など別スタック用のスペックは今後 `@supabase` タグを付与します。Playwright の `--grep` オプションや config の `projects` と連動して柔軟に絞り込み可能です。
+- **実行コマンド**:
+  - `pnpm test:e2e -- --project nextjs-turso-prisma` … ローカルのデフォルトスタック (Turso + Prisma + Vercel Blob)
+  - `pnpm test:e2e -- --grep @turso` … タグ指定で実行
+- **前提**: すべてローカルサービスで完結します。Turso は SQLite ファイル、ストレージは `.storage/` ディレクトリへ書き込まれます。Supabase など外部サービス向けスペックを実行する場合は該当 CLI を事前に起動してください。
+- **後片付け**: フィクスチャが自動でテンポラリディレクトリ／dev サーバーをクリーンアップします。
+
 ## よく使うコマンド
+
 
 ```bash
 # すべてのテストを実行
@@ -63,6 +78,7 @@ pnpm test
 pnpm test:unit          # ユニットテストのみ
 pnpm test:functional    # 機能テストのみ
 pnpm test:scenario      # シナリオテストのみ
+pnpm test:e2e           # Playwright を用いた Next.js E2E フロー
 
 # 開発時
 pnpm test:watch         # ウォッチモード

@@ -8,12 +8,23 @@ import { generatePackageJson } from '../utils/package-json.js';
 import { readTemplate, readTemplateWithReplacements } from '../utils/template-reader.js';
 import { slugify } from '../utils/slugify.js';
 
+// Next.jsジェネレーター用のロガーを作成
 const logger = createScopedLogger('next');
 
+/**
+ * 文字列をケバブケース（ハイフン区切り）に変換する
+ * @param value 変換する文字列
+ * @returns ケバブケース文字列、空の場合は'app'を返す
+ */
 function toKebab(value: string) {
     return slugify(value) || 'app';
 }
 
+/**
+ * プロジェクト名から各種スラッグ（識別子）を生成する
+ * @param name プロジェクト名
+ * @returns ケバブケースとアンダースコア形式のスラッグオブジェクト
+ */
 function getProjectSlugs(name: string) {
     const kebab = toKebab(name);
     return {
@@ -22,12 +33,20 @@ function getProjectSlugs(name: string) {
     };
 }
 
+/**
+ * Next.jsプロジェクトを生成するメイン関数
+ * プロジェクト構造の作成、依存関係のセットアップ、設定ファイルの生成などを行う
+ * @param config プロジェクト設定
+ */
 export async function generateNextProject(config: ProjectConfig) {
+    // プロジェクトディレクトリの確保
     await fs.ensureDir(config.projectPath);
 
+    // モード設定の確認
     const isMinimal = config.mode === 'minimal';
     const isTestMode = process.env.FLUORITE_TEST_MODE === 'true';
 
+    // 基本的なプロジェクト構造の作成
     await createNextAppStructure(config);
     await generatePackageJson(config);
     await setupTypeScript(config);
@@ -35,44 +54,58 @@ export async function generateNextProject(config: ProjectConfig) {
     await setupLinters(config);
     await createNextjsConfig(config);
 
+    // モードに応じたUI設定
     if (isMinimal) {
         await setupMinimalUILibraries(config);
     } else {
         if (isTestMode) {
-            logger.info('Skipping dependency installation in test mode');
+            logger.info('テストモードのため依存関係のインストールをスキップ');
         } else {
             await installDependencies(config);
         }
         await setupUILibraries(config);
     }
 
+    // 状態管理とフックのセットアップ
     await setupStateManagement(config);
     await setupHooks(config);
 
+    // ミニマルモード以外ではGitフックを設定
     if (!isMinimal) {
         await setupHusky(config);
     }
 
+    // 初期ページと環境設定スクリプトの作成
     await createInitialPages(config);
     await createEnvToolkitScripts(config);
 }
 
+/**
+ * Next.jsアプリケーションの基本ディレクトリ構造を作成する
+ * @param config プロジェクト設定
+ */
 async function createNextAppStructure(config: ProjectConfig) {
+    // 作成するディレクトリリスト（App Router構造）
     const dirs = [
-        'src/app',
-        'src/components',
-        'src/components/ui',
-        'src/lib',
-        'src/hooks',
-        'src/styles',
-        'public',
+        'src/app', // App Routerのページとレイアウト
+        'src/components', // 再利用可能なコンポーネント
+        'src/components/ui', // UIライブラリコンポーネント
+        'src/lib', // ライブラリとユーティリティ
+        'src/hooks', // カスタムReactフック
+        'src/styles', // スタイルファイル
+        'public', // 静的アセット
     ];
 
+    // 各ディレクトリを作成
     for (const dir of dirs) {
         await fs.ensureDir(path.join(config.projectPath, dir));
     }
 }
 
+/**
+ * TypeScript設定ファイル（tsconfig.json）とNext.js型定義を設定する
+ * @param config プロジェクト設定
+ */
 async function setupTypeScript(config: ProjectConfig) {
     const tsConfig = {
         compilerOptions: {
@@ -105,19 +138,23 @@ async function setupTypeScript(config: ProjectConfig) {
         spaces: 2,
     });
 
-    // Create next-env.d.ts
+    // Next.js環境型定義ファイルの作成
     const nextEnvContent = `/// <reference types="next" />
 /// <reference types="next/image-types/global" />
 
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
+// 注意: このファイルは編集しないでください
+// 詳細は https://nextjs.org/docs/app/building-your-application/configuring/typescript を参照してください。
 `;
 
     await fs.writeFile(path.join(config.projectPath, 'next-env.d.ts'), nextEnvContent);
 }
 
+/**
+ * Tailwind CSS v4の設定とグローバルCSSファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function setupTailwind(config: ProjectConfig) {
-    // Tailwind CSS v4 uses PostCSS config instead of tailwind.config.ts
+    // Tailwind CSS v4はtailwind.config.tsの代わりにPostCSS設定を使用
     const postcssConfig = `const config = {
   plugins: {
     "@tailwindcss/postcss": {}
@@ -214,11 +251,15 @@ body {
 
     await fs.writeFile(path.join(config.projectPath, 'src/app/globals.css'), tailwindContent);
 
-    // PostCSS not needed with Next.js 15.5+ and Tailwind CSS v4
+    // Next.js 15.5+とTailwind CSS v4ではPostCSS設定は不要
 }
 
+/**
+ * Biome（コードフォーマッター・リンター）の設定を行う
+ * @param config プロジェクト設定
+ */
 async function setupLinters(config: ProjectConfig) {
-    // Biome config
+    // Biome設定オブジェクト
     const biomeConfig = {
         $schema: 'https://biomejs.dev/schemas/1.9.4/schema.json',
         vcs: {
@@ -341,8 +382,12 @@ async function setupLinters(config: ProjectConfig) {
     });
 }
 
+/**
+ * ミニマルモード用のUIコンポーネントスタブを作成する
+ * @param config プロジェクト設定
+ */
 async function setupMinimalUILibraries(config: ProjectConfig) {
-    logger.step('Creating minimal UI component stubs...');
+    logger.step('最小限のUIコンポーネントスタブを作成中...');
 
     const utilsContent = `import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -867,8 +912,12 @@ export {
     }
 }
 
+/**
+ * 完全なUIライブラリとコンポーネントをセットアップする
+ * @param config プロジェクト設定
+ */
 async function setupUILibraries(config: ProjectConfig) {
-    // Create utils.ts file
+    // utils.tsファイルの作成
     const utilsContent = `import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -879,9 +928,9 @@ export function cn(...inputs: ClassValue[]) {
 
     await fs.writeFile(path.join(config.projectPath, 'src/lib/utils.ts'), utilsContent);
 
-    logger.step('Installing UI component library...');
+    logger.step('UIコンポーネントライブラリをインストール中...');
 
-    // Copy pre-verified UI components from templates
+    // テンプレートから事前検証済みUIコンポーネントをコピー
     const templatesPath = path.join(
         path.dirname(new URL(import.meta.url).pathname),
         '../templates/nextjs-ui-components'
@@ -891,11 +940,15 @@ export function cn(...inputs: ClassValue[]) {
     await fs.ensureDir(targetPath);
     await fs.copy(templatesPath, targetPath, { overwrite: true });
 
-    logger.success('Installed verified UI components');
+    logger.success('検証済みUIコンポーネントをインストール完了');
 }
 
+/**
+ * カスタムReactフックをセットアップする
+ * @param config プロジェクト設定
+ */
 async function setupHooks(config: ProjectConfig) {
-    // Copy pre-verified hooks from templates
+    // テンプレートから事前検証済みフックをコピー
     const hooksTemplatePath = path.join(
         path.dirname(new URL(import.meta.url).pathname),
         '../templates/nextjs-hooks'
@@ -903,14 +956,18 @@ async function setupHooks(config: ProjectConfig) {
     const targetHooksPath = path.join(config.projectPath, 'src/hooks');
     await fs.ensureDir(targetHooksPath);
 
-    // Check if hooks template exists and has files
+    // フックテンプレートの存在とファイルの確認
     if (await fs.pathExists(hooksTemplatePath)) {
         await fs.copy(hooksTemplatePath, targetHooksPath, { overwrite: true });
     }
 }
 
+/**
+ * Jotaiを使用した状態管理システムをセットアップする
+ * @param config プロジェクト設定
+ */
 async function setupStateManagement(config: ProjectConfig) {
-    // Jotai store
+    // Jotaiストアの定義
     const storeContent = `import { atom } from 'jotai';
 
 export const countAtom = atom(0);
@@ -919,7 +976,7 @@ export const themeAtom = atom<'light' | 'dark'>('light');
 
     await fs.writeFile(path.join(config.projectPath, 'src/lib/store.ts'), storeContent);
 
-    // Providers
+    // プロバイダーコンポーネント
     const providersContent = `'use client';
 
 import type { ReactNode } from 'react';
@@ -948,10 +1005,14 @@ export function Providers({ children }: { children: ReactNode }) {
     );
 }
 
+/**
+ * Huskyを使用したGitフックを設定する
+ * @param config プロジェクト設定
+ */
 async function setupHusky(config: ProjectConfig) {
     const isTestMode = process.env.FLUORITE_TEST_MODE === 'true';
 
-    // Initialize husky (prepare script is already in package.json)
+    // Huskyの初期化（prepareスクリプトは既にpackage.jsonに追加済み）
     if (!isTestMode) {
         try {
             await execa(config.packageManager, ['run', 'prepare'], {
@@ -959,18 +1020,18 @@ async function setupHusky(config: ProjectConfig) {
                 stdio: 'inherit',
             });
         } catch (_error) {
-            // If husky init fails, it's not critical - continue with setup
-            logger.info('Note: Husky initialization will complete on next install');
+            // Huskyの初期化に失敗してもクリティカルではない - セットアップを続行
+            logger.info('注意: Huskyの初期化は次回のインストール時に完了します');
         }
     } else {
-        logger.info('Skipping Husky prepare step in test mode');
+        logger.info('テストモードのためHusky prepareステップをスキップ');
     }
 
-    // Create .husky directory
+    // .huskyディレクトリの作成
     const huskyDir = path.join(config.projectPath, '.husky');
     await fs.ensureDir(huskyDir);
 
-    // Pre-commit hook
+    // プリコミットフック
     const preCommitContent = `#!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
@@ -996,13 +1057,17 @@ echo "✅ Pre-commit checks completed!"
     await fs.chmod(preCommitPath, '755');
 }
 
+/**
+ * Next.js設定ファイルと環境変数ファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function createNextjsConfig(config: ProjectConfig) {
-    // Next.js config
+    // Next.js設定ファイル
     const nextConfigContent = `/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    // Enable experimental features as needed
+    // 必要に応じて実験的な機能を有効化
   },
 };
 
@@ -1011,10 +1076,10 @@ export default nextConfig;
 
     await fs.writeFile(path.join(config.projectPath, 'next.config.mjs'), nextConfigContent);
 
-    // Generate environment files
+    // 環境変数ファイルの生成
     await writeEnvironmentFiles(config);
 
-    // Gitignore
+    // .gitignoreファイル
     const gitignoreContent = `# Dependencies
 /node_modules
 /.pnp
@@ -1058,6 +1123,10 @@ next-env.d.ts
     await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
 }
 
+/**
+ * 各環境用の環境変数ファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function writeEnvironmentFiles(config: ProjectConfig) {
     const { kebab, underscore } = getProjectSlugs(config.projectName);
     const replacements = {
@@ -1085,6 +1154,10 @@ async function writeEnvironmentFiles(config: ProjectConfig) {
     }
 }
 
+/**
+ * 環境変数管理用のツールキットスクリプトを作成する
+ * @param config プロジェクト設定
+ */
 async function createEnvToolkitScripts(config: ProjectConfig) {
     const script = await readTemplate('next/scripts/env-tools.ts.template');
     const scriptsDir = path.join(config.projectPath, 'scripts');
@@ -1092,8 +1165,12 @@ async function createEnvToolkitScripts(config: ProjectConfig) {
     await fs.writeFile(path.join(scriptsDir, 'env-tools.ts'), script);
 }
 
+/**
+ * 初期ページ（レイアウトとホームページ）を作成する
+ * @param config プロジェクト設定
+ */
 async function createInitialPages(config: ProjectConfig) {
-    // Layout
+    // ルートレイアウト
     const layoutContent = `import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
@@ -1124,7 +1201,7 @@ export default function RootLayout({
 
     await fs.writeFile(path.join(config.projectPath, 'src/app/layout.tsx'), layoutContent);
 
-    // Homepage with optional database demo
+    // データベースデモを含むホームページ
     const pageContent = `'use client';
 
 import { useEffect, useState } from 'react';
@@ -1239,8 +1316,12 @@ export default function Home() {
     await fs.writeFile(path.join(config.projectPath, 'src/app/page.tsx'), pageContent);
 }
 
+/**
+ * npmパッケージの依存関係をインストールする
+ * @param config プロジェクト設定
+ */
 async function installDependencies(config: ProjectConfig) {
-    logger.step('Installing dependencies...');
+    logger.step('依存関係をインストール中...');
 
     try {
         await execa(config.packageManager, ['install'], {
@@ -1248,6 +1329,6 @@ async function installDependencies(config: ProjectConfig) {
             stdio: 'inherit',
         });
     } catch (error) {
-        throw new Error(`Failed to install dependencies: ${(error as Error).message}`);
+        throw new Error(`依存関係のインストールに失敗: ${(error as Error).message}`);
     }
 }

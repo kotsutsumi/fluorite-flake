@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create/types.js';
 import { readTemplate, readTemplateWithReplacements } from '../utils/template-reader.js';
 
-// Simple logger replacement
+// シンプルなロガーの代替実装
 const _logger = {
     info: (message: string, meta?: unknown) => console.log(`[INFO] ${message}`, meta || ''),
     warn: (message: string, meta?: unknown) => console.warn(`[WARN] ${message}`, meta || ''),
@@ -12,11 +12,18 @@ const _logger = {
     error: (message: string, meta?: unknown) => console.error(`[ERROR] ${message}`, meta || ''),
 };
 
+/**
+ * データベース設定を行うメイン関数
+ * 指定されたデータベースとORMに応じて設定ファイルやサンプルコードを生成
+ * @param config プロジェクト設定
+ */
 export async function setupDatabase(config: ProjectConfig) {
+    // データベースが指定されていない場合はスキップ
     if (config.database === 'none') {
         return;
     }
 
+    // データベース種別に応じたセットアップ
     switch (config.database) {
         case 'turso':
             await setupTurso(config);
@@ -25,9 +32,10 @@ export async function setupDatabase(config: ProjectConfig) {
             await setupSupabase(config);
             break;
         default:
-            throw new Error(`Unknown database: ${config.database}`);
+            throw new Error(`未知のデータベース: ${config.database}`);
     }
 
+    // ORMに応じたセットアップ
     switch (config.orm) {
         case 'prisma':
             await setupPrisma(config);
@@ -39,14 +47,21 @@ export async function setupDatabase(config: ProjectConfig) {
             break;
     }
 
+    // サンプルAPIルートとデモコンポーネントの作成
     await createSampleApiRoute(config);
     await createDatabaseDemoComponent(config);
 
+    // Prismaを使用する場合はpostinstallスクリプトを追加
     if (config.orm === 'prisma') {
         await addPostInstallScript(config);
     }
 }
 
+/**
+ * Tursoデータベースの設定を行う
+ * 環境変数テンプレート、セットアップスクリプト、パッケージスクリプトを作成
+ * @param config プロジェクト設定
+ */
 async function setupTurso(config: ProjectConfig) {
     const envContent = await readTemplate('database/env/turso-env.txt.template');
     await appendEnvLocal(config, envContent);
@@ -74,11 +89,16 @@ async function setupTurso(config: ProjectConfig) {
     };
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
-    // Check Turso CLI availability and provide guidance
-    // TODO: Enable when CLI adapters are fixed
+    // Turso CLIの可用性を確認してガイダンスを提供
+    // TODO: CLIアダプターが修正されたら有効化
     // await checkTursoAvailability(config);
 }
 
+/**
+ * Supabaseデータベースの設定を行う
+ * 環境変数テンプレート、クライアントライブラリ、セットアップスクリプトを作成
+ * @param config プロジェクト設定
+ */
 async function setupSupabase(config: ProjectConfig) {
     const envContent = await readTemplate('database/env/supabase-env.txt.template');
     await appendEnvLocal(config, envContent);
@@ -112,11 +132,16 @@ async function setupSupabase(config: ProjectConfig) {
     };
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
-    // Check Supabase CLI availability and provide guidance
-    // TODO: Enable when CLI adapters are fixed
+    // Supabase CLIの可用性を確認してガイダンスを提供
+    // TODO: CLIアダプターが修正されたら有効化
     // await checkSupabaseAvailability(config);
 }
 
+/**
+ * Prisma ORMの設定を行う
+ * スキーマファイル、シードファイル、データベースクライアント、スクリプトを作成
+ * @param config プロジェクト設定
+ */
 async function setupPrisma(config: ProjectConfig) {
     const prismaDir = path.join(config.projectPath, 'prisma');
     await fs.ensureDir(prismaDir);
@@ -124,7 +149,9 @@ async function setupPrisma(config: ProjectConfig) {
     const packageJsonPath = path.join(config.projectPath, 'package.json');
     const packageJson = await fs.readJSON(packageJsonPath);
 
+    // 認証機能が有効な場合のメンバーシップフィールド
     const authMemberships = config.auth ? '\n  memberships   Member[]' : '';
+    // 認証機能が有効な場合の追加モデル定義
     const authModels = config.auth
         ? `model Organization {
   id         String       @id @default(cuid())
@@ -221,7 +248,7 @@ model Invitation {
             : '',
         authOrganizations: config.auth
             ? `
-  // Create organizations and memberships
+  // 組織とメンバーシップを作成
   const techCorp = await prisma.organization.create({
     data: {
       name: 'Tech Corp',
@@ -238,7 +265,7 @@ model Invitation {
     },
   });
 
-  // Create memberships
+  // メンバーシップを作成
   await prisma.member.createMany({
     data: [
       { userId: alice.id, organizationId: techCorp.id, role: 'owner' },
@@ -248,7 +275,7 @@ model Invitation {
     ],
   });
 
-  // Create an invitation
+  // 招待を作成
   await prisma.invitation.create({
     data: {
       email: 'dave@example.com',
@@ -305,6 +332,11 @@ model Invitation {
     }
 }
 
+/**
+ * Drizzle ORMの設定を行う
+ * 設定ファイル、スキーマ、クライアント、シードファイル、スクリプトを作成
+ * @param config プロジェクト設定
+ */
 async function setupDrizzle(config: ProjectConfig) {
     const drizzleDir = path.join(config.projectPath, 'drizzle');
     await fs.ensureDir(drizzleDir);
@@ -367,7 +399,13 @@ async function setupDrizzle(config: ProjectConfig) {
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }
 
+/**
+ * サンプルAPIルートを作成する
+ * 選択されたORMに応じてデータベース操作のAPIエンドポイントを生成
+ * @param config プロジェクト設定
+ */
 async function createSampleApiRoute(config: ProjectConfig) {
+    // ORMが指定されていない場合はスキップ
     if (!config.orm) {
         return;
     }
@@ -384,7 +422,13 @@ async function createSampleApiRoute(config: ProjectConfig) {
     await fs.writeFile(path.join(apiDir, 'route.ts'), apiRouteContent);
 }
 
+/**
+ * データベース操作のデモコンポーネントを作成する
+ * フロントエンドでデータベースの動作を確認できるコンポーネントを生成
+ * @param config プロジェクト設定
+ */
 async function createDatabaseDemoComponent(config: ProjectConfig) {
+    // ORMが指定されていない場合はスキップ
     if (!config.orm) {
         return;
     }
@@ -406,24 +450,35 @@ const ENV_TARGET_FILES = [
     '.env.prod',
 ];
 
+/**
+ * 環境変数ファイルにコンテンツを追加する
+ * Next.jsの場合は存在するすべての環境ファイルに追加、その他は.env.localに追加
+ * @param config プロジェクト設定
+ * @param content 追加するコンテンツ
+ */
 async function appendEnvLocal(config: ProjectConfig, content: string) {
-    // For Next.js, append to all environment files that exist
+    // Next.jsの場合、存在するすべての環境ファイルに追加
     if (config.framework === 'nextjs') {
         for (const file of ENV_TARGET_FILES) {
             const envPath = path.join(config.projectPath, file);
-            // Only append if file exists
+            // ファイルが存在する場合のみ追加
             if (await fs.pathExists(envPath)) {
                 await fs.appendFile(envPath, `\n${content}`);
             }
         }
     } else {
-        // For other frameworks, maintain original behavior - create .env.local if needed
+        // その他のフレームワークは元の動作を維持 - 必要に応じて.env.localを作成
         const envPath = path.join(config.projectPath, '.env.local');
         await fs.appendFile(envPath, content);
     }
 }
 
+/**
+ * Prisma用のpostinstallスクリプトをpackage.jsonに追加する
+ * @param config プロジェクト設定
+ */
 export async function addPostInstallScript(config: ProjectConfig) {
+    // Prismaを使用しない場合はスキップ
     if (config.orm !== 'prisma') {
         return;
     }
@@ -441,7 +496,12 @@ export async function addPostInstallScript(config: ProjectConfig) {
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }
 
+/**
+ * Tursoデータベース用の初期化スクリプトを作成する
+ * @param config プロジェクト設定
+ */
 export async function createInitScript(config: ProjectConfig) {
+    // Turso以外のデータベースの場合はスキップ
     if (config.database !== 'turso') {
         return;
     }
@@ -471,7 +531,13 @@ export async function createInitScript(config: ProjectConfig) {
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 }
 
+/**
+ * 開発環境用のブートストラップスクリプトを作成する
+ * データベースの初期化とセットアップを自動化するスクリプト
+ * @param config プロジェクト設定
+ */
 export async function createDevelopmentBootstrapScript(config: ProjectConfig) {
+    // データベースやORMが指定されていない場合はスキップ
     if (config.database === 'none' || !config.orm) {
         return;
     }

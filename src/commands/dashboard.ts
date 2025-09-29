@@ -1,5 +1,11 @@
 /**
- * Dashboard command for viewing Cloudflare Workers and R2 status
+ * Cloudflare WorkersとR2の状態表示用ダッシュボードコマンド
+ *
+ * Cloudflareのリソース（Workers、R2バケット、KVストア）の状態を表示し、
+ * 管理操作（デプロイ、バケット作成・削除、ログ監視）を提供します。
+ * Wrangler CLIを使用してCloudflare APIと連携し、リアルタイムの情報を取得します。
+ *
+ * @module DashboardCommand
  */
 
 import chalk from 'chalk';
@@ -7,7 +13,31 @@ import ora from 'ora';
 import { createWranglerDashboard, formatDashboardData } from '../utils/wrangler-dashboard.js';
 
 /**
- * Display Cloudflare dashboard information
+ * Cloudflareダッシュボード情報の表示
+ *
+ * Cloudflareアカウントのリソース情報を取得し、整理された形で表示します。
+ * Workers、R2バケット、KVネームスペースの情報を個別または統合して表示できます。
+ * Wrangler CLIのインストールと認証状態を事前に確認します。
+ *
+ * @param options - 表示オプションの設定
+ * @param options.json - JSON形式で出力するか
+ * @param options.workers - Workers情報のみ表示するか
+ * @param options.r2 - R2バケット情報のみ表示するか
+ * @param options.kv - KVネームスペース情報のみ表示するか
+ * @param options.analytics - アナリティクス情報を表示するか
+ * @param options.workerName - アナリティクスを取得するWorker名
+ *
+ * @example
+ * ```typescript
+ * // 全リソースの表示
+ * await showDashboard();
+ *
+ * // WorkersのみをJSONで出力
+ * await showDashboard({ workers: true, json: true });
+ *
+ * // 特定Workerのアナリティクス表示
+ * await showDashboard({ analytics: true, workerName: 'my-worker' });
+ * ```
  */
 export async function showDashboard(
     options: {
@@ -23,7 +53,7 @@ export async function showDashboard(
     const dashboard = createWranglerDashboard();
 
     try {
-        // Check if Wrangler is available
+        // Wrangler CLIの利用可能性を確認
         const isAvailable = await dashboard.isAvailable();
         if (!isAvailable) {
             spinner.fail('Wrangler CLI is not installed or not in PATH');
@@ -34,7 +64,7 @@ export async function showDashboard(
             return;
         }
 
-        // Check authentication
+        // 認証状態の確認
         spinner.text = 'Checking authentication status...';
         const isAuth = await dashboard.isAuthenticated();
         if (!isAuth) {
@@ -44,11 +74,11 @@ export async function showDashboard(
             return;
         }
 
-        // Get user info
+        // ユーザー情報の取得
         const userInfo = await dashboard.whoami();
         spinner.succeed(`Authenticated as: ${userInfo?.email || 'Unknown'}`);
 
-        // Get dashboard data based on options
+        // オプションに基づいてダッシュボードデータを取得
         const showAll = !options.workers && !options.r2 && !options.kv && !options.analytics;
 
         if (showAll || options.workers || options.r2 || options.kv) {
@@ -57,7 +87,7 @@ export async function showDashboard(
             try {
                 const data = await dashboard.getDashboardData();
 
-                // Filter data based on options
+                // オプションに基づいてデータをフィルタリング
                 if (!showAll) {
                     if (!options.workers) {
                         data.workers = [];
@@ -73,10 +103,10 @@ export async function showDashboard(
                 dataSpinner.succeed('Dashboard data fetched');
 
                 if (options.json) {
-                    // Output as JSON
+                    // JSON形式で出力
                     console.log(JSON.stringify(data, null, 2));
                 } else {
-                    // Format and display
+                    // 整形して表示
                     console.log(`\n${chalk.bold.blue('Cloudflare Dashboard')}`);
                     console.log(chalk.gray('─'.repeat(50)));
 
@@ -93,7 +123,7 @@ export async function showDashboard(
             }
         }
 
-        // Get analytics if requested
+        // リクエストされた場合はアナリティクスを取得
         if (options.analytics && options.workerName) {
             const analyticsSpinner = ora(`Fetching analytics for ${options.workerName}...`).start();
 
@@ -134,7 +164,25 @@ export async function showDashboard(
 }
 
 /**
- * Deploy a worker
+ * Workerのデプロイ
+ *
+ * 指定されたWorkerをCloudflareにデプロイします。
+ * ドライランモードでのテスト、環境指定、デプロイ結果のフィードバックを提供します。
+ * Wrangler CLIを使用して実際のデプロイ作業を実行します。
+ *
+ * @param name - デプロイするWorker名（オプション）
+ * @param options - デプロイオプション
+ * @param options.env - デプロイ環境名
+ * @param options.dryRun - ドライランモード（実際のデプロイは実行しない）
+ *
+ * @example
+ * ```typescript
+ * // ドライランでテスト
+ * await deployWorker('my-worker', { dryRun: true });
+ *
+ * // 本番環境にデプロイ
+ * await deployWorker('my-worker', { env: 'production' });
+ * ```
  */
 export async function deployWorker(
     name?: string,
@@ -147,14 +195,14 @@ export async function deployWorker(
     const spinner = ora('Preparing deployment...').start();
 
     try {
-        // Check if Wrangler is available
+        // Wranglerが利用可能か確認
         const isAvailable = await dashboard.isAvailable();
         if (!isAvailable) {
             spinner.fail('Wrangler CLI is not installed');
             return;
         }
 
-        // Check authentication
+        // 認証状態を確認
         const isAuth = await dashboard.isAuthenticated();
         if (!isAuth) {
             spinner.fail('Not authenticated with Cloudflare');
@@ -189,21 +237,40 @@ export async function deployWorker(
 }
 
 /**
- * Manage R2 buckets
+ * R2バケットの管理
+ *
+ * Cloudflare R2バケットの作成、削除、一覧表示を行います。
+ * Wrangler CLIを使用してR2 APIと連携し、バケットのライフサイクル管理を
+ * 安全かつ確実に実行します。操作結果のフィードバックも提供します。
+ *
+ * @param action - 実行する操作（'create' | 'delete' | 'list'）
+ * @param bucketName - 操作対象のバケット名（create/delete時に必須）
+ *
+ * @example
+ * ```typescript
+ * // バケット一覧の表示
+ * await manageR2Bucket('list');
+ *
+ * // 新しいバケットの作成
+ * await manageR2Bucket('create', 'my-bucket');
+ *
+ * // バケットの削除
+ * await manageR2Bucket('delete', 'old-bucket');
+ * ```
  */
 export async function manageR2Bucket(action: 'create' | 'delete' | 'list', bucketName?: string) {
     const dashboard = createWranglerDashboard();
     const spinner = ora('Checking Wrangler CLI...').start();
 
     try {
-        // Check if Wrangler is available
+        // Wranglerが利用可能か確認
         const isAvailable = await dashboard.isAvailable();
         if (!isAvailable) {
             spinner.fail('Wrangler CLI is not installed');
             return;
         }
 
-        // Check authentication
+        // 認証状態を確認
         const isAuth = await dashboard.isAuthenticated();
         if (!isAuth) {
             spinner.fail('Not authenticated with Cloudflare');
@@ -274,7 +341,30 @@ export async function manageR2Bucket(action: 'create' | 'delete' | 'list', bucke
 }
 
 /**
- * Tail worker logs
+ * Workerログのリアルタイム監視
+ *
+ * 指定されたWorkerのログをリアルタイムでストリーミングし、
+ * コンソールに表示します。ログのフォーマット、フィルタリング、
+ * カラー出力などのオプションを提供し、デバッグと監視を支援します。
+ *
+ * @param workerName - 監視するWorker名（オプション）
+ * @param options - ログ監視のオプション
+ * @param options.format - ログの出力フォーマット（'json' | 'pretty'）
+ * @param options.status - ステータスコードでフィルタリング（'ok' | 'error'）
+ * @param options.method - HTTPメソッドでフィルタリング
+ * @param options.search - ログ内容の検索キーワード
+ *
+ * @example
+ * ```typescript
+ * // 全Workerのログを綺麗なフォーマットで表示
+ * await tailWorkerLogs(undefined, { format: 'pretty' });
+ *
+ * // 特定Workerのエラーログのみ表示
+ * await tailWorkerLogs('my-worker', { status: 'error' });
+ *
+ * // JSONフォーマットで出力
+ * await tailWorkerLogs('api-worker', { format: 'json' });
+ * ```
  */
 export async function tailWorkerLogs(
     workerName?: string,
@@ -289,14 +379,14 @@ export async function tailWorkerLogs(
     const spinner = ora('Starting log tail...').start();
 
     try {
-        // Check if Wrangler is available
+        // Wranglerが利用可能か確認
         const isAvailable = await dashboard.isAvailable();
         if (!isAvailable) {
             spinner.fail('Wrangler CLI is not installed');
             return;
         }
 
-        // Check authentication
+        // 認証状態を確認
         const isAuth = await dashboard.isAuthenticated();
         if (!isAuth) {
             spinner.fail('Not authenticated with Cloudflare');
@@ -306,15 +396,15 @@ export async function tailWorkerLogs(
         spinner.succeed('Tailing worker logs (press Ctrl+C to stop)...');
         console.log(chalk.gray('─'.repeat(50)));
 
-        // Start tailing logs
+        // ログのテーリングを開始
         const logStream = await dashboard.tailLogs(workerName, options);
 
         for await (const log of logStream) {
-            // Format log based on content
+            // 内容に基づいてログをフォーマット
             if (options.format === 'json') {
                 console.log(log);
             } else {
-                // Pretty format with colors
+                // カラーで綺麗にフォーマット
                 if (log.includes('error') || log.includes('Error')) {
                     console.log(chalk.red(log));
                 } else if (log.includes('warning') || log.includes('Warning')) {

@@ -3,55 +3,70 @@ import fs from 'fs-extra';
 
 import type { ProjectConfig } from '../commands/create/types.js';
 
+/**
+ * Expoプロジェクトを生成するメイン関数
+ * React Native アプリケーションの基本構造、設定、テストセットアップを行う
+ * @param config プロジェクト設定
+ */
 export async function generateExpoProject(config: ProjectConfig) {
-    // Create project directory
+    // プロジェクトディレクトリの作成
     await fs.ensureDir(config.projectPath);
 
-    // Create Expo app structure
+    // Expoアプリ構造の作成
     await createExpoAppStructure(config);
 
-    // Setup package.json for Expo
+    // Expo用package.jsonのセットアップ
     await generateExpoPackageJson(config);
 
-    // Setup TypeScript
+    // TypeScript設定
     await setupExpoTypeScript(config);
 
-    // Setup Expo configuration
+    // Expo設定ファイルの作成
     await setupExpoConfig(config);
 
-    // Setup Metro bundler
+    // Metroバンドラーの設定
     await setupMetro(config);
 
-    // Setup Babel configuration
+    // Babel設定
     await setupBabel(config);
 
-    // Create initial app structure
+    // 初期アプリ構造の作成
     await createInitialExpoApp(config);
 
-    // Setup .gitignore
+    // .gitignoreファイルのセットアップ
     await createExpoGitignore(config);
 
-    // Setup Maestro E2E testing
+    // Maestro E2Eテストのセットアップ
     await setupMaestroTesting(config);
 }
 
+/**
+ * Expoアプリケーションの基本ディレクトリ構造を作成する
+ * @param config プロジェクト設定
+ */
 async function createExpoAppStructure(config: ProjectConfig) {
+    // 作成するディレクトリリスト（Expo Router構造）
     const dirs = [
-        'app',
-        'components',
-        'components/ui',
-        'constants',
-        'hooks',
-        'assets',
-        'assets/images',
-        'assets/fonts',
+        'app', // Expo Routerのページとレイアウト
+        'components', // 再利用可能なコンポーネント
+        'components/ui', // UIライブラリコンポーネント
+        'constants', // 定数定義ファイル
+        'hooks', // カスタムReactフック
+        'assets', // 静的アセット
+        'assets/images', // 画像ファイル
+        'assets/fonts', // フォントファイル
     ];
 
+    // 各ディレクトリを作成
     for (const dir of dirs) {
         await fs.ensureDir(path.join(config.projectPath, dir));
     }
 }
 
+/**
+ * Expo用のpackage.jsonファイルを生成する（依存関係とスクリプトを含む）
+ * @param config プロジェクト設定
+ */
 async function generateExpoPackageJson(config: ProjectConfig) {
     const packageJson: {
         name: string;
@@ -101,7 +116,7 @@ async function generateExpoPackageJson(config: ProjectConfig) {
         },
     };
 
-    // Add database dependencies for Expo
+    // Expo用データベース依存関係の追加
     if (config.database === 'turso' && config.orm === 'drizzle') {
         packageJson.dependencies['drizzle-orm'] = '^0.38.3';
         packageJson.dependencies['@libsql/client'] = '^0.15.0';
@@ -110,7 +125,7 @@ async function generateExpoPackageJson(config: ProjectConfig) {
         packageJson.dependencies['@supabase/supabase-js'] = '^2.48.1';
     }
 
-    // Add storage dependencies
+    // ストレージ依存関係の追加
     if (config.storage !== 'none') {
         switch (config.storage) {
             case 'supabase-storage':
@@ -124,7 +139,7 @@ async function generateExpoPackageJson(config: ProjectConfig) {
         }
     }
 
-    // Add authentication dependencies
+    // 認証依存関係の追加
     if (config.auth) {
         packageJson.dependencies['expo-auth-session'] = '~6.0.0';
         packageJson.dependencies['expo-crypto'] = '~14.0.0';
@@ -136,6 +151,10 @@ async function generateExpoPackageJson(config: ProjectConfig) {
     });
 }
 
+/**
+ * Expo用TypeScript設定ファイル（tsconfig.json）を設定する
+ * @param config プロジェクト設定
+ */
 async function setupExpoTypeScript(config: ProjectConfig) {
     const tsConfig = {
         extends: 'expo/tsconfig.base',
@@ -153,13 +172,17 @@ async function setupExpoTypeScript(config: ProjectConfig) {
         spaces: 2,
     });
 
-    // Create expo-env.d.ts
+    // Expo環境型定義ファイルの作成
     const expoEnvContent = `/// <reference types="expo/types" />
 `;
 
     await fs.writeFile(path.join(config.projectPath, 'expo-env.d.ts'), expoEnvContent);
 }
 
+/**
+ * Expo設定ファイル（app.json）を作成する
+ * @param config プロジェクト設定
+ */
 async function setupExpoConfig(config: ProjectConfig) {
     const appConfig = {
         expo: {
@@ -214,6 +237,10 @@ async function setupExpoConfig(config: ProjectConfig) {
     });
 }
 
+/**
+ * Metro バンドラーの設定ファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function setupMetro(config: ProjectConfig) {
     const metroConfig = `const { getDefaultConfig } = require('expo/metro-config');
 
@@ -226,6 +253,10 @@ module.exports = config;
     await fs.writeFile(path.join(config.projectPath, 'metro.config.js'), metroConfig);
 }
 
+/**
+ * Babel設定ファイルを作成する（Expo用トランスパイル設定）
+ * @param config プロジェクト設定
+ */
 async function setupBabel(config: ProjectConfig) {
     const babelConfig = {
         presets: ['babel-preset-expo'],
@@ -237,20 +268,24 @@ async function setupBabel(config: ProjectConfig) {
     });
 }
 
+/**
+ * Expoアプリの初期構造とサンプルページを作成する
+ * @param config プロジェクト設定
+ */
 async function createInitialExpoApp(config: ProjectConfig) {
-    // Root layout
+    // ルートレイアウト
     const rootLayoutContent = `import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { SplashScreen } from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { Provider as JotaiProvider } from 'jotai';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete
+// アセット読み込み完了前にスプラッシュスクリーンが自動で非表示になることを防ぐ
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    // Add custom fonts here
+    // カスタムフォントをここに追加
   });
 
   useEffect(() => {
@@ -276,7 +311,7 @@ export default function RootLayout() {
 
     await fs.writeFile(path.join(config.projectPath, 'app/_layout.tsx'), rootLayoutContent);
 
-    // Create tabs layout
+    // タブレイアウトの作成
     await fs.ensureDir(path.join(config.projectPath, 'app/(tabs)'));
 
     const tabsLayoutContent = `import { Tabs } from 'expo-router';
@@ -321,7 +356,7 @@ export default function TabLayout() {
 
     await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/_layout.tsx'), tabsLayoutContent);
 
-    // Home screen
+    // ホーム画面
     const homeScreenContent = `import { StyleSheet, Text, View } from 'react-native';
 import { useAtom } from 'jotai';
 import { atom } from 'jotai';
@@ -417,7 +452,7 @@ const styles = StyleSheet.create({
 
     await fs.writeFile(path.join(config.projectPath, 'app/(tabs)/index.tsx'), homeScreenContent);
 
-    // Explore screen
+    // 探索画面
     const exploreScreenContent = `import { StyleSheet, Text, View, ScrollView } from 'react-native';
 
 export default function ExploreScreen() {
@@ -506,7 +541,7 @@ const styles = StyleSheet.create({
         exploreScreenContent
     );
 
-    // Not found screen
+    // 404画面
     const notFoundContent = `import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -548,12 +583,16 @@ const styles = StyleSheet.create({
 
     await fs.writeFile(path.join(config.projectPath, 'app/+not-found.tsx'), notFoundContent);
 
-    // Create placeholder assets
+    // プレースホルダーアセットの作成
     await createPlaceholderAssets(config);
 }
 
+/**
+ * プレースホルダーアセットとその説明用READMEファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function createPlaceholderAssets(config: ProjectConfig) {
-    // For now, create README files explaining what assets are needed
+    // 必要なアセットの説明用READMEファイルを作成
     const assetsReadme = `# Assets
 
 Please add the following asset files:
@@ -574,6 +613,10 @@ Placeholder assets have been created. Replace with your actual design assets.
     await fs.writeFile(path.join(config.projectPath, 'assets/README.md'), assetsReadme);
 }
 
+/**
+ * Expo用.gitignoreファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function createExpoGitignore(config: ProjectConfig) {
     const gitignoreContent = `# Learn more https://docs.github.io/en/get-started/getting-started-with-git/ignoring-files
 
@@ -615,12 +658,16 @@ yarn-error.*
     await fs.writeFile(path.join(config.projectPath, '.gitignore'), gitignoreContent);
 }
 
+/**
+ * Maestro E2Eテストフレームワークのセットアップを行う
+ * @param config プロジェクト設定
+ */
 async function setupMaestroTesting(config: ProjectConfig) {
-    // Create .maestro directory for test flows
+    // テストフロー用.maestroディレクトリの作成
     const maestroDir = path.join(config.projectPath, '.maestro');
     await fs.ensureDir(maestroDir);
 
-    // Create README for Maestro
+    // Maestro用READMEの作成
     const maestroReadme = `# Maestro E2E Testing
 
 Maestro is a lightweight E2E testing framework for mobile apps that works great with Expo.
@@ -700,7 +747,7 @@ Key concepts:
 
     await fs.writeFile(path.join(maestroDir, 'README.md'), maestroReadme);
 
-    // Create a basic smoke test
+    // 基本的なスモークテストの作成
     const smokeTest = `# Basic smoke test for ${config.projectName}
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
@@ -757,7 +804,7 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
     await fs.writeFile(path.join(maestroDir, 'smoke-test.yaml'), smokeTest);
 
-    // Create navigation test
+    // ナビゲーションテストの作成
     const navigationTest = `# Navigation test for ${config.projectName}
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
@@ -789,7 +836,7 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
     await fs.writeFile(path.join(maestroDir, 'navigation-test.yaml'), navigationTest);
 
-    // Create auth test template if auth is enabled
+    // 認証が有効な場合の認証テストテンプレートの作成
     if (config.auth) {
         const authTest = `# Authentication flow test
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
@@ -838,7 +885,7 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
         await fs.writeFile(path.join(maestroDir, 'auth-test.yaml'), authTest);
     }
 
-    // Create a CI workflow template
+    // CIワークフローテンプレートの作成
     const ciWorkflow = `# CI Test Suite
 appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
@@ -865,12 +912,12 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
 
     await fs.writeFile(path.join(maestroDir, 'ci-test-suite.yaml'), ciWorkflow);
 
-    // Update package.json with Maestro test scripts
+    // package.jsonにMaestroテストスクリプトを追加
     const packageJsonPath = path.join(config.projectPath, 'package.json');
     if (await fs.pathExists(packageJsonPath)) {
         const packageJson = await fs.readJSON(packageJsonPath);
 
-        // Add Maestro test scripts
+        // Maestroテストスクリプトの追加
         packageJson.scripts = {
             ...packageJson.scripts,
             'test:e2e': 'maestro test .maestro/',
@@ -882,13 +929,13 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
         await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
     }
 
-    // Add testID props to main components for better testing
-    // Update the home screen to include testIDs
+    // テストを向上させるためメインコンポーネントにtestIDプロパティを追加
+    // ホーム画面にtestIDを含むよう更新
     const homeScreenPath = path.join(config.projectPath, 'app/(tabs)/index.tsx');
     if (await fs.pathExists(homeScreenPath)) {
         const homeContent = await fs.readFile(homeScreenPath, 'utf-8');
 
-        // Add testID props to make components easier to test with Maestro
+        // Maestroでのテストを容易にするためtestIDプロパティを追加
         const updatedHomeContent = homeContent
             .replace(
                 'style={styles.button}',
@@ -902,7 +949,7 @@ appId: com.${config.projectName.toLowerCase().replace(/-/g, '')}
         await fs.writeFile(homeScreenPath, updatedHomeContent);
     }
 
-    // Create a config file for Maestro Studio
+    // Maestro Studio用設定ファイルの作成
     const maestroConfig = `# Maestro Configuration
 app:
   id: com.${config.projectName.toLowerCase().replace(/-/g, '')}

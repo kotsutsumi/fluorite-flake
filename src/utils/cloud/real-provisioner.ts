@@ -105,7 +105,7 @@ export class RealProvisioner implements CloudProvisioner {
         const databases: TursoDatabaseRecord[] = [];
 
         for (const env of DB_ENVIRONMENTS) {
-            // Turso only accepts lowercase letters, numbers, and dashes (no underscores)
+            // Tursoは小文字、数字、ダッシュのみ受け入れる（アンダースコアは不可）
             const dbName = `${slug}-${env}`;
             const hostname = await this.createOrFetchTursoDatabase(dbName);
             const authToken = await this.createTursoToken(dbName);

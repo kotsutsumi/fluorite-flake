@@ -1,95 +1,163 @@
 /**
- * Wrangler Dashboard Integration
+ * Wranglerダッシュボード統合
  *
- * Minimal dashboard features for Cloudflare Workers and R2 storage
- * without external dependencies that cause compilation issues.
+ * コンパイル問題を引き起こす外部依存関係を使用しない
+ * Cloudflare WorkersとR2ストレージの最小限のダッシュボード機能
  */
 
 import { execa } from 'execa';
 import type { ExecaError } from 'execa';
 
 /**
- * Wrangler dashboard data types
+ * Wranglerダッシュボードのデータ型定義
+ */
+/**
+ * Cloudflare Workerの情報を表すインターフェース
  */
 export interface WranglerWorker {
+    /** Worker名 */
     name: string;
+    /** Worker ID */
     id?: string;
+    /** 作成日時 */
     created_on?: string;
+    /** 更新日時 */
     modified_on?: string;
+    /** ETagハッシュ */
     etag?: string;
+    /** ルート情報 */
     routes?: string[];
+    /** 使用モデル（バンドルまたはアンバウンド） */
     usage_model?: 'bundled' | 'unbound';
 }
 
+/**
+ * Cloudflare R2バケットの情報を表すインターフェース
+ */
 export interface WranglerR2Bucket {
+    /** バケット名 */
     name: string;
+    /** 作成日時 */
     created_on?: string;
+    /** ロケーション */
     location?: string;
 }
 
+/**
+ * Cloudflare KVネームスペースの情報を表すインターフェース
+ */
 export interface WranglerKVNamespace {
+    /** ネームスペースID */
     id: string;
+    /** ネームスペースタイトル */
     title: string;
+    /** URLエンコーディングサポート */
     supports_url_encoding?: boolean;
 }
 
+/**
+ * Cloudflare Durable Objectの情報を表すインターフェース
+ */
 export interface WranglerDurableObject {
+    /** Durable Object名 */
     name: string;
+    /** クラス名 */
     class_name: string;
+    /** スクリプト名 */
     script_name?: string;
 }
 
+/**
+ * Cloudflare Workerのデプロイメント情報を表すインターフェース
+ */
 export interface WranglerDeployment {
+    /** デプロイメントID */
     id: string;
+    /** 作成日時 */
     created_on: string;
+    /** 作成者 */
     author: string;
+    /** デプロイメントソース */
     source: 'upload' | 'wrangler';
+    /** デプロイメント戦略 */
     strategy: 'percentage' | 'weight';
+    /** バージョン情報 */
     versions: Array<{
+        /** バージョンID */
         version_id: string;
+        /** トラフィックの割合 */
         percentage: number;
     }>;
 }
 
+/**
+ * Workerのアナリティクス情報を表すインターフェース
+ */
 export interface WranglerAnalytics {
+    /** リクエスト統計 */
     requests: {
+        /** 成功リクエスト数 */
         success: number;
+        /** エラーリクエスト数 */
         error: number;
+        /** 総リクエスト数 */
         total: number;
     };
+    /** 帯域幅統計 */
     bandwidth: {
+        /** 使用バイト数 */
         bytes: number;
     };
+    /** CPU時間統計 */
     cpu_time: {
+        /** パーセンタイル値 */
         percentiles: {
+            /** 50%タイル */
             p50: number;
+            /** 75%タイル */
             p75: number;
+            /** 99%タイル */
             p99: number;
         };
     };
 }
 
+/**
+ * ダッシュボードの全データをまとめたインターフェース
+ */
 export interface WranglerDashboardData {
+    /** Worker一覧 */
     workers: WranglerWorker[];
+    /** R2バケット一覧 */
     r2Buckets: WranglerR2Bucket[];
+    /** KVネームスペース一覧 */
     kvNamespaces: WranglerKVNamespace[];
+    /** Durable Object一覧 */
     durableObjects: WranglerDurableObject[];
+    /** デプロイメント一覧 */
     deployments: WranglerDeployment[];
+    /** アナリティクス情報（オプション） */
     analytics?: WranglerAnalytics;
 }
 
 /**
- * Wrangler CLI wrapper for dashboard operations
+ * ダッシュボード操作のためのWrangler CLIラッパークラス
  */
 export class WranglerDashboard {
+    /** Wrangler CLIのパス */
     private wranglerPath: string;
 
+    /**
+     * WranglerDashboardインスタンスを作成します
+     * @param wranglerPath Wrangler CLIのパス（デフォルト: 'wrangler'）
+     */
     constructor(wranglerPath = 'wrangler') {
         this.wranglerPath = wranglerPath;
     }
 
     /**
-     * Check if Wrangler CLI is available
+     * Wrangler CLIが利用可能かどうかをチェックします
+     * @returns CLIが利用可能な場合はtrue
      */
     async isAvailable(): Promise<boolean> {
         try {
@@ -101,7 +169,8 @@ export class WranglerDashboard {
     }
 
     /**
-     * Get Wrangler version
+     * Wranglerのバージョンを取得します
+     * @returns バージョン文字列、取得できない場合はnull
      */
     async getVersion(): Promise<string | null> {
         try {
@@ -113,7 +182,8 @@ export class WranglerDashboard {
     }
 
     /**
-     * Check authentication status
+     * 認証状態をチェックします
+     * @returns 認証済みの場合はtrue
      */
     async isAuthenticated(): Promise<boolean> {
         try {
@@ -125,12 +195,13 @@ export class WranglerDashboard {
     }
 
     /**
-     * Get current user info
+     * 現在のユーザー情報を取得します
+     * @returns ユーザー情報、取得できない場合はnull
      */
     async whoami(): Promise<{ email?: string; accountId?: string } | null> {
         try {
             const { stdout } = await execa(this.wranglerPath, ['whoami']);
-            // Parse email from output like "You are logged in as: user@example.com"
+            // 「You are logged in as: user@example.com」のような出力からメールをパース
             const emailMatch = stdout.match(/logged in as:\s*(.+?)(?:\s|\n|$)/);
             const accountMatch = stdout.match(/Account ID:\s*(.+?)(?:\s|\n|$)/);
 
@@ -144,14 +215,15 @@ export class WranglerDashboard {
     }
 
     /**
-     * List all workers
+     * 全てのWorkerを一覧取得します
+     * @returns Workerの配列
      */
     async listWorkers(): Promise<WranglerWorker[]> {
         try {
             const { stdout } = await execa(this.wranglerPath, ['deploy', '--dry-run', '--json']);
             const data = JSON.parse(stdout);
 
-            // Transform the output to our format
+            // 出力を我々のフォーマットに変換
             if (Array.isArray(data)) {
                 return data.map((worker: unknown) => {
                     const w = worker as Record<string, unknown>;
@@ -168,10 +240,10 @@ export class WranglerDashboard {
             }
             return [];
         } catch {
-            // Fallback: try to parse from non-JSON output
+            // フォールバック: JSON以外の出力からパースを試みる
             try {
                 const { stdout } = await execa(this.wranglerPath, ['deploy', '--dry-run']);
-                // Basic parsing of worker names from output
+                // 出力からWorker名の基本的なパース
                 const matches = stdout.matchAll(/Worker:\s*(.+)/g);
                 return Array.from(matches).map((match) => ({ name: match[1] }));
             } catch {
@@ -181,23 +253,24 @@ export class WranglerDashboard {
     }
 
     /**
-     * List R2 buckets
+     * R2バケットを一覧取得します
+     * @returns R2バケットの配列
      */
     async listR2Buckets(): Promise<WranglerR2Bucket[]> {
         try {
             const { stdout } = await execa(this.wranglerPath, ['r2', 'bucket', 'list']);
 
-            // Parse bucket names from output
+            // 出力からバケット名をパース
             const lines = stdout.split('\n').filter((line) => line.trim());
             const buckets: WranglerR2Bucket[] = [];
 
             for (const line of lines) {
-                // Skip headers and empty lines
+                // ヘッダーと空行をスキップ
                 if (line.includes('Name') || line.includes('---') || !line.trim()) {
                     continue;
                 }
 
-                // Extract bucket name (first column)
+                // バケット名（第1カラム）を抽出
                 const parts = line.trim().split(/\s+/);
                 if (parts[0]) {
                     buckets.push({
@@ -210,19 +283,20 @@ export class WranglerDashboard {
 
             return buckets;
         } catch (_error) {
-            // If R2 is not available or user has no buckets
+            // R2が利用できないか、ユーザーがバケットを持っていない場合
             return [];
         }
     }
 
     /**
-     * List KV namespaces
+     * KVネームスペースを一覧取得します
+     * @returns KVネームスペースの配列
      */
     async listKVNamespaces(): Promise<WranglerKVNamespace[]> {
         try {
             const { stdout } = await execa(this.wranglerPath, ['kv:namespace', 'list']);
 
-            // Try to parse JSON output first
+            // 最初にJSON出力のパースを試みる
             try {
                 const data = JSON.parse(stdout);
                 if (Array.isArray(data)) {
@@ -238,12 +312,12 @@ export class WranglerDashboard {
                     });
                 }
             } catch {
-                // Fallback to parsing text output
+                // テキスト出力のパースにフォールバック
                 const lines = stdout.split('\n').filter((line) => line.trim());
                 const namespaces: WranglerKVNamespace[] = [];
 
                 for (const line of lines) {
-                    // Parse lines like "namespace_id: namespace_title"
+                    // 「namespace_id: namespace_title」のような行をパース
                     const match = line.match(/(\w+):\s*(.+)/);
                     if (match) {
                         namespaces.push({
@@ -263,7 +337,10 @@ export class WranglerDashboard {
     }
 
     /**
-     * Get worker analytics (requires paid plan)
+     * Workerのアナリティクスを取得します（有料プランが必要）
+     * @param workerName Worker名
+     * @param date 日付（オプション）
+     * @returns アナリティクス情報、取得できない場合はnull
      */
     async getAnalytics(workerName: string, date?: string): Promise<WranglerAnalytics | null> {
         try {
@@ -274,7 +351,7 @@ export class WranglerDashboard {
 
             const { stdout } = await execa(this.wranglerPath, args);
 
-            // Parse analytics from output
+            // 出力からアナリティクスをパース
             const requestsMatch = stdout.match(/Requests:\s*(\d+)\s*success,\s*(\d+)\s*error/);
             const bandwidthMatch = stdout.match(/Bandwidth:\s*(\d+)\s*bytes/);
             const cpuMatch = stdout.match(/CPU Time.*p50:\s*(\d+).*p75:\s*(\d+).*p99:\s*(\d+)/);
@@ -308,9 +385,11 @@ export class WranglerDashboard {
     }
 
     /**
-     * Get comprehensive dashboard data
+     * 総合的なダッシュボードデータを取得します
+     * @returns ダッシュボードの全データ
      */
     async getDashboardData(): Promise<WranglerDashboardData> {
+        // 各サービスのデータを並行で取得
         const [workers, r2Buckets, kvNamespaces] = await Promise.all([
             this.listWorkers(),
             this.listR2Buckets(),
@@ -321,13 +400,18 @@ export class WranglerDashboard {
             workers,
             r2Buckets,
             kvNamespaces,
-            durableObjects: [], // Would require parsing wrangler.toml
-            deployments: [], // Would require additional API calls
+            durableObjects: [], // wrangler.tomlのパースが必要
+            deployments: [], // 追加のAPIコールが必要
         };
     }
 
     /**
-     * Deploy a worker (dry run by default for safety)
+     * Workerをデプロイします（安全のためデフォルトでドライラン）
+     * @param options デプロイオプション
+     * @param options.name Worker名
+     * @param options.dryRun ドライランモード
+     * @param options.env 環境名
+     * @returns デプロイ結果
      */
     async deployWorker(
         options: {
@@ -368,7 +452,7 @@ export class WranglerDashboard {
     }
 
     /**
-     * Create an R2 bucket
+     * R2バケットを作成します
      */
     async createR2Bucket(bucketName: string): Promise<{ success: boolean; message: string }> {
         try {
@@ -394,7 +478,7 @@ export class WranglerDashboard {
     }
 
     /**
-     * Delete an R2 bucket
+     * R2バケットを削除します
      */
     async deleteR2Bucket(bucketName: string): Promise<{ success: boolean; message: string }> {
         try {
@@ -420,7 +504,7 @@ export class WranglerDashboard {
     }
 
     /**
-     * Create a KV namespace
+     * KVネームスペースを作成します
      */
     async createKVNamespace(
         title: string
@@ -428,7 +512,7 @@ export class WranglerDashboard {
         try {
             const { stdout } = await execa(this.wranglerPath, ['kv:namespace', 'create', title]);
 
-            // Extract namespace ID from output
+            // 出力からネームスペースIDを抽出
             const idMatch = stdout.match(/id\s*=\s*"([^"]+)"/);
 
             return {
@@ -447,7 +531,7 @@ export class WranglerDashboard {
     }
 
     /**
-     * Tail worker logs
+     * Workerログをテールします
      */
     async tailLogs(
         workerName?: string,
@@ -480,7 +564,7 @@ export class WranglerDashboard {
             args.push('--search', options.search);
         }
 
-        // Create an async generator for streaming logs
+        // ストリーミングログ用の非同期ジェネレーターを作成
         const wranglerPath = this.wranglerPath;
         async function* logStream() {
             const subprocess = execa(wranglerPath, args);
@@ -489,10 +573,10 @@ export class WranglerDashboard {
                 return;
             }
 
-            // Process stdout as a stream
+            // stdoutをストリームとして処理
             subprocess.stdout.setEncoding('utf8');
             for await (const chunk of subprocess.stdout) {
-                // Chunk is already a string due to setEncoding
+                // setEncodingによりチャンクは既に文字列
                 yield chunk as string;
             }
         }
@@ -502,19 +586,23 @@ export class WranglerDashboard {
 }
 
 /**
- * Create a Wrangler dashboard instance
+ * Wranglerダッシュボードインスタンスを作成します
+ * @param wranglerPath Wrangler CLIのパス（オプション）
+ * @returns WranglerDashboardインスタンス
  */
 export function createWranglerDashboard(wranglerPath?: string): WranglerDashboard {
     return new WranglerDashboard(wranglerPath);
 }
 
 /**
- * Format dashboard data for display
+ * ダッシュボードデータを表示用にフォーマットします
+ * @param data フォーマットするダッシュボードデータ
+ * @returns フォーマットされた文字列
  */
 export function formatDashboardData(data: WranglerDashboardData): string {
     const sections: string[] = [];
 
-    // Workers section
+    // Workerセクション
     if (data.workers.length > 0) {
         sections.push('📦 Workers:');
         for (const worker of data.workers) {
@@ -524,7 +612,7 @@ export function formatDashboardData(data: WranglerDashboardData): string {
         }
     }
 
-    // R2 Buckets section
+    // R2バケットセクション
     if (data.r2Buckets.length > 0) {
         sections.push('\n🪣 R2 Buckets:');
         for (const bucket of data.r2Buckets) {
@@ -532,7 +620,7 @@ export function formatDashboardData(data: WranglerDashboardData): string {
         }
     }
 
-    // KV Namespaces section
+    // KVネームスペースセクション
     if (data.kvNamespaces.length > 0) {
         sections.push('\n🗄️ KV Namespaces:');
         for (const ns of data.kvNamespaces) {
@@ -540,7 +628,7 @@ export function formatDashboardData(data: WranglerDashboardData): string {
         }
     }
 
-    // Analytics section
+    // アナリティクスセクション
     if (data.analytics) {
         sections.push('\n📊 Analytics:');
         sections.push(

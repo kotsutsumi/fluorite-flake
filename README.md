@@ -43,6 +43,8 @@ fluorite-flake create
 fluorite-flake new
 ```
 
+> ℹ️ **Locale**: CLI output follows your OS locale (Japanese or English). Override it with `-L, --locale <en|ja>` or set `FLUORITE_LOCALE` when testing.
+
 The CLI will guide you through:
 1. **Framework Selection**: Next.js, Expo, Tauri, or Flutter
 2. **Project Configuration**: Name, database, authentication, storage

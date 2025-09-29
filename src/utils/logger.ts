@@ -1,21 +1,29 @@
 /**
- * Standardized logging utility for consistent output across the CLI
+ * CLI全体で一貫した出力を実現する標準化されたログユーティリティ
  */
 
 import chalk from 'chalk';
 
+/**
+ * ロガーのオプション設定
+ */
 export interface LoggerOptions {
+    /** メッセージのプレフィックス */
     prefix?: string;
+    /** タイムスタンプを表示するかどうか */
     timestamp?: boolean;
+    /** ログレベル */
     level?: 'debug' | 'info' | 'warn' | 'error';
 }
 
 /**
- * Centralized logger with consistent styling
+ * 一貫したスタイリングを持つ中央集中型ロガー
  */
 export const logger = {
     /**
-     * General information message
+     * 一般的な情報メッセージを出力します
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     info: (message: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -23,7 +31,9 @@ export const logger = {
     },
 
     /**
-     * Success message
+     * 成功メッセージを出力します
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     success: (message: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -31,7 +41,9 @@ export const logger = {
     },
 
     /**
-     * Warning message
+     * 警告メッセージを出力します
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     warn: (message: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -39,7 +51,9 @@ export const logger = {
     },
 
     /**
-     * Error message
+     * エラーメッセージを出力します
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     error: (message: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -47,7 +61,9 @@ export const logger = {
     },
 
     /**
-     * Step in a process
+     * プロセスのステップを表示します
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     step: (message: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -55,7 +71,9 @@ export const logger = {
     },
 
     /**
-     * Debug message (only shown in debug mode)
+     * デバッグメッセージを出力します（デバッグモードでのみ表示）
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     debug: (message: string, options?: LoggerOptions) => {
         if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
@@ -65,7 +83,9 @@ export const logger = {
     },
 
     /**
-     * Progress indicator
+     * 進行状況を表示します
+     * @param message 表示するメッセージ
+     * @param options ログオプション
      */
     progress: (message: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -73,7 +93,9 @@ export const logger = {
     },
 
     /**
-     * Command or code block
+     * コマンドやコードブロックを表示します
+     * @param command 表示するコマンド
+     * @param options ログオプション
      */
     command: (command: string, options?: LoggerOptions) => {
         const prefix = options?.prefix ? `${options.prefix} ` : '';
@@ -81,7 +103,8 @@ export const logger = {
     },
 
     /**
-     * Section divider
+     * セクションの区切り線を表示します
+     * @param title セクションのタイトル
      */
     section: (title: string) => {
         console.log();
@@ -90,14 +113,16 @@ export const logger = {
     },
 
     /**
-     * Blank line for spacing
+     * 空行を出力して間隔をあけます
      */
     blank: () => {
         console.log();
     },
 
     /**
-     * List item
+     * リストアイテムを表示します
+     * @param item アイテムの内容
+     * @param level インデントレベル（デフォルト: 0）
      */
     item: (item: string, level = 0) => {
         const indent = '  '.repeat(level);
@@ -105,7 +130,11 @@ export const logger = {
     },
 
     /**
-     * Key-value pair
+     * キー・値ペアを表示します
+     * @param key キー名
+     * @param value 値
+     * @param options 表示オプション
+     * @param options.color 値の色
      */
     keyValue: (
         key: string,
@@ -119,7 +148,9 @@ export const logger = {
 };
 
 /**
- * Create a scoped logger with a prefix
+ * プレフィックス付きのスコープロガーを作成します
+ * @param scope スコープ名
+ * @returns スコープ付きロガー
  */
 export function createScopedLogger(scope: string): typeof logger {
     return {
@@ -147,21 +178,33 @@ export function createScopedLogger(scope: string): typeof logger {
 }
 
 /**
- * Spinner utility for long-running operations
+ * 長時間実行される操作のためのスピナーユーティリティ
  */
 export class LoggerSpinner {
+    /** タイマーのID */
     private interval: NodeJS.Timeout | null = null;
+    /** スピナーのアニメーションフレーム */
     private frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    /** 現在のフレームインデックス */
     private current = 0;
 
+    /**
+     * スピナーを開始します
+     * @param message 表示するメッセージ
+     */
     start(message: string): void {
         process.stdout.write(`${this.frames[0]} ${message}`);
+        // 100ms毎にフレームを更新
         this.interval = setInterval(() => {
             this.current = (this.current + 1) % this.frames.length;
             process.stdout.write(`\r${this.frames[this.current]} ${message}`);
         }, 100);
     }
 
+    /**
+     * スピナーを停止し、成功メッセージを表示します
+     * @param message 表示する成功メッセージ
+     */
     stop(message?: string): void {
         if (this.interval) {
             clearInterval(this.interval);
@@ -173,6 +216,10 @@ export class LoggerSpinner {
         }
     }
 
+    /**
+     * スピナーを停止し、エラーメッセージを表示します
+     * @param message 表示するエラーメッセージ
+     */
     fail(message?: string): void {
         if (this.interval) {
             clearInterval(this.interval);
@@ -186,7 +233,8 @@ export class LoggerSpinner {
 }
 
 /**
- * Create a spinner for long operations
+ * 長時間操作用のスピナーを作成します
+ * @returns スピナーインスタンス
  */
 export function createSpinner(): LoggerSpinner {
     return new LoggerSpinner();

@@ -1,3 +1,13 @@
+/**
+ * パッケージバージョングループ定義
+ * 機能やカテゴリ別にパッケージバージョンを分類して管理
+ * 各グループは関連するパッケージのバージョンを一括で定義
+ */
+
+/**
+ * コアフレームワークバージョン
+ * 主要なフレームワークとライブラリのバージョン定義
+ */
 export const CORE_FRAMEWORK_VERSIONS = {
     next: '15.5.4',
     react: '19.0.0',
@@ -7,6 +17,10 @@ export const CORE_FRAMEWORK_VERSIONS = {
     '@tauri-apps/api': '^2.1.1',
 } as const;
 
+/**
+ * TypeScriptと型定義バージョン
+ * TypeScriptコンパイラと各ライブラリの型定義パッケージ
+ */
 export const TYPESCRIPT_AND_TYPES_VERSIONS = {
     typescript: '^5.6.0',
     '@types/node': '^22.0.0',
@@ -16,12 +30,20 @@ export const TYPESCRIPT_AND_TYPES_VERSIONS = {
     '@types/color': '^3.0.6',
 } as const;
 
+/**
+ * スタイリングバージョン
+ * CSSフレームワークとスタイリング関連パッケージ
+ */
 export const STYLING_VERSIONS = {
     tailwindcss: '^4',
     '@tailwindcss/postcss': '^4',
     'tailwindcss-animate': '^1.0.7',
 } as const;
 
+/**
+ * データベースとORMバージョン
+ * データベースクライアント、ORM、アダプターパッケージ
+ */
 export const DATABASE_AND_ORM_VERSIONS = {
     prisma: '^5.22.0',
     '@prisma/client': '^5.22.0',
@@ -32,27 +54,47 @@ export const DATABASE_AND_ORM_VERSIONS = {
     '@supabase/supabase-js': '^2.46.1',
 } as const;
 
+/**
+ * 認証バージョン
+ * 認証、パスワードハッシュ、バリデーション関連パッケージ
+ */
 export const AUTH_VERSIONS = {
     'better-auth': '^1.2.3',
     bcryptjs: '^2.4.3',
     zod: '^3.23.8',
 } as const;
 
+/**
+ * ストレージバージョン
+ * オブジェクトストレージ、ファイルストレージ関連パッケージ
+ */
 export const STORAGE_VERSIONS = {
     '@vercel/blob': '^0.27.0',
     '@aws-sdk/client-s3': '^3.687.0',
 } as const;
 
+/**
+ * デプロイバージョン
+ * デプロイ、アナリティクス、モニタリング関連パッケージ
+ */
 export const DEPLOYMENT_VERSIONS = {
     '@vercel/analytics': '^1.5.0',
     '@vercel/speed-insights': '^1.1.0',
 } as const;
 
+/**
+ * 状態管理とテーマバージョン
+ * グローバル状態管理、テーマ切り替え関連パッケージ
+ */
 export const STATE_THEME_VERSIONS = {
     jotai: '^2.10.4',
     'next-themes': '^0.4.4',
 } as const;
 
+/**
+ * UIコンポーネントバージョン
+ * Radix UIコンポーネント、アイコンライブラリなどのUIパーツ
+ */
 export const UI_COMPONENT_VERSIONS = {
     'lucide-react': '^0.460.0',
     'react-icons': '^5.4.0',
@@ -90,11 +132,19 @@ export const UI_COMPONENT_VERSIONS = {
     'tailwind-merge': '^2.5.4',
 } as const;
 
+/**
+ * フォームと入力バージョン
+ * フォーム管理、入力検証、フォームリゾルバー関連パッケージ
+ */
 export const FORM_AND_INPUT_VERSIONS = {
     'react-hook-form': '^7.54.2',
     '@hookform/resolvers': '^3.9.1',
 } as const;
 
+/**
+ * UIライブラリバージョン
+ * カルーセル、デイトピッカー、チャートなどの専用UIライブラリ
+ */
 export const UI_LIBRARY_VERSIONS = {
     'embla-carousel-react': '^8.5.2',
     'react-day-picker': '^9.4.5',
@@ -106,10 +156,18 @@ export const UI_LIBRARY_VERSIONS = {
     vaul: '^1.1.2',
 } as const;
 
+/**
+ * アニメーションバージョン
+ * アニメーション、モーションライブラリ関連パッケージ
+ */
 export const ANIMATION_VERSIONS = {
     motion: '^11.15.0',
 } as const;
 
+/**
+ * Kibo UIバージョン
+ * テーブル、リッチテキストエディターなどの高機能UIコンポーネント
+ */
 export const KIBO_UI_VERSIONS = {
     '@tanstack/react-table': '^8.20.5',
     '@tiptap/react': '^3.5.0',
@@ -143,6 +201,10 @@ export const KIBO_UI_VERSIONS = {
     '@tiptap/core': '^3.5.0',
 } as const;
 
+/**
+ * Kibo追加バージョン
+ * ドラッグ＆ドロップ、ファイルアップロード、メディア再生などの拡張機能
+ */
 export const KIBO_ADDITIONAL_VERSIONS = {
     'react-dropzone': '^14.3.5',
     'tippy.js': '^6.3.7',
@@ -159,6 +221,10 @@ export const KIBO_ADDITIONAL_VERSIONS = {
     '@types/culori': '^2.1.1',
 } as const;
 
+/**
+ * 開発ツールバージョン
+ * ビルドツール、リンター、フォーマッター、Gitフックなどの開発環境ツール
+ */
 export const DEV_TOOL_VERSIONS = {
     vite: '^6.0.0',
     '@vitejs/plugin-react': '^4.3.0',
@@ -166,21 +232,37 @@ export const DEV_TOOL_VERSIONS = {
     husky: '^9.1.7',
 } as const;
 
+/**
+ * テストバージョン
+ * テストフレームワーク、テストランナー、DOMモック関連パッケージ
+ */
 export const TESTING_VERSIONS = {
     vitest: '^2.1.5',
     '@vitest/ui': '^2.1.5',
     'happy-dom': '^15.11.6',
 } as const;
 
+/**
+ * ビルドツールバージョン
+ * TypeScript実行ツール、ビルドユーティリティ関連パッケージ
+ */
 export const BUILD_TOOL_VERSIONS = {
     tsx: '^4.19.2',
 } as const;
 
+/**
+ * Expo固有バージョン
+ * Expoフレームワーク固有のパッケージと機能
+ */
 export const EXPO_SPECIFIC_VERSIONS = {
     '@expo/vector-icons': '^14.0.0',
     'expo-router': '~4.0.0',
 } as const;
 
+/**
+ * Tauri固有バージョン
+ * Tauriフレームワーク固有のプラグインと機能
+ */
 export const TAURI_SPECIFIC_VERSIONS = {
     '@tauri-apps/plugin-shell': '^2.0.1',
 } as const;

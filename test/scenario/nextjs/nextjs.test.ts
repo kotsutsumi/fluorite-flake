@@ -4,8 +4,9 @@
  * 必要なファイル・依存関係・環境変数を正しく出力できるかを網羅的に確認する。
  * テストでは実際にテンポラリディレクトリへプロジェクトを生成し、構成ファイルの存在や依存関係を検証する。
  */
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { describe, expect, it, afterAll } from 'vitest';
 import path from 'node:path';
+import { execa } from 'execa';
 import {
     generateProject,
     verifyProjectStructure,
@@ -431,5 +432,33 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
 
             expect(depsValid).toBe(true);
         });
+    });
+
+    describe('Playwright E2E による Next.js 動作検証', () => {
+        const runE2ETest =
+            process.env.CI === 'true' || process.env.FLUORITE_SKIP_E2E === '1' ? it.skip : it;
+
+        runE2ETest(
+            'Playwright E2E フローが成功すること',
+            async () => {
+                const subprocess = execa(
+                    'pnpm',
+                    ['test:e2e', '--', 'test/e2e/nextjs.e2e.test.ts'],
+                    {
+                        env: {
+                            ...process.env,
+                            HUSKY: '0',
+                            NEXT_TELEMETRY_DISABLED: '1',
+                        },
+                    }
+                );
+
+                subprocess.stdout?.on('data', (chunk) => process.stdout.write(chunk));
+                subprocess.stderr?.on('data', (chunk) => process.stderr.write(chunk));
+
+                await subprocess;
+            },
+            900_000
+        );
     });
 });

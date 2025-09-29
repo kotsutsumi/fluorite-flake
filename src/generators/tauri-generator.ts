@@ -3,51 +3,66 @@ import fs from 'fs-extra';
 
 import type { ProjectConfig } from '../commands/create/types.js';
 
+/**
+ * Tauriプロジェクトを生成するメイン関数
+ * RustバックエンドとReactフロントエンドを組み合わせたデスクトップアプリを作成
+ * @param config プロジェクト設定
+ */
 export async function generateTauriProject(config: ProjectConfig) {
-    // Create project directory
+    // プロジェクトディレクトリの作成
     await fs.ensureDir(config.projectPath);
 
-    // Create Tauri app structure
+    // Tauriアプリ構造の作成
     await createTauriAppStructure(config);
 
-    // Setup package.json for Tauri
+    // Tauri用package.jsonのセットアップ
     await generateTauriPackageJson(config);
 
-    // Setup TypeScript
+    // TypeScript設定
     await setupTauriTypeScript(config);
 
-    // Setup Tauri configuration
+    // Tauri設定
     await setupTauriConfig(config);
 
-    // Setup Rust backend
+    // Rustバックエンドのセットアップ
     await setupRustBackend(config);
 
-    // Setup Vite configuration
+    // Vite設定
     await setupVite(config);
 
-    // Create initial web frontend
+    // 初期Webフロントエンドの作成
     await createWebFrontend(config);
 
-    // Setup .gitignore
+    // .gitignoreのセットアップ
     await createTauriGitignore(config);
 }
 
+/**
+ * Tauriアプリケーションの基本ディレクトリ構造を作成する
+ * @param config プロジェクト設定
+ */
 async function createTauriAppStructure(config: ProjectConfig) {
+    // 作成するディレクトリリスト（Tauri構造）
     const dirs = [
-        'src',
-        'src/components',
-        'src/styles',
-        'src/utils',
-        'src-tauri',
-        'src-tauri/src',
-        'public',
+        'src', // Reactフロントエンドソース
+        'src/components', // Reactコンポーネント
+        'src/styles', // CSSスタイルファイル
+        'src/utils', // ユーティリティ関数
+        'src-tauri', // Rustバックエンドルート
+        'src-tauri/src', // Rustソースコード
+        'public', // 静的アセット
     ];
 
+    // 各ディレクトリを作成
     for (const dir of dirs) {
         await fs.ensureDir(path.join(config.projectPath, dir));
     }
 }
 
+/**
+ * Tauri用のpackage.jsonファイルを生成する（フロントエンド依存関係とスクリプトを含む）
+ * @param config プロジェクト設定
+ */
 async function generateTauriPackageJson(config: ProjectConfig) {
     const packageJson = {
         name: config.projectName,
@@ -85,6 +100,10 @@ async function generateTauriPackageJson(config: ProjectConfig) {
     });
 }
 
+/**
+ * Tauri用TypeScript設定ファイルを設定する
+ * @param config プロジェクト設定
+ */
 async function setupTauriTypeScript(config: ProjectConfig) {
     const tsConfig = {
         compilerOptions: {
@@ -115,7 +134,7 @@ async function setupTauriTypeScript(config: ProjectConfig) {
         spaces: 2,
     });
 
-    // Node.js TypeScript config
+    // Node.js用TypeScript設定
     const nodeConfig = {
         compilerOptions: {
             composite: true,
@@ -134,6 +153,10 @@ async function setupTauriTypeScript(config: ProjectConfig) {
     });
 }
 
+/**
+ * Tauri設定ファイル（tauri.conf.json）を作成する
+ * @param config プロジェクト設定
+ */
 async function setupTauriConfig(config: ProjectConfig) {
     const tauriConfig = {
         productName: config.projectName,
@@ -192,8 +215,12 @@ async function setupTauriConfig(config: ProjectConfig) {
     });
 }
 
+/**
+ * Rustバックエンドのセットアップ（Cargo.toml、build.rs、main.rsなど）
+ * @param config プロジェクト設定
+ */
 async function setupRustBackend(config: ProjectConfig) {
-    // Cargo.toml
+    // Cargo.toml（Rustの依存関係管理ファイル）
     const cargoToml = `[package]
 name = "${config.projectName}"
 version = "0.0.0"
@@ -217,7 +244,7 @@ custom-protocol = ["tauri/custom-protocol"]
 
     await fs.writeFile(path.join(config.projectPath, 'src-tauri/Cargo.toml'), cargoToml);
 
-    // build.rs
+    // build.rs（ビルドスクリプト）
     const buildRs = `fn main() {
     tauri_build::build()
 }
@@ -225,7 +252,7 @@ custom-protocol = ["tauri/custom-protocol"]
 
     await fs.writeFile(path.join(config.projectPath, 'src-tauri/build.rs'), buildRs);
 
-    // main.rs
+    // main.rs（Rustメインエントリポイント）
     const mainRs = `// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -245,7 +272,7 @@ fn greet(name: &str) -> String {
 
     await fs.writeFile(path.join(config.projectPath, 'src-tauri/src/main.rs'), mainRs);
 
-    // Create icons directory and placeholder
+    // アイコンディレクトリとプラスホルダーの作成
     const iconsDir = path.join(config.projectPath, 'src-tauri/icons');
     await fs.ensureDir(iconsDir);
 
@@ -269,6 +296,10 @@ For now, placeholders will be generated during build.
     await fs.writeFile(path.join(iconsDir, 'README.md'), iconsReadme);
 }
 
+/**
+ * Viteビルドツールの設定ファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function setupVite(config: ProjectConfig) {
     const viteConfig = `import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -278,13 +309,13 @@ import { resolve } from 'path';
 export default defineConfig(async () => ({
   plugins: [react()],
 
-  // Vite options tailored for Tauri development
+  // Tauri開発に特化したViteオプション
   clearScreen: false,
   server: {
     port: 1420,
     strictPort: true,
     watch: {
-      // 3. tell vite to ignore watching \`src-tauri\`
+      // 3. viteに\`src-tauri\`の監視を無視するよう指示
       ignored: ['**/src-tauri/**'],
     },
   },
@@ -294,11 +325,11 @@ export default defineConfig(async () => ({
     },
   },
   build: {
-    // Tauri supports es2021
+    // Tauriはes2021をサポート
     target: process.env.TAURI_DEBUG ? 'es2021' : 'chrome100',
-    // don't minify for debug builds
+    // デバッグビルドではミニファイしない
     minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
-    // produce sourcemaps for debug builds
+    // デバッグビルド用のソースマップを生成
     sourcemap: !!process.env.TAURI_DEBUG,
   },
 }));
@@ -307,8 +338,12 @@ export default defineConfig(async () => ({
     await fs.writeFile(path.join(config.projectPath, 'vite.config.ts'), viteConfig);
 }
 
+/**
+ * Reactフロントエンドの初期ファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function createWebFrontend(config: ProjectConfig) {
-    // HTML entry point
+    // HTMLエントリーポイント
     const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -326,7 +361,7 @@ async function createWebFrontend(config: ProjectConfig) {
 
     await fs.writeFile(path.join(config.projectPath, 'index.html'), indexHtml);
 
-    // Main TypeScript entry
+    // メインTypeScriptエントリーポイント
     const mainTsx = `import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
@@ -341,7 +376,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
     await fs.writeFile(path.join(config.projectPath, 'src/main.tsx'), mainTsx);
 
-    // Main App component
+    // メインAppコンポーネント
     const appTsx = `import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import './styles/App.css';
@@ -415,7 +450,7 @@ export default App;
 
     await fs.writeFile(path.join(config.projectPath, 'src/App.tsx'), appTsx);
 
-    // Global CSS
+    // グローバルCSS
     const globalsCss = `:root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -586,7 +621,7 @@ button {
 
     await fs.writeFile(path.join(config.projectPath, 'src/styles/globals.css'), globalsCss);
 
-    // App-specific CSS
+    // アプリ固有CSS
     const appCss = `#root {
   max-width: 1280px;
   margin: 0 auto;
@@ -597,10 +632,10 @@ button {
 
     await fs.writeFile(path.join(config.projectPath, 'src/styles/App.css'), appCss);
 
-    // Public assets
+    // パブリックアセット
     const publicDir = path.join(config.projectPath, 'public');
 
-    // Create simple SVG logos as placeholders
+    // プレースホルダーとしてシンプルSVGロゴを作成
     const tauriSvg = `<svg width="206" height="231" viewBox="0 0 206 231" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M143.143 84C143.143 96.1503 133.293 106 121.143 106C108.992 106 99.1426 96.1503 99.1426 84C99.1426 71.8497 108.992 62 121.143 62C133.293 62 143.143 71.8497 143.143 84Z" fill="#FFC131"/>
 </svg>`;
@@ -630,6 +665,10 @@ button {
     await fs.writeFile(path.join(publicDir, 'vite.svg'), viteSvg);
 }
 
+/**
+ * Tauri用.gitignoreファイルを作成する
+ * @param config プロジェクト設定
+ */
 async function createTauriGitignore(config: ProjectConfig) {
     const gitignoreContent = `# Logs
 logs

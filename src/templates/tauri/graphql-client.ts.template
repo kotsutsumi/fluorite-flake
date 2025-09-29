@@ -1,0 +1,358 @@
+import { ApolloClient, InMemoryCache, createHttpLink, ApolloLink, from } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+import { onError } from '@apollo/client/link/error';
+
+// Get API URL from environment
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const GRAPHQL_ENDPOINT = `${API_URL}/api/graphql`;
+
+// Storage keys
+const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+const USER_KEY = 'user';
+
+// Token management functions using localStorage (you can switch to Tauri's secure storage)
+export const TokenManager = {
+  async getAccessToken(): Promise<string | null> {
+    try {
+      // For production, consider using Tauri's Store plugin for secure storage
+      return localStorage.getItem(ACCESS_TOKEN_KEY);
+    } catch (error) {
+      console.error('Error getting access token:', error);
+      return null;
+    }
+  },
+
+  async setAccessToken(token: string): Promise<void> {
+    try {
+      localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    } catch (error) {
+      console.error('Error saving access token:', error);
+    }
+  },
+
+  async getRefreshToken(): Promise<string | null> {
+    try {
+      return localStorage.getItem(REFRESH_TOKEN_KEY);
+    } catch (error) {
+      console.error('Error getting refresh token:', error);
+      return null;
+    }
+  },
+
+  async setRefreshToken(token: string): Promise<void> {
+    try {
+      localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    } catch (error) {
+      console.error('Error saving refresh token:', error);
+    }
+  },
+
+  async clearTokens(): Promise<void> {
+    try {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } catch (error) {
+      console.error('Error clearing tokens:', error);
+    }
+  },
+
+  async saveUser(user: any): Promise<void> {
+    try {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } catch (error) {
+      console.error('Error saving user:', error);
+    }
+  },
+
+  async getUser(): Promise<any | null> {
+    try {
+      const userStr = localStorage.getItem(USER_KEY);
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return null;
+    }
+  },
+};
+
+// HTTP link
+const httpLink = createHttpLink({
+  uri: GRAPHQL_ENDPOINT,
+  credentials: 'include', // Include cookies for CORS
+});
+
+// Auth link
+const authLink = setContext(async (_, { headers }) => {
+  const token = await TokenManager.getAccessToken();
+
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+      'x-app-version': import.meta.env.VITE_APP_VERSION || '1.0.0',
+      'x-platform': 'tauri',
+    },
+  };
+});
+
+// Error link for handling GraphQL errors
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+  if (graphQLErrors) {
+    graphQLErrors.forEach(({ message, extensions }) => {
+      console.log(`[GraphQL error]: Message: ${message}`);
+
+      // Handle specific error codes
+      if (extensions?.code === 'UNAUTHENTICATED') {
+        // Token expired or invalid, try to refresh
+        handleTokenRefresh();
+      } else if (extensions?.code === 'FORBIDDEN') {
+        // User doesn't have permission
+        console.error('Permission denied');
+      }
+    });
+  }
+
+  if (networkError) {
+    console.log(`[Network error]: ${networkError}`);
+
+    // Handle network errors
+    if ('statusCode' in networkError) {
+      switch (networkError.statusCode) {
+        case 401:
+          // Unauthorized, clear tokens and redirect to login
+          TokenManager.clearTokens();
+          window.location.href = '/login';
+          break;
+        case 403:
+          // Forbidden
+          console.error('Access forbidden');
+          break;
+        case 500:
+          // Server error
+          console.error('Internal server error');
+          break;
+        case 503:
+          // Service unavailable
+          console.error('Service unavailable. Please try again later.');
+          break;
+        default:
+          console.error(`Network error: ${networkError.statusCode}`);
+      }
+    }
+  }
+});
+
+// Token refresh function
+async function handleTokenRefresh() {
+  const refreshToken = await TokenManager.getRefreshToken();
+
+  if (!refreshToken) {
+    // No refresh token, redirect to login
+    await TokenManager.clearTokens();
+    window.location.href = '/login';
+    return;
+  }
+
+  try {
+    // Call the refresh token mutation
+    const response = await fetch(GRAPHQL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          mutation RefreshToken($refreshToken: String!) {
+            refreshToken(refreshToken: $refreshToken) {
+              accessToken
+              refreshToken
+              user {
+                id
+                email
+                name
+                role
+              }
+            }
+          }
+        `,
+        variables: { refreshToken },
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.data?.refreshToken) {
+      const { accessToken, refreshToken: newRefreshToken, user } = data.data.refreshToken;
+
+      // Save new tokens
+      await TokenManager.setAccessToken(accessToken);
+      await TokenManager.setRefreshToken(newRefreshToken);
+      await TokenManager.saveUser(user);
+
+      // Reload the page to retry with new token
+      window.location.reload();
+    } else {
+      // Refresh failed, clear tokens and redirect to login
+      await TokenManager.clearTokens();
+      window.location.href = '/login';
+    }
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    await TokenManager.clearTokens();
+    window.location.href = '/login';
+  }
+}
+
+// Apollo Client instance
+export const apolloClient = new ApolloClient({
+  link: from([errorLink, authLink, httpLink]),
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          users: {
+            keyArgs: false,
+            merge(existing = { items: [] }, incoming) {
+              return {
+                ...incoming,
+                items: [...existing.items, ...incoming.items],
+              };
+            },
+          },
+          organizations: {
+            keyArgs: false,
+            merge(existing = { items: [] }, incoming) {
+              return {
+                ...incoming,
+                items: [...existing.items, ...incoming.items],
+              };
+            },
+          },
+        },
+      },
+      User: {
+        keyFields: ['id'],
+      },
+      Organization: {
+        keyFields: ['id'],
+      },
+      Profile: {
+        keyFields: ['id'],
+      },
+    },
+  }),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'cache-and-network',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'cache-first',
+      errorPolicy: 'all',
+    },
+    mutate: {
+      errorPolicy: 'all',
+    },
+  },
+});
+
+// Export a function to reset the client (useful for logout)
+export const resetApolloClient = () => {
+  apolloClient.clearStore();
+  apolloClient.cache.reset();
+};
+
+// Helper function to handle authentication
+export const handleAuthentication = async (authResponse: any) => {
+  const { accessToken, refreshToken, user } = authResponse;
+
+  // Save tokens and user data
+  await TokenManager.setAccessToken(accessToken);
+  await TokenManager.setRefreshToken(refreshToken);
+  await TokenManager.saveUser(user);
+
+  // Reset Apollo Client to clear any cached unauthorized queries
+  resetApolloClient();
+};
+
+// Helper function to handle logout
+export const handleLogout = async () => {
+  // Clear tokens
+  await TokenManager.clearTokens();
+
+  // Reset Apollo Client
+  resetApolloClient();
+
+  // Redirect to login
+  window.location.href = '/login';
+};
+
+// Export types for TypeScript
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'ADMIN' | 'USER' | 'GUEST';
+  emailVerified: boolean;
+  profile?: Profile;
+  organizations?: OrganizationMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Profile {
+  id: string;
+  displayName?: string;
+  bio?: string;
+  avatar?: string;
+  phone?: string;
+  location?: string;
+  website?: string;
+  socialLinks?: SocialLinks;
+  preferences?: ProfilePreferences;
+}
+
+export interface SocialLinks {
+  twitter?: string;
+  github?: string;
+  linkedin?: string;
+  website?: string;
+}
+
+export interface ProfilePreferences {
+  theme: 'LIGHT' | 'DARK' | 'SYSTEM';
+  language: string;
+  notifications: NotificationPreferences;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo?: string;
+  members?: OrganizationMember[];
+}
+
+export interface OrganizationMember {
+  id: string;
+  user?: User;
+  organization?: Organization;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+  joinedAt: string;
+}

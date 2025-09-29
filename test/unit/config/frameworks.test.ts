@@ -74,7 +74,7 @@ describe('FRAMEWORK_CONFIGS の構成確認', () => {
             expect(nextjsConfig.displayName).toBe('Next.js');
             expect(nextjsConfig.defaultName).toBe('my-next-app');
             expect(nextjsConfig.description).toBe(
-                'React framework for production-ready web applications'
+                'プロダクション対応のWebアプリケーション用Reactフレームワーク'
             );
         });
 
@@ -132,7 +132,9 @@ describe('FRAMEWORK_CONFIGS の構成確認', () => {
             expect(expoConfig.name).toBe('expo');
             expect(expoConfig.displayName).toBe('Expo');
             expect(expoConfig.defaultName).toBe('my-expo-app');
-            expect(expoConfig.description).toBe('React Native framework for mobile applications');
+            expect(expoConfig.description).toBe(
+                'モバイルアプリケーション用React Nativeフレームワーク'
+            );
         });
 
         it('should support most features except deployment', () => {
@@ -176,7 +178,7 @@ describe('FRAMEWORK_CONFIGS の構成確認', () => {
             expect(tauriConfig.displayName).toBe('Tauri');
             expect(tauriConfig.defaultName).toBe('my-tauri-app');
             expect(tauriConfig.description).toBe(
-                'Desktop applications with Rust backend and web frontend'
+                'RustバックエンドとWebフロントエンドによるデスクトップアプリケーション'
             );
         });
 
@@ -212,7 +214,7 @@ describe('FRAMEWORK_CONFIGS の構成確認', () => {
             expect(flutterConfig.name).toBe('flutter');
             expect(flutterConfig.displayName).toBe('Flutter');
             expect(flutterConfig.defaultName).toBe('my_flutter_app');
-            expect(flutterConfig.description).toBe('Cross-platform apps with Dart');
+            expect(flutterConfig.description).toBe('Dartによるクロスプラットフォームアプリ');
         });
 
         it('should only support deployment feature', () => {

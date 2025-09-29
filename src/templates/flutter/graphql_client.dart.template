@@ -1,0 +1,296 @@
+import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+// GraphQL endpoint
+const String graphqlEndpoint = String.fromEnvironment(
+  'GRAPHQL_ENDPOINT',
+  defaultValue: 'http://localhost:3000/api/graphql',
+);
+
+// Secure storage instance
+const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+
+// Storage keys
+class StorageKeys {
+  static const String accessToken = 'accessToken';
+  static const String refreshToken = 'refreshToken';
+  static const String user = 'user';
+}
+
+/// Token manager for handling authentication tokens
+class TokenManager {
+  static Future<String?> getAccessToken() async {
+    try {
+      return await _secureStorage.read(key: StorageKeys.accessToken);
+    } catch (e) {
+      debugPrint('Error getting access token: $e');
+      return null;
+    }
+  }
+
+  static Future<void> setAccessToken(String token) async {
+    try {
+      await _secureStorage.write(key: StorageKeys.accessToken, value: token);
+    } catch (e) {
+      debugPrint('Error saving access token: $e');
+    }
+  }
+
+  static Future<String?> getRefreshToken() async {
+    try {
+      return await _secureStorage.read(key: StorageKeys.refreshToken);
+    } catch (e) {
+      debugPrint('Error getting refresh token: $e');
+      return null;
+    }
+  }
+
+  static Future<void> setRefreshToken(String token) async {
+    try {
+      await _secureStorage.write(key: StorageKeys.refreshToken, value: token);
+    } catch (e) {
+      debugPrint('Error saving refresh token: $e');
+    }
+  }
+
+  static Future<void> clearTokens() async {
+    try {
+      await _secureStorage.deleteAll();
+    } catch (e) {
+      debugPrint('Error clearing tokens: $e');
+    }
+  }
+
+  static Future<void> saveUser(String userJson) async {
+    try {
+      await _secureStorage.write(key: StorageKeys.user, value: userJson);
+    } catch (e) {
+      debugPrint('Error saving user: $e');
+    }
+  }
+
+  static Future<String?> getUser() async {
+    try {
+      return await _secureStorage.read(key: StorageKeys.user);
+    } catch (e) {
+      debugPrint('Error getting user: $e');
+      return null;
+    }
+  }
+}
+
+/// GraphQL client provider
+class GraphQLClientProvider extends StatefulWidget {
+  final Widget child;
+
+  const GraphQLClientProvider({
+    Key? key,
+    required this.child,
+  }) : super(key: key);
+
+  @override
+  State<GraphQLClientProvider> createState() => _GraphQLClientProviderState();
+}
+
+class _GraphQLClientProviderState extends State<GraphQLClientProvider> {
+  late ValueNotifier<GraphQLClient> client;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeClient();
+  }
+
+  Future<void> _initializeClient() async {
+    final HttpLink httpLink = HttpLink(graphqlEndpoint);
+
+    final AuthLink authLink = AuthLink(
+      getToken: () async {
+        final token = await TokenManager.getAccessToken();
+        return token != null ? 'Bearer $token' : null;
+      },
+    );
+
+    final Link link = authLink.concat(httpLink);
+
+    client = ValueNotifier(
+      GraphQLClient(
+        cache: GraphQLCache(
+          store: HiveStore(),
+        ),
+        link: link,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GraphQLProvider(
+      client: client,
+      child: widget.child,
+    );
+  }
+}
+
+/// GraphQL service for authentication and API calls
+class GraphQLService {
+  static final GraphQLService _instance = GraphQLService._internal();
+  factory GraphQLService() => _instance;
+  GraphQLService._internal();
+
+  late GraphQLClient _client;
+
+  void initialize() {
+    final HttpLink httpLink = HttpLink(graphqlEndpoint);
+
+    final AuthLink authLink = AuthLink(
+      getToken: () async {
+        final token = await TokenManager.getAccessToken();
+        return token != null ? 'Bearer $token' : null;
+      },
+    );
+
+    final ErrorLink errorLink = ErrorLink(
+      onGraphQLError: (request, forward, response) async {
+        if (response.errors != null) {
+          for (final error in response.errors!) {
+            final code = error.extensions?['code'];
+
+            if (code == 'UNAUTHENTICATED') {
+              // Token expired, try to refresh
+              await _refreshToken();
+            }
+          }
+        }
+        return null;
+      },
+    );
+
+    final Link link = authLink.concat(errorLink).concat(httpLink);
+
+    _client = GraphQLClient(
+      cache: GraphQLCache(
+        store: InMemoryStore(),
+      ),
+      link: link,
+    );
+  }
+
+  GraphQLClient get client => _client;
+
+  /// Refresh the access token using the refresh token
+  Future<bool> _refreshToken() async {
+    final refreshToken = await TokenManager.getRefreshToken();
+
+    if (refreshToken == null) {
+      // No refresh token, need to login again
+      await TokenManager.clearTokens();
+      return false;
+    }
+
+    try {
+      const String refreshMutation = '''
+        mutation RefreshToken(\$refreshToken: String!) {
+          refreshToken(refreshToken: \$refreshToken) {
+            accessToken
+            refreshToken
+            user {
+              id
+              email
+              name
+              role
+            }
+          }
+        }
+      ''';
+
+      final result = await _client.mutate(
+        MutationOptions(
+          document: gql(refreshMutation),
+          variables: {'refreshToken': refreshToken},
+        ),
+      );
+
+      if (result.hasException) {
+        // Refresh failed, clear tokens
+        await TokenManager.clearTokens();
+        return false;
+      }
+
+      final data = result.data?['refreshToken'];
+      if (data != null) {
+        await TokenManager.setAccessToken(data['accessToken']);
+        await TokenManager.setRefreshToken(data['refreshToken']);
+        // Save user data
+        if (data['user'] != null) {
+          await TokenManager.saveUser(data['user'].toString());
+        }
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Token refresh error: $e');
+      await TokenManager.clearTokens();
+      return false;
+    }
+  }
+
+  /// Execute a query with automatic token refresh
+  Future<QueryResult> query(QueryOptions options) async {
+    var result = await _client.query(options);
+
+    // Check if we need to refresh token and retry
+    if (result.hasException) {
+      final errors = result.exception?.graphqlErrors ?? [];
+      for (final error in errors) {
+        if (error.extensions?['code'] == 'UNAUTHENTICATED') {
+          // Try to refresh token
+          final refreshed = await _refreshToken();
+          if (refreshed) {
+            // Retry the query
+            result = await _client.query(options);
+          }
+          break;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// Execute a mutation with automatic token refresh
+  Future<QueryResult> mutate(MutationOptions options) async {
+    var result = await _client.mutate(options);
+
+    // Check if we need to refresh token and retry
+    if (result.hasException) {
+      final errors = result.exception?.graphqlErrors ?? [];
+      for (final error in errors) {
+        if (error.extensions?['code'] == 'UNAUTHENTICATED') {
+          // Try to refresh token
+          final refreshed = await _refreshToken();
+          if (refreshed) {
+            // Retry the mutation
+            result = await _client.mutate(options);
+          }
+          break;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /// Reset the client (useful for logout)
+  void resetClient() {
+    _client.cache.store.reset();
+  }
+}
+
+/// Initialize GraphQL and Hive for caching
+Future<void> initializeGraphQL() async {
+  await initHiveForFlutter();
+  GraphQLService().initialize();
+}

@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../commands/create/types.js';
-// Unused imports removed for cleanup
+// 不要なインポートをクリーンアップのため削除
 
 export async function setupAuth(config: ProjectConfig) {
     if (config.framework !== 'nextjs') {
@@ -44,7 +44,7 @@ async function addAuthDependencies(config: ProjectConfig) {
         packageJson.dependencies.bcryptjs = '^2.4.3';
     }
 
-    // Add dev dependencies for types
+    // 型定義用の開発依存関係を追加
     packageJson.devDependencies = packageJson.devDependencies ?? {};
     if (!packageJson.devDependencies['@types/bcryptjs']) {
         packageJson.devDependencies['@types/bcryptjs'] = '^2.4.6';
@@ -165,7 +165,7 @@ export async function getSession() {
       return null;
     }
 
-    // Verify session exists in database and hasn't expired
+    // セッションがデータベースに存在し、有効期限が切れていないことを確認
     const session = await prisma.session.findUnique({
       where: {
         token: sessionCookie.value,
@@ -184,7 +184,7 @@ export async function getSession() {
 
     if (session.expiresAt < new Date()) {
       console.log('⏰ Session expired, cleaning up');
-      // Clean up expired session
+      // 期限切れセッションをクリーンアップ
       await prisma.session.delete({
         where: { id: session.id },
       });
@@ -1684,7 +1684,7 @@ async function writeApiRoutes(config: ProjectConfig) {
 }
 
 async function writeCustomAuthApi(config: ProjectConfig) {
-    // Create custom sign-in API route for better login handling
+    // ログイン処理を改善するためのカスタムサインインAPIルートを作成
     const signInDir = path.join(config.projectPath, 'src/app/api/auth/sign-in/email');
     const signOutDir = path.join(config.projectPath, 'src/app/api/auth/sign-out');
     await fs.ensureDir(signInDir);
@@ -1704,7 +1704,7 @@ export async function POST(request: NextRequest) {
     console.log('Login attempt for:', email);
     console.log('Password provided:', !!password);
 
-    // Find user in database with their account
+    // アカウント情報と共にデータベースからユーザーを検索
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -1729,7 +1729,7 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    // Verify password from the account
+    // アカウントからパスワードを検証
     const account = user.accounts[0];
     console.log('Account password exists:', !!account.password);
     console.log('Account password length:', account.password?.length || 0);
@@ -1746,11 +1746,11 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    // Create session
+    // セッションを作成
     const sessionToken = randomUUID();
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-    // Store session in database
+    // セッションをデータベースに保存
     const session = await prisma.session.create({
       data: {
         userId: user.id,
@@ -1761,7 +1761,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Return success response with cookie in headers
+    // Cookieをヘッダーに含む成功レスポンスを返す
     const response = NextResponse.json({
       user: {
         id: user.id,
@@ -1781,7 +1781,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Set cookie in response headers
+    // レスポンスヘッダーにCookieを設定
     console.log('Setting session cookie:', sessionToken);
     response.cookies.set('session', sessionToken, {
       httpOnly: true,
@@ -1820,7 +1820,7 @@ export async function POST(request: NextRequest) {
     const sessionCookie = cookieStore.get('session');
 
     if (sessionCookie?.value) {
-      // Delete session from database
+      // データベースからセッションを削除
       await prisma.session.deleteMany({
         where: {
           token: sessionCookie.value
@@ -1828,7 +1828,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create response and clear cookie
+    // レスポンスを作成してCookieをクリア
     const response = NextResponse.json({ success: true });
     response.cookies.delete('session');
 
@@ -2450,7 +2450,7 @@ async function appendEnvFile(envPath: string, block: string) {
     try {
         existing = await fs.readFile(envPath, 'utf-8');
     } catch (_error) {
-        // file does not exist yet
+        // ファイルがまだ存在しない
     }
 
     const linesToAdd = block
@@ -2470,7 +2470,7 @@ async function appendEnvFile(envPath: string, block: string) {
 }
 
 async function writeHelperFunctions(config: ProjectConfig) {
-    // Write error helper function
+    // エラーヘルパー関数を書き込み
     const errorHelperContent = `export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
@@ -2486,7 +2486,7 @@ async function writeHelperFunctions(config: ProjectConfig) {
 }
 
 async function updateSeedFileForAuth(config: ProjectConfig) {
-    // Update the seed file with proper auth test users
+    // 適切な認証テストユーザーでシードファイルを更新
     const seedContent = `import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { APP_ROLES } from '../src/lib/roles';
@@ -2494,7 +2494,7 @@ import { APP_ROLES } from '../src/lib/roles';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean up existing data (handle empty database gracefully)
+  // 既存のデータをクリーンアップ（空のデータベースを適切に処理）
   try {
     await prisma.post.deleteMany();
     await prisma.invitation.deleteMany();
@@ -2507,12 +2507,12 @@ async function main() {
     console.log('Database cleanup skipped (fresh database)');
   }
 
-  // Create passwords for test users
+  // テストユーザー用のパスワードを作成
   const adminPassword = await bcrypt.hash('Admin123!', 12);
   const orgAdminPassword = await bcrypt.hash('OrgAdmin123!', 12);
   const userPassword = await bcrypt.hash('User123!', 12);
 
-  // Create test organizations
+  // テスト組織を作成
   const techCorp = await prisma.organization.create({
     data: {
       name: 'Tech Corp',  // Changed to match test expectations
@@ -2535,7 +2535,7 @@ async function main() {
     },
   });
 
-  // Create admin user (full system access)
+  // 管理ユーザーを作成（システム全体へのアクセス）
   const admin = await prisma.user.create({
     data: {
       email: 'admin@example.com',
@@ -2564,7 +2564,7 @@ async function main() {
     },
   });
 
-  // Create org admin user (manages specific organizations)
+  // 組織管理ユーザーを作成（特定の組織を管理）
   const orgAdmin = await prisma.user.create({
     data: {
       email: 'orgadmin@example.com',
@@ -2587,7 +2587,7 @@ async function main() {
     },
   });
 
-  // Create regular user
+  // 一般ユーザーを作成
   const user = await prisma.user.create({
     data: {
       email: 'user@example.com',
@@ -2610,7 +2610,7 @@ async function main() {
     },
   });
 
-  // Create additional test users (for backward compatibility)
+  // 追加のテストユーザーを作成（後方互換性のため）
   const alice = await prisma.user.create({
     data: {
       email: 'alice@example.com',
@@ -2671,7 +2671,7 @@ async function main() {
     },
   });
 
-  // Create demo posts
+  // デモ投稿を作成
   await prisma.post.createMany({
     data: [
       {
@@ -2713,7 +2713,7 @@ async function main() {
     ],
   });
 
-  // Create pending invitations
+  // 保留中の招待を作成
   await prisma.invitation.createMany({
     data: [
       {

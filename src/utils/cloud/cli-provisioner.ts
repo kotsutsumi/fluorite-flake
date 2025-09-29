@@ -19,12 +19,23 @@ import type {
     VercelProjectRecord,
 } from './types.js';
 
+/** データベースプロビジョニング対象の環境一覧 */
 const DB_ENVIRONMENTS: ProvisionedDatabaseEnv[] = ['dev', 'stg', 'prod'];
 
+/**
+ * 実際のCLIツールを使用してクラウドリソースをプロビジョニングするクラス
+ * Turso、Supabase、Vercel、AWS、Cloudflareなどのサービスと連携します
+ */
 export class CLIProvisioner implements CloudProvisioner {
     readonly mode = 'real' as const;
     private spinner?: Ora;
 
+    /**
+     * 環境変数の値を取得します（空文字列の場合はfallbackを返す）
+     * @param name 環境変数名
+     * @param fallback デフォルト値
+     * @returns 環境変数の値またはデフォルト値
+     */
     private env(name: string, fallback?: string): string | undefined {
         const value = process.env[name]?.trim();
         if (value && value.length > 0) {
@@ -33,6 +44,11 @@ export class CLIProvisioner implements CloudProvisioner {
         return fallback;
     }
 
+    /**
+     * CloudflareアカウントのアカウントIDを取得します
+     * wrangler whoamiコマンドの出力から抽出します
+     * @returns アカウントID（取得できない場合はundefined）
+     */
     private async lookupCloudflareAccountId(): Promise<string | undefined> {
         try {
             const { stdout } = await execa('wrangler', ['whoami']);
@@ -47,6 +63,13 @@ export class CLIProvisioner implements CloudProvisioner {
         }
     }
 
+    /**
+     * Vercelプロジェクトに環境変数を追加します
+     * @param key 環境変数のキー
+     * @param value 環境変数の値
+     * @param targets 対象環境（development、preview、production）
+     * @param projectPath プロジェクトのパス
+     */
     private async addVercelEnv(
         key: string,
         value: string | undefined,
@@ -189,7 +212,7 @@ export class CLIProvisioner implements CloudProvisioner {
                         return true;
                     }
                 } catch {
-                    // Ignore invalid JSON payloads
+                    // 無効なJSONペイロードを無視
                 }
             }
 
@@ -279,12 +302,12 @@ export class CLIProvisioner implements CloudProvisioner {
 
                 const stderr = result.stderr ?? '';
                 if (this.isUnsupportedBlobSubcommand(stderr) || /unknown option/i.test(stderr)) {
-                    // Skip unsupported subcommand
+                    // サポートされていないサブコマンドをスキップ
                 }
             } catch (error) {
                 const stderr = (error as { stderr?: string }).stderr ?? '';
                 if (this.isUnsupportedBlobSubcommand(stderr) || /unknown option/i.test(stderr)) {
-                    // Skip unsupported subcommand
+                    // サポートされていないサブコマンドをスキップ
                 }
             }
         }
@@ -308,7 +331,7 @@ export class CLIProvisioner implements CloudProvisioner {
                     cwd: projectPath,
                     timeout: 30000,
                     stdin: 'pipe',
-                    input: 'y\n', // Auto-confirm any prompts
+                    input: 'y\n', // プロンプトを自動確認
                 });
                 created = true;
                 break;
@@ -338,7 +361,7 @@ export class CLIProvisioner implements CloudProvisioner {
         storeName: string,
         projectPath: string
     ): Promise<string | undefined> {
-        // Try to connect/link the blob store to the project
+        // blobストアをプロジェクトに接続/リンクを試行
         const connectVariants: string[][] = [
             ['blob', 'store', 'connect', storeName],
             ['blob', 'store', 'link', storeName],
@@ -353,11 +376,11 @@ export class CLIProvisioner implements CloudProvisioner {
                     cwd: projectPath,
                     timeout: 30000,
                     stdin: 'pipe',
-                    input: 'y\n', // Auto-confirm any prompts
+                    input: 'y\n', // プロンプトを自動確認
                 });
                 connected = true;
 
-                // Try to extract token from output
+                // 出力からトークンの抽出を試行
                 const output = result.stdout || result.stderr || '';
                 const tokenMatch = output.match(
                     /BLOB_READ_WRITE_TOKEN[=:"'\s]+((blob_|vercel_blob_)[\w-]+)/i
@@ -370,7 +393,7 @@ export class CLIProvisioner implements CloudProvisioner {
                 const stderr = (error as { stderr?: string }).stderr ?? '';
                 const normalized = stderr.toLowerCase();
 
-                // Check if already connected
+                // 既に接続されているかチェック
                 if (
                     normalized.includes('already linked') ||
                     normalized.includes('already connected')
@@ -379,7 +402,7 @@ export class CLIProvisioner implements CloudProvisioner {
                     break;
                 }
 
-                // Check if command not supported
+                // コマンドがサポートされていないかチェック
                 if (this.isUnsupportedBlobSubcommand(stderr)) {
                     continue;
                 }
@@ -388,8 +411,8 @@ export class CLIProvisioner implements CloudProvisioner {
             }
         }
 
-        // If no connect commands worked, the blob store might be auto-connected by 'add' command
-        // This is fine for newer Vercel CLI versions
+        // 接続コマンドが動作しない場合、blobストアは'add'コマンドで自動接続される可能性がある
+        // これは新しいVercel CLIバージョンでは正常な動作
         if (!connected && lastError) {
             const errorStr = String(lastError);
             if (!errorStr.includes('unknown command') && !errorStr.includes('unknown argument')) {
@@ -402,13 +425,20 @@ export class CLIProvisioner implements CloudProvisioner {
         return undefined;
     }
 
+    /**
+     * プロジェクト設定に基づいてクラウドリソースをプロビジョニングします
+     * データベース、ストレージ、デプロイメントサービスを順次設定し、
+     * 環境変数の設定まで行います
+     * @param config プロジェクトの設定
+     * @returns プロビジョニング結果のレコード
+     */
     async provision(config: ProjectConfig): Promise<CloudProvisioningRecord> {
         const slug = slugify(config.projectName);
 
-        // Check if CLIs are available
+        // 必要なCLIツールが利用可能かチェック
         await this.checkCLITools(config);
 
-        // Provision database resources
+        // データベースリソースのプロビジョニング
         const turso =
             config.database === 'turso' ? await this.provisionTurso(slug, config) : undefined;
         const supabase =
@@ -416,10 +446,10 @@ export class CLIProvisioner implements CloudProvisioner {
                 ? await this.provisionSupabaseDatabase(slug, config)
                 : undefined;
 
-        // Provision deployment resources
+        // デプロイメントリソースのプロビジョニング
         const vercel = config.deployment ? await this.provisionVercel(config) : undefined;
 
-        // Provision storage resources based on selection
+        // ストレージリソースのプロビジョニング（選択されたサービスに基づく）
         let vercelBlob: VercelBlobRecord | undefined;
         let cloudflareR2: CloudflareR2Record | undefined;
         let awsS3: AwsS3Record | undefined;
@@ -435,7 +465,7 @@ export class CLIProvisioner implements CloudProvisioner {
             supabaseStorage = await this.provisionSupabaseStorage(slug, config, supabase);
         }
 
-        // Configure environment variables
+        // 環境変数の設定
         await this.configureEnvironment(
             vercel,
             turso,
@@ -461,8 +491,13 @@ export class CLIProvisioner implements CloudProvisioner {
         };
     }
 
+    /**
+     * プロジェクト設定に応じて必要なCLIツールが利用可能かチェックします
+     * @param config プロジェクトの設定
+     * @throws {ProvisioningError} 必要なCLIツールが見つからない場合
+     */
     private async checkCLITools(config: ProjectConfig) {
-        // Check Turso CLI if using Turso database
+        // TursoデータベースのCLIチェック
         if (config.database === 'turso') {
             try {
                 await execa('turso', ['--version']);
@@ -473,7 +508,7 @@ export class CLIProvisioner implements CloudProvisioner {
             }
         }
 
-        // Check AWS CLI if using S3 storage
+        // S3ストレージを使用する場合はAWS CLIをチェック
         if (config.storage === 'aws-s3') {
             try {
                 await execa('aws', ['--version']);
@@ -484,7 +519,7 @@ export class CLIProvisioner implements CloudProvisioner {
             }
         }
 
-        // Check Vercel CLI if using Vercel deployment or Vercel Blob
+        // VercelデプロイメントまたはVercel Blobを使用する場合はVercel CLIをチェック
         if (config.deployment || config.storage === 'vercel-blob') {
             try {
                 await execa('vercel', ['--version']);
@@ -495,7 +530,7 @@ export class CLIProvisioner implements CloudProvisioner {
             }
         }
 
-        // Check Wrangler CLI if using Cloudflare R2
+        // Cloudflare R2を使用する場合はWrangler CLIをチェック
         if (config.storage === 'cloudflare-r2') {
             try {
                 await execa('wrangler', ['--version']);
@@ -506,7 +541,7 @@ export class CLIProvisioner implements CloudProvisioner {
             }
         }
 
-        // Check Supabase CLI if using Supabase database or storage
+        // Supabaseデータベースまたはストレージを使用する場合はSupabase CLIをチェック
         if (config.database === 'supabase' || config.storage === 'supabase-storage') {
             try {
                 await execa('supabase', ['--version']);
@@ -522,7 +557,7 @@ export class CLIProvisioner implements CloudProvisioner {
         this.spinner = ora('Setting up Turso databases...').start();
 
         try {
-            // Check if logged in to Turso
+            // Tursoにログインしているかチェック
             const { stdout: authStatus } = await execa('turso', ['auth', 'status'], {
                 reject: false,
                 stdout: 'pipe',
@@ -536,7 +571,7 @@ export class CLIProvisioner implements CloudProvisioner {
                 this.spinner = ora('Setting up Turso databases...').start();
             }
 
-            // Get organization
+            // 組織を取得
             const { stdout: orgOutput } = await execa('turso', ['org', 'list'], {
                 stdout: 'pipe',
                 stderr: 'pipe',
@@ -546,14 +581,14 @@ export class CLIProvisioner implements CloudProvisioner {
 
             const databases: TursoDatabaseRecord[] = [];
 
-            // Check existing databases for all environments first
+            // まず全環境の既存データベースをチェック
             const existingDatabases: Record<string, boolean> = {};
             this.spinner.text = 'Checking existing databases...';
 
             for (const env of DB_ENVIRONMENTS) {
                 const dbName = `${slug}-${env}`;
                 try {
-                    // Use silent check to avoid spinner conflict
+                    // スピナーの競合を避けるためサイレントチェックを使用
                     await execa('turso', ['db', 'show', dbName], {
                         reject: false,
                         stdout: 'pipe',
@@ -565,12 +600,12 @@ export class CLIProvisioner implements CloudProvisioner {
                 }
             }
 
-            // If any databases exist, ask once for all environments
+            // データベースが存在する場合は、全環境に対して一度だけ確認
             const hasExisting = Object.values(existingDatabases).some((exists) => exists);
             let action = 'create';
 
             if (hasExisting) {
-                // Stop spinner before prompting to avoid visual conflicts
+                // 視覚的な競合を避けるためプロンプト前にスピナーを停止
                 this.spinner.stop();
 
                 const existingList = DB_ENVIRONMENTS.filter((env) => existingDatabases[env])
@@ -592,11 +627,11 @@ export class CLIProvisioner implements CloudProvisioner {
 
                 action = response.action;
 
-                // Restart spinner after prompt
+                // プロンプト後にスピナーを再開
                 this.spinner = ora('Processing databases...').start();
             }
 
-            // Process all databases with the same action
+            // 全てのデータベースを同じアクションで処理
             for (const env of DB_ENVIRONMENTS) {
                 const dbName = `${slug}-${env}`;
                 const exists = existingDatabases[env];
@@ -621,14 +656,14 @@ export class CLIProvisioner implements CloudProvisioner {
                     });
                 }
 
-                // Get database URL
+                // データベースURLを取得
                 const { stdout: showOutput } = await execa('turso', ['db', 'show', dbName]);
                 const urlMatch = showOutput.match(/URL:\s+(\S+)/);
                 const hostname = urlMatch
                     ? urlMatch[1].replace('libsql://', '')
                     : `${dbName}-${organization}.turso.io`;
 
-                // Create auth token
+                // 認証トークンを作成
                 const { stdout: tokenOutput } = await execa('turso', [
                     'db',
                     'tokens',
@@ -663,7 +698,7 @@ export class CLIProvisioner implements CloudProvisioner {
         this.spinner = ora('Setting up Vercel project...').start();
 
         try {
-            // Check if logged in to Vercel
+            // Vercelにログインしているかチェック
             const { stdout: whoami } = await execa('vercel', ['whoami'], {
                 reject: false,
             });
@@ -673,15 +708,15 @@ export class CLIProvisioner implements CloudProvisioner {
                 await execa('vercel', ['login'], { stdio: 'inherit' });
             }
 
-            // Check if project already exists by checking if we're already linked
+            // 既にリンクされているかチェックして、プロジェクトが既に存在するか確認
             let projectExists = false;
             try {
-                // Try to get project info to see if we're already linked
+                // 既にリンクされているかを確認するためプロジェクト情報の取得を試行
                 const { stdout: projectInfo } = await execa('vercel', ['project'], {
                     cwd: config.projectPath,
                     reject: false,
                 });
-                // If we got project info and it contains our project name, we're already linked
+                // プロジェクト情報を取得し、プロジェクト名が含まれている場合は既にリンク済み
                 if (
                     projectInfo &&
                     !projectInfo.includes('Error') &&
@@ -693,7 +728,7 @@ export class CLIProvisioner implements CloudProvisioner {
                     }
                 }
             } catch {
-                // Not linked to any project, which is fine
+                // プロジェクトにリンクされていないが、これは正常
             }
 
             if (projectExists) {
@@ -722,7 +757,7 @@ export class CLIProvisioner implements CloudProvisioner {
                         timeout: 30000,
                     });
                     this.spinner.text = 'Creating Vercel project...';
-                    // Use vercel command without --project flag, let it prompt interactively
+                    // --projectフラグなしでvercelコマンドを使用し、対話的にプロンプトを表示
                     await execa('vercel', ['link', '--yes'], {
                         cwd: config.projectPath,
                         reject: false,
@@ -730,7 +765,7 @@ export class CLIProvisioner implements CloudProvisioner {
                     });
                 } else {
                     this.spinner = ora('Using existing Vercel project...').start();
-                    // Link to existing project
+                    // 既存プロジェクトにリンク
                     await execa('vercel', ['link', '--yes'], {
                         cwd: config.projectPath,
                         reject: false,
@@ -739,7 +774,7 @@ export class CLIProvisioner implements CloudProvisioner {
                 }
             } else {
                 this.spinner.text = 'Creating Vercel project...';
-                // Create and link new project
+                // 新しいプロジェクトを作成してリンク
                 await execa('vercel', ['link', '--yes'], {
                     cwd: config.projectPath,
                     reject: false,
@@ -747,24 +782,24 @@ export class CLIProvisioner implements CloudProvisioner {
                 });
             }
 
-            // Get project info
+            // プロジェクト情報を取得
             const { stdout: projectInfo } = await execa('vercel', ['project'], {
                 cwd: config.projectPath,
                 timeout: 10000, // 10 second timeout
             });
 
-            // Extract project details
+            // プロジェクトの詳細を抽出
             const nameMatch = projectInfo.match(/Name:\s+(\S+)/);
             const projectName = nameMatch ? nameMatch[1] : config.projectName;
 
-            // Get project URL
+            // プロジェクトURLを取得
             const urlMatch = projectInfo.match(/Production:\s+(\S+)/);
             const productionUrl = urlMatch ? urlMatch[1] : undefined;
 
             this.spinner.succeed('Vercel project created');
 
             return {
-                projectId: projectName, // Use project name as ID for CLI operations
+                projectId: projectName, // CLI操作ではプロジェクト名をIDとして使用
                 projectName,
                 productionUrl,
             };
@@ -805,7 +840,7 @@ export class CLIProvisioner implements CloudProvisioner {
             try {
                 existingStores = await this.listBlobStores(config.projectPath);
             } catch {
-                // Best effort: continue with empty list
+                // ベストエフォート：空のリストで続行
             }
 
             this.spinner.stop();
@@ -980,7 +1015,7 @@ export class CLIProvisioner implements CloudProvisioner {
                         readWriteToken = tokenMatch[0];
                     }
                 } catch {
-                    // CLI might not support token creation yet
+                    // CLIがまだトークン作成をサポートしていない可能性
                 }
             }
 
@@ -1026,7 +1061,7 @@ export class CLIProvisioner implements CloudProvisioner {
                             await execa('xdg-open', [dashboardUrl]);
                         }
                     } catch {
-                        // Optional convenience only
+                        // オプションの便利機能のみ
                     }
                 }
 
@@ -1099,7 +1134,7 @@ export class CLIProvisioner implements CloudProvisioner {
         this.spinner = ora('Configuring Cloudflare R2 bucket...').start();
 
         try {
-            // Create bucket if needed
+            // 必要に応じてバケットを作成
             try {
                 await execa('wrangler', ['r2', 'bucket', 'create', bucketName]);
                 this.spinner.succeed(`Created Cloudflare R2 bucket: ${bucketName}`);
@@ -1180,7 +1215,7 @@ export class CLIProvisioner implements CloudProvisioner {
 
             const projectArgs = ['--project-ref', projectRef];
 
-            // Ensure bucket exists via CLI (non-fatal if command fails)
+            // CLI経由でバケットの存在を確認（コマンドが失敗しても致命的ではない）
             try {
                 await execa('supabase', [
                     'storage',

@@ -1,7 +1,11 @@
 /**
- * IPC Integration module
+ * IPC統合モジュール
  *
- * Connects the IPC server with existing CLI functionality
+ * IPCサーバーと既存のCLI機能を結びつけるモジュールです。
+ * Cloudflare Workers管理、プロジェクト作成、システム操作などの
+ * CLI機能をIPC経由で利用できるようにします。
+ *
+ * @module IPCIntegration
  */
 
 import { createIPCServer, type IPCServer } from './ipc-server.js';
@@ -16,7 +20,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Setup IPC server with all method handlers
+ * すべてのメソッドハンドラを設定したIPCサーバーのセットアップ
+ *
+ * IPCサーバーを作成し、Fluorite Flake CLIのすべての機能にアクセスできる
+ * メソッドハンドラを登録します。ダッシュボード操作、プロジェクト作成、
+ * システム管理などの機能を外部プロセスから利用できます。
+ *
+ * @param options - IPCサーバーの設定オプション
+ * @param options.port - TCPポート番号
+ * @param options.socketPath - UNIXソケットパス
+ * @param options.authToken - 認証トークン
+ * @returns IPCServer 設定済みのIPCサーバーインスタンス
+ *
+ * @example
+ * ```typescript
+ * const server = setupIPCServer({ port: 9123, authToken: 'token' });
+ * await server.start();
+ * ```
  */
 export function setupIPCServer(options?: {
     port?: number;
@@ -26,7 +46,7 @@ export function setupIPCServer(options?: {
     const server = createIPCServer(options);
     const dashboard = createWranglerDashboard();
 
-    // Dashboard methods
+    // ダッシュボードメソッドの登録
     server.registerMethod('dashboard.getData', async () => {
         return await dashboard.getDashboardData();
     });
@@ -57,22 +77,25 @@ export function setupIPCServer(options?: {
         return await dashboard.deleteR2Bucket(params.name);
     });
 
+    // Workerログのリアルタイムストリーミングメソッド
     server.registerMethod('dashboard.tailLogs', async function* (params) {
         const logStream = await dashboard.tailLogs(params?.workerName, {
             format: params?.format,
         });
 
+        // ログストリームを順次クライアントに送信
         for await (const log of logStream) {
             yield log;
         }
     });
 
-    // Project creation methods
+    // プロジェクト作成メソッドの登録
     server.registerMethod('project.create', async (params) => {
         if (!params?.framework || !params?.name || !params?.path) {
             throw new Error('Framework, name, and path are required');
         }
 
+        // プロジェクト設定の構築
         const config: ProjectConfig = {
             framework: params.framework as ProjectConfig['framework'],
             projectName: params.name,
@@ -94,11 +117,13 @@ export function setupIPCServer(options?: {
         }
     });
 
-    // System methods
+    // システムメソッドの登録
+    // サーバーの稼働状態確認用のpingメソッド
     server.registerMethod('system.ping', async () => {
         return { pong: true, timestamp: Date.now() };
     });
 
+    // システムバージョン情報取得メソッド
     server.registerMethod('system.version', async () => {
         const packageJson = JSON.parse(
             readFileSync(join(__dirname, '../../package.json'), 'utf-8')
@@ -109,7 +134,9 @@ export function setupIPCServer(options?: {
         };
     });
 
+    // サーバーシャットダウンメソッド
     server.registerMethod('system.shutdown', async () => {
+        // 100ms後にサーバーを停止してプロセスを終了
         setTimeout(() => {
             server.stop();
             process.exit(0);
@@ -121,7 +148,23 @@ export function setupIPCServer(options?: {
 }
 
 /**
- * Start IPC server as a daemon
+ * IPCサーバーをデーモンとして起動
+ *
+ * IPCサーバーをバックグラウンドプロセスとして起動します。
+ * シグナルハンドリング、ログ出力、エラーハンドリングを設定し、
+ * 外部プロセスからの接続を待受けします。
+ *
+ * @param options - デーモン起動の設定オプション
+ * @param options.port - TCPポート番号
+ * @param options.socketPath - UNIXソケットパス
+ * @param options.authToken - 認証トークン
+ * @param options.verbose - 詳細なログ出力を有効にするか
+ * @returns Promise<void> サーバーが起動したら解決されるPromise
+ *
+ * @example
+ * ```typescript
+ * await startIPCDaemon({ port: 9123, verbose: true });
+ * ```
  */
 export async function startIPCDaemon(options?: {
     port?: number;
@@ -131,11 +174,12 @@ export async function startIPCDaemon(options?: {
 }): Promise<void> {
     const server = setupIPCServer(options);
 
+    // サーバー起動完了時の処理
     server.on('listening', (info) => {
         if (options?.verbose) {
             console.log('IPC Server listening:', info);
         }
-        // Write connection info to stdout for clients
+        // クライアント用に接続情報を標準出力に出力
         console.log(
             JSON.stringify({
                 type: 'ipc-server-ready',
@@ -144,12 +188,14 @@ export async function startIPCDaemon(options?: {
         );
     });
 
+    // クライアント接続イベントのハンドリング
     server.on('connection', () => {
         if (options?.verbose) {
             console.log('Client connected');
         }
     });
 
+    // クライアント切断イベントのハンドリング
     server.on('disconnection', () => {
         if (options?.verbose) {
             console.log('Client disconnected');
@@ -163,12 +209,14 @@ export async function startIPCDaemon(options?: {
     try {
         await server.start();
 
-        // Handle shutdown signals
+        // シャットダウンシグナルのハンドリング
+        // Ctrl+C（SIGINT）での終了処理
         process.on('SIGINT', async () => {
             await server.stop();
             process.exit(0);
         });
 
+        // システム終了シグナル（SIGTERM）での終了処理
         process.on('SIGTERM', async () => {
             await server.stop();
             process.exit(0);

@@ -1,11 +1,21 @@
+/**
+ * フレームワーク設定定義
+ * 各フレームワークの詳細設定とサポート機能を定義
+ */
+
 import type { FrameworkConfig, FrameworkType } from './types.js';
 
+/**
+ * フレームワーク設定マップ
+ * サポートされている全フレームワークの設定情報
+ */
 export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
+    // Next.js 設定 - プロダクション対応のReactフレームワーク
     nextjs: {
         name: 'nextjs',
         displayName: 'Next.js',
         defaultName: 'my-next-app',
-        description: 'React framework for production-ready web applications',
+        description: 'プロダクション対応のWebアプリケーション用Reactフレームワーク',
         supportedFeatures: {
             database: true,
             auth: true,
@@ -13,27 +23,29 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
             deployment: true,
             packageManager: true,
         },
-        supportedDatabases: ['none', 'turso', 'supabase'],
-        supportedOrms: ['prisma', 'drizzle'],
-        supportedStorage: ['none', 'vercel-blob', 'cloudflare-r2', 'aws-s3', 'supabase-storage'],
+        supportedDatabases: ['none', 'turso', 'supabase'], // 対応データベース
+        supportedOrms: ['prisma', 'drizzle'], // 対応ORM
+        supportedStorage: ['none', 'vercel-blob', 'cloudflare-r2', 'aws-s3', 'supabase-storage'], // 対応ストレージ
         versions: {
-            next: '15.5.4',
-            react: '19.0.0',
-            'react-dom': '19.0.0',
-            typescript: '^5.6.0',
-            tailwindcss: '^4',
-            '@types/node': '^22.0.0',
-            '@types/react': '^19.0.0',
-            '@types/react-dom': '^19.0.0',
+            // パッケージバージョン定義
+            next: '15.5.4', // Next.jsコア
+            react: '19.0.0', // Reactライブラリ
+            'react-dom': '19.0.0', // React DOMレンダリング
+            typescript: '^5.6.0', // TypeScript
+            tailwindcss: '^4', // Tailwind CSS
+            '@types/node': '^22.0.0', // Node.js型定義
+            '@types/react': '^19.0.0', // React型定義
+            '@types/react-dom': '^19.0.0', // React DOM型定義
         },
-        requiredDependencies: ['next', 'react', 'react-dom'],
-        devDependencies: ['typescript', '@types/node', '@types/react', '@types/react-dom'],
+        requiredDependencies: ['next', 'react', 'react-dom'], // 必須依存関係
+        devDependencies: ['typescript', '@types/node', '@types/react', '@types/react-dom'], // 開発依存関係
     },
+    // Expo 設定 - モバイルアプリケーション用React Nativeフレームワーク
     expo: {
         name: 'expo',
         displayName: 'Expo',
         defaultName: 'my-expo-app',
-        description: 'React Native framework for mobile applications',
+        description: 'モバイルアプリケーション用React Nativeフレームワーク',
         supportedFeatures: {
             database: true,
             auth: true,
@@ -41,9 +53,9 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
             deployment: false,
             packageManager: true,
         },
-        supportedDatabases: ['none', 'turso', 'supabase'],
-        supportedOrms: ['prisma', 'drizzle'],
-        supportedStorage: ['none', 'cloudflare-r2', 'aws-s3', 'supabase-storage'],
+        supportedDatabases: ['none', 'turso', 'supabase'], // 対応データベース
+        supportedOrms: ['prisma', 'drizzle'], // 対応ORM
+        supportedStorage: ['none', 'cloudflare-r2', 'aws-s3', 'supabase-storage'], // 対応ストレージ
         versions: {
             expo: '~52.0.0',
             react: '18.3.1',
@@ -66,7 +78,7 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
         name: 'tauri',
         displayName: 'Tauri',
         defaultName: 'my-tauri-app',
-        description: 'Desktop applications with Rust backend and web frontend',
+        description: 'RustバックエンドとWebフロントエンドによるデスクトップアプリケーション',
         supportedFeatures: {
             database: false,
             auth: false,
@@ -101,7 +113,7 @@ export const FRAMEWORK_CONFIGS: Record<FrameworkType, FrameworkConfig> = {
         name: 'flutter',
         displayName: 'Flutter',
         defaultName: 'my_flutter_app',
-        description: 'Cross-platform apps with Dart',
+        description: 'Dartによるクロスプラットフォームアプリ',
         supportedFeatures: {
             database: false,
             auth: false,
