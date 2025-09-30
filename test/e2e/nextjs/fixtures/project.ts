@@ -273,6 +273,9 @@ export const test = base.extend<{
                 ...process.env,
                 HUSKY: '0',
                 NEXT_TELEMETRY_DISABLED: '1',
+                // Allow Prisma dangerous operations in test environment only
+                // This is safe because we're using temporary test databases
+                PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION: 'test-environment-consent',
             };
 
             if (stack.database === 'turso') {
