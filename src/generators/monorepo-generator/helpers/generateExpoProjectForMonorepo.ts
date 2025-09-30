@@ -10,5 +10,8 @@ import type { MonorepoConfig } from '../types/MonorepoConfig.js';
  * Monorepo用にExpoプロジェクトを生成
  */
 export async function generateExpoProjectForMonorepo(config: MonorepoConfig) {
-    await generateExpoProject(config);
+    if (!config.frontendConfig) {
+        throw new Error('Frontend config is required for monorepo Expo project generation');
+    }
+    await generateExpoProject(config.frontendConfig);
 }

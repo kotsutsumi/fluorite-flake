@@ -35,7 +35,20 @@ export async function createRootPackageJson(config: MonorepoConfig) {
             prettier: '^3.1.1',
             typescript: '^5.3.3',
         },
-        packageManager: `${config.packageManager}@latest`,
+        packageManager: (() => {
+            switch (config.packageManager) {
+                case 'pnpm':
+                    return 'pnpm@9.15.1';
+                case 'npm':
+                    return 'npm@10.9.0';
+                case 'yarn':
+                    return 'yarn@4.5.3';
+                case 'bun':
+                    return 'bun@1.1.38';
+                default:
+                    return 'pnpm@9.15.1';
+            }
+        })(),
     };
 
     await fs.writeJSON(path.join(config.projectPath, 'package.json'), rootPackageJson, {

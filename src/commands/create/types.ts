@@ -17,7 +17,21 @@ export interface ProjectConfig {
     frontendFramework?: 'expo' | 'flutter' | 'tauri';
     backendConfig?: Omit<
         ProjectConfig,
-        'isMonorepo' | 'workspaceTool' | 'includeBackend' | 'frontendFramework' | 'backendConfig'
+        | 'isMonorepo'
+        | 'workspaceTool'
+        | 'includeBackend'
+        | 'frontendFramework'
+        | 'backendConfig'
+        | 'frontendConfig'
+    >;
+    frontendConfig?: Omit<
+        ProjectConfig,
+        | 'isMonorepo'
+        | 'workspaceTool'
+        | 'includeBackend'
+        | 'frontendFramework'
+        | 'backendConfig'
+        | 'frontendConfig'
     >;
     isMonorepoChild?: boolean; // Flag to indicate this is a child project in a monorepo
 }

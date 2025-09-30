@@ -267,6 +267,22 @@ export async function createProject(providedConfig?: Partial<ProjectConfig>) {
             auth: config.auth,
             packageManager: config.packageManager,
             mode: config.mode,
+            isMonorepoChild: true,
+        };
+
+        // Create frontend configuration
+        config.frontendConfig = {
+            projectName: `${config.projectName}-frontend`,
+            projectPath: '', // Will be set by monorepo generator
+            framework: config.framework,
+            database: config.database,
+            orm: config.orm,
+            deployment: config.deployment,
+            storage: config.storage,
+            auth: config.auth,
+            packageManager: config.packageManager,
+            mode: config.mode,
+            isMonorepoChild: true,
         };
     }
 
