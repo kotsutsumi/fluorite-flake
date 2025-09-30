@@ -39,9 +39,20 @@ export function createLogWidget(grid: BlessedGrid, config: LogConfig): BlessedWi
         border,
     } = config;
 
-    return grid.set(...position, blessed.log, {
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
         fg: style?.fg || 'green',
         selectedFg: style?.selectedFg || 'green',
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
+
+    return grid.set(...position, blessed.log, {
+        fg: widgetStyle.fg,
+        selectedFg: widgetStyle.selectedFg,
         label: title,
         scrollable,
         alwaysScroll,
@@ -49,10 +60,10 @@ export function createLogWidget(grid: BlessedGrid, config: LogConfig): BlessedWi
         keys,
         vi,
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+        style: widgetStyle,
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -64,18 +75,25 @@ export function createMarkdownWidget(
 ): BlessedWidget {
     const { position, title, markdown = '', style, border } = config;
 
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
+        fg: style?.fg || 'white',
+        bg: style?.bg || 'black',
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
+
     return grid.set(...position, contrib.markdown, {
         label: title,
         markdown,
-        style: {
-            fg: style?.fg || 'white',
-            bg: style?.bg || 'black',
-        },
+        style: widgetStyle,
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -87,17 +105,29 @@ export function createTreeWidget(
 ): BlessedWidget {
     const { position, title, template, style, border } = config;
 
-    return grid.set(...position, contrib.tree, {
-        label: title,
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
         fg: style?.fg || 'green',
         selectedFg: style?.selectedFg || 'white',
         selectedBg: style?.selectedBg || 'blue',
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
+
+    return grid.set(...position, contrib.tree, {
+        label: title,
+        fg: widgetStyle.fg,
+        selectedFg: widgetStyle.selectedFg,
+        selectedBg: widgetStyle.selectedBg,
         template,
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+        style: widgetStyle,
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -119,10 +149,12 @@ export function createStatusBarWidget(
         style: {
             fg: 'white',
             bg: 'black',
+            border: {
+                fg: 'cyan',
+            },
         },
         border: {
             type: 'line',
-            fg: 'cyan',
         },
     });
 }

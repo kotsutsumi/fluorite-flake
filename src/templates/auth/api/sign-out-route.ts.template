@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/db';
 
-export async function POST(request: NextRequest) {
+export async function POST(_: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const sessionCookie = cookieStore.get('session');
 
     if (sessionCookie?.value) {
@@ -16,9 +16,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create response and clear cookie
+    cookieStore.delete('session');
+
     const response = NextResponse.json({ success: true });
-    response.cookies.delete('session');
+    response.cookies.set({
+      name: 'session',
+      value: '',
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      expires: new Date(0),
+    });
 
     return response;
   } catch (error) {

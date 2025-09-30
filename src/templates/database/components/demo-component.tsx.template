@@ -36,7 +36,7 @@ export default function DatabaseDemo() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/posts');
+      const response = await fetch('/api/posts', { credentials: 'include' });
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
       }
@@ -60,6 +60,7 @@ export default function DatabaseDemo() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error('Failed to create post');

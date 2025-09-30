@@ -1,0 +1,32 @@
+import { useState } from 'react';
+import { View, Text, Button, ActivityIndicator } from 'react-native';
+
+export function FileUpload() {
+  const [uploading, setUploading] = useState(false);
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUpload = async () => {
+    try {
+      setUploading(true);
+      setError(null);
+      setResultMessage(
+        'サンプル実装です。expo-file-system や expo-image-picker を使用してファイルを選択し、バックエンド API に送信してください。'
+      );
+    } catch (err) {
+      console.error(err);
+      setError('アップロード処理に失敗しました');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <View style={{ gap: 12 }}>
+      <Button title={uploading ? 'アップロード中...' : 'ファイルをアップロード'} onPress={handleUpload} disabled={uploading} />
+      {uploading && <ActivityIndicator />}
+      {error && <Text style={{ color: 'red' }}>{error}</Text>}
+      {resultMessage && <Text>{resultMessage}</Text>}
+    </View>
+  );
+}

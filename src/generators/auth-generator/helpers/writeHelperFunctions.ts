@@ -7,6 +7,9 @@ import { writeTemplateFile } from './writeTemplateFile.js';
  * エラーハンドリングなどの共通処理を提供
  */
 export async function writeHelperFunctions(config: ProjectConfig) {
-    const helperPath = path.join(config.projectPath, 'src/lib/error-helper.ts');
-    await writeTemplateFile(helperPath, 'auth/lib/error-helper.ts.template');
+    const errorHelperPath = path.join(config.projectPath, 'src/lib/error-helper.ts');
+    await writeTemplateFile(errorHelperPath, 'auth/lib/error-helper.ts.template');
+
+    const apiSessionHelperPath = path.join(config.projectPath, 'src/lib/getApiSession.ts');
+    await writeTemplateFile(apiSessionHelperPath, 'auth/lib/getApiSession.ts.template');
 }

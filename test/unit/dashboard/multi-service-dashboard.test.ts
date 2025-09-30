@@ -6,15 +6,54 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DashboardOrchestrator } from '../../../src/dashboard/dashboard-orchestrator.js';
-import { serviceFactory } from '../../../src/services/service-factory.js';
 import type {
     ServiceAdapter,
     ServiceDashboardData,
+    ServiceFactory,
+    ServiceInfo,
+    ServiceCapabilities,
 } from '../../../src/services/base-service-adapter/index.js';
 
-// サービスファクトリーをモック化
-vi.mock('../../../src/services/service-factory.js', () => ({
-    serviceFactory: {
+import type {
+    ServiceInfo,
+    ServiceCapabilities,
+} from '../../../src/services/base-service-adapter/types.js';
+
+const BASE_CAPABILITIES: ServiceCapabilities = {
+    realTimeUpdates: true,
+    logStreaming: true,
+    metricsHistory: true,
+    resourceManagement: true,
+    multiProject: true,
+    deployments: true,
+    analytics: true,
+    fileOperations: true,
+    database: true,
+    userManagement: true,
+};
+
+type MockedServiceFactory = ServiceFactory & {
+    createService: ReturnType<typeof vi.fn>;
+    getSupportedServices: ReturnType<typeof vi.fn>;
+    getServiceInfo: ReturnType<typeof vi.fn>;
+    getAllServiceInfo: ReturnType<typeof vi.fn>;
+    isSupported: ReturnType<typeof vi.fn>;
+    getServiceCapabilities: ReturnType<typeof vi.fn>;
+    getServicesByCapability: ReturnType<typeof vi.fn>;
+    clearCache: ReturnType<typeof vi.fn>;
+    removeCachedInstance: ReturnType<typeof vi.fn>;
+};
+
+function createMockServiceFactory(): MockedServiceFactory {
+    const buildInfo = (type: string): ServiceInfo => ({
+        name: type,
+        displayName: type.charAt(0).toUpperCase() + type.slice(1),
+        description: `${type} service`,
+        capabilities: { ...BASE_CAPABILITIES },
+        authMethods: ['token'],
+    });
+
+    const factory = {
         createService: vi.fn(),
         getSupportedServices: vi.fn(() => [
             'vercel',
@@ -23,34 +62,31 @@ vi.mock('../../../src/services/service-factory.js', () => ({
             'turso',
             'aws',
             'github',
+            'test-service',
+            'service1',
+            'service2',
+            'failing-service',
         ]),
-        getServiceInfo: vi.fn((type: string) => ({
-            name: type,
-            displayName: type.charAt(0).toUpperCase() + type.slice(1),
-            description: `${type} service`,
-            capabilities: {
-                realTimeUpdates: true,
-                logStreaming: true,
-                metricsHistory: true,
-                resourceManagement: true,
-                multiProject: true,
-                deployments: true,
-                analytics: true,
-                fileOperations: true,
-                database: type !== 'github',
-                userManagement: type !== 'turso',
-            },
-            authMethods: ['token'],
-        })),
-    },
-}));
+        getServiceInfo: vi.fn((type: string) => buildInfo(type)),
+        getAllServiceInfo: vi.fn(() => ({})),
+        isSupported: vi.fn(() => true),
+        getServiceCapabilities: vi.fn(() => ({ ...BASE_CAPABILITIES })),
+        getServicesByCapability: vi.fn(() => []),
+        clearCache: vi.fn(),
+        removeCachedInstance: vi.fn(),
+    };
+
+    return factory as unknown as MockedServiceFactory;
+}
 
 describe('DashboardOrchestrator', () => {
     let orchestrator: DashboardOrchestrator;
+    let mockFactory: MockedServiceFactory;
     let mockAdapter: Partial<ServiceAdapter>;
 
     beforeEach(() => {
-        orchestrator = new DashboardOrchestrator();
+        mockFactory = createMockServiceFactory();
+        orchestrator = new DashboardOrchestrator({}, mockFactory);
 
         // モックアダプターを作成
         mockAdapter = {
@@ -129,13 +165,11 @@ describe('DashboardOrchestrator', () => {
 
     describe('サービス管理', () => {
         it('新しいサービスを追加できる', async () => {
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapter as ServiceAdapter);
 
             await orchestrator.addService('test-service', {}, { token: 'test-token' });
 
-            expect(serviceFactory.createService).toHaveBeenCalledWith('test-service', {});
+            expect(mockFactory.createService).toHaveBeenCalledWith('test-service', {});
             expect(mockAdapter.initialize).toHaveBeenCalled();
             expect(mockAdapter.authenticate).toHaveBeenCalledWith({ token: 'test-token' });
             expect(mockAdapter.connect).toHaveBeenCalled();
@@ -143,9 +177,7 @@ describe('DashboardOrchestrator', () => {
         });
 
         it('サービスを削除できる', async () => {
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapter as ServiceAdapter);
 
             await orchestrator.addService('test-service', {}, { token: 'test-token' });
             await orchestrator.removeService('test-service');
@@ -163,9 +195,7 @@ describe('DashboardOrchestrator', () => {
 
     describe('ダッシュボードデータ', () => {
         it('サービスのダッシュボードデータを取得できる', async () => {
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapter as ServiceAdapter);
             await orchestrator.addService('test-service', {}, { token: 'test-token' });
 
             const data = await orchestrator.getServiceDashboardData('test-service');
@@ -176,9 +206,7 @@ describe('DashboardOrchestrator', () => {
         });
 
         it('複数サービスのダッシュボードデータを取得できる', async () => {
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapter as ServiceAdapter);
 
             await orchestrator.addService('service1', {}, { token: 'token1' });
             await orchestrator.addService('service2', {}, { token: 'token2' });
@@ -194,9 +222,7 @@ describe('DashboardOrchestrator', () => {
 
     describe('集計処理', () => {
         it('全サービスの指標を集計できる', async () => {
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapter as ServiceAdapter);
 
             await orchestrator.addService('service1', {}, { token: 'token1' });
             await orchestrator.addService('service2', {}, { token: 'token2' });
@@ -224,9 +250,7 @@ describe('DashboardOrchestrator', () => {
                 }),
             };
 
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapterWithAlerts as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapterWithAlerts as ServiceAdapter);
 
             await orchestrator.addService('service1', {}, { token: 'token1' });
 
@@ -240,9 +264,7 @@ describe('DashboardOrchestrator', () => {
 
     describe('ヘルス監視', () => {
         it('全サービスのヘルスチェックを実行できる', async () => {
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockAdapter as ServiceAdapter);
 
             await orchestrator.addService('service1', {}, { token: 'token1' });
             await orchestrator.addService('service2', {}, { token: 'token2' });
@@ -260,9 +282,7 @@ describe('DashboardOrchestrator', () => {
                 healthCheck: vi.fn().mockRejectedValue(new Error('Health check failed')),
             };
 
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                failingAdapter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(failingAdapter as ServiceAdapter);
 
             await orchestrator.addService('failing-service', {}, { token: 'token' });
 
@@ -284,9 +304,7 @@ describe('DashboardOrchestrator', () => {
                 }),
             };
 
-            vi.mocked(serviceFactory.createService).mockResolvedValue(
-                mockEmitter as ServiceAdapter
-            );
+            mockFactory.createService.mockResolvedValue(mockEmitter as ServiceAdapter);
 
             const logHandler = vi.fn();
             orchestrator.on('service:logEntry', logHandler);
@@ -302,7 +320,7 @@ describe('DashboardOrchestrator', () => {
 
     describe('サービスファクトリー連携', () => {
         it('サポート対象のサービスを一覧できる', () => {
-            const services = serviceFactory.getSupportedServices();
+            const services = mockFactory.getSupportedServices();
             expect(services).toContain('vercel');
             expect(services).toContain('cloudflare');
             expect(services).toContain('supabase');
@@ -312,7 +330,7 @@ describe('DashboardOrchestrator', () => {
         });
 
         it('サービス情報を取得できる', () => {
-            const info = serviceFactory.getServiceInfo('vercel');
+            const info = mockFactory.getServiceInfo('vercel');
             expect(info).toHaveProperty('name', 'vercel');
             expect(info).toHaveProperty('capabilities');
             expect(info?.capabilities).toHaveProperty('deployments', true);

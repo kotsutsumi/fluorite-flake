@@ -19,8 +19,8 @@ interface BlessedGrid {
 
 interface BlessedWidget {
     setData(data: unknown): void;
-    setPercent(percent: number): void;
-    log(message: string): void;
+    setPercent?(percent: number): void;
+    log?(message: string): void;
 }
 
 /**
@@ -38,22 +38,29 @@ export function createLineChartWidget(grid: BlessedGrid, config: ChartConfig): B
         border,
     } = config;
 
-    return grid.set(...position, contrib.line, {
-        style: {
-            line: style?.fg || 'yellow',
-            text: 'green',
-            baseline: 'black',
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
+        line: style?.fg || 'yellow',
+        text: 'green',
+        baseline: 'black',
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
         },
+    };
+
+    return grid.set(...position, contrib.line, {
+        style: widgetStyle,
         xLabelPadding,
         xPadding,
         showLegend,
         wholeNumbersOnly,
         label: title,
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -61,6 +68,15 @@ export function createLineChartWidget(grid: BlessedGrid, config: ChartConfig): B
  */
 export function createBarChartWidget(grid: BlessedGrid, config: ChartConfig): BlessedWidget {
     const { position, title, style, border } = config;
+
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
 
     return grid.set(...position, contrib.bar, {
         label: title,
@@ -70,10 +86,10 @@ export function createBarChartWidget(grid: BlessedGrid, config: ChartConfig): Bl
         maxHeight: 9,
         barBgColor: style?.bg || 'blue',
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+        style: widgetStyle,
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -85,15 +101,24 @@ export function createGaugeWidget(
 ): BlessedWidget {
     const { position, title, label, stroke = 'green', fill = 'white', border } = config;
 
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
+
     return grid.set(...position, contrib.gauge, {
         label: label || title,
         stroke,
         fill,
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+        style: widgetStyle,
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -105,6 +130,15 @@ export function createDonutWidget(
 ): BlessedWidget {
     const { position, title, radius = 8, arcWidth = 3, border } = config;
 
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
+
     return grid.set(...position, contrib.donut, {
         label: title,
         radius,
@@ -112,10 +146,10 @@ export function createDonutWidget(
         remainColor: 'black',
         yPadding: 2,
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+        style: widgetStyle,
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**
@@ -137,7 +171,9 @@ export function updateChartData(
  * ゲージのパーセンテージ更新
  */
 export function updateGaugeData(widget: BlessedWidget, percent: number): void {
-    widget.setPercent(percent);
+    if (typeof widget.setPercent === 'function') {
+        widget.setPercent(percent);
+    }
 }
 
 /**

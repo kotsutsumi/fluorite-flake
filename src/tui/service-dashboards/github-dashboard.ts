@@ -25,55 +25,59 @@ import {
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
-// Widget interface definition
-interface BlessedWidget {
-    setData(data: unknown): void;
-    setPercent?(percent: number): void;
-    log?(message: string): void;
-    focus?(): void;
-    destroy?(): void;
-}
-
 // GitHub Dashboard data interfaces
 interface GitHubRepository {
-    name: string;
-    stargazers_count: number;
-    forks_count: number;
+    name?: string;
+    description?: string;
+    stars?: number;
+    forks?: number;
+    openIssues?: number;
+    stargazers_count?: number;
+    forks_count?: number;
+    open_issues_count?: number;
     language?: string;
-    updated_at: string;
+    updated_at?: string;
 }
 
 interface GitHubPullRequest {
-    title: string;
+    title?: string;
     user?: { login: string };
-    created_at: string;
-    state: string;
+    author?: string;
+    status?: string;
+    reviewCount?: number;
+    created_at?: string;
+    state?: string;
 }
 
 interface GitHubIssue {
-    title: string;
+    title?: string;
     user?: { login: string };
-    created_at: string;
-    state: string;
+    created_at?: string;
+    createdAt?: string;
+    state?: string;
+    labels?: string[];
+    assignee?: string;
 }
 
 interface GitHubAction {
     name?: string;
     workflow_name?: string;
-    status: string;
-    created_at: string;
+    status?: string;
+    duration?: number;
+    created_at?: string;
     actor?: { login: string };
 }
 
 interface GitHubContributor {
-    login: string;
-    contributions: number;
+    name?: string;
+    login?: string;
+    contributions?: number;
 }
 
 interface GitHubActivity {
-    commits: number;
-    pullRequests: number;
-    issues: number;
+    commits?: number[];
+    pullRequests?: number[];
+    issues?: number[];
 }
 
 export interface GitHubDashboardConfig {
@@ -87,13 +91,7 @@ export class GitHubDashboard {
     private screen: blessed.Widgets.Screen;
     private grid: contrib.grid;
     private widgets: {
-        repositories?: BlessedWidget;
-        pullRequests?: BlessedWidget;
-        issues?: BlessedWidget;
-        actions?: BlessedWidget;
-        activity?: BlessedWidget;
-        contributors?: BlessedWidget;
-        logs?: BlessedWidget;
+        [key: string]: any;
         statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
@@ -222,13 +220,15 @@ export class GitHubDashboard {
             width: '100%',
             height: 1,
             content: ` ${this.organization ? `Org: ${this.organization} | ` : ''}Press q to quit | r to refresh | Tab to navigate | h for help `,
+            border: {
+                type: 'line',
+            },
             style: {
                 fg: this.theme.fg,
                 bg: this.theme.bg,
-            },
-            border: {
-                type: 'line',
-                fg: this.theme.border as string,
+                border: {
+                    fg: this.theme.border,
+                },
             },
         });
     }
@@ -242,7 +242,10 @@ export class GitHubDashboard {
 
         // 更新
         this.screen.key(['r', 'R'], () => {
-            addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
+            const logsWidget = this.widgets.logs;
+            if (logsWidget) {
+                addLogEntry(logsWidget, 'Manual refresh triggered...', true);
+            }
             this.refresh();
         });
 
@@ -288,14 +291,20 @@ export class GitHubDashboard {
         // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'github') {
-                addLogEntry(this.widgets.logs, entry.message, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, entry.message, true);
+                }
             }
         });
 
         // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'github') {
-                addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, `❌ Error: ${error}`, true);
+                }
             }
         });
     }
@@ -303,11 +312,14 @@ export class GitHubDashboard {
     async start(): Promise<void> {
         // 初期レンダー
         this.screen.render();
-        addLogEntry(
-            this.widgets.logs,
-            `🚀 Starting GitHub Dashboard${this.organization ? ` for ${this.organization}` : ''}...`,
-            true
-        );
+        const logsWidgetStart = this.widgets.logs;
+        if (logsWidgetStart) {
+            addLogEntry(
+                logsWidgetStart,
+                `🚀 Starting GitHub Dashboard${this.organization ? ` for ${this.organization}` : ''}...`,
+                true
+            );
+        }
 
         // 初期データ読み込み
         await this.refresh();
@@ -319,11 +331,14 @@ export class GitHubDashboard {
             }, this.config.refreshInterval);
         }
 
-        addLogEntry(
-            this.widgets.logs,
-            `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
-            true
-        );
+        const logsWidgetReady = this.widgets.logs;
+        if (logsWidgetReady) {
+            addLogEntry(
+                logsWidgetReady,
+                `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
+                true
+            );
+        }
     }
 
     async stop(): Promise<void> {
@@ -339,7 +354,10 @@ export class GitHubDashboard {
             this.updateDashboard(data);
             this.updateStatusBar(`Last refresh: ${new Date().toLocaleTimeString()}`);
         } catch (error) {
-            addLogEntry(this.widgets.logs, `❌ Refresh failed: ${error}`, true);
+            const logsWidgetError = this.widgets.logs;
+            if (logsWidgetError) {
+                addLogEntry(logsWidgetError, `❌ Refresh failed: ${error}`, true);
+            }
         }
     }
 
@@ -347,16 +365,19 @@ export class GitHubDashboard {
         // リポジトリのテーブルを更新
         if (this.widgets.repositories && data.repositories) {
             const repos = data.repositories as GitHubRepository[];
-            const repoData = repos
-                .slice(0, 10)
-                .map((r) => [
+            const repoData = repos.slice(0, 10).map((r) => {
+                const starCount = r.stars ?? r.stargazers_count ?? 0;
+                const forkCount = r.forks ?? r.forks_count ?? 0;
+                const issueCount = r.openIssues ?? r.open_issues_count ?? 0;
+                return [
                     r.name || 'Unknown',
-                    r.stars?.toString() || '0',
-                    r.forks?.toString() || '0',
-                    r.openIssues?.toString() || '0',
-                ]);
+                    starCount.toString(),
+                    forkCount.toString(),
+                    issueCount.toString(),
+                ];
+            });
             updateTableData(
-                this.widgets.repositories,
+                this.widgets.repositories!,
                 ['Name', 'Stars', 'Forks', 'Issues'],
                 repoData
             );
@@ -365,16 +386,19 @@ export class GitHubDashboard {
         // プルリクエストのテーブルを更新
         if (this.widgets.pullRequests && data.pullRequests) {
             const prs = data.pullRequests as GitHubPullRequest[];
-            const prData = prs
-                .slice(0, 10)
-                .map((pr) => [
+            const prData = prs.slice(0, 10).map((pr) => {
+                const author = pr.author || pr.user?.login || 'Unknown';
+                const status = pr.status || pr.state || 'open';
+                const reviewCount = pr.reviewCount ?? 0;
+                return [
                     (pr.title || 'Unknown').substring(0, 25),
-                    pr.author || 'Unknown',
-                    pr.status || 'open',
-                    pr.reviewCount?.toString() || '0',
-                ]);
+                    author,
+                    status,
+                    reviewCount.toString(),
+                ];
+            });
             updateTableData(
-                this.widgets.pullRequests,
+                this.widgets.pullRequests!,
                 ['Title', 'Author', 'Status', 'Reviews'],
                 prData
             );
@@ -391,7 +415,7 @@ export class GitHubDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.activity, [
+            updateChartData(this.widgets.activity!, [
                 {
                     title: 'Commits',
                     x: last7Days,
@@ -423,7 +447,7 @@ export class GitHubDashboard {
                     this.getStatusIcon(a.status),
                     this.formatDuration(a.duration),
                 ]);
-            updateTableData(this.widgets.actions, ['Workflow', 'Status', 'Duration'], actionData);
+            updateTableData(this.widgets.actions!, ['Workflow', 'Status', 'Duration'], actionData);
         }
 
         // コントリビュータードーナツチャートを更新
@@ -433,12 +457,15 @@ export class GitHubDashboard {
             const topContributors = contributors.slice(0, 5);
 
             updateDonutData(
-                this.widgets.contributors,
-                topContributors.map((c, i) => ({
-                    percent: Math.round((c.contributions / total) * 100),
-                    label: c.name || 'Unknown',
-                    color: ['green', 'yellow', 'cyan', 'magenta', 'blue'][i],
-                }))
+                this.widgets.contributors!,
+                topContributors.map((c, i) => {
+                    const contributions = c.contributions ?? 0;
+                    return {
+                        percent: Math.round((contributions / total) * 100),
+                        label: c.name || c.login || 'Unknown',
+                        color: ['green', 'yellow', 'cyan', 'magenta', 'blue'][i],
+                    };
+                })
             );
         }
 
@@ -453,7 +480,11 @@ export class GitHubDashboard {
                     i.assignee || 'unassigned',
                     this.formatAge(i.createdAt),
                 ]);
-            updateTableData(this.widgets.issues, ['Title', 'Labels', 'Assignee', 'Age'], issueData);
+            updateTableData(
+                this.widgets.issues!,
+                ['Title', 'Labels', 'Assignee', 'Age'],
+                issueData
+            );
         }
 
         this.screen.render();
@@ -689,8 +720,9 @@ export class GitHubDashboard {
         this.screen.render();
     }
 
-    private getStatusIcon(status: string): string {
-        switch (status?.toLowerCase()) {
+    private getStatusIcon(status?: string): string {
+        const normalized = status?.toLowerCase() || 'unknown';
+        switch (normalized) {
             case 'success':
             case 'completed':
                 return '✅ Success';

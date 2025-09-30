@@ -53,7 +53,7 @@ export const PACKAGE_CATEGORIES = {
         prisma: ['prisma', '@prisma/client'], // Prisma ORMコアパッケージ
         drizzle: ['drizzle-orm', 'drizzle-kit'], // Drizzle ORMコアパッケージ
         turso: ['@libsql/client', '@prisma/adapter-libsql'], // Tursoデータベースクライアント
-        supabase: ['@supabase/supabase-js'], // Supabaseクライアント
+        supabase: ['@supabase/supabase-js', 'postgres'], // Supabaseクライアント
     },
     // 認証関連パッケージ
     auth: [
@@ -66,6 +66,7 @@ export const PACKAGE_CATEGORIES = {
     storage: {
         'vercel-blob': ['@vercel/blob'], // Vercel Blobストレージ
         'aws-s3': ['@aws-sdk/client-s3'], // AWS S3クライアント
+        'cloudflare-r2': ['@aws-sdk/client-s3'], // Cloudflare R2 は AWS SDK S3 クライアントを再利用
         'supabase-storage': ['@supabase/supabase-js'], // Supabaseストレージ
     },
     // UI関連パッケージ - コンポーネント、アイコン、ユーティリティの包括的セット

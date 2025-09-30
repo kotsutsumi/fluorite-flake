@@ -8,6 +8,7 @@ import { createVercelConfig } from './helpers/createVercelConfig.js';
 import { addDeploymentScripts } from './helpers/addDeploymentScripts.js';
 import { createDeploymentScripts } from './helpers/createDeploymentScripts.js';
 import { createVercelAutomationScript } from './helpers/createVercelAutomationScript.js';
+import { setupTauriDeployment } from '../tauri-generator/helpers/setupTauriDeployment.js';
 
 /**
  * デプロイメント環境をセットアップするメイン関数
@@ -15,6 +16,12 @@ import { createVercelAutomationScript } from './helpers/createVercelAutomationSc
  * @param config プロジェクト設定
  */
 export async function setupDeployment(config: ProjectConfig) {
+    if (config.framework === 'tauri') {
+        // Tauri向けにはGitHub Releasesを前提としたデプロイ構成を生成する
+        await setupTauriDeployment(config);
+        return;
+    }
+
     // Flutterは独自のデプロイメント設定を持つためスキップ
     if (config.framework === 'flutter') {
         return;

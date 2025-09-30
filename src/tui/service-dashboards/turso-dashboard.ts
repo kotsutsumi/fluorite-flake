@@ -165,13 +165,15 @@ export class TursoDashboard {
             width: '100%',
             height: 1,
             content: ' Press q to quit | r to refresh | Tab to navigate | h for help ',
+            border: {
+                type: 'line',
+            },
             style: {
                 fg: this.theme.fg,
                 bg: this.theme.bg,
-            },
-            border: {
-                type: 'line',
-                fg: this.theme.border,
+                border: {
+                    fg: this.theme.border,
+                },
             },
         });
     }
@@ -185,7 +187,10 @@ export class TursoDashboard {
 
         // 更新
         this.screen.key(['r', 'R'], () => {
-            addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
+            const logsWidget = this.widgets.logs;
+            if (logsWidget) {
+                addLogEntry(logsWidget, 'Manual refresh triggered...', true);
+            }
             this.refresh();
         });
 
@@ -226,14 +231,20 @@ export class TursoDashboard {
         // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'turso') {
-                addLogEntry(this.widgets.logs, entry.message, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, entry.message, true);
+                }
             }
         });
 
         // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'turso') {
-                addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, `❌ Error: ${error}`, true);
+                }
             }
         });
     }
@@ -241,7 +252,10 @@ export class TursoDashboard {
     async start(): Promise<void> {
         // 初期レンダー
         this.screen.render();
-        addLogEntry(this.widgets.logs, '🚀 Starting Turso Dashboard...', true);
+        const logsWidgetStart = this.widgets.logs;
+        if (logsWidgetStart) {
+            addLogEntry(logsWidgetStart, '🚀 Starting Turso Dashboard...', true);
+        }
 
         // 初期データ読み込み
         await this.refresh();
@@ -253,11 +267,14 @@ export class TursoDashboard {
             }, this.config.refreshInterval);
         }
 
-        addLogEntry(
-            this.widgets.logs,
-            `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
-            true
-        );
+        const logsWidgetReady = this.widgets.logs;
+        if (logsWidgetReady) {
+            addLogEntry(
+                logsWidgetReady,
+                `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
+                true
+            );
+        }
     }
 
     async stop(): Promise<void> {
@@ -273,7 +290,10 @@ export class TursoDashboard {
             this.updateDashboard(data);
             this.updateStatusBar(`Last refresh: ${new Date().toLocaleTimeString()}`);
         } catch (error) {
-            addLogEntry(this.widgets.logs, `❌ Refresh failed: ${error}`, true);
+            const logsWidgetError = this.widgets.logs;
+            if (logsWidgetError) {
+                addLogEntry(logsWidgetError, `❌ Refresh failed: ${error}`, true);
+            }
         }
     }
 
@@ -290,7 +310,7 @@ export class TursoDashboard {
                     this.formatBytes(db.size || 0),
                     db.status || 'Unknown',
                 ]);
-            updateTableData(this.widgets.databases, ['Name', 'Region', 'Size', 'Status'], dbData);
+            updateTableData(this.widgets.databases!, ['Name', 'Region', 'Size', 'Status'], dbData);
         }
 
         // レプリカのテーブルを更新
@@ -306,7 +326,7 @@ export class TursoDashboard {
                     r.syncStatus || 'Unknown',
                 ]);
             updateTableData(
-                this.widgets.replicas,
+                this.widgets.replicas!,
                 ['Location', 'Status', 'Latency', 'Sync'],
                 replicaData
             );
@@ -324,7 +344,7 @@ export class TursoDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.queries, [
+            updateChartData(this.widgets.queries!, [
                 {
                     title: 'Reads',
                     x: last24Hours.slice(-12),

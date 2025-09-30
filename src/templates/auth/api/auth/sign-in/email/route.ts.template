@@ -91,20 +91,23 @@ export async function POST(request: NextRequest) {
 
     // Set cookie in response headers
     console.log('Setting session cookie:', sessionToken);
-    response.cookies.set('session', sessionToken, {
+    const sessionCookieOptions = {
       httpOnly: true,
-      secure: ${process.env.NODE_ENV} === 'production',
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      expires: expires,
-      path: '/'
-    });
+      expires,
+      path: '/',
+    } as const;
+
+    response.cookies.set('better-auth.session_token', sessionToken, sessionCookieOptions);
+    response.cookies.set('session', sessionToken, sessionCookieOptions);
 
     console.log('Cookie settings:', {
-      httpOnly: true,
-      secure: ${process.env.NODE_ENV} === 'production',
-      sameSite: 'lax',
+      httpOnly: sessionCookieOptions.httpOnly,
+      secure: sessionCookieOptions.secure,
+      sameSite: sessionCookieOptions.sameSite,
       expires: expires.toISOString(),
-      path: '/'
+      path: sessionCookieOptions.path,
     });
 
     return response;

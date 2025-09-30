@@ -36,20 +36,34 @@ export function createTableWidget(grid: BlessedGrid, config: TableConfig): Bless
         border,
     } = config;
 
-    return grid.set(...position, contrib.table, {
-        keys: interactive,
+    const borderType = border?.type || 'line';
+    const borderFg = border?.fg || 'cyan';
+    const widgetStyle: Record<string, unknown> = {
         fg: style?.fg || 'white',
+        bg: style?.bg,
         selectedFg: style?.selectedFg || 'white',
         selectedBg: style?.selectedBg || 'blue',
+        focus: style?.focus,
+        border: {
+            fg: borderFg,
+            bg: border?.bg,
+        },
+    };
+
+    return grid.set(...position, contrib.table, {
+        keys: interactive,
+        fg: widgetStyle.fg,
+        selectedFg: widgetStyle.selectedFg,
+        selectedBg: widgetStyle.selectedBg,
         interactive,
         label: title,
         columnSpacing,
         columnWidth: columnWidths || headers.map(() => 15),
         border: {
-            type: border?.type || 'line',
-            fg: border?.fg || 'cyan',
+            type: borderType,
         },
-    });
+        style: widgetStyle,
+    } as Record<string, unknown>) as BlessedWidget;
 }
 
 /**

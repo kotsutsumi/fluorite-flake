@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { requireSession, getAccessibleOrganizationIds } from '@/lib/auth-server';
@@ -29,6 +30,14 @@ export default async function DashboardPage() {
                     : { organizationId: { in: organizationIds }, status: 'pending' },
         }),
     ]);
+
+    let DatabaseDemo: ComponentType | null = null;
+    try {
+        const module = await import('@/components/database-demo');
+        DatabaseDemo = module.default;
+    } catch {
+        DatabaseDemo = null;
+    }
 
     return (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -94,6 +103,11 @@ export default async function DashboardPage() {
                     )}
                 </CardContent>
             </Card>
+            {DatabaseDemo && (
+                <div className="md:col-span-2 xl:col-span-3">
+                    <DatabaseDemo />
+                </div>
+            )}
         </div>
     );
 }

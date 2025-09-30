@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import prisma from '@/lib/db';
-import { auth } from '@/lib/auth';
+import { getApiSession } from '@/lib/getApiSession';
 import { APP_ROLES } from '@/lib/roles';
 import { toSlug } from '@/lib/to-slug';
 
 export const runtime = 'nodejs';
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getApiSession(request);
 
     if (!session || session.user.role !== APP_ROLES.ADMIN) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -49,8 +48,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ organizations });
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
-    const session = await auth.api.getSession({ headers: await headers() });
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const session = await getApiSession(request);
 
     if (!session || session.user.role !== APP_ROLES.ADMIN) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

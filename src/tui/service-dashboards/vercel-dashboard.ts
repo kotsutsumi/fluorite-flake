@@ -159,13 +159,15 @@ export class VercelDashboard {
             width: '100%',
             height: 1,
             content: ' Press q to quit | r to refresh | Tab to navigate | h for help ',
+            border: {
+                type: 'line',
+            },
             style: {
                 fg: this.theme.fg,
                 bg: this.theme.bg,
-            },
-            border: {
-                type: 'line',
-                fg: this.theme.border,
+                border: {
+                    fg: this.theme.border,
+                },
             },
         });
     }
@@ -179,7 +181,10 @@ export class VercelDashboard {
 
         // 更新
         this.screen.key(['r', 'R'], () => {
-            addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
+            const logsWidget = this.widgets.logs;
+            if (logsWidget) {
+                addLogEntry(logsWidget, 'Manual refresh triggered...', true);
+            }
             this.refresh();
         });
 
@@ -210,14 +215,20 @@ export class VercelDashboard {
         // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'vercel') {
-                addLogEntry(this.widgets.logs, entry.message, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, entry.message, true);
+                }
             }
         });
 
         // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'vercel') {
-                addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, `❌ Error: ${error}`, true);
+                }
             }
         });
     }
@@ -225,7 +236,10 @@ export class VercelDashboard {
     async start(): Promise<void> {
         // 初期レンダー
         this.screen.render();
-        addLogEntry(this.widgets.logs, '🚀 Starting Vercel Dashboard...', true);
+        const logsWidgetStart = this.widgets.logs;
+        if (logsWidgetStart) {
+            addLogEntry(logsWidgetStart, '🚀 Starting Vercel Dashboard...', true);
+        }
 
         // 初期データ読み込み
         await this.refresh();
@@ -237,11 +251,14 @@ export class VercelDashboard {
             }, this.config.refreshInterval);
         }
 
-        addLogEntry(
-            this.widgets.logs,
-            `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
-            true
-        );
+        const logsWidgetReady = this.widgets.logs;
+        if (logsWidgetReady) {
+            addLogEntry(
+                logsWidgetReady,
+                `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
+                true
+            );
+        }
     }
 
     async stop(): Promise<void> {
@@ -257,7 +274,10 @@ export class VercelDashboard {
             this.updateDashboard(data);
             this.updateStatusBar(`Last refresh: ${new Date().toLocaleTimeString()}`);
         } catch (error) {
-            addLogEntry(this.widgets.logs, `❌ Refresh failed: ${error}`, true);
+            const logsWidgetError = this.widgets.logs;
+            if (logsWidgetError) {
+                addLogEntry(logsWidgetError, `❌ Refresh failed: ${error}`, true);
+            }
         }
     }
 
@@ -275,7 +295,7 @@ export class VercelDashboard {
                     new Date(d.createdAt || 0).toLocaleDateString(),
                 ]);
             updateTableData(
-                this.widgets.deployments,
+                this.widgets.deployments!,
                 ['Name', 'Status', 'URL', 'Created'],
                 deploymentData
             );
@@ -292,7 +312,7 @@ export class VercelDashboard {
                     p.framework || 'N/A',
                     new Date(p.updatedAt || 0).toLocaleDateString(),
                 ]);
-            updateTableData(this.widgets.projects, ['Name', 'Framework', 'Updated'], projectData);
+            updateTableData(this.widgets.projects!, ['Name', 'Framework', 'Updated'], projectData);
         }
 
         // ドメインのテーブルを更新
@@ -304,7 +324,7 @@ export class VercelDashboard {
                 d.verified ? '✅' : '❌',
                 '✅', // SSL always enabled on Vercel
             ]);
-            updateTableData(this.widgets.domains, ['Domain', 'Status', 'SSL'], domainData);
+            updateTableData(this.widgets.domains!, ['Domain', 'Status', 'SSL'], domainData);
         }
 
         // 分析チャートを更新（現在はモックデータ）
@@ -318,7 +338,7 @@ export class VercelDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.analytics, [
+            updateChartData(this.widgets.analytics!, [
                 {
                     title: 'Deployments',
                     x: last7Days,

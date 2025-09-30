@@ -9,7 +9,8 @@ import { readTemplate } from '../../../utils/template-reader.js';
  * @param config プロジェクト設定
  */
 export async function ensureSupabaseClient(config: ProjectConfig) {
-    const supabasePath = path.join(config.projectPath, 'src/lib/supabase.ts');
+    const supabaseDir = config.framework === 'expo' ? 'lib' : 'src/lib';
+    const supabasePath = path.join(config.projectPath, supabaseDir, 'supabase.ts');
     if (await fs.pathExists(supabasePath)) {
         return;
     }

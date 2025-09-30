@@ -9,6 +9,8 @@ import { setupRustBackend } from './helpers/setupRustBackend.js';
 import { setupVite } from './helpers/setupVite.js';
 import { createWebFrontend } from './helpers/createWebFrontend.js';
 import { createTauriGitignore } from './helpers/createTauriGitignore.js';
+import { createPackageManagerArtifacts } from './helpers/createPackageManagerArtifacts.js';
+import { setupTauriDeployment } from './helpers/setupTauriDeployment.js';
 
 /**
  * Tauriプロジェクトを生成するメイン関数
@@ -42,4 +44,12 @@ export async function generateTauriProject(config: ProjectConfig) {
 
     // .gitignoreのセットアップ
     await createTauriGitignore(config);
+
+    // テストモードで欠落しがちなロックファイルなどを補完する
+    await createPackageManagerArtifacts(config);
+
+    if (config.deployment) {
+        // GitHub Actions とリリーススクリプトを用意して配布フローを整える
+        await setupTauriDeployment(config);
+    }
 }

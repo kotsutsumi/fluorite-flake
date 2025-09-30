@@ -6,6 +6,7 @@
 
 // メイン関数のエクスポート
 export { generateExpoProject } from './generateExpoProject.js';
+export { setupExpoAuth } from './helpers/setupExpoAuth.js';
 
 // ヘルパー関数のエクスポート
 export { createExpoAppStructure } from './helpers/createExpoAppStructure.js';

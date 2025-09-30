@@ -9,8 +9,9 @@ const STORAGE_DIR = path.join(process.cwd(), '.storage');
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { path: string[] } }
+    context: { params?: { path?: string[] } } = {}
 ) {
+    const resolvedContext = await Promise.resolve(context);
     // Only allow in development
     if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
@@ -19,7 +20,17 @@ export async function GET(
         );
     }
 
-    const pathname = params.path.join('/');
+    const params = await Promise.resolve(resolvedContext.params);
+    const pathSegments = params?.path ?? [];
+    // パスセグメントが指定されていない場合は即座にエラーを返す
+    if (pathSegments.length === 0) {
+        return NextResponse.json(
+            { error: 'Path segment is required' },
+            { status: 400 }
+        );
+    }
+
+    const pathname = pathSegments.join('/');
     const filepath = path.join(STORAGE_DIR, pathname);
 
     try {
@@ -86,8 +97,9 @@ export async function GET(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { path: string[] } }
+    context: { params?: { path?: string[] } } = {}
 ) {
+    const resolvedContext = await Promise.resolve(context);
     // Only allow in development
     if (process.env.NODE_ENV === 'production') {
         return NextResponse.json(
@@ -96,7 +108,17 @@ export async function DELETE(
         );
     }
 
-    const pathname = params.path.join('/');
+    const params = await Promise.resolve(resolvedContext.params);
+    const pathSegments = params?.path ?? [];
+    // パスセグメントが無い削除リクエストは危険なため拒否する
+    if (pathSegments.length === 0) {
+        return NextResponse.json(
+            { error: 'Path segment is required' },
+            { status: 400 }
+        );
+    }
+
+    const pathname = pathSegments.join('/');
     const filepath = path.join(STORAGE_DIR, pathname);
 
     try {

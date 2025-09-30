@@ -171,13 +171,15 @@ export class SupabaseDashboard {
             width: '100%',
             height: 1,
             content: ' Press q to quit | r to refresh | Tab to navigate | h for help ',
+            border: {
+                type: 'line',
+            },
             style: {
                 fg: this.theme.fg,
                 bg: this.theme.bg,
-            },
-            border: {
-                type: 'line',
-                fg: this.theme.border,
+                border: {
+                    fg: this.theme.border,
+                },
             },
         });
     }
@@ -191,7 +193,10 @@ export class SupabaseDashboard {
 
         // 更新
         this.screen.key(['r', 'R'], () => {
-            addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
+            const logsWidget = this.widgets.logs;
+            if (logsWidget) {
+                addLogEntry(logsWidget, 'Manual refresh triggered...', true);
+            }
             this.refresh();
         });
 
@@ -232,14 +237,20 @@ export class SupabaseDashboard {
         // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'supabase') {
-                addLogEntry(this.widgets.logs, entry.message, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, entry.message, true);
+                }
             }
         });
 
         // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'supabase') {
-                addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, `❌ Error: ${error}`, true);
+                }
             }
         });
     }
@@ -247,7 +258,10 @@ export class SupabaseDashboard {
     async start(): Promise<void> {
         // 初期レンダー
         this.screen.render();
-        addLogEntry(this.widgets.logs, '🚀 Starting Supabase Dashboard...', true);
+        const logsWidgetStart = this.widgets.logs;
+        if (logsWidgetStart) {
+            addLogEntry(logsWidgetStart, '🚀 Starting Supabase Dashboard...', true);
+        }
 
         // 初期データ読み込み
         await this.refresh();
@@ -259,11 +273,14 @@ export class SupabaseDashboard {
             }, this.config.refreshInterval);
         }
 
-        addLogEntry(
-            this.widgets.logs,
-            `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
-            true
-        );
+        const logsWidgetReady = this.widgets.logs;
+        if (logsWidgetReady) {
+            addLogEntry(
+                logsWidgetReady,
+                `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
+                true
+            );
+        }
     }
 
     async stop(): Promise<void> {
@@ -279,7 +296,10 @@ export class SupabaseDashboard {
             this.updateDashboard(data);
             this.updateStatusBar(`Last refresh: ${new Date().toLocaleTimeString()}`);
         } catch (error) {
-            addLogEntry(this.widgets.logs, `❌ Refresh failed: ${error}`, true);
+            const logsWidgetError = this.widgets.logs;
+            if (logsWidgetError) {
+                addLogEntry(logsWidgetError, `❌ Refresh failed: ${error}`, true);
+            }
         }
     }
 
@@ -289,7 +309,7 @@ export class SupabaseDashboard {
             // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const db = data.database as any;
             const usagePercent = db.usagePercent || 0;
-            updateGaugeData(this.widgets.database, usagePercent);
+            updateGaugeData(this.widgets.database!, usagePercent);
         }
 
         // 認証ユーザーのテーブルを更新
@@ -303,7 +323,7 @@ export class SupabaseDashboard {
                     u.provider || 'email',
                     new Date(u.lastSignIn || 0).toLocaleString(),
                 ]);
-            updateTableData(this.widgets.auth, ['Email', 'Provider', 'Last Login'], userData);
+            updateTableData(this.widgets.auth!, ['Email', 'Provider', 'Last Login'], userData);
         }
 
         // ストレージバケットのテーブルを更新
@@ -317,7 +337,7 @@ export class SupabaseDashboard {
                     b.fileCount?.toString() || '0',
                     this.formatBytes(b.size || 0),
                 ]);
-            updateTableData(this.widgets.storage, ['Bucket', 'Files', 'Size'], bucketData);
+            updateTableData(this.widgets.storage!, ['Bucket', 'Files', 'Size'], bucketData);
         }
 
         // クエリ分析チャートを更新
@@ -332,7 +352,7 @@ export class SupabaseDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.queries, [
+            updateChartData(this.widgets.queries!, [
                 {
                     title: 'Queries',
                     x: last24Hours.slice(-12),
@@ -361,7 +381,7 @@ export class SupabaseDashboard {
                     f.errors?.toString() || '0',
                 ]);
             updateTableData(
-                this.widgets.functions,
+                this.widgets.functions!,
                 ['Function', 'Status', 'Invocations', 'Errors'],
                 functionData
             );
@@ -376,7 +396,7 @@ export class SupabaseDashboard {
             const idle = rt.idle || 0;
             const disconnected = total - active - idle;
 
-            updateDonutData(this.widgets.realtime, [
+            updateDonutData(this.widgets.realtime!, [
                 {
                     percent: Math.round((active / total) * 100),
                     label: 'Active',

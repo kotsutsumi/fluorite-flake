@@ -39,7 +39,9 @@ export async function setupVercelBlob(config: ProjectConfig) {
     const localStorageContent = await readTemplate(
         'storage/vercel-blob/lib/storage-local.ts.template'
     );
-    const localStoragePath = path.join(config.projectPath, 'src/lib/storage-local.ts');
+    const storageLibDir = config.framework === 'expo' ? 'lib' : 'src/lib';
+    const localStoragePath = path.join(config.projectPath, storageLibDir, 'storage-local.ts');
+    await fs.ensureDir(path.dirname(localStoragePath));
     await fs.writeFile(localStoragePath, localStorageContent);
 
     // ローカルエミュレーション用の.storageディレクトリを作成

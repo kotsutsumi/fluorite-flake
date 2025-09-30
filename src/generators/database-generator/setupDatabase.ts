@@ -80,6 +80,62 @@ async function setupTurso(config: ProjectConfig) {
     await fs.writeFile(path.join(scriptsDir, 'setup-turso.sh'), setupScriptContent);
     await fs.chmod(path.join(scriptsDir, 'setup-turso.sh'), '755');
 
+    const initScriptContent = `#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_ROOT="$(pwd)"
+FLAG_FILE="$PROJECT_ROOT/.fluorite-db-ready"
+DATABASE_URL="\${DATABASE_URL:-file:./prisma/dev.db}"
+
+if [ -f "$FLAG_FILE" ] && [ "\${FORCE_DB_INIT:-0}" != "1" ]; then
+  if [ -f "$PROJECT_ROOT/prisma/dev.db" ]; then
+    echo "⏭️  Database already initialized."
+    exit 0
+  fi
+fi
+
+rm -f "$FLAG_FILE"
+
+echo "🚀 Initializing Turso database..."
+
+if pnpm exec prisma generate; then
+  echo "  ✅ Prisma client generated"
+else
+  echo "  ⚠️  Prisma client generation failed"
+fi
+
+if pnpm exec prisma db push --force-reset --skip-generate; then
+  echo "  ✅ Schema pushed to database"
+else
+  echo "  ⚠️  Schema push failed"
+fi
+
+if pnpm exec prisma db seed >/dev/null 2>&1; then
+  echo "  ✅ Database seeded"
+else
+  echo "  ℹ️  No seed script or seeding skipped"
+fi
+
+touch "$FLAG_FILE"
+`;
+    const initScriptPath = path.join(scriptsDir, 'init-turso.sh');
+    await fs.writeFile(initScriptPath, initScriptContent);
+    await fs.chmod(initScriptPath, '755');
+
+    const devBootstrapContent = `#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+bash "$SCRIPT_DIR/init-turso.sh"
+
+pnpm run dev "$@"
+`;
+    const devBootstrapPath = path.join(scriptsDir, 'dev-bootstrap.sh');
+    await fs.writeFile(devBootstrapPath, devBootstrapContent);
+    await fs.chmod(devBootstrapPath, '755');
+
     const packageJsonPath = path.join(config.projectPath, 'package.json');
     const packageJson = await fs.readJSON(packageJsonPath);
     packageJson.scripts = {
@@ -87,6 +143,7 @@ async function setupTurso(config: ProjectConfig) {
         'setup:db': 'bash scripts/setup-turso.sh',
         'setup:db:local': 'bash scripts/setup-turso.sh --local',
         'setup:db:cloud': 'bash scripts/setup-turso.sh --cloud',
+        'dev:bootstrap': 'bash scripts/dev-bootstrap.sh',
     };
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
@@ -371,6 +428,13 @@ async function setupDrizzle(config: ProjectConfig) {
         await fs.writeFile(path.join(dbDir, 'index.ts'), clientContent);
     }
 
+    const drizzleLibDir = path.join(config.projectPath, 'src/lib');
+    await fs.ensureDir(drizzleLibDir);
+    const drizzleLibContent = `export { db } from '../db/index';
+export * as schema from '../db/schema';
+`;
+    await fs.writeFile(path.join(drizzleLibDir, 'db.ts'), drizzleLibContent);
+
     const seedContent = await readTemplate('database/drizzle/seed.ts.template');
     await fs.writeFile(path.join(dbDir, 'seed.ts'), seedContent);
 
@@ -434,12 +498,39 @@ async function createDatabaseDemoComponent(config: ProjectConfig) {
         return;
     }
 
-    const demoComponentContent = await readTemplate(
-        'database/components/demo-component.tsx.template'
+    const databaseDescription = getDatabaseDescription(config);
+    const demoComponentContent = await readTemplateWithReplacements(
+        'database/components/demo-component.tsx.template',
+        {
+            databaseDescription,
+        }
     );
     const componentsDir = path.join(config.projectPath, 'src/components');
     await fs.ensureDir(componentsDir);
     await fs.writeFile(path.join(componentsDir, 'database-demo.tsx'), demoComponentContent);
+}
+
+function getDatabaseDescription(config: ProjectConfig): string {
+    // データベースと ORM の組み合わせに応じてダッシュボードの説明文を生成する
+    if (config.database === 'turso') {
+        if (config.orm === 'prisma') {
+            return 'Turso と Prisma の組み合わせで、エッジ最適化された SQLite データベースに安全に接続しています。';
+        }
+        if (config.orm === 'drizzle') {
+            return 'Turso (libSQL) と Drizzle ORM を利用し、軽量でスケーラブルなデータアクセス層を提供します。';
+        }
+        return 'Turso に接続されたデータベース構成が初期化されています。';
+    }
+    if (config.database === 'supabase') {
+        if (config.orm === 'prisma') {
+            return 'Supabase と Prisma を活用した PostgreSQL 互換のデータベース接続が有効になっています。';
+        }
+        if (config.orm === 'drizzle') {
+            return 'Supabase と Drizzle ORM を用いて、PostgreSQL ベースの API を型安全に扱えるよう構成しています。';
+        }
+        return 'Supabase に接続されたデータベース構成が初期化されています。';
+    }
+    return 'データベース接続がセットアップされ、API ルートから利用可能な状態です。';
 }
 
 const ENV_TARGET_FILES = [

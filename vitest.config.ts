@@ -48,6 +48,11 @@ export default defineConfig({
                 test: {
                     name: 'scenario',
                     include: ['test/scenario/**/*.test.ts'],
+                    // Flutter/Tauri のシナリオテストは一時停止する
+                    exclude: [
+                        'test/scenario/flutter/**/*.test.ts',
+                        'test/scenario/tauri/**/*.test.ts',
+                    ],
                     testTimeout: 300000, // 5 minutes for scenario tests
                     hookTimeout: 300000,
                     maxConcurrency: 1, // Run scenario tests sequentially

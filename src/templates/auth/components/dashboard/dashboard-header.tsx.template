@@ -1,7 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ROLE_LABELS, type AppRole } from '@/lib/roles';
@@ -17,8 +16,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
-    const [isPending, startTransition] = useTransition();
-    const router = useRouter();
+    const [isSigningOut, setIsSigningOut] = useState(false);
     const initials = user.name
         ? user.name
               .split(' ')
@@ -29,28 +27,37 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
         : user.email.slice(0, 2).toUpperCase();
 
     const handleSignOut = () => {
-        startTransition(async () => {
-            try {
-                console.log('🚪 Starting custom logout process');
-                const response = await fetch('/api/auth/sign-out', {
+        if (isSigningOut) {
+            return;
+        }
+        setIsSigningOut(true);
+        try {
+            console.log('🚪 Starting custom logout process');
+            const beaconData = new Blob(['{}'], { type: 'application/json' });
+            const beaconSent = navigator.sendBeacon('/api/auth/sign-out', beaconData);
+
+            if (!beaconSent) {
+                fetch('/api/auth/sign-out', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    credentials: 'include',
+                    keepalive: true,
+                }).catch((error) => {
+                    console.error('❌ Logout fetch fallback failed:', error);
                 });
-
-                if (response.ok) {
-                    console.log('✅ Logout successful, redirecting to login');
-                    router.push('/login');
-                    router.refresh(); // Force refresh to clear any cached data
-                } else {
-                    console.error('❌ Logout failed:', response.status);
-                }
-            } catch (error) {
-                console.error('💥 Logout error:', error);
             }
-        });
+
+            console.log('✅ Logout request dispatched, redirecting to login');
+        } catch (error) {
+            console.error('💥 Logout error:', error);
+        } finally {
+            window.location.replace('/login');
+        }
     };
+
+
 
     return (
         <header className="flex items-center justify-between border-b bg-background/60 px-6 py-4">
@@ -64,7 +71,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                 <Avatar className="h-10 w-10">
                     <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
-                <Button variant="outline" size="sm" onClick={handleSignOut} disabled={isPending}>
+                <Button variant="outline" size="sm" onClick={handleSignOut} disabled={isSigningOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     ログアウト
                 </Button>

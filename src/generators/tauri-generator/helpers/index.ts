@@ -11,3 +11,5 @@ export { setupRustBackend } from './setupRustBackend.js';
 export { setupVite } from './setupVite.js';
 export { createWebFrontend } from './createWebFrontend.js';
 export { createTauriGitignore } from './createTauriGitignore.js';
+export { createPackageManagerArtifacts } from './createPackageManagerArtifacts.js';
+export { setupTauriDeployment } from './setupTauriDeployment.js';

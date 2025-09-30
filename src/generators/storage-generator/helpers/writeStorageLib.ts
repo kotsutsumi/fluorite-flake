@@ -9,7 +9,8 @@ import type { ProjectConfig } from '../../../commands/create/types.js';
  * @param contents ファイルの内容
  */
 export async function writeStorageLib(config: ProjectConfig, contents: string) {
-    const storagePath = path.join(config.projectPath, 'src/lib/storage.ts');
+    const baseDir = config.framework === 'expo' ? 'lib' : 'src/lib';
+    const storagePath = path.join(config.projectPath, baseDir, 'storage.ts');
     await fs.ensureDir(path.dirname(storagePath));
     await fs.writeFile(storagePath, contents);
 }

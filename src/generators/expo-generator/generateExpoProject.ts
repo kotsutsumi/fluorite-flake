@@ -10,6 +10,7 @@ import { setupBabel } from './helpers/setupBabel.js';
 import { createInitialExpoApp } from './helpers/createInitialExpoApp.js';
 import { createExpoGitignore } from './helpers/createExpoGitignore.js';
 import { setupMaestroTesting } from './helpers/setupMaestroTesting.js';
+import { setupExpoAuth } from './helpers/setupExpoAuth.js';
 
 /**
  * Expoプロジェクトを生成するメイン関数
@@ -46,4 +47,8 @@ export async function generateExpoProject(config: ProjectConfig) {
 
     // Maestro E2Eテストのセットアップ
     await setupMaestroTesting(config);
+
+    if (config.auth) {
+        await setupExpoAuth(config);
+    }
 }

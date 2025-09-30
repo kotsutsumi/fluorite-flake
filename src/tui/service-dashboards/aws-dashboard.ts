@@ -21,15 +21,6 @@ import {
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
-// Widget interface definition
-interface BlessedWidget {
-    setData(data: unknown): void;
-    setPercent?(percent: number): void;
-    log?(message: string): void;
-    focus?(): void;
-    destroy?(): void;
-}
-
 // AWS Dashboard data interfaces
 interface EC2Instance {
     name?: string;
@@ -88,13 +79,7 @@ export class AWSDashboard {
     private screen: blessed.Widgets.Screen;
     private grid: contrib.grid;
     private widgets: {
-        ec2?: BlessedWidget;
-        lambda?: BlessedWidget;
-        s3?: BlessedWidget;
-        rds?: BlessedWidget;
-        cloudwatch?: BlessedWidget;
-        costs?: BlessedWidget;
-        logs?: BlessedWidget;
+        [key: string]: any;
         statusBar?: blessed.Widgets.BoxElement;
     } = {};
     private refreshTimer?: NodeJS.Timeout;
@@ -223,13 +208,15 @@ export class AWSDashboard {
             width: '100%',
             height: 1,
             content: ` Region: ${this.region} | Press q to quit | r to refresh | Tab to navigate | h for help `,
+            border: {
+                type: 'line',
+            },
             style: {
                 fg: this.theme.fg,
                 bg: this.theme.bg,
-            },
-            border: {
-                type: 'line',
-                fg: this.theme.border as string,
+                border: {
+                    fg: this.theme.border,
+                },
             },
         });
     }
@@ -243,7 +230,10 @@ export class AWSDashboard {
 
         // 更新
         this.screen.key(['r', 'R'], () => {
-            addLogEntry(this.widgets.logs, 'Manual refresh triggered...', true);
+            const logsWidget = this.widgets.logs;
+            if (logsWidget) {
+                addLogEntry(logsWidget, 'Manual refresh triggered...', true);
+            }
             this.refresh();
         });
 
@@ -289,14 +279,20 @@ export class AWSDashboard {
         // ログの追加を監視
         this.orchestrator.on('service:logEntry', (serviceName, entry) => {
             if (serviceName === 'aws') {
-                addLogEntry(this.widgets.logs, entry.message, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, entry.message, true);
+                }
             }
         });
 
         // エラーを監視
         this.orchestrator.on('service:error', (serviceName, error) => {
             if (serviceName === 'aws') {
-                addLogEntry(this.widgets.logs, `❌ Error: ${error}`, true);
+                const logsWidget = this.widgets.logs;
+                if (logsWidget) {
+                    addLogEntry(logsWidget, `❌ Error: ${error}`, true);
+                }
             }
         });
     }
@@ -304,7 +300,10 @@ export class AWSDashboard {
     async start(): Promise<void> {
         // 初期レンダー
         this.screen.render();
-        addLogEntry(this.widgets.logs, `🚀 Starting AWS Dashboard (${this.region})...`, true);
+        const logsWidgetStart = this.widgets.logs;
+        if (logsWidgetStart) {
+            addLogEntry(logsWidgetStart, `🚀 Starting AWS Dashboard (${this.region})...`, true);
+        }
 
         // 初期データ読み込み
         await this.refresh();
@@ -316,11 +315,14 @@ export class AWSDashboard {
             }, this.config.refreshInterval);
         }
 
-        addLogEntry(
-            this.widgets.logs,
-            `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
-            true
-        );
+        const logsWidgetReady = this.widgets.logs;
+        if (logsWidgetReady) {
+            addLogEntry(
+                logsWidgetReady,
+                `✅ Dashboard ready (refresh: ${this.config.refreshInterval || 'manual'}ms)`,
+                true
+            );
+        }
     }
 
     async stop(): Promise<void> {
@@ -336,7 +338,10 @@ export class AWSDashboard {
             this.updateDashboard(data);
             this.updateStatusBar(`Last refresh: ${new Date().toLocaleTimeString()}`);
         } catch (error) {
-            addLogEntry(this.widgets.logs, `❌ Refresh failed: ${error}`, true);
+            const logsWidget = this.widgets.logs;
+            if (logsWidget) {
+                addLogEntry(logsWidget, `❌ Refresh failed: ${error}`, true);
+            }
         }
     }
 
@@ -352,7 +357,7 @@ export class AWSDashboard {
                     i.state || 'Unknown',
                     i.publicIp || 'N/A',
                 ]);
-            updateTableData(this.widgets.ec2, ['Name', 'Type', 'State', 'IP'], ec2Data);
+            updateTableData(this.widgets.ec2!, ['Name', 'Type', 'State', 'IP'], ec2Data);
         }
 
         // Lambda 関数のテーブルを更新
@@ -367,7 +372,7 @@ export class AWSDashboard {
                     f.invocations?.toString() || '0',
                 ]);
             updateTableData(
-                this.widgets.lambda,
+                this.widgets.lambda!,
                 ['Function', 'Runtime', 'Memory', 'Invocations'],
                 lambdaData
             );
@@ -384,7 +389,7 @@ export class AWSDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.cloudwatch, [
+            updateChartData(this.widgets.cloudwatch!, [
                 {
                     title: 'CPU Usage',
                     x: last24Hours.slice(-12),
@@ -405,7 +410,7 @@ export class AWSDashboard {
             const costs = data.costs as CostBreakdown;
             const total = costs.total || 1;
 
-            updateDonutData(this.widgets.costs, [
+            updateDonutData(this.widgets.costs!, [
                 {
                     percent: Math.round((costs.ec2 / total) * 100),
                     label: 'EC2',
@@ -444,7 +449,7 @@ export class AWSDashboard {
                     b.objectCount?.toString() || '0',
                     this.formatBytes(b.size || 0),
                 ]);
-            updateTableData(this.widgets.s3, ['Bucket', 'Objects', 'Size'], s3Data);
+            updateTableData(this.widgets.s3!, ['Bucket', 'Objects', 'Size'], s3Data);
         }
 
         // RDS データベースのテーブルを更新
@@ -457,7 +462,7 @@ export class AWSDashboard {
                     db.engine || 'Unknown',
                     db.status || 'Unknown',
                 ]);
-            updateTableData(this.widgets.rds, ['DB', 'Engine', 'Status'], rdsData);
+            updateTableData(this.widgets.rds!, ['DB', 'Engine', 'Status'], rdsData);
         }
 
         this.screen.render();

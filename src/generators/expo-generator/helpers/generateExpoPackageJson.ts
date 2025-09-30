@@ -85,6 +85,7 @@ export async function generateExpoPackageJson(config: ProjectConfig) {
         packageJson.dependencies['expo-auth-session'] = '~6.0.0';
         packageJson.dependencies['expo-crypto'] = '~14.0.0';
         packageJson.dependencies['expo-web-browser'] = '~14.0.0';
+        packageJson.dependencies['expo-secure-store'] = '~13.0.0';
     }
 
     await fs.writeJSON(path.join(config.projectPath, 'package.json'), packageJson, {

@@ -4,17 +4,40 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../../../commands/create/types.js';
 
 /**
+ * 指定したパッケージマネージャーごとのスクリプト実行コマンドを返すヘルパー。
+ * Yarn は `yarn <script>`、Bun は `bun run <script>` のように呼び出し方が異なるため、
+ * ここで統一的に扱う。
+ */
+function resolveScriptCommand(
+    packageManager: ProjectConfig['packageManager'],
+    script: string
+): string {
+    if (packageManager === 'yarn') {
+        return `yarn ${script}`;
+    }
+
+    if (packageManager === 'bun') {
+        return `bun run ${script}`;
+    }
+
+    return `${packageManager} run ${script}`;
+}
+
+/**
  * Tauri設定ファイル（tauri.conf.json）を作成する
  * @param config プロジェクト設定
  */
 export async function setupTauriConfig(config: ProjectConfig) {
+    // Tauriのビルドフックで利用するパッケージマネージャー依存コマンドを事前に算出する
+    const beforeDevCommand = resolveScriptCommand(config.packageManager, 'dev:web');
+    const beforeBuildCommand = resolveScriptCommand(config.packageManager, 'build:web');
     const tauriConfig = {
         productName: config.projectName,
         version: '0.0.0',
         identifier: `com.${config.projectName.toLowerCase()}.app`,
         build: {
-            beforeDevCommand: 'npm run dev:web',
-            beforeBuildCommand: 'npm run build:web',
+            beforeDevCommand: beforeDevCommand,
+            beforeBuildCommand: beforeBuildCommand,
             devUrl: 'http://localhost:1420',
             frontendDist: '../dist',
         },

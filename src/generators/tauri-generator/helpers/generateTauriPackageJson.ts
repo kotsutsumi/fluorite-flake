@@ -26,14 +26,14 @@ export async function generateTauriPackageJson(config: ProjectConfig) {
         dependencies: {
             '@tauri-apps/api': '^2.1.1',
             '@tauri-apps/plugin-shell': '^2.0.0',
+            react: '^18.3.1',
+            'react-dom': '^18.3.1',
         },
         devDependencies: {
             '@tauri-apps/cli': '^2.1.0',
+            '@vitejs/plugin-react': '^4.3.4',
             typescript: '^5.7.2',
             vite: '^6.0.5',
-            '@vitejs/plugin-react': '^4.3.4',
-            react: '^18.3.1',
-            'react-dom': '^18.3.1',
             '@types/react': '^18.3.17',
             '@types/react-dom': '^18.3.5',
         },
