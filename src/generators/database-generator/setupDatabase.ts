@@ -378,9 +378,7 @@ model Invitation {
                 : 'prisma db push --force-reset && tsx prisma/seed.ts',
     };
 
-    packageJson.prisma = {
-        seed: config.packageManager === 'bun' ? 'bun run prisma/seed.ts' : 'tsx prisma/seed.ts',
-    };
+    // Note: Removed deprecated packageJson.prisma config. Seed command is now in scripts.db:seed
 
     await fs.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 
