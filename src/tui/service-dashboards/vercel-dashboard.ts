@@ -295,7 +295,7 @@ export class VercelDashboard {
                     new Date(d.createdAt || 0).toLocaleDateString(),
                 ]);
             updateTableData(
-                this.widgets.deployments!,
+                this.widgets.deployments,
                 ['Name', 'Status', 'URL', 'Created'],
                 deploymentData
             );
@@ -312,7 +312,7 @@ export class VercelDashboard {
                     p.framework || 'N/A',
                     new Date(p.updatedAt || 0).toLocaleDateString(),
                 ]);
-            updateTableData(this.widgets.projects!, ['Name', 'Framework', 'Updated'], projectData);
+            updateTableData(this.widgets.projects, ['Name', 'Framework', 'Updated'], projectData);
         }
 
         // ドメインのテーブルを更新
@@ -324,7 +324,7 @@ export class VercelDashboard {
                 d.verified ? '✅' : '❌',
                 '✅', // SSL always enabled on Vercel
             ]);
-            updateTableData(this.widgets.domains!, ['Domain', 'Status', 'SSL'], domainData);
+            updateTableData(this.widgets.domains, ['Domain', 'Status', 'SSL'], domainData);
         }
 
         // 分析チャートを更新（現在はモックデータ）
@@ -338,7 +338,7 @@ export class VercelDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.analytics!, [
+            updateChartData(this.widgets.analytics, [
                 {
                     title: 'Deployments',
                     x: last7Days,

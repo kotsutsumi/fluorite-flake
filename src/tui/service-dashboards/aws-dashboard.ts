@@ -79,6 +79,7 @@ export class AWSDashboard {
     private screen: blessed.Widgets.Screen;
     private grid: contrib.grid;
     private widgets: {
+        // biome-ignore lint/suspicious/noExplicitAny: Widget types are complex and mixed
         [key: string]: any;
         statusBar?: blessed.Widgets.BoxElement;
     } = {};
@@ -357,7 +358,7 @@ export class AWSDashboard {
                     i.state || 'Unknown',
                     i.publicIp || 'N/A',
                 ]);
-            updateTableData(this.widgets.ec2!, ['Name', 'Type', 'State', 'IP'], ec2Data);
+            updateTableData(this.widgets.ec2, ['Name', 'Type', 'State', 'IP'], ec2Data);
         }
 
         // Lambda 関数のテーブルを更新
@@ -372,7 +373,7 @@ export class AWSDashboard {
                     f.invocations?.toString() || '0',
                 ]);
             updateTableData(
-                this.widgets.lambda!,
+                this.widgets.lambda,
                 ['Function', 'Runtime', 'Memory', 'Invocations'],
                 lambdaData
             );
@@ -389,7 +390,7 @@ export class AWSDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.cloudwatch!, [
+            updateChartData(this.widgets.cloudwatch, [
                 {
                     title: 'CPU Usage',
                     x: last24Hours.slice(-12),
@@ -410,7 +411,7 @@ export class AWSDashboard {
             const costs = data.costs as CostBreakdown;
             const total = costs.total || 1;
 
-            updateDonutData(this.widgets.costs!, [
+            updateDonutData(this.widgets.costs, [
                 {
                     percent: Math.round((costs.ec2 / total) * 100),
                     label: 'EC2',
@@ -449,7 +450,7 @@ export class AWSDashboard {
                     b.objectCount?.toString() || '0',
                     this.formatBytes(b.size || 0),
                 ]);
-            updateTableData(this.widgets.s3!, ['Bucket', 'Objects', 'Size'], s3Data);
+            updateTableData(this.widgets.s3, ['Bucket', 'Objects', 'Size'], s3Data);
         }
 
         // RDS データベースのテーブルを更新
@@ -462,7 +463,7 @@ export class AWSDashboard {
                     db.engine || 'Unknown',
                     db.status || 'Unknown',
                 ]);
-            updateTableData(this.widgets.rds!, ['DB', 'Engine', 'Status'], rdsData);
+            updateTableData(this.widgets.rds, ['DB', 'Engine', 'Status'], rdsData);
         }
 
         this.screen.render();

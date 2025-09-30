@@ -310,7 +310,7 @@ export class TursoDashboard {
                     this.formatBytes(db.size || 0),
                     db.status || 'Unknown',
                 ]);
-            updateTableData(this.widgets.databases!, ['Name', 'Region', 'Size', 'Status'], dbData);
+            updateTableData(this.widgets.databases, ['Name', 'Region', 'Size', 'Status'], dbData);
         }
 
         // レプリカのテーブルを更新
@@ -326,7 +326,7 @@ export class TursoDashboard {
                     r.syncStatus || 'Unknown',
                 ]);
             updateTableData(
-                this.widgets.replicas!,
+                this.widgets.replicas,
                 ['Location', 'Status', 'Latency', 'Sync'],
                 replicaData
             );
@@ -344,7 +344,7 @@ export class TursoDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.queries!, [
+            updateChartData(this.widgets.queries, [
                 {
                     title: 'Reads',
                     x: last24Hours.slice(-12),

@@ -36,7 +36,8 @@ export async function createPackageManagerArtifacts(config: ProjectConfig) {
                 break;
             }
 
-            const placeholderContent = `# このロックファイルはテスト用のプレースホルダーです\n# 実際の開発では yarn install を実行し最新状態を反映してください\n`;
+            const placeholderContent =
+                '# このロックファイルはテスト用のプレースホルダーです\n# 実際の開発では yarn install を実行し最新状態を反映してください\n';
             await fs.writeFile(lockPath, placeholderContent);
             break;
         }

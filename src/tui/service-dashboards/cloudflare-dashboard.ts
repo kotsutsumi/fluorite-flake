@@ -73,6 +73,7 @@ export class CloudflareDashboard {
     private screen: blessed.Widgets.Screen;
     private grid: contrib.grid;
     private widgets: {
+        // biome-ignore lint/suspicious/noExplicitAny: Widget types are complex and mixed
         [key: string]: any;
         statusBar?: blessed.Widgets.BoxElement;
     } = {};
@@ -335,7 +336,7 @@ export class CloudflareDashboard {
                     w.errors?.toString() || '0',
                 ]);
             updateTableData(
-                this.widgets.workers!,
+                this.widgets.workers,
                 ['Name', 'Status', 'Requests', 'Errors'],
                 workerData
             );
@@ -352,7 +353,7 @@ export class CloudflareDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.requests!, [
+            updateChartData(this.widgets.requests, [
                 {
                     title: 'Requests',
                     x: last24Hours.slice(-12),
@@ -374,7 +375,7 @@ export class CloudflareDashboard {
             const avgResponseTime = perf.avgResponseTime || 0;
             // Convert to percentage (assuming 1000ms = 100%)
             const percent = Math.min(100, (avgResponseTime / 1000) * 100);
-            updateGaugeData(this.widgets.performance!, 100 - percent); // Invert for better UX
+            updateGaugeData(this.widgets.performance, 100 - percent); // Invert for better UX
         }
 
         // エラーレートを更新
@@ -385,7 +386,7 @@ export class CloudflareDashboard {
                 stackedCategory: ['Errors'],
                 data: [[errors['4xx'] || 0], [errors['5xx'] || 0], [errors.timeout || 0]],
             };
-            this.widgets.errors!.setData(errorData);
+            this.widgets.errors.setData(errorData);
         }
 
         // KV ネームスペースのテーブルを更新
@@ -394,7 +395,7 @@ export class CloudflareDashboard {
             const kvData = namespaces
                 .slice(0, 10)
                 .map((kv) => [kv.name || 'Unknown', kv.keys?.toString() || '0']);
-            updateTableData(this.widgets.kvNamespaces!, ['Name', 'Keys'], kvData);
+            updateTableData(this.widgets.kvNamespaces, ['Name', 'Keys'], kvData);
         }
 
         // R2 バケットのテーブルを更新
@@ -407,7 +408,7 @@ export class CloudflareDashboard {
                     b.objects?.toString() || '0',
                     this.formatBytes(b.size || 0),
                 ]);
-            updateTableData(this.widgets.r2Buckets!, ['Name', 'Objects', 'Size'], bucketData);
+            updateTableData(this.widgets.r2Buckets, ['Name', 'Objects', 'Size'], bucketData);
         }
 
         this.screen.render();

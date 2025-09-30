@@ -309,7 +309,7 @@ export class SupabaseDashboard {
             // biome-ignore lint/suspicious/noExplicitAny: ServiceDashboardData uses any for service-specific data
             const db = data.database as any;
             const usagePercent = db.usagePercent || 0;
-            updateGaugeData(this.widgets.database!, usagePercent);
+            updateGaugeData(this.widgets.database, usagePercent);
         }
 
         // 認証ユーザーのテーブルを更新
@@ -323,7 +323,7 @@ export class SupabaseDashboard {
                     u.provider || 'email',
                     new Date(u.lastSignIn || 0).toLocaleString(),
                 ]);
-            updateTableData(this.widgets.auth!, ['Email', 'Provider', 'Last Login'], userData);
+            updateTableData(this.widgets.auth, ['Email', 'Provider', 'Last Login'], userData);
         }
 
         // ストレージバケットのテーブルを更新
@@ -337,7 +337,7 @@ export class SupabaseDashboard {
                     b.fileCount?.toString() || '0',
                     this.formatBytes(b.size || 0),
                 ]);
-            updateTableData(this.widgets.storage!, ['Bucket', 'Files', 'Size'], bucketData);
+            updateTableData(this.widgets.storage, ['Bucket', 'Files', 'Size'], bucketData);
         }
 
         // クエリ分析チャートを更新
@@ -352,7 +352,7 @@ export class SupabaseDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.queries!, [
+            updateChartData(this.widgets.queries, [
                 {
                     title: 'Queries',
                     x: last24Hours.slice(-12),
@@ -381,7 +381,7 @@ export class SupabaseDashboard {
                     f.errors?.toString() || '0',
                 ]);
             updateTableData(
-                this.widgets.functions!,
+                this.widgets.functions,
                 ['Function', 'Status', 'Invocations', 'Errors'],
                 functionData
             );
@@ -396,7 +396,7 @@ export class SupabaseDashboard {
             const idle = rt.idle || 0;
             const disconnected = total - active - idle;
 
-            updateDonutData(this.widgets.realtime!, [
+            updateDonutData(this.widgets.realtime, [
                 {
                     percent: Math.round((active / total) * 100),
                     label: 'Active',

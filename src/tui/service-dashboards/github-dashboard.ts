@@ -91,6 +91,7 @@ export class GitHubDashboard {
     private screen: blessed.Widgets.Screen;
     private grid: contrib.grid;
     private widgets: {
+        // biome-ignore lint/suspicious/noExplicitAny: Widget types are complex and mixed
         [key: string]: any;
         statusBar?: blessed.Widgets.BoxElement;
     } = {};
@@ -377,7 +378,7 @@ export class GitHubDashboard {
                 ];
             });
             updateTableData(
-                this.widgets.repositories!,
+                this.widgets.repositories,
                 ['Name', 'Stars', 'Forks', 'Issues'],
                 repoData
             );
@@ -398,7 +399,7 @@ export class GitHubDashboard {
                 ];
             });
             updateTableData(
-                this.widgets.pullRequests!,
+                this.widgets.pullRequests,
                 ['Title', 'Author', 'Status', 'Reviews'],
                 prData
             );
@@ -415,7 +416,7 @@ export class GitHubDashboard {
                 })
                 .reverse();
 
-            updateChartData(this.widgets.activity!, [
+            updateChartData(this.widgets.activity, [
                 {
                     title: 'Commits',
                     x: last7Days,
@@ -447,7 +448,7 @@ export class GitHubDashboard {
                     this.getStatusIcon(a.status),
                     this.formatDuration(a.duration),
                 ]);
-            updateTableData(this.widgets.actions!, ['Workflow', 'Status', 'Duration'], actionData);
+            updateTableData(this.widgets.actions, ['Workflow', 'Status', 'Duration'], actionData);
         }
 
         // コントリビュータードーナツチャートを更新
@@ -457,7 +458,7 @@ export class GitHubDashboard {
             const topContributors = contributors.slice(0, 5);
 
             updateDonutData(
-                this.widgets.contributors!,
+                this.widgets.contributors,
                 topContributors.map((c, i) => {
                     const contributions = c.contributions ?? 0;
                     return {
@@ -480,11 +481,7 @@ export class GitHubDashboard {
                     i.assignee || 'unassigned',
                     this.formatAge(i.createdAt),
                 ]);
-            updateTableData(
-                this.widgets.issues!,
-                ['Title', 'Labels', 'Assignee', 'Age'],
-                issueData
-            );
+            updateTableData(this.widgets.issues, ['Title', 'Labels', 'Assignee', 'Age'], issueData);
         }
 
         this.screen.render();

@@ -14,11 +14,6 @@ import type {
     ServiceCapabilities,
 } from '../../../src/services/base-service-adapter/index.js';
 
-import type {
-    ServiceInfo,
-    ServiceCapabilities,
-} from '../../../src/services/base-service-adapter/types.js';
-
 const BASE_CAPABILITIES: ServiceCapabilities = {
     realTimeUpdates: true,
     logStreaming: true,
