@@ -68,38 +68,74 @@ export async function generatePackageJson(config: ProjectConfig) {
 
     // データベース依存関係を追加
     if (config.database === 'turso') {
-        // Tursoデータベース用パッケージを追加
-        Object.assign(
-            packageJson.dependencies,
-            getPackageVersions([...PACKAGE_CATEGORIES.database.turso])
-        );
-        // ORM設定に応じて追加パッケージをインストール
+        const tursoPackages = getPackageVersions([...PACKAGE_CATEGORIES.database.turso]);
+        const libsqlVersion = tursoPackages['@libsql/client'];
+        const adapterVersion = tursoPackages['@prisma/adapter-libsql'];
+
+        if (libsqlVersion) {
+            packageJson.dependencies['@libsql/client'] = libsqlVersion;
+        }
+
         if (config.orm === 'prisma') {
-            Object.assign(
-                packageJson.dependencies,
-                getPackageVersions([...PACKAGE_CATEGORIES.database.prisma])
-            );
-            Object.assign(packageJson.devDependencies, getPackageVersions(['prisma', 'tsx']));
+            const prismaPackages = getPackageVersions([...PACKAGE_CATEGORIES.database.prisma]);
+            const prismaClientVersion = prismaPackages['@prisma/client'];
+            const prismaVersion = prismaPackages.prisma;
+
+            if (prismaClientVersion) {
+                packageJson.dependencies['@prisma/client'] = prismaClientVersion;
+            }
+            if (prismaVersion) {
+                packageJson.devDependencies.prisma = prismaVersion;
+            }
+            if (adapterVersion) {
+                packageJson.devDependencies['@prisma/adapter-libsql'] = adapterVersion;
+            }
         } else if (config.orm === 'drizzle') {
-            Object.assign(packageJson.dependencies, getPackageVersions(['drizzle-orm']));
-            Object.assign(packageJson.devDependencies, getPackageVersions(['drizzle-kit', 'tsx']));
+            const drizzlePackages = getPackageVersions(['drizzle-orm', 'drizzle-kit']);
+            const drizzleOrmVersion = drizzlePackages['drizzle-orm'];
+            const drizzleKitVersion = drizzlePackages['drizzle-kit'];
+
+            if (drizzleOrmVersion) {
+                packageJson.dependencies['drizzle-orm'] = drizzleOrmVersion;
+            }
+            if (drizzleKitVersion) {
+                packageJson.devDependencies['drizzle-kit'] = drizzleKitVersion;
+            }
         }
     } else if (config.database === 'supabase') {
-        // Supabaseデータベース用パッケージを追加
-        Object.assign(
-            packageJson.dependencies,
-            getPackageVersions([...PACKAGE_CATEGORIES.database.supabase])
-        );
-        // ORM設定に応じて追加パッケージをインストール
+        const supabasePackages = getPackageVersions([...PACKAGE_CATEGORIES.database.supabase]);
+        const supabaseVersion = supabasePackages['@supabase/supabase-js'];
+        const postgresVersion = supabasePackages.postgres;
+
+        if (supabaseVersion) {
+            packageJson.dependencies['@supabase/supabase-js'] = supabaseVersion;
+        }
+        if (postgresVersion) {
+            packageJson.dependencies.postgres = postgresVersion;
+        }
+
         if (config.orm === 'prisma') {
-            Object.assign(
-                packageJson.dependencies,
-                getPackageVersions([...PACKAGE_CATEGORIES.database.prisma])
-            );
-            Object.assign(packageJson.devDependencies, getPackageVersions(['prisma', 'tsx']));
+            const prismaPackages = getPackageVersions([...PACKAGE_CATEGORIES.database.prisma]);
+            const prismaClientVersion = prismaPackages['@prisma/client'];
+            const prismaVersion = prismaPackages.prisma;
+
+            if (prismaClientVersion) {
+                packageJson.dependencies['@prisma/client'] = prismaClientVersion;
+            }
+            if (prismaVersion) {
+                packageJson.devDependencies.prisma = prismaVersion;
+            }
         } else if (config.orm === 'drizzle') {
-            Object.assign(packageJson.dependencies, getPackageVersions(['drizzle-orm']));
-            Object.assign(packageJson.devDependencies, getPackageVersions(['drizzle-kit', 'tsx']));
+            const drizzlePackages = getPackageVersions(['drizzle-orm', 'drizzle-kit']);
+            const drizzleOrmVersion = drizzlePackages['drizzle-orm'];
+            const drizzleKitVersion = drizzlePackages['drizzle-kit'];
+
+            if (drizzleOrmVersion) {
+                packageJson.dependencies['drizzle-orm'] = drizzleOrmVersion;
+            }
+            if (drizzleKitVersion) {
+                packageJson.devDependencies['drizzle-kit'] = drizzleKitVersion;
+            }
         }
     }
 

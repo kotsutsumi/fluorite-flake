@@ -177,9 +177,11 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
                 'package.json',
                 'src/lib/auth.ts',
                 'src/lib/auth-client.ts',
+                'src/lib/auth-server.ts',
                 'src/app/api/auth/[...all]/route.ts',
-                'src/components/auth/sign-in.tsx',
-                'src/components/auth/sign-up.tsx',
+                'src/app/login/page.tsx',
+                'src/app/(app)/page.tsx',
+                'src/components/dashboard/sidebar.tsx',
             ]);
 
             expect(valid).toBe(true);
@@ -273,9 +275,9 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
                 'src/lib/storage.ts',
                 'src/lib/storage-local.ts',
                 'src/app/api/upload/route.ts',
-                'src/app/api/storage/[...path]/route.ts',
                 'src/components/file-upload.tsx',
                 'scripts/setup-vercel-blob.sh',
+                'scripts/check-blob-config.ts',
                 '.storage/.gitkeep',
             ]);
 
@@ -404,16 +406,24 @@ describe('Next.js プロジェクト生成のシナリオ検証', () => {
                 'prisma/schema.prisma',
                 'src/lib/db.ts',
                 'scripts/setup-turso.sh',
+                'scripts/init-turso.sh',
+                'scripts/dev-bootstrap.sh',
                 // ストレージ関連ファイル
                 'src/lib/storage.ts',
                 'src/lib/storage-local.ts',
                 'src/app/api/upload/route.ts',
+                'scripts/setup-vercel-blob.sh',
                 // 認証関連ファイル
                 'src/lib/auth.ts',
+                'src/lib/auth-client.ts',
+                'src/lib/auth-server.ts',
                 'src/app/api/auth/[...all]/route.ts',
+                'src/app/login/page.tsx',
                 // デプロイ関連ファイル
-                'scripts/deploy-to-vercel.sh',
+                'scripts/setup-deployment.sh',
+                'scripts/destroy-deployment.ts',
                 'scripts/env-tools.ts',
+                'scripts/automated-deployment.sh',
             ]);
 
             expect(valid).toBe(true);
