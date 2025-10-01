@@ -480,6 +480,7 @@ async function createSampleApiRoute(config: ProjectConfig) {
         }
     );
 
+    // Next.js 13+ app directory構造を使用（srcディレクトリ含む）
     const apiDir = path.join(config.projectPath, 'src/app/api/posts');
     await fs.ensureDir(apiDir);
     await fs.writeFile(path.join(apiDir, 'route.ts'), apiRouteContent);

@@ -13,8 +13,8 @@ import type { MonorepoConfig } from '../types/MonorepoConfig.js';
  * GraphQL関連ファイルの作成
  */
 export async function createGraphQLFiles(backendPath: string, _config: MonorepoConfig) {
-    // GraphQL スキーマディレクトリ
-    const graphqlDir = path.join(backendPath, 'lib', 'graphql');
+    // GraphQL スキーマディレクトリ（srcディレクトリ含む）
+    const graphqlDir = path.join(backendPath, 'src', 'lib', 'graphql');
     await fs.ensureDir(graphqlDir);
 
     // GraphQL スキーマファイル
@@ -25,8 +25,8 @@ export async function createGraphQLFiles(backendPath: string, _config: MonorepoC
     const resolversContent = await readTemplate('graphql/resolvers.ts.template');
     await fs.writeFile(path.join(graphqlDir, 'resolvers.ts'), resolversContent);
 
-    // GraphQL APIルート
-    const apiDir = path.join(backendPath, 'app', 'api', 'graphql');
+    // GraphQL APIルート（srcディレクトリ含む）
+    const apiDir = path.join(backendPath, 'src', 'app', 'api', 'graphql');
     await fs.ensureDir(apiDir);
 
     const routeContent = await readTemplate('graphql/route.ts.template');

@@ -44,6 +44,8 @@ export default function RootLayout({
     await fs.writeFile(path.join(config.projectPath, 'src/app/layout.tsx'), layoutContent);
 
     // データベースデモを含むホームページ
+    const shouldIncludeDatabaseDemo =
+        config.database !== 'none' && !config.isMonorepo && !config.isMonorepoChild;
     const pageContent = `'use client';
 
 import { useEffect, useState } from 'react';
@@ -65,9 +67,7 @@ import {
   AnnouncementTitle,
 } from '@/components/ui/kibo-ui/announcement';
 import { ThemeSwitcher } from '@/components/ui/kibo-ui/theme-switcher';${
-        config.database !== 'none' && !config.isMonorepo
-            ? "\nimport DatabaseDemo from '@/components/database-demo';"
-            : ''
+        shouldIncludeDatabaseDemo ? "\nimport DatabaseDemo from '@/components/database-demo';" : ''
     }
 
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -145,7 +145,7 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>${
-            config.database !== 'none' && !config.isMonorepo
+            shouldIncludeDatabaseDemo
                 ? `
 
         <DatabaseDemo />`

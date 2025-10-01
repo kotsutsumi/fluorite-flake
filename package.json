@@ -1,6 +1,6 @@
 {
     "name": "fluorite-flake",
-    "version": "0.4.11",
+    "version": "0.4.12",
     "description": "Boilerplate generator CLI for Fluorite — quickly scaffold Next.js, Expo, and Tauri projects and more.",
     "main": "dist/index.js",
     "type": "module",

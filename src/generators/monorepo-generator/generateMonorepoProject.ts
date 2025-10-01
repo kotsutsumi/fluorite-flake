@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 
 import { createScopedLogger } from '../../utils/logger.js';
+import { setupDatabase } from '../database-generator/index.js';
 import type { MonorepoConfig } from './types/MonorepoConfig.js';
 import { createWorkspaceStructure } from './helpers/createWorkspaceStructure.js';
 import { generateNextProjectForMonorepo } from './helpers/generateNextProjectForMonorepo.js';
@@ -54,6 +55,12 @@ export async function generateMonorepoProject(config: MonorepoConfig) {
     if (config.includeBackend && config.backendConfig) {
         logger.info('Generating backend (Next.js) application...');
         await generateNextProjectForMonorepo(config);
+
+        // データベースセットアップ（API エンドポイントを含む）
+        if (config.backendConfig.database !== 'none') {
+            await setupDatabase(config.backendConfig);
+        }
+
         await setupGraphQLBackend(config);
     }
 
