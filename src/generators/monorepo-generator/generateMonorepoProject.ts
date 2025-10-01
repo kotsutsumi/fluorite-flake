@@ -8,6 +8,10 @@ import path from 'node:path';
 
 import { createScopedLogger } from '../../utils/logger.js';
 import { setupDatabase } from '../database-generator/index.js';
+import { setupAuth } from '../auth-generator/index.js';
+import { setupStorage } from '../storage-generator/index.js';
+import { setupDeployment } from '../deployment-generator/index.js';
+import { isProvisioningEligible, provisionCloudResources } from '../../utils/cloud/index.js';
 import type { MonorepoConfig } from './types/MonorepoConfig.js';
 import { createWorkspaceStructure } from './helpers/createWorkspaceStructure.js';
 import { generateNextProjectForMonorepo } from './helpers/generateNextProjectForMonorepo.js';
@@ -59,6 +63,26 @@ export async function generateMonorepoProject(config: MonorepoConfig) {
         // データベースセットアップ（API エンドポイントを含む）
         if (config.backendConfig.database !== 'none') {
             await setupDatabase(config.backendConfig);
+        }
+
+        // ストレージセットアップ
+        if (config.backendConfig.storage && config.backendConfig.storage !== 'none') {
+            await setupStorage(config.backendConfig);
+        }
+
+        // デプロイメントセットアップ
+        if (config.backendConfig.deployment) {
+            await setupDeployment(config.backendConfig);
+        }
+
+        // クラウドリソースのプロビジョニング
+        if (isProvisioningEligible(config.backendConfig)) {
+            await provisionCloudResources(config.backendConfig);
+        }
+
+        // 認証セットアップ
+        if (config.backendConfig.auth) {
+            await setupAuth(config.backendConfig);
         }
 
         await setupGraphQLBackend(config);
