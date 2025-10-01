@@ -32,5 +32,10 @@ export default defineConfig({
                 requiresSupabase: true,
             },
         },
+        {
+            name: 'monorepo-backend',
+            testMatch: 'monorepo/**/*.e2e.test.ts',
+            use: { ...devices['Desktop Chrome'] },
+        },
     ],
 });

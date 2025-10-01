@@ -65,7 +65,9 @@ import {
   AnnouncementTitle,
 } from '@/components/ui/kibo-ui/announcement';
 import { ThemeSwitcher } from '@/components/ui/kibo-ui/theme-switcher';${
-        config.database !== 'none' ? "\nimport DatabaseDemo from '@/components/database-demo';" : ''
+        config.database !== 'none' && !config.isMonorepo
+            ? "\nimport DatabaseDemo from '@/components/database-demo';"
+            : ''
     }
 
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -143,7 +145,7 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>${
-            config.database !== 'none'
+            config.database !== 'none' && !config.isMonorepo
                 ? `
 
         <DatabaseDemo />`

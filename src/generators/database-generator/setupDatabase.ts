@@ -496,6 +496,12 @@ async function createDatabaseDemoComponent(config: ProjectConfig) {
         return;
     }
 
+    // モノレポの場合はdatabase-demoコンポーネントの生成をスキップ
+    // (モノレポではbackendとfrontendが分離されているため)
+    if ('isMonorepo' in config && config.isMonorepo) {
+        return;
+    }
+
     const databaseDescription = getDatabaseDescription(config);
     const demoComponentContent = await readTemplateWithReplacements(
         'database/components/demo-component.tsx.template',

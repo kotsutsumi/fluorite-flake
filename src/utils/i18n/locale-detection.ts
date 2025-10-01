@@ -62,7 +62,7 @@ export function initialLocaleFromEnvironment(): string | undefined {
  * @returns サポートされているロケール（デフォルト: 'en'）
  */
 export function normalizeLocale(value?: string | null): SupportedLocale {
-    if (!value) {
+    if (!value || typeof value !== 'string') {
         return 'en'; // デフォルトは英語
     }
     const lower = value.toLowerCase();
