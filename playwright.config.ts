@@ -6,7 +6,7 @@ export default defineConfig({
     testDir: './test/e2e',
     fullyParallel: false,
     workers: 1,
-    timeout: 120_000, // 2 minutes per test to allow for Next.js compilation
+    timeout: 300_000, // 5 minutes per test to allow for full project generation and server startup
     expect: {
         timeout: 15_000,
     },
