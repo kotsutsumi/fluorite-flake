@@ -1,0 +1,60 @@
+{
+  "cli": {
+    "metaDescription": "Boilerplate generator CLI for Next.js, Expo, and Tauri projects",
+    "usage": "Usage: fluorite-flake <command> [options]",
+    "commandsHeading": "Commands:",
+    "commandLines": [
+      "  create <type>    Create a new project",
+      "  new <type>       Create a new project (alias for create)"
+    ],
+    "projectTypes": "Project types: nextjs, expo, tauri",
+    "examplesHeading": "Examples:",
+    "exampleLines": [
+      "  fluorite-flake create nextjs --name my-app",
+      "  fluorite-flake new tauri --name desktop-app --template typescript"
+    ],
+    "helpHint": "Use --help with any command for more information",
+    "devNoSubcommand": "Main command called with no subcommand"
+  },
+  "create": {
+    "commandDescription": "Create a new project",
+    "newCommandDescription": "Create a new project (alias for create)",
+    "args": {
+      "type": "Project type (nextjs|expo|tauri)",
+      "name": "Project name",
+      "template": "Template to use",
+      "dir": "Target directory",
+      "force": "Force creation (overwrite existing)"
+    },
+    "invalidProjectType": "❌ Invalid project type: {type}",
+    "availableProjectTypes": "Available types: nextjs, expo, tauri",
+    "invalidTemplate": "❌ Invalid template \"{template}\" for {projectType}",
+    "availableTemplates": "Available templates: {templates}",
+    "spinnerCreating": "Creating {type} project: {name}",
+    "spinnerSettingUp": "Setting up {type} project structure...",
+    "spinnerInstallingDeps": "Installing dependencies...",
+    "spinnerConfiguringTemplate": "Configuring {template} template...",
+    "spinnerSuccess": "✅ Successfully created {type} project: {name}",
+    "spinnerFailure": "❌ Failed to create project",
+    "errorPrefix": "Error:",
+    "nextStepsHeading": "Next steps:",
+    "nextStepsCd": "  cd {directory}",
+    "nextStepCommands": {
+      "expo": "  npx expo start",
+      "tauri": "  npm run tauri dev",
+      "default": "  npm run dev"
+    },
+    "debugCommandCalled": "Create command called with:",
+    "debugProjectConfig": "Project configuration:",
+    "debugGenerationSuccess": "Project generation completed successfully",
+    "debugGenerationFailure": "Project generation failed:"
+  },
+  "debug": {
+    "devModeEnabled": "🔧 Development mode enabled",
+    "cwdLabel": "📍 Current working directory:",
+    "nodeVersionLabel": "🔗 Node version:",
+    "argsLabel": "📦 CLI arguments:",
+    "changedDirectory": "📂 Changed working directory to:",
+    "debugMessage": "🐛 Debug: {message}"
+  }
+}

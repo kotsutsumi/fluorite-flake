@@ -1,17 +1,23 @@
-import chalk from 'chalk';
+import chalk from "chalk";
 
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from "../package.json" with { type: "json" };
 
+/**
+ * ヘッダー情報を表示する関数
+ */
 export function printHeader() {
-    const name = chalk.bold.cyan('Fluorite Flake');
+    const name = chalk.bold.cyan("Fluorite Flake");
     const version = chalk.gray(`v${pkg.version}`);
-    const tagline = chalk.gray('Boilerplate generator CLI for Fluorite');
-    const titleLine = `${chalk.cyan('>')} ${name} ${version}`;
-    const underline = chalk.white('─'.repeat(titleLine.length));
+    const tagline = chalk.gray("Boilerplate generator CLI for Fluorite");
+    const titleLine = `${chalk.cyan(">")} ${name} ${version}`;
+    const underline = chalk.white("─".repeat(titleLine.length));
 
-    console.log('');
+    // ヘッダー情報をコンソールに出力
+    console.log("");
     console.log(titleLine);
-    console.log(underline);
     console.log(`  ${tagline}`);
-    console.log('');
+    console.log(underline);
+    console.log("");
 }
+
+// EOF

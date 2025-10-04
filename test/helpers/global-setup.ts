@@ -1,13 +1,15 @@
 /**
- * Global test setup for Vitest
+ * Vitestのグローバルテスト設定
  */
 
 export async function setup() {
-    // Global setup code here
-    // For now, just a placeholder
+    // グローバルセットアップコードをここに記述
+    // 現在はプレースホルダーのみ
 }
 
 export async function teardown() {
-    // Global teardown code here
-    // For now, just a placeholder
+    // グローバルティアダウンコードをここに記述
+    // 現在はプレースホルダーのみ
 }
+
+// EOF

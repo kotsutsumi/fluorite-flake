@@ -1,22 +1,22 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
     test: {
         // Root configuration
         globals: true,
-        environment: 'node',
-        exclude: ['node_modules', 'dist', '.temp-*'],
+        environment: "node",
+        exclude: ["node_modules", "dist", ".temp-*"],
         coverage: {
-            reporter: ['text', 'json', 'html'],
-            include: ['src/**/*.ts'],
+            reporter: ["text", "json", "html"],
+            include: ["src/**/*.ts"],
             exclude: [
-                'node_modules/',
-                'dist/',
-                'test/',
-                '*.config.ts',
-                '**/*.d.ts',
-                'src/cli.ts', // CLI entry point
-                'src/index.ts', // Library entry point
+                "node_modules/",
+                "dist/",
+                "test/",
+                "*.config.ts",
+                "**/*.d.ts",
+                "src/cli.ts", // CLI entry point
+                "src/index.ts", // Library entry point
             ],
         },
 
@@ -24,48 +24,48 @@ export default defineConfig({
         projects: [
             {
                 test: {
-                    name: 'unit',
-                    include: ['test/unit/**/*.test.ts'],
-                    testTimeout: 10000, // 10 seconds for unit tests
-                    hookTimeout: 10000,
-                    globalSetup: './test/helpers/global-setup.ts',
+                    name: "unit",
+                    include: ["test/unit/**/*.test.ts"],
+                    testTimeout: 10_000, // 10 seconds for unit tests
+                    hookTimeout: 10_000,
+                    globalSetup: "./test/helpers/global-setup.ts",
                     globals: true,
-                    environment: 'node',
+                    environment: "node",
                 },
             },
             {
                 test: {
-                    name: 'functional',
-                    include: ['test/functional/**/*.test.ts'],
-                    testTimeout: 30000, // 30 seconds for functional tests
-                    hookTimeout: 30000,
-                    globalSetup: './test/helpers/global-setup.ts',
+                    name: "functional",
+                    include: ["test/functional/**/*.test.ts"],
+                    testTimeout: 30_000, // 30 seconds for functional tests
+                    hookTimeout: 30_000,
+                    globalSetup: "./test/helpers/global-setup.ts",
                     globals: true,
-                    environment: 'node',
+                    environment: "node",
                 },
             },
             {
                 test: {
-                    name: 'scenario',
-                    include: ['test/scenario/**/*.test.ts'],
+                    name: "scenario",
+                    include: ["test/scenario/**/*.test.ts"],
                     // Flutter/Tauri のシナリオテストは一時停止する
                     exclude: [
-                        'test/scenario/flutter/**/*.test.ts',
-                        'test/scenario/tauri/**/*.test.ts',
+                        "test/scenario/flutter/**/*.test.ts",
+                        "test/scenario/tauri/**/*.test.ts",
                     ],
-                    testTimeout: 300000, // 5 minutes for scenario tests
-                    hookTimeout: 300000,
+                    testTimeout: 300_000, // 5 minutes for scenario tests
+                    hookTimeout: 300_000,
                     maxConcurrency: 1, // Run scenario tests sequentially
-                    pool: 'threads', // Use single threaded execution
+                    pool: "threads", // Use single threaded execution
                     poolOptions: {
                         threads: {
                             maxThreads: 1, // Force single thread
                             minThreads: 1,
                         },
                     },
-                    globalSetup: './test/helpers/global-setup.ts',
+                    globalSetup: "./test/helpers/global-setup.ts",
                     globals: true,
-                    environment: 'node',
+                    environment: "node",
                     sequence: {
                         concurrent: false, // Disable concurrent execution
                         shuffle: false, // Run tests in order

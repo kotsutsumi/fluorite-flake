@@ -2,15 +2,17 @@
 /**
  * Fluorite-flake CLI エントリーポイント
  */
-import { defineCommand, runMain } from 'citty';
+import { defineCommand, runMain } from "citty";
 
+import { createCommand, newCommand } from "./commands/create/index.js";
 import {
     debugLog,
     isDevelopment,
     printDevelopmentInfo,
     setupDevelopmentWorkspace,
-} from './debug.js';
-import { printHeader } from './header.js';
+} from "./debug.js";
+import { printHeader } from "./header.js";
+import { getMessages } from "./i18n.js";
 
 // 開発環境での初期化
 if (isDevelopment()) {
@@ -25,57 +27,37 @@ if (isDevelopment()) {
 
 const main = defineCommand({
     meta: {
-        name: 'fluorite-flake',
-        version: '1.0.0',
-        description: 'Boilerplate generator CLI for Next.js, Expo, and Tauri projects',
+        name: "fluorite-flake",
+        version: "0.5.0",
+        description: getMessages().cli.metaDescription,
     },
-    args: {
-        project: {
-            type: 'positional',
-            description: 'Project type (nextjs|expo|tauri)',
-            required: false,
-        },
-        name: {
-            type: 'string',
-            description: 'Project name',
-            alias: 'n',
-        },
+    subCommands: {
+        create: createCommand,
+        new: newCommand,
     },
-    run({ args }: { args: { project?: string; name?: string } }) {
+    run() {
+        const { cli } = getMessages();
+
         // 開発モードでの詳細なデバッグ情報
-        debugLog('Received arguments:', args);
-        if (isDevelopment()) {
-            console.log('');
-        }
+        debugLog(cli.devNoSubcommand);
 
         // ヘッダー表示
         printHeader();
 
-        if (!args.project) {
-            console.log('Usage: fluorite-flake <project-type> [options]');
-            console.log('Available project types: nextjs, expo, tauri');
-
-            // if (isDevelopment) {
-            //     console.log('💡 Development tip: Use --help for detailed options');
-            // }
-            return;
+        // 利用方法とコマンド一覧を表示
+        console.log(cli.usage);
+        console.log("");
+        console.log(cli.commandsHeading);
+        for (const line of cli.commandLines) {
+            console.log(line);
         }
-
-        const projectName = args.name || 'my-project';
-        console.log(`Generating ${args.project} project: ${projectName}`);
-
-        // if (isDevelopment) {
-        //     console.log(
-        //         '🔍 Debug: Project type validation and generation will be implemented here'
-        //     );
-        //     console.log('📋 Debug: Project configuration:', {
-        //         type: args.project,
-        //         name: projectName,
-        //         timestamp: new Date().toISOString(),
-        //     });
-        // }
-
-        // ここにプロジェクト生成ロジックを追加
+        console.log("");
+        console.log(cli.projectTypes);
+        console.log("");
+        console.log(cli.examplesHeading);
+        for (const line of cli.exampleLines) {
+            console.log(line);
+        }
     },
 });
 

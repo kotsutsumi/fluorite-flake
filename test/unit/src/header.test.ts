@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { printHeader } from '../../../src/header.js';
+import { printHeader } from "../../../src/header.js";
 
-// Mock chalk
-vi.mock('chalk', () => ({
+// chalkライブラリのモック設定
+vi.mock("chalk", () => ({
     default: {
         bold: {
             cyan: vi.fn((text: string) => `[BOLD_CYAN]${text}[/BOLD_CYAN]`),
@@ -14,19 +14,19 @@ vi.mock('chalk', () => ({
     },
 }));
 
-// Mock package.json
-vi.mock('../../../package.json', () => ({
+// package.jsonのモック設定
+vi.mock("../../../package.json", () => ({
     default: {
-        version: '0.5.0',
+        version: "0.5.0",
     },
 }));
 
-describe('header utilities', () => {
+describe("ヘッダーユーティリティ", () => {
     let consoleSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {
-            /* intentionally empty - mock console.log */
+        consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+            /* 意図的に空 - console.logのモック */
         });
         vi.clearAllMocks();
     });
@@ -35,36 +35,51 @@ describe('header utilities', () => {
         consoleSpy.mockRestore();
     });
 
-    describe('printHeader', () => {
-        it('should print header with correct formatting', () => {
+    describe("printHeader", () => {
+        it("正しいフォーマットでヘッダーを表示するべき", () => {
+            // ヘッダー表示機能の基本動作テスト
+            // 5回のconsole.log呼び出しで構成される完全なヘッダーレイアウト:
+            // 1. 空行
+            // 2. タイトル行（矢印 + アプリ名 + バージョン）
+            // 3. アンダーライン（白色のダッシュ）
+            // 4. タグライン（灰色、2スペースインデント）
+            // 5. 空行
             printHeader();
 
-            // Check that console.log was called multiple times
+            // console.logが適切な回数呼び出されることを確認
             expect(consoleSpy).toHaveBeenCalledTimes(5);
 
-            // Check the calls in order
+            // 呼び出し順序をチェック
             const calls = consoleSpy.mock.calls;
 
-            // First call: empty line
-            expect(calls[0]).toEqual(['']);
+            // 1回目の呼び出し: 空行
+            expect(calls[0]).toEqual([""]);
 
-            // Second call: title line with name and version
-            expect(calls[1][0]).toContain('[CYAN]>[/CYAN]');
-            expect(calls[1][0]).toContain('[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]');
-            expect(calls[1][0]).toContain('[GRAY]v0.5.0[/GRAY]');
+            // 2回目の呼び出し: アプリ名とバージョンを含むタイトル行
+            expect(calls[1][0]).toContain("[CYAN]>[/CYAN]");
+            expect(calls[1][0]).toContain(
+                "[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]"
+            );
+            expect(calls[1][0]).toContain("[GRAY]v0.5.0[/GRAY]");
 
-            // Third call: underline (should be white dashes)
-            expect(calls[2][0]).toContain('[WHITE]');
-            expect(calls[2][0]).toContain('─');
+            // 3回目の呼び出し: アンダーライン（白色のダッシュ）
+            expect(calls[2][0]).toContain("[WHITE]");
+            expect(calls[2][0]).toContain("─");
 
-            // Fourth call: tagline with proper indentation
-            expect(calls[3][0]).toContain('  [GRAY]Boilerplate generator CLI for Fluorite[/GRAY]');
+            // 4回目の呼び出し: 適切なインデントでタグライン
+            expect(calls[3][0]).toContain(
+                "  [GRAY]Boilerplate generator CLI for Fluorite[/GRAY]"
+            );
 
-            // Fifth call: empty line
-            expect(calls[4]).toEqual(['']);
+            // 5回目の呼び出し: 空行
+            expect(calls[4]).toEqual([""]);
         });
 
-        it('should use correct colors for each element', () => {
+        it("各要素に正しい色を使用するべき", () => {
+            // 色付け機能の詳細テスト
+            // タイトル行: シアン矢印 + 太字シアンアプリ名 + 灰色バージョン
+            // アンダーライン: 白色ダッシュ文字
+            // タグライン: 灰色テキスト
             printHeader();
 
             const calls = consoleSpy.mock.calls;
@@ -72,53 +87,69 @@ describe('header utilities', () => {
             const underline = calls[2][0];
             const tagline = calls[3][0];
 
-            // Title line should contain colored elements
-            expect(titleLine).toContain('[CYAN]>[/CYAN]'); // Arrow
-            expect(titleLine).toContain('[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]'); // Name
-            expect(titleLine).toContain('[GRAY]v0.5.0[/GRAY]'); // Version
+            // タイトル行は色付き要素を含むべき
+            expect(titleLine).toContain("[CYAN]>[/CYAN]"); // 矢印
+            expect(titleLine).toContain(
+                "[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]"
+            ); // アプリ名
+            expect(titleLine).toContain("[GRAY]v0.5.0[/GRAY]"); // バージョン
 
-            // Underline should be white
-            expect(underline).toContain('[WHITE]');
-            expect(underline).toContain('─');
+            // アンダーラインは白色であるべき
+            expect(underline).toContain("[WHITE]");
+            expect(underline).toContain("─");
 
-            // Tagline should be gray
-            expect(tagline).toContain('[GRAY]Boilerplate generator CLI for Fluorite[/GRAY]');
+            // タグラインは灰色であるべき
+            expect(tagline).toContain(
+                "[GRAY]Boilerplate generator CLI for Fluorite[/GRAY]"
+            );
         });
 
-        it('should format the version correctly', () => {
+        it("バージョンを正しくフォーマットするべき", () => {
+            // バージョン表示形式の検証テスト
+            // 'v'プレフィックス付きで灰色表示されることを確認
             printHeader();
 
             const calls = consoleSpy.mock.calls;
             const titleLine = calls[1][0];
 
-            // Version should have 'v' prefix and be in gray
-            expect(titleLine).toContain('[GRAY]v0.5.0[/GRAY]');
+            // バージョンは'v'プレフィックス付きで灰色表示されるべき
+            expect(titleLine).toContain("[GRAY]v0.5.0[/GRAY]");
         });
 
-        it('should include proper spacing and indentation', () => {
+        it("適切な間隔とインデントを含むべき", () => {
+            // レイアウト構造の検証テスト
+            // - 開始と終了の空行
+            // - タグラインの2スペースインデント
+            // - 全体的な視覚的バランス
             printHeader();
 
             const calls = consoleSpy.mock.calls;
 
-            // Should start with empty line
-            expect(calls[0]).toEqual(['']);
+            // 空行で始まるべき
+            expect(calls[0]).toEqual([""]);
 
-            // Tagline should have 2-space indentation
+            // タグラインは2スペースのインデントを持つべき
             expect(calls[3][0]).toMatch(/^ {2}/);
 
-            // Should end with empty line
-            expect(calls[4]).toEqual(['']);
+            // 空行で終わるべき
+            expect(calls[4]).toEqual([""]);
         });
 
-        it('should generate underline with appropriate length', () => {
+        it("適切な長さのアンダーラインを生成するべき", () => {
+            // アンダーライン生成機能のテスト
+            // - 複数のダッシュ文字で構成
+            // - 白色でスタイリング
+            // - タイトル行の長さに応じた適切な長さ
             printHeader();
 
             const calls = consoleSpy.mock.calls;
             const underline = calls[2][0];
 
-            // Underline should contain multiple dash characters
+            // アンダーラインは複数のダッシュ文字を含むべき
             expect(underline).toMatch(/─+/);
-            expect(underline).toContain('[WHITE]');
+            expect(underline).toContain("[WHITE]");
         });
     });
 });
+
+// EOF
