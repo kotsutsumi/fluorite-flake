@@ -10,7 +10,8 @@
       ".vscode/**",
       "dist/**",
       "build/**",
-      "coverage/**"
+      "coverage/**",
+      "templates/**"
     ]
   },
   "linter": {

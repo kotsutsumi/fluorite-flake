@@ -87,7 +87,7 @@ function detectLocaleFromIntl(): SupportedLocale | undefined {
             return intlLocale;
         }
     } catch (_error) {
-        // Intl might be unavailable in some environments; ignore and fallback later.
+        // 一部の環境ではIntlが利用できない場合があるため、無視して後でフォールバック
     }
 
     return;
@@ -172,6 +172,8 @@ type RawLocaleMessages = {
             template: string;
             dir: string;
             force: string;
+            monorepo: string;
+            simple?: string;
         };
         invalidProjectType: string;
         availableProjectTypes: string;
@@ -195,6 +197,32 @@ type RawLocaleMessages = {
         debugProjectConfig: string;
         debugGenerationSuccess: string;
         debugGenerationFailure: string;
+        pnpmNotFound: string;
+        pnpmVersionTooOld: string;
+        pnpmVersionValid: string;
+        pnpmInstallGuide: string;
+        pnpmInstallCommands: string[];
+        pnpmMoreInfo: string;
+    };
+    readme: {
+        title: string;
+        description: string;
+        gettingStartedHeading: string;
+        gettingStartedCommands: string[];
+        learnMoreHeading: string;
+        templateDescription: string;
+        convertToMonorepoHeading: string;
+        convertToMonorepoDescription: string;
+        convertToMonorepoCommand: string;
+        monorepoDescription: string;
+        workspaceStructureHeading: string;
+        workspaceStructureDescription: string;
+        developmentHeading: string;
+        developmentCommands: string[];
+        buildingHeading: string;
+        buildingCommands: string[];
+        testingHeading: string;
+        testingCommands: string[];
     };
     debug: {
         devModeEnabled: string;
@@ -228,6 +256,7 @@ export type LocaleMessages = {
             template: string;
             dir: string;
             force: string;
+            monorepo: string;
         };
         invalidProjectType: (type: string) => string;
         availableProjectTypes: string;
@@ -247,6 +276,32 @@ export type LocaleMessages = {
         debugProjectConfig: string;
         debugGenerationSuccess: string;
         debugGenerationFailure: string;
+        pnpmNotFound: string;
+        pnpmVersionTooOld: (version: string, minVersion: string) => string;
+        pnpmVersionValid: (version: string) => string;
+        pnpmInstallGuide: string;
+        pnpmInstallCommands: string[];
+        pnpmMoreInfo: string;
+    };
+    readme: {
+        title: string;
+        description: string;
+        gettingStartedHeading: string;
+        gettingStartedCommands: string[];
+        learnMoreHeading: string;
+        templateDescription: string;
+        convertToMonorepoHeading: string;
+        convertToMonorepoDescription: string;
+        convertToMonorepoCommand: string;
+        monorepoDescription: string;
+        workspaceStructureHeading: string;
+        workspaceStructureDescription: string;
+        developmentHeading: string;
+        developmentCommands: string[];
+        buildingHeading: string;
+        buildingCommands: string[];
+        testingHeading: string;
+        testingCommands: string[];
     };
     debug: {
         devModeEnabled: string;
@@ -307,6 +362,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 template: rawMessages.create.args.template,
                 dir: rawMessages.create.args.dir,
                 force: rawMessages.create.args.force,
+                monorepo: rawMessages.create.args.monorepo,
             },
             invalidProjectType: (type: string) =>
                 formatMessage(rawMessages.create.invalidProjectType, { type }),
@@ -356,6 +412,42 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             debugProjectConfig: rawMessages.create.debugProjectConfig,
             debugGenerationSuccess: rawMessages.create.debugGenerationSuccess,
             debugGenerationFailure: rawMessages.create.debugGenerationFailure,
+            pnpmNotFound: rawMessages.create.pnpmNotFound,
+            pnpmVersionTooOld: (version: string, minVersion: string) =>
+                formatMessage(rawMessages.create.pnpmVersionTooOld, {
+                    version,
+                    minVersion,
+                }),
+            pnpmVersionValid: (version: string) =>
+                formatMessage(rawMessages.create.pnpmVersionValid, { version }),
+            pnpmInstallGuide: rawMessages.create.pnpmInstallGuide,
+            pnpmInstallCommands: rawMessages.create.pnpmInstallCommands,
+            pnpmMoreInfo: rawMessages.create.pnpmMoreInfo,
+        },
+        readme: {
+            title: rawMessages.readme.title,
+            description: rawMessages.readme.description,
+            gettingStartedHeading: rawMessages.readme.gettingStartedHeading,
+            gettingStartedCommands: rawMessages.readme.gettingStartedCommands,
+            learnMoreHeading: rawMessages.readme.learnMoreHeading,
+            templateDescription: rawMessages.readme.templateDescription,
+            convertToMonorepoHeading:
+                rawMessages.readme.convertToMonorepoHeading,
+            convertToMonorepoDescription:
+                rawMessages.readme.convertToMonorepoDescription,
+            convertToMonorepoCommand:
+                rawMessages.readme.convertToMonorepoCommand,
+            monorepoDescription: rawMessages.readme.monorepoDescription,
+            workspaceStructureHeading:
+                rawMessages.readme.workspaceStructureHeading,
+            workspaceStructureDescription:
+                rawMessages.readme.workspaceStructureDescription,
+            developmentHeading: rawMessages.readme.developmentHeading,
+            developmentCommands: rawMessages.readme.developmentCommands,
+            buildingHeading: rawMessages.readme.buildingHeading,
+            buildingCommands: rawMessages.readme.buildingCommands,
+            testingHeading: rawMessages.readme.testingHeading,
+            testingCommands: rawMessages.readme.testingCommands,
         },
         debug: {
             devModeEnabled: rawMessages.debug.devModeEnabled,

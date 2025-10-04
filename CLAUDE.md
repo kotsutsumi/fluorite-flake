@@ -5,11 +5,24 @@
 ## 基本
 
 - 応答は、全て日本語で行う事
-- **コード変更後の自動処理**: ファイルの作成・編集・削除を行った場合、必ずイテレーション作業を実行する事
+
+## 🚨 重要: コード変更後の必須作業
+
+**すべてのコード変更後（ファイルの作成・編集・削除）の後は、必ずイテレーション作業を実行する事**
+
+この作業をスキップしてはいけません。作業完了の判断基準は：
+
+1. すべてのリント・フォーマットエラーが解消されている
+2. TypeScriptのビルドが成功している
+3. テストが通っている
+4. EOFタグが適切に配置されている
+5. 日本語コメントが適切に記述されている
+
+**例外なく実行してください**
 
 ## 実装方針
 
-Typescriptのモジュールは、`xxxx.ts`でまとめるよりも、
+TypeScriptのモジュールは、`xxxx.ts`でまとめるよりも、
 
 ```
 xxxx/index.ts # exports
@@ -19,15 +32,66 @@ xxxx/index.ts # exports
 
 のように、各関数、型などは分割して作成する事
 
+### ✅ 必須のファイル構造規則
+
+**すべてのユーティリティファイルは必ずディレクトリ構造にする事**
+
+- ✅ **正しい構造**: `src/utils/pnpm-validator/index.ts`, `src/utils/monorepo-generator/index.ts`
+- ❌ **間違った構造**: `src/utils/pnpm-validator.ts`, `src/utils/monorepo-generator.ts`
+
+### ディレクトリ構造の例
+
+```
+src/utils/
+├── pnpm-validator/
+│   ├── index.ts              # export文のみ
+│   ├── validate-pnpm.ts      # メイン機能
+│   └── show-install-guide.ts # サブ機能
+└── monorepo-generator/
+    ├── index.ts              # export文のみ
+    ├── create-structure.ts   # ディレクトリ作成
+    ├── copy-templates.ts     # テンプレートコピー
+    └── create-web-app.ts     # Webアプリ設定
+```
+
+### index.tsの書き方
+
+```typescript
+/**
+ * ユーティリティの説明
+ */
+
+export { mainFunction } from "./main-function.js";
+export { subFunction } from "./sub-function.js";
+export type { SomeType } from "./types.js";
+
+// EOF
+```
+
+### 機能分割の原則
+
+1. **単一責任**: 各ファイルは1つの明確な責任を持つ
+2. **関連性**: 関連する機能をディレクトリでグループ化
+3. **再利用性**: 個別の機能を独立してインポート可能
+4. **保守性**: 機能追加時は新しいファイルを追加し、index.tsを更新
+
+### 実装時の注意点
+
+- 新しいユーティリティを作成する際は、**必ず**ディレクトリ構造を使用する
+- 既存の単一ファイル（`.ts`）を見つけた場合は、ディレクトリ構造に変換する
+- `index.ts`ファイルは export 文のみを含む
+- インポート時は `/index.js` を明示的に指定する
+
 ## イテレーション作業
 
 **自動実行**: コードの修正・追加・削除を行った際は、**必ず**以下の処理を実行してください。
 
-**手動実行**: ユーザーが `/iter` と入力した場合
+**手動実行**: ユーザーが `:iter` と入力した場合
 
 **重要**:
+
 - ファイルの作成・編集・削除などのコード変更を行った場合、**自動的に**以下の作業を順番に実行してください
-- `/iter` コマンドが入力された場合も、同様に以下の作業を実行してください
+- `:iter` コマンドが入力された場合も、同様に以下の作業を実行してください
 - 他の作業は中断してこの処理を優先してください
 
 ### イテレーション作業の実行順序
@@ -60,6 +124,7 @@ xxxx/index.ts # exports
 この作業を行った際は、分かり易く実装作業をしたことをコンソールに表示してください。
 
 **実装作業の表示例**:
+
 ```
 🔧 実装作業開始: docs/plans/[ファイル名] の内容を実装中...
 ✅ 実装完了: [実装した機能の概要]
@@ -69,7 +134,7 @@ xxxx/index.ts # exports
 ### クリーンアップ
 
 ```
-/fl:cleanup --loop --wave-mode --delegate --until-perfect --ultrathink "pnpm lint && pnpm format && pnpm build で出る警告・エラーを全て解消"
+/fl:cleanup --loop --wave-mode --delegate --until-perfect --ultrathink "pnpm lint && pnpm format && pnpm test run && pnpm build で出る警告・エラーを全て解消"
 ```
 
 ### 4. srcディレクトリ下の .ts, .tsx, .js, .jsxの末尾にEOFを付ける

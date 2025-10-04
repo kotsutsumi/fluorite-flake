@@ -20,20 +20,21 @@ export const createCommand = defineCommand({
         description: initialMessages.create.commandDescription,
     },
     args: {
-        type: {
+        name: {
             type: "positional",
-            description: initialMessages.create.args.type,
+            description: initialMessages.create.args.name,
             required: true,
         },
-        name: {
+        type: {
             type: "string",
-            description: initialMessages.create.args.name,
-            alias: "n",
+            description: initialMessages.create.args.type,
+            alias: "t",
+            default: "nextjs",
         },
         template: {
             type: "string",
             description: initialMessages.create.args.template,
-            alias: "t",
+            alias: "T",
         },
         dir: {
             type: "string",
@@ -44,6 +45,17 @@ export const createCommand = defineCommand({
             type: "boolean",
             description: initialMessages.create.args.force,
             alias: "f",
+        },
+        monorepo: {
+            type: "boolean",
+            description: initialMessages.create.args.monorepo,
+            alias: "m",
+            default: true,
+        },
+        simple: {
+            type: "boolean",
+            description: "Create a simple project (non-monorepo structure)",
+            alias: "s",
         },
     },
     async run({ args }) {
@@ -56,6 +68,7 @@ export const createCommand = defineCommand({
             template: args.template,
             dir: args.dir,
             force: args.force,
+            monorepo: args.simple ? false : args.monorepo, // --simpleフラグがあればmonorepo=false
         });
 
         // 設定が無効な場合はエラー終了

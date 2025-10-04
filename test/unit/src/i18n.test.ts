@@ -113,6 +113,43 @@ describe("国際化ユーティリティ", () => {
                             debugProjectConfig: "Project config",
                             debugGenerationSuccess: "Success",
                             debugGenerationFailure: "Failed",
+                            pnpmNotFound: "pnpm not found",
+                            pnpmVersionTooOld:
+                                "pnpm v{version} too old. v{minVersion}+ required",
+                            pnpmVersionValid: "pnpm v{version} detected",
+                            pnpmInstallGuide: "pnpm installation guide",
+                            pnpmInstallCommands: ["npm install -g pnpm@latest"],
+                            pnpmMoreInfo:
+                                "More info: https://pnpm.io/installation",
+                        },
+                        readme: {
+                            title: "{name}",
+                            description:
+                                "A {type} project created with Fluorite Flake.",
+                            gettingStartedHeading: "Getting Started",
+                            gettingStartedCommands: [
+                                "npm install",
+                                "npm run dev",
+                            ],
+                            learnMoreHeading: "Learn More",
+                            templateDescription:
+                                "This project uses {template} template.",
+                            convertToMonorepoHeading: "Converting to Monorepo",
+                            convertToMonorepoDescription:
+                                "To convert this project to a monorepo structure, run:",
+                            convertToMonorepoCommand:
+                                "fluorite-flake convert-to-monorepo",
+                            monorepoDescription:
+                                "This is a monorepo project built with Fluorite Flake.",
+                            workspaceStructureHeading: "Workspace Structure",
+                            workspaceStructureDescription:
+                                "This project uses pnpm workspaces and Turbo for efficient development.",
+                            developmentHeading: "Development",
+                            developmentCommands: ["pnpm install", "pnpm dev"],
+                            buildingHeading: "Building",
+                            buildingCommands: ["pnpm build"],
+                            testingHeading: "Testing",
+                            testingCommands: ["pnpm test"],
                         },
                         debug: {
                             devModeEnabled: "Dev mode",
@@ -171,6 +208,42 @@ describe("国際化ユーティリティ", () => {
                             debugProjectConfig: "プロジェクト設定",
                             debugGenerationSuccess: "成功",
                             debugGenerationFailure: "失敗",
+                            pnpmNotFound: "pnpmが見つかりません",
+                            pnpmVersionTooOld:
+                                "pnpm v{version}が古いです。v{minVersion}+が必要です",
+                            pnpmVersionValid: "pnpm v{version}を検出しました",
+                            pnpmInstallGuide: "pnpmインストールガイド",
+                            pnpmInstallCommands: ["npm install -g pnpm@latest"],
+                            pnpmMoreInfo: "詳細: https://pnpm.io/installation",
+                        },
+                        readme: {
+                            title: "{name}",
+                            description:
+                                "Fluorite Flakeで作成された{type}プロジェクトです。",
+                            gettingStartedHeading: "はじめに",
+                            gettingStartedCommands: [
+                                "npm install",
+                                "npm run dev",
+                            ],
+                            learnMoreHeading: "詳細について",
+                            templateDescription:
+                                "このプロジェクトは{template}テンプレートを使用しています。",
+                            convertToMonorepoHeading: "モノレポ構造への変換",
+                            convertToMonorepoDescription:
+                                "このプロジェクトをモノレポ構造に変換するには、以下を実行してください：",
+                            convertToMonorepoCommand:
+                                "fluorite-flake convert-to-monorepo",
+                            monorepoDescription:
+                                "Fluorite Flakeで構築されたモノレポプロジェクトです。",
+                            workspaceStructureHeading: "ワークスペース構造",
+                            workspaceStructureDescription:
+                                "このプロジェクトは効率的な開発のためにpnpm workspacesとTurboを使用しています。",
+                            developmentHeading: "開発",
+                            developmentCommands: ["pnpm install", "pnpm dev"],
+                            buildingHeading: "ビルド",
+                            buildingCommands: ["pnpm build"],
+                            testingHeading: "テスト",
+                            testingCommands: ["pnpm test"],
                         },
                         debug: {
                             devModeEnabled: "開発モード",

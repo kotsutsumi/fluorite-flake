@@ -54,7 +54,7 @@ import { getMessagesForLocale } from "../../../src/i18n.js";
 const DEBUG_MESSAGES_EN = getMessagesForLocale("en").debug;
 const _DEBUG_MESSAGES_JA = getMessagesForLocale("ja").debug;
 
-// Mock external dependencies
+// 外部依存関係をモック
 vi.mock("node:fs");
 vi.mock("node:path");
 vi.mock("chalk", () => ({
@@ -71,16 +71,18 @@ describe("debug utilities", () => {
     let consoleSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        // Save original environment
+        // 元の環境変数を保存
         originalEnv = process.env.NODE_ENV;
         originalLocale = process.env.FLUORITE_LOCALE;
         originalCwd = process.cwd();
         originalChdir = process.chdir;
 
-        // Default to English locale for deterministic assertions
+        // 決定的なアサーション用に英語ロケールをデフォルトとして設定
         process.env.FLUORITE_LOCALE = "en";
+        // デバッグ関数テスト用に開発モードを設定
+        process.env.NODE_ENV = "development";
 
-        // Setup mocks
+        // モックをセットアップ
         consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
             /* intentionally empty - mock console.log */
         });
@@ -95,12 +97,12 @@ describe("debug utilities", () => {
         });
         vi.mocked(path.join).mockImplementation((...args) => args.join("/"));
 
-        // Clear previous calls
+        // 前回の呼び出しをクリア
         vi.clearAllMocks();
     });
 
     afterEach(() => {
-        // Restore original environment
+        // 元の環境を復元
         if (originalEnv !== undefined) {
             process.env.NODE_ENV = originalEnv;
         } else {

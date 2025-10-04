@@ -62,14 +62,14 @@ describe("ヘッダーユーティリティ", () => {
             );
             expect(calls[1][0]).toContain("[GRAY]v0.5.0[/GRAY]");
 
-            // 3回目の呼び出し: アンダーライン（白色のダッシュ）
-            expect(calls[2][0]).toContain("[WHITE]");
-            expect(calls[2][0]).toContain("─");
-
-            // 4回目の呼び出し: 適切なインデントでタグライン
-            expect(calls[3][0]).toContain(
+            // 3回目の呼び出し: 適切なインデントでタグライン
+            expect(calls[2][0]).toContain(
                 "  [GRAY]Boilerplate generator CLI for Fluorite[/GRAY]"
             );
+
+            // 4回目の呼び出し: アンダーライン（白色のダッシュ）
+            expect(calls[3][0]).toContain("[WHITE]");
+            expect(calls[3][0]).toContain("─");
 
             // 5回目の呼び出し: 空行
             expect(calls[4]).toEqual([""]);
@@ -84,8 +84,8 @@ describe("ヘッダーユーティリティ", () => {
 
             const calls = consoleSpy.mock.calls;
             const titleLine = calls[1][0];
-            const underline = calls[2][0];
-            const tagline = calls[3][0];
+            const tagline = calls[2][0];
+            const underline = calls[3][0];
 
             // タイトル行は色付き要素を含むべき
             expect(titleLine).toContain("[CYAN]>[/CYAN]"); // 矢印
@@ -129,7 +129,7 @@ describe("ヘッダーユーティリティ", () => {
             expect(calls[0]).toEqual([""]);
 
             // タグラインは2スペースのインデントを持つべき
-            expect(calls[3][0]).toMatch(/^ {2}/);
+            expect(calls[2][0]).toMatch(/^ {2}/);
 
             // 空行で終わるべき
             expect(calls[4]).toEqual([""]);
@@ -143,7 +143,7 @@ describe("ヘッダーユーティリティ", () => {
             printHeader();
 
             const calls = consoleSpy.mock.calls;
-            const underline = calls[2][0];
+            const underline = calls[3][0];
 
             // アンダーラインは複数のダッシュ文字を含むべき
             expect(underline).toMatch(/─+/);

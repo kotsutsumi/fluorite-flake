@@ -10,6 +10,8 @@ export type CreateOptions = {
     template?: string;
     force?: boolean;
     dir?: string;
+    monorepo?: boolean;
+    simple?: boolean;
 };
 
 /**
@@ -21,6 +23,7 @@ export type ProjectConfig = {
     directory: string;
     template?: string;
     force: boolean;
+    monorepo: boolean;
 };
 
 // EOF
