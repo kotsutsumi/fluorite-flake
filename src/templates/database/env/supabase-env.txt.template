@@ -1,0 +1,9 @@
+# Supabase - Local Development
+# These values will be automatically populated when you run the setup script
+NEXT_PUBLIC_SUPABASE_URL="http://localhost:54321"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[LOCAL_ANON_KEY]"
+SUPABASE_SERVICE_ROLE_KEY="[LOCAL_SERVICE_KEY]"
+
+# Production/Staging/Development environments
+# These will be set in separate environment files (.env.production, .env.staging, .env.development)
+# Run 'pnpm run setup:db --cloud' to create cloud projects and populate these files

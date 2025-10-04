@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -e
+
+PROJECT_NAME="{{projectName}}"
+PROJECT_NAME_CLEAN=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | tr -cs 'a-z0-9-' '-' | sed 's/^-*//; s/-*$//')
+
+echo "🚀 Setting up Turso database for $PROJECT_NAME..."
+
+# Function to check if logged in to Turso
+check_turso_auth() {
+    if ! turso auth status &>/dev/null; then
+        echo "📝 Logging in to Turso..."
+        turso auth login
+    else
+        echo "✅ Already logged in to Turso"
+    fi
+}
+
+# Function to create Turso Cloud database
+create_turso_db() {
+    local env=$1
+    local db_name="${PROJECT_NAME_CLEAN}-${env}"
+
+    echo "🗄️ Creating Turso Cloud database: $db_name..."
+
+    # Check if database already exists
+    if turso db show "$db_name" &>/dev/null; then
+        echo "   Database $db_name already exists, skipping..."
+        # Still get the URL and token
+        DB_URL=$(turso db show "$db_name" --url)
+        AUTH_TOKEN=$(turso db tokens create "$db_name")
+    else
+        # Create database
+        turso db create "$db_name" --group default
+        echo "   ✅ Database $db_name created"
+
+        # Get database URL and create token
+        DB_URL=$(turso db show "$db_name" --url)
+        AUTH_TOKEN=$(turso db tokens create "$db_name")
+    fi
+
+    # Save to environment file
+    echo "" >> .env.${env,,}
+    echo "# Turso Database - ${env^^} Environment" >> .env.${env,,}
+    echo "TURSO_DATABASE_URL_${env^^}=\"$DB_URL\"" >> .env.${env,,}
+    echo "TURSO_AUTH_TOKEN_${env^^}=\"$AUTH_TOKEN\"" >> .env.${env,,}
+
+    echo "   ✅ Environment variables saved to .env.${env,,}"
+
+    # Apply schema to cloud database
+    echo "   📋 Applying schema to $db_name..."
+    TURSO_DATABASE_URL="$DB_URL" TURSO_AUTH_TOKEN="$AUTH_TOKEN" DATABASE_URL="$DB_URL?authToken=$AUTH_TOKEN" {{packageManager}} run db:push
+    echo "   ✅ Schema applied"
+}
+
+# Setup local database
+echo "📁 Setting up local development database..."
+mkdir -p prisma
+touch prisma/dev.db
+echo "✅ Local database created at prisma/dev.db"
+
+# Run initial setup
+echo "🔧 Running initial database setup..."
+{{packageManager}} run db:generate || echo "Will complete after install"
+{{packageManager}} run db:push || echo "Will complete after install"
+{{packageManager}} run db:seed || echo "Will complete after install"
+
+# Check if we should set up cloud databases
+if [[ "$1" == "--cloud" ]]; then
+    # Check if turso CLI is installed
+    if ! command -v turso &> /dev/null; then
+        echo "⚠️ Turso CLI not found. Installing..."
+        curl -sSfL https://get.tur.so/install.sh | bash
+        export PATH="$HOME/.turso:$PATH"
+    fi
+
+    check_turso_auth
+
+    # Create databases for each environment
+    echo ""
+    echo "🌐 Setting up Turso Cloud databases..."
+
+    # Create environment files
+    touch .env.production
+    touch .env.staging
+    touch .env.development
+
+    # Create databases
+    create_turso_db "prod"
+    create_turso_db "stg"
+    create_turso_db "dev"
+
+    echo ""
+    echo "✅ All Turso Cloud databases created!"
+    echo ""
+    echo "📝 Database URLs have been saved to:"
+    echo "   - .env.production"
+    echo "   - .env.staging"
+    echo "   - .env.development"
+fi
+
+echo ""
+echo "✅ Turso setup complete!"
+echo ""
+echo "📚 Next steps:"
+echo "   1. Run '{{packageManager}} run dev' to start development server"
+echo "   2. Visit http://localhost:3000 to see the database demo"
+echo "   3. Run '{{packageManager}} run setup:turso:cloud' to set up cloud databases"
+echo "   4. Run '{{packageManager}} run deploy' to deploy to Vercel"

@@ -1,0 +1,102 @@
+import { headers, cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import prisma from '@/lib/db';
+import { auth } from './auth';
+import { APP_ROLES, type AppRole } from './roles';
+
+export async function getSession() {
+    try {
+        console.log('🔍 getSession: Starting session check');
+
+        const cookieStore = await cookies();
+        const sessionCookie = cookieStore.get('session');
+
+        console.log('🍪 Session cookie exists:', !!sessionCookie?.value);
+
+        if (!sessionCookie?.value) {
+            console.log('❌ No session cookie found');
+            return null;
+        }
+
+        // Verify session exists in database and hasn't expired
+        const session = await prisma.session.findUnique({
+            where: {
+                token: sessionCookie.value,
+            },
+            include: {
+                user: true,
+            },
+        });
+
+        console.log('🗄️ Database session found:', !!session);
+
+        if (!session) {
+            console.log('❌ Session not found in database');
+            return null;
+        }
+
+        if (session.expiresAt < new Date()) {
+            console.log('⏰ Session expired, cleaning up');
+            // Clean up expired session
+            await prisma.session.delete({
+                where: { id: session.id },
+            });
+            return null;
+        }
+
+        console.log('✅ Valid session found for user:', session.user.email);
+
+        return {
+            user: session.user,
+            session,
+        };
+    } catch (error) {
+        console.error('💥 Session verification error:', error);
+        return null;
+    }
+}
+
+export async function requireSession() {
+    const session = await getSession();
+
+    if (!session) {
+        redirect('/login');
+    }
+
+    return session;
+}
+
+export function hasRole(role: string | null | undefined, allowed: AppRole[]) {
+    return role ? allowed.includes(role as AppRole) : false;
+}
+
+export function assertRole(session: Awaited<ReturnType<typeof getSession>>, allowed: AppRole[]) {
+    if (!session || !hasRole(session.user?.role, allowed)) {
+        redirect('/');
+    }
+}
+
+export async function getAccessibleOrganizationIds(userId: string, role: AppRole) {
+    if (role === APP_ROLES.ADMIN) {
+        const organizations = await prisma.organization.findMany({ select: { id: true } });
+        return organizations.map((org) => org.id);
+    }
+
+    const memberships = await prisma.member.findMany({
+        where: { userId },
+        select: { organizationId: true },
+    });
+
+    return memberships.map((membership) => membership.organizationId);
+}
+
+export function roleLabel(role: AppRole) {
+    switch (role) {
+        case APP_ROLES.ADMIN:
+            return '管理ユーザー';
+        case APP_ROLES.ORG_ADMIN:
+            return '組織管理ユーザー';
+        default:
+            return '一般ユーザー';
+    }
+}

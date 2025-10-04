@@ -1,0 +1,60 @@
+import { redirect } from 'next/navigation';
+import prisma from '@/lib/db';
+import { requireSession, getAccessibleOrganizationIds } from '@/lib/auth-server';
+import { APP_ROLES, type AppRole } from '@/lib/roles';
+import { UsersClient } from '@/components/dashboard/users-client';
+
+export default async function UsersPage() {
+  const session = await requireSession();
+  const role = (session.user?.role as string) ?? APP_ROLES.USER;
+
+  if (role === APP_ROLES.USER) {
+    redirect('/');
+  }
+
+  const organizationIds = await getAccessibleOrganizationIds(session.user.id, role as AppRole);
+
+  const [organizations, users] = await Promise.all([
+    prisma.organization.findMany({
+      where: role === APP_ROLES.ADMIN ? undefined : { id: { in: organizationIds } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.user.findMany({
+      where: role === APP_ROLES.ADMIN ? undefined : {
+        memberships: {
+          some: {
+            organizationId: { in: organizationIds },
+          },
+        },
+      },
+      include: {
+        memberships: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
+
+  return (
+    <UsersClient
+      initialUsers={JSON.parse(JSON.stringify(users))}
+      organizations={organizations}
+      currentRole={role}
+      currentUserId={session.user.id}
+    />
+  );
+}

@@ -1,0 +1,61 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Environment-aware Supabase client
+// Automatically connects to the appropriate Supabase project
+// based on the deployment environment
+
+function getEnvironment(): 'production' | 'staging' | 'development' | 'local' {
+  // On Vercel, use VERCEL_ENV to determine environment
+  if (process.env.VERCEL_ENV) {
+    if (process.env.VERCEL_ENV === 'production') return 'production';
+    if (process.env.VERCEL_ENV === 'preview') {
+      // For preview deployments, check branch or use staging as default
+      if (process.env.VERCEL_GIT_COMMIT_REF === 'develop' ||
+          process.env.VERCEL_GIT_COMMIT_REF === 'staging') {
+        return 'staging';
+      }
+      return 'development';
+    }
+  }
+
+  // For local development or other environments
+  if (process.env.NODE_ENV === 'development') return 'local';
+  if (process.env.NODE_ENV === 'production') return 'production';
+
+  return 'local'; // Default to local
+}
+
+function getSupabaseConfig() {
+  const env = getEnvironment();
+
+  switch (env) {
+    case 'production':
+      return {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL_PROD || process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_PROD || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      };
+    case 'staging':
+      return {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL_STG || process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_STG || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      };
+    case 'development':
+      return {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL_DEV || process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_DEV || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      };
+    case 'local':
+    default:
+      return {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      };
+  }
+}
+
+const { url: supabaseUrl, anonKey: supabaseAnonKey } = getSupabaseConfig();
+const environment = getEnvironment();
+
+console.log(`🗄️ Connecting to Supabase (${environment}):`, supabaseUrl);
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

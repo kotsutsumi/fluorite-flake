@@ -1,439 +1,156 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Claude Code 向けに、このリポジトリで作業するときの指針をまとめています。
 
-## Project Overview
+## プロジェクト概要
 
-Fluorite-flake is a comprehensive multi-framework project generator and CLI utility that provides:
-1. **Multi-Framework Support**: Create projects with Next.js, Expo (React Native), Tauri (Desktop), or Flutter
-2. **Interactive Project Generator**: Production-ready applications with customizable configurations
-3. **Terminal Styling**: Beautiful terminal output with ANSI colors and animations
-4. **Modern Stack**: Latest framework versions with TypeScript and cutting-edge tooling
-5. **Flexible Database Support**: Choose between Turso (SQLite edge) or Supabase (PostgreSQL) for supported frameworks
-6. **ORM Options**: Prisma or Drizzle ORM integration for database-enabled projects
-7. **Authentication**: Framework-specific auth solutions (Better Auth for Next.js, Expo Auth Session for Expo)
-8. **Deployment Ready**: Framework-appropriate deployment configurations
+Fluorite-flake はマルチフレームワーク対応のプロジェクトジェネレーター兼 CLI です。Next.js / Expo / Tauri / Flutter など複数のアプリ雛形を、対話式プロンプトに従って生成できます。主要な特徴は以下のとおりです。
 
-## Development Commands
+1. **多彩なターゲット**: Web・モバイル・デスクトップまでカバーするテンプレート群。
+2. **豊富なオプション**: データベース（Turso / Supabase）、ORM（Prisma / Drizzle）、ストレージ、認証、デプロイ設定などを選択可能。
+3. **型安全な実装**: TypeScript + strict モード、再利用可能なユーティリティで構成。
+4. **強固な開発体験**: Biome によるフォーマット＆Lint、Vitest によるテスト、Husky による pre-commit チェック。
+
+## 開発コマンド
 
 ```bash
-# Development workflow
-pnpm install          # Install dependencies
-pnpm run dev         # Run CLI in development mode (uses tsx)
-pnpm run build       # Compile TypeScript to dist/
-pnpm run format      # Format code with Biome
-pnpm run lint        # Lint code with Biome
-pnpm run check       # Run both format and lint checks
+# セットアップ
+pnpm install            # 依存関係をインストール
 
-# Testing
-pnpm run test        # Run unit tests with Vitest
-pnpm run test:e2e    # Run E2E tests with Playwright
-pnpm run test:watch  # Run tests in watch mode
+# 開発
+pnpm dev                # tsx src/cli.ts を実行（オートリロード付き）
 
-# Publishing (automated via GitHub Actions on main branch merge)
-pnpm publish         # Manual publish to npm (auto-runs build via prepublishOnly)
+# ビルド / 品質
+pnpm build              # TypeScript を dist/ へビルド
+pnpm lint               # Biome lint
+pnpm format             # Biome format
+pnpm check              # Lint + Format チェック
+
+# テストレイヤー
+pnpm test               # Unit + Functional テストを実行（常時グリーン必須）
+pnpm test:unit          # ユニットのみ
+pnpm test:functional    # CLI 機能単体テスト
+pnpm test:scenario      # シナリオテスト（重いので必要時のみ）
+pnpm test:watch         # ウォッチモード
 ```
 
-## Architecture
+> **重要:** ソースコードを修正した場合は、必ず該当するテストも更新し、`pnpm test` を実行して成功したことを確認してください。テストを更新せずにコードだけ変更することは禁止です。
 
-### Module System
-- Uses ES modules (`"type": "module"` in package.json)
-- TypeScript compiles to ESNext modules with bundler resolution
-- Requires Node.js >=18.0.0
+## アーキテクチャ概要
 
-### Entry Points
-- **CLI**: `src/cli.ts` → `dist/cli.js` (executable with shebang)
-- **Library**: `src/index.ts` → `dist/index.js` (programmatic API exports)
+- **ES Modules**: `"type": "module"`。Node.js >= 20 が必須。
+- **CLI エントリポイント**: `src/cli.ts` → `dist/cli.js`。Commander + prompts で構築。
+- **公開 API**: `src/index.ts` → `dist/index.js`。ライブラリ利用者向けの再輸出。
+- **主要依存**:
+  - `commander` – CLI コマンド定義
+  - `prompts` – 対話式入力
+  - `chalk` / `ora` – 端末表示演出
+  - `fs-extra` / `execa` – ファイル操作・プロセス実行
+  - `vitest` – テスティングフレームワーク
+  - `biome` – フォーマッタ + Linter
 
-### Key Dependencies
-- **chalk** (v5.3.0): Terminal string styling - note this is ESM-only
-- **commander** (v12.1.0): CLI argument parsing and command structure
-- **ora** (v8.1.0): Terminal spinners for async operations
-- **prompts** (v2.4.2): Interactive CLI prompts for project configuration
-- **fs-extra** (v11.2.0): Enhanced file system operations
-- **execa** (v9.5.2): Process execution for running commands
-- **handlebars** (v4.7.8): Template engine for code generation
-
-### Code Quality
-- **Biome**: Handles both formatting and linting with strict rules
-- **TypeScript**: Strict mode enabled with all strict checks
-- **Husky**: Pre-commit hooks run format, lint, and build automatically
-- **Best Practices**:
-  - Proper TypeScript typing (no `any` types)
-  - Functional programming patterns (`for...of` over `forEach`)
-  - Structured error handling and validation
-  - Consistent code formatting and organization
-
-### Publishing Configuration
-- Package publishes only `dist/`, `README.md`, and `LICENSE` files
-- Binary entry point: `fluorite-flake` → `./dist/cli.js`
-- Main library export: `dist/index.js`
-
-## Important Patterns
-
-### Adding New CLI Commands
-Commands are added to `src/cli.ts` using the commander pattern:
-```typescript
-program
-  .command('commandname [args]')
-  .description('Description')
-  .option('-f, --flag', 'Flag description')
-  .action((args, options) => {
-    // Implementation
-  });
-```
-
-### Exporting Library Functions
-Public API functions go in `src/index.ts` and should be fully typed with interfaces for options.
-
-### Using Chalk Colors
-Since chalk v5 is ESM-only, dynamic color selection requires type casting:
-```typescript
-const colorFn = chalk[colorName as keyof typeof chalk] as typeof chalk.cyan;
-```
-
-## Create Command (Project Generator)
-
-### Usage
-```bash
-fluorite-flake create  # or 'fluorite-flake new'
-```
-
-### Interactive Options
-The create command prompts for:
-1. **Framework**: Choose your technology stack:
-   - **Next.js**: React web framework for production
-   - **Expo**: React Native for mobile apps (iOS/Android/Web)
-   - **Tauri**: Desktop applications with Rust backend + Web frontend
-   - **Flutter**: Cross-platform apps (Mobile/Web/Desktop) with Dart
-2. **Project Name**: Name of your new application
-3. **Database** (Next.js/Expo only):
-   - None (no database)
-   - Turso (SQLite at the edge)
-   - Supabase (PostgreSQL)
-4. **ORM** (if database selected):
-   - Prisma (type-safe database client)
-   - Drizzle (TypeScript ORM)
-5. **Deployment** (framework-specific):
-   - Next.js: Vercel deployment
-   - Tauri: GitHub Releases setup
-   - Flutter: Store distribution configuration
-6. **Storage** (Next.js/Expo only):
-   - None
-   - Vercel Blob
-   - Cloudflare R2
-   - AWS S3
-   - Supabase Storage
-7. **Authentication** (Next.js/Expo with database):
-   - Next.js: Better Auth integration
-   - Expo: Expo Auth Session
-8. **Package Manager** (JavaScript frameworks only):
-   - pnpm (recommended)
-   - npm
-   - yarn
-   - bun
-
-### Framework Capabilities
-- **Next.js**: Full-stack web apps with all features (database, auth, storage, deployment)
-- **Expo**: Mobile apps with database and storage support
-- **Tauri**: Desktop apps with deployment configuration
-- **Flutter**: Cross-platform apps with Flutter-specific tooling
-
-### Generated Project Structures
-
-#### Next.js Project Structure
-```
-project-name/
-├── src/
-│   ├── app/              # Next.js App Router pages
-│   │   └── api/         # API routes (auth, upload endpoints)
-│   ├── components/       # React components
-│   │   ├── ui/          # shadcn/ui components
-│   │   ├── auth/        # Auth components (if selected)
-│   │   └── file-upload.tsx # File upload component (if storage selected)
-│   ├── lib/             # Utility functions and configurations
-│   │   ├── auth.ts      # Better Auth server config (if selected)
-│   │   ├── storage.ts   # Storage client (if selected)
-│   │   └── store.ts     # Jotai state management
-│   ├── hooks/           # Custom React hooks
-│   └── styles/          # Global styles and Tailwind CSS v4
-├── prisma/              # Prisma schema (if selected)
-├── drizzle/             # Drizzle config (if selected)
-├── public/              # Static assets
-├── scripts/             # Deployment scripts (if selected)
-└── Configuration files (next.config.mjs, tsconfig.json, etc.)
-```
-
-#### Expo Project Structure
-```
-project-name/
-├── app/                 # Expo Router navigation
-│   ├── (tabs)/         # Tab navigation screens
-│   ├── _layout.tsx     # Root layout with providers
-│   └── +not-found.tsx  # 404 screen
-├── components/          # React Native components
-│   └── ui/             # Reusable UI components
-├── constants/           # App constants
-├── hooks/              # Custom React hooks
-├── assets/             # Images, fonts, and other assets
-│   ├── images/
-│   └── fonts/
-└── Configuration files (app.json, tsconfig.json, babel.config.js)
-```
-
-#### Tauri Project Structure
-```
-project-name/
-├── src/                 # Frontend (React + TypeScript)
-│   ├── components/      # React components
-│   ├── styles/         # CSS styles
-│   ├── utils/          # Utility functions
-│   ├── App.tsx         # Main React app
-│   └── main.tsx        # Entry point
-├── src-tauri/          # Backend (Rust)
-│   ├── src/
-│   │   └── main.rs     # Rust application logic
-│   ├── icons/          # App icons for different platforms
-│   ├── Cargo.toml      # Rust dependencies
-│   └── tauri.conf.json # Tauri configuration
-├── public/             # Static assets
-└── Configuration files (vite.config.ts, tsconfig.json)
-```
-
-#### Flutter Project Structure
-```
-project-name/
-├── lib/                # Dart source code
-│   ├── screens/        # Screen widgets
-│   ├── widgets/        # Reusable widgets
-│   ├── models/         # Data models
-│   ├── services/       # Business logic
-│   ├── utils/          # Utility functions
-│   └── main.dart       # App entry point
-├── test/               # Unit and widget tests
-├── assets/             # Images, fonts, and other assets
-│   ├── images/
-│   └── fonts/
-├── android/            # Android-specific code
-├── ios/                # iOS-specific code
-├── web/                # Web-specific code
-├── linux/              # Linux desktop code
-├── macos/              # macOS desktop code
-├── windows/            # Windows desktop code
-└── Configuration files (pubspec.yaml, analysis_options.yaml)
-```
-
-## Generator Architecture
-
-### Modular Generators
-The project uses a modular architecture with separate generators:
+## フォルダ構成の指針
 
 ```
-src/generators/
-├── next-generator.ts      # Next.js project setup with App Router
-├── expo-generator.ts      # Expo (React Native) project setup
-├── tauri-generator.ts     # Tauri desktop app setup with Rust backend
-├── flutter-generator.ts   # Flutter cross-platform project setup
-├── database-generator.ts  # Database and ORM configuration (framework-aware)
-├── deployment-generator.ts # Deployment setup (Vercel, GitHub Releases, etc.)
-├── auth-generator.ts      # Authentication integration (Better Auth, Expo Auth)
-└── storage-generator.ts   # Storage provider setup (Blob, S3, R2, Supabase)
-
-### Adding New Generators
-1. Create a new file in `src/generators/`
-2. Export an async function accepting `ProjectConfig`
-3. Import and call from `src/commands/create.ts`
-4. Add tests in `test/generator.test.ts`
-
-### ProjectConfig Interface
-```typescript
-interface ProjectConfig {
-  projectName: string;
-  projectPath: string;
-  framework: 'nextjs' | 'expo' | 'tauri' | 'flutter';
-  database: 'none' | 'turso' | 'supabase';
-  orm?: 'prisma' | 'drizzle';
-  deployment: boolean;
-  storage: 'none' | 'vercel-blob' | 'cloudflare-r2' | 'aws-s3' | 'supabase-storage';
-  auth: boolean;
-  packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
-}
+src/
+  cli.ts             # CLI メインエントリ
+  generators/        # フレームワーク別ジェネレーター
+  utils/             # 再利用可能なユーティリティ
+  commands/          # CLI コマンド定義
+  templates/         # 各ジェネレーターが読み込むテンプレート資産
+scripts/             # 補助スクリプト
+tests/
+  helpers/           # temp dir や CLI runner
+  unit/              # ユニットテスト
+  functional/        # 機能テスト
+  scenario/          # シナリオテスト
 ```
 
-## Framework-Specific Requirements
+`tests/` ではテンポラリディレクトリを活用し、生成されたファイルの内容を fixture と比較します。`tests/scenario` では実際に CLI を起動し、プロジェクト生成〜`pnpm dev` 起動確認まで行います。
 
-### Next.js
-- **Node.js**: 18.18.0 or later
-- **Package Manager**: npm, pnpm, yarn, or bun
-- **Development Commands**:
-  ```bash
-  pnpm run dev       # Start development server
-  pnpm run build     # Build for production
-  pnpm run start     # Start production server
-  pnpm run lint      # Run linting
+## コーディング規約
+
+- Biome がフォーマット・Lint を強制します。PR 送信前に `pnpm format && pnpm lint` を実行してください。
+- 命名規則: 変数/関数 `camelCase`、型/クラス `PascalCase`、CLI コマンド `kebab-case`。
+- エラー処理は丁寧に行い、CLI ではユーザーに分かりやすいメッセージを返すよう徹底してください。
+- I/O（CLI 入出力・ファイル書き込みなど）と純粋ロジックを分離し、テストを書きやすくすること。
+- **コメントは日本語で記載**: ソースコード内のコメントは、開発チーム内での理解を促進するため、できるだけ詳しく日本語で記載してください。
+- **テストの同時更新必須**: コードを修正した場合は、必ず対応するテストも記載・修正し、`pnpm test` が成功することを確認してください。
+- **1ファイル1定義の原則（厳守）**: 各モジュールは1つの主要な定義（関数、クラス、定数など）のみをエクスポートし、単一責任原則を徹底してください。複数のエクスポートがある場合は、機能別に個別ファイルに分割し、index.ts で統合エクスポートを行ってください。
+
+  **基本原則**:
+  - 1ファイルにつき1つの主要な責任を持つ
+  - 関連するヘルパー関数や型は許可されるが、メインの定義に直接関連するもののみ
+  - 大きなファイル（>200行または>10エクスポート）は必ず分割する
+  - 型定義とロジックは分離する
+
+  ```typescript
+  // ❌ 避けるべき構造（複数の責任）
+  // utils/helpers.ts
+  export function getPackageVersion() { ... }
+  export function getPackageVersions() { ... }
+  export function validateEmail() { ... }
+  export function parseUrl() { ... }
+  export interface ApiResponse { ... }
+  export interface UserData { ... }
+
+  // ✅ 推奨される構造（機能別分割）
+  // utils/package-version/getPackageVersion.ts
+  export function getPackageVersion() { ... }
+
+  // utils/package-version/getPackageVersions.ts
+  export function getPackageVersions() { ... }
+
+  // utils/validation/validateEmail.ts
+  export function validateEmail() { ... }
+
+  // utils/parsing/parseUrl.ts
+  export function parseUrl() { ... }
+
+  // types/api-types.ts
+  export interface ApiResponse { ... }
+
+  // types/user-types.ts
+  export interface UserData { ... }
+
+  // utils/package-version/index.ts
+  export { getPackageVersion } from './getPackageVersion.js';
+  export { getPackageVersions } from './getPackageVersions.js';
+
+  // utils/index.ts
+  export * from './package-version/index.js';
+  export * from './validation/index.js';
+  export * from './parsing/index.js';
   ```
 
-### Expo (React Native)
-- **Node.js**: 18.0.0 or later
-- **Expo CLI**: Installed automatically with the project
-- **Platform Requirements**:
-  - iOS: Xcode (macOS only) for iOS simulator
-  - Android: Android Studio or Android SDK
-- **Development Commands**:
-  ```bash
-  pnpm start         # Start Expo development server
-  pnpm run ios       # Run on iOS simulator
-  pnpm run android   # Run on Android emulator
-  pnpm run web       # Run in web browser
-  ```
+  **許可される例外**:
+  - 密接に関連する型とその実装（例：クラスとそのオプション型）
+  - メイン関数とそのヘルパー関数（プライベートな性質のもの）
+  - 定数群（テーマ、設定値など、論理的にグループ化されるもの）
 
-### Tauri
-- **Node.js**: 18.0.0 or later
-- **Rust**: Latest stable version (install from rustup.rs)
-- **Platform Dependencies**:
-  - Linux: Various system packages (webkit2gtk, etc.)
-  - Windows: WebView2 (usually pre-installed)
-  - macOS: Xcode Command Line Tools
-- **Development Commands**:
-  ```bash
-  pnpm run dev       # Start Tauri development mode
-  pnpm run build     # Build for production
-  pnpm run tauri dev # Alternative dev command
-  ```
+  **分割の判断基準**:
+  - ファイルサイズ: >200行
+  - エクスポート数: >10個
+  - 機能的関連性: 異なるドメインの機能が混在
+  - 単体テストの複雑さ: 1ファイルで複数の異なる機能をテストする必要がある
 
-### Flutter
-- **Flutter SDK**: 3.2.0 or later (install from flutter.dev)
-- **Dart**: Included with Flutter SDK
-- **Platform Requirements**:
-  - iOS: Xcode (macOS only)
-  - Android: Android Studio with Android SDK
-  - Web: Chrome browser
-  - Desktop: Platform-specific requirements
-- **Development Commands**:
-  ```bash
-  flutter pub get    # Install dependencies
-  flutter run        # Run on connected device
-  flutter build apk  # Build Android APK
-  flutter build ios  # Build iOS app
-  flutter build web  # Build for web
-  flutter test       # Run tests
-  ```
+  **適用対象**: `src/commands/`, `src/config/`, `src/utils/`, `src/generators/`, `src/services/`, `src/ipc/`, `src/tauri/`, `src/types/`, `src/tui/` ディレクトリは厳守が必要です。
+- **一時ファイルの管理**: 一時的なスクリプトは `temp/scripts/` 、一時的なドキュメントは `temp/docs/` に配置し、本番コードと明確に分離してください。
 
-## Generated Project Features
+## 作業時のベストプラクティス
 
-### Database Integration
-- **Turso**: SQLite at the edge with libSQL adapter
-  - Prisma with driver adapters preview feature
-  - Drizzle with libSQL client
-- **Supabase**: PostgreSQL with built-in auth
-  - Direct database connection
-  - Supabase client SDK integration
+1. **テストファースト**: 修正対象モジュールを特定したら、関連するユニットテスト／機能テストを確認・追加しましょう。
+2. **テンプレート編集時の注意**: `src/templates/**` を更新したら、該当する functional / scenario テストで実際に生成物が期待どおりか確認してください。
+3. **テンポラリ生成のクリーンアップ**: テストや検証で作成したディレクトリは必ず削除するか、`.gitignore` 済みの場所（`/tmp` 相当）を利用してください。
+4. **CI との整合**: `pnpm test` が失敗すると PR がブロックされます。`pnpm test:scenario` は実行時間が長いため、必要に応じてローカルまたは nightly CI ジョブで回してください。
+5. **ドキュメント更新**: ツールチェーンやテスト構成に影響する変更を行った場合は、このファイルと `AGENTS.md`、関連する README / ガイドも忘れずに更新しましょう。
 
-### Authentication
-- **Next.js (Better Auth)**:
-  - Session-based authentication
-  - Sign in/Sign up forms
-  - Protected routes
-  - User management
-  - Database schema integration
-- **Expo (Expo Auth Session)**:
-  - OAuth 2.0 authentication flow
-  - Secure token storage
-  - Social login integration
+## 参考: CLI 拡張の流れ
 
-### Deployment Features
-- **Next.js (Vercel)**:
-  - Automatic deployment configuration
-  - Environment variable management
-  - Deployment scripts for automation
-- **Tauri (GitHub Releases)**:
-  - Cross-platform desktop binaries
-  - Auto-update configuration
-  - Release workflow setup
-- **Flutter (Store Distribution)**:
-  - iOS App Store configuration
-  - Google Play Store setup
-  - Web deployment options
-- **Expo (EAS Build)**:
-  - Over-the-air updates
-  - Native build service
-  - Store submission preparation
+1. `src/commands/` に新しいコマンドまたはサブコマンドを追加。
+2. ビジネスロジックを `src/utils/` や `src/generators/` へ分離し、ユニットテストを追加。
+3. CLI から呼び出す際は `src/cli.ts` へ登録し、機能テストを整備。
+4. 必要に応じてテンプレートやスクリプトを追加し、シナリオテストで最終的な出力を検証。
+5. `pnpm test` → `pnpm build` → `pnpm lint` を実行し、CI が通ることを確認。
 
-### Storage Solutions (Next.js/Expo)
-- **Vercel Blob**: Simple file storage with CDN
-- **Cloudflare R2**: S3-compatible object storage
-- **AWS S3**: Industry-standard object storage
-- **Supabase Storage**: Integrated with Supabase auth/database
-- Pre-configured upload components and API endpoints
-
-## Testing Infrastructure
-
-### Test Suite
-- **Vitest**: Unit and integration testing
-- **Playwright**: E2E testing for generated projects
-- **Coverage**: Multiple framework and configuration combinations
-
-### Running Tests
-```bash
-pnpm test              # Run all tests
-pnpm test:watch       # Watch mode
-pnpm test:coverage    # Generate coverage report
-```
-
-### Test Matrix
-Tests verify:
-- Project generation for all frameworks (Next.js, Expo, Tauri, Flutter)
-- Framework-specific configurations and features
-- Correct dependencies installation
-- Build success for generated projects
-- Framework-appropriate file structures
-- Conditional prompt flows based on framework
-
-## CI/CD Pipeline
-
-### GitHub Actions Workflows
-
-#### 1. CI Workflow (`.github/workflows/ci.yml`)
-- Triggers on: Push and pull requests to develop/main
-- Test matrix: Node.js 18, 20, 22
-- Steps: Install, lint, format check, build, test
-
-#### 2. Release Workflow (`.github/workflows/release.yml`)
-- Triggers on: Release creation
-- Publishes to npm automatically
-- Uses NPM_TOKEN secret for authentication
-
-#### 3. Publish Workflow (`.github/workflows/publish.yml`)
-- Triggers on: Push to main branch
-- Automatically publishes to npm
-- Increments patch version if not manually set
-
-### Setting Up Secrets
-Required GitHub secrets:
-- `NPM_TOKEN`: npm access token for publishing
-
-## Development Workflow
-
-### Making Changes
-1. Create feature branch from `develop`
-2. Make changes and add tests
-3. Run `pnpm run check` to ensure quality
-4. Commit (pre-commit hooks run automatically)
-5. Push and create PR to `develop`
-6. After review, merge to `develop`
-7. When ready for release, merge `develop` to `main`
-
-### Pre-commit Hooks
-Husky runs automatically on commit:
-1. Format code with Biome
-2. Lint with Biome
-3. Build TypeScript
-4. Run tests (optional)
-
-### Code Quality Standards
-When contributing, ensure your code follows these standards:
-- **TypeScript**: Use proper typing, avoid `any` types
-- **Performance**: Use `for...of` loops instead of `forEach` for better performance
-- **Error Handling**: Implement comprehensive error handling with meaningful messages
-- **Testing**: Add tests for new features covering all configuration combinations
-- **Documentation**: Update documentation for new features and configuration options
+これらのガイドラインに従い、常にテストとコードを両輪でメンテナンスしてください。EOF

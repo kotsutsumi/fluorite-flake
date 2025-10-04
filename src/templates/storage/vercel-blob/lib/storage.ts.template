@@ -1,0 +1,235 @@
+// Storage abstraction layer that automatically falls back to local storage
+// when BLOB_READ_WRITE_TOKEN is not configured or not running on Vercel
+
+// Determine if we should use local storage emulation
+// Use local storage if:
+// - No BLOB_READ_WRITE_TOKEN is set (required for Vercel Blob)
+// - OR not running on Vercel (no VERCEL env var)
+// This handles local development, next start, E2E tests, etc.
+const isLocalMode = !process.env.BLOB_READ_WRITE_TOKEN || !process.env.VERCEL;
+
+// Dynamic imports based on environment
+const storageModule = isLocalMode
+  ? import('./storage-local')
+  : import('@vercel/blob');
+
+export async function uploadBuffer(buffer: Buffer, filename: string, contentType?: string) {
+  if (isLocalMode) {
+    // Use local storage emulation
+    const { uploadLocal } = await import('./storage-local');
+    const result = await uploadLocal(buffer, { pathname: filename });
+    return result.url;
+  }
+
+  // Use Vercel Blob in production or when token is configured
+  const { put } = await storageModule as typeof import('@vercel/blob');
+  const blob = await put(filename, buffer, {
+    access: 'public',
+    contentType,
+  });
+
+  return blob.url;
+}
+
+export async function uploadFile(file: File, options?: { pathname?: string }) {
+  if (isLocalMode) {
+    // Use local storage emulation
+    const { uploadLocal } = await import('./storage-local');
+    const result = await uploadLocal(file, options);
+    return result.url;
+  }
+
+  // Use Vercel Blob in production or when token is configured
+  const { put } = await storageModule as typeof import('@vercel/blob');
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = options?.pathname || file.name;
+
+  const blob = await put(filename, buffer, {
+    access: 'public',
+    contentType: file.type,
+  });
+
+  return blob.url;
+}
+
+export async function deleteFile(urlOrPath: string) {
+  if (isLocalMode) {
+    // Use local storage emulation
+    const { deleteLocal } = await import('./storage-local');
+    // Extract pathname from URL if it's a full URL
+    const pathname = urlOrPath.startsWith('/api/storage/')
+      ? urlOrPath.replace('/api/storage/', '')
+      : urlOrPath;
+    await deleteLocal(pathname);
+    return;
+  }
+
+  // Use Vercel Blob in production or when token is configured
+  const { del } = await storageModule as typeof import('@vercel/blob');
+  await del(urlOrPath);
+}
+
+export async function listFiles(options?: { limit?: number; prefix?: string }) {
+  if (isLocalMode) {
+    // Use local storage emulation
+    const { listLocal } = await import('./storage-local');
+    const result = await listLocal(options);
+    return result.blobs;
+  }
+
+  // Use Vercel Blob in production or when token is configured
+  const { list } = await storageModule as typeof import('@vercel/blob');
+  const { blobs } = await list(options);
+  return blobs;
+}
+
+export async function getFile(pathname: string) {
+  if (isLocalMode) {
+    // Use local storage emulation
+    const { getLocal } = await import('./storage-local');
+    const result = await getLocal(pathname);
+    return {
+      url: result.url,
+      pathname: result.pathname,
+      size: result.size,
+      uploadedAt: result.uploadedAt,
+      buffer: result.buffer,
+    };
+  }
+
+  // For Vercel Blob, use the list API to find the blob and get its URL
+  const { list, head } = await storageModule as typeof import('@vercel/blob');
+
+  try {
+    // Try to get blob metadata using head if available
+    if (head) {
+      const blob = await head(pathname);
+
+      // Fetch the content from the blob URL
+      const response = await fetch(blob.url);
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      return {
+        url: blob.url,
+        pathname: blob.pathname,
+        size: blob.size,
+        uploadedAt: blob.uploadedAt,
+        buffer,
+      };
+    }
+  } catch (error) {
+    // Fall back to list if head is not available or fails
+  }
+
+  // Fall back to using list to find the blob
+  const { blobs } = await list({
+    prefix: pathname,
+    limit: 1,
+  });
+
+  if (blobs.length === 0) {
+    throw new Error(`Blob not found: ${pathname}`);
+  }
+
+  const blob = blobs[0];
+
+  // Fetch the content from the blob URL
+  const response = await fetch(blob.url);
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  return {
+    url: blob.url,
+    pathname: blob.pathname,
+    size: blob.size,
+    uploadedAt: blob.uploadedAt,
+    buffer,
+  };
+}
+
+export async function copyFile(from: string, to: string) {
+  if (isLocalMode) {
+    // Use local storage emulation
+    const { copyLocal } = await import('./storage-local');
+    const result = await copyLocal(from, to);
+    return result.url;
+  }
+
+  // For Vercel Blob, copy by downloading and re-uploading
+  const { put, list, copy } = await storageModule as typeof import('@vercel/blob');
+
+  // First, check if the Vercel Blob SDK has a native copy function (v0.14.0+)
+  if (copy) {
+    try {
+      const result = await copy(from, to, {
+        access: 'public',
+      });
+      return result.url;
+    } catch (error) {
+      // Fall back to manual copy if native copy fails
+    }
+  }
+
+  // Manual copy: Find the source blob URL first
+  const { blobs } = await list({
+    prefix: from,
+    limit: 1,
+  });
+
+  if (blobs.length === 0) {
+    throw new Error(`Source blob not found: ${from}`);
+  }
+
+  const sourceBlob = blobs[0];
+
+  // Fetch the content from the source blob URL
+  const response = await fetch(sourceBlob.url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch source blob: ${response.status} ${response.statusText}`);
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  // Upload to the new location
+  const blob = await put(to, buffer, {
+    access: 'public',
+    contentType: response.headers.get('content-type') || undefined,
+  });
+
+  return blob.url;
+}
+
+// Export a helper to check if we're in local mode
+export function isUsingLocalStorage() {
+  return isLocalMode;
+}
+
+// Helper function to get storage info
+export async function getStorageInfo() {
+  if (isLocalMode) {
+    const reasons = [];
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      reasons.push('No BLOB_READ_WRITE_TOKEN configured');
+    }
+    if (!process.env.VERCEL) {
+      reasons.push('Not running on Vercel');
+    }
+
+    return {
+      type: 'local',
+      message: 'Using local file storage (.storage directory)',
+      reason: reasons.join(', '),
+      apiEndpoint: '/api/storage',
+      debugEndpoint: '/api/storage/debug',
+      environment: process.env.NODE_ENV,
+    };
+  }
+
+  return {
+    type: 'vercel-blob',
+    message: 'Using Vercel Blob Storage',
+    hasToken: !!process.env.BLOB_READ_WRITE_TOKEN,
+    storeId: process.env.BLOB_STORE_ID,
+    isVercel: !!process.env.VERCEL,
+    environment: process.env.NODE_ENV,
+  };
+}

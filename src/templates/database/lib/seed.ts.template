@@ -1,0 +1,14 @@
+import { db } from './index';
+import { users, posts } from './schema';
+{{config.auth ? "import bcrypt from 'bcryptjs';" : ''}}
+
+async function seed() {
+  console.log('🌱 Seeding database...');
+
+  // Clear existing data
+  await db.delete(posts);
+  await db.delete(users);
+
+  ${
+      config.auth
+          ? 

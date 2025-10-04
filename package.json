@@ -1,68 +1,65 @@
 {
-  "name": "fluorite-flake",
-  "version": "0.1.1",
-  "description": "A beautiful CLI utility with ANSI colors",
-  "main": "dist/index.js",
-  "type": "module",
-  "bin": {
-    "fluorite-flake": "./dist/cli.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx src/cli.ts",
-    "format": "biome format --write .",
-    "lint": "biome lint .",
-    "check": "biome check .",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:nextjs": "playwright test --project=nextjs-e2e",
-    "test:e2e:expo": "playwright test --project=expo-e2e",
-    "test:e2e:tauri": "playwright test --project=tauri-e2e",
-    "test:e2e:flutter": "playwright test --project=flutter-e2e",
-    "test:e2e:smoke": "playwright test --project=smoke-tests",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
-    "test:all": "pnpm run build && vitest run --no-coverage",
-    "test:local": "./scripts/test-local.sh",
-    "install:local": "./scripts/install-local.sh",
-    "install:local:win": "powershell -ExecutionPolicy Bypass -File ./scripts/install-local.ps1",
-    "clean": "rm -rf dist coverage playwright-report",
-    "clean:deps": "rm -rf node_modules pnpm-lock.yaml",
-    "prepare": "husky",
-    "prepublishOnly": "pnpm run clean && pnpm run build"
-  },
-  "keywords": ["cli", "utility", "ansi", "colors", "terminal"],
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@playwright/test": "^1.55.0",
-    "@types/fs-extra": "^11.0.4",
-    "@types/node": "^22.10.2",
-    "@types/prompts": "^2.4.9",
-    "@vitest/ui": "^3.2.4",
-    "husky": "^9.1.7",
-    "playwright": "^1.55.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "vitest": "^3.2.4"
-  },
-  "dependencies": {
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "execa": "^9.6.0",
-    "fs-extra": "^11.3.2",
-    "handlebars": "^4.7.8",
-    "ora": "^8.1.0",
-    "prompts": "^2.4.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "files": ["dist", "README.md", "LICENSE"],
-  "publishConfig": {
-    "access": "public"
-  }
+    "name": "fluorite-flake",
+    "version": "0.4.14",
+    "description": "Boilerplate generator CLI for Fluorite — quickly scaffold Next.js, Expo, and Tauri projects and more.",
+    "main": "dist/index.js",
+    "type": "module",
+    "bin": {
+        "fluorite-flake": "./dist/cli.js"
+    },
+    "scripts": {
+        "build": "tsc && node scripts/copy-templates.js",
+        "prepublishOnly": "pnpm run build",
+        "dev": "tsx src/cli.ts",
+        "format": "biome format --write .",
+        "lint": "biome lint .",
+        "check": "biome check .",
+        "test": "vitest run --project unit --project functional",
+        "test:unit": "vitest run --project unit",
+        "test:functional": "vitest run --project functional",
+        "test:scenario": "vitest run --project scenario --max-concurrency=1",
+        "test:all": "vitest run",
+        "test:watch": "vitest watch",
+        "test:coverage": "vitest run --coverage",
+        "test:ui": "vitest --ui",
+        "test:single": "vitest run",
+        "test:e2e": "playwright test"
+    },
+    "keywords": ["cli", "utility", "ansi", "colors", "terminal"],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@biomejs/biome": "^1.9.4",
+        "@playwright/test": "^1.55.1",
+        "@types/fs-extra": "^11.0.4",
+        "@types/node": "^22.10.2",
+        "@types/prompts": "^2.4.9",
+        "@types/uuid": "^11.0.0",
+        "@types/ws": "^8.18.1",
+        "@vitest/ui": "^3.2.4",
+        "playwright": "^1.55.1",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2",
+        "vitest": "^3.2.4"
+    },
+    "dependencies": {
+        "@types/blessed": "^0.1.25",
+        "blessed": "^0.1.81",
+        "blessed-contrib": "^4.11.0",
+        "chalk": "^5.3.0",
+        "commander": "^12.1.0",
+        "execa": "^9.6.0",
+        "fs-extra": "^11.3.2",
+        "ora": "^8.1.0",
+        "prompts": "^2.4.2",
+        "uuid": "^13.0.0",
+        "ws": "^8.18.3"
+    },
+    "files": ["dist", "README.md", "LICENSE"],
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
 }

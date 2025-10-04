@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -e
+
+PROJECT_NAME="{{projectName}}"
+ENV=${1:-"prod"}
+
+echo "🚀 Setting up Vercel deployment for $PROJECT_NAME ($ENV environment)..."
+
+# Check if vercel CLI is installed
+if ! command -v vercel &> /dev/null; then
+    echo "⚠️ Vercel CLI not found. Installing..."
+    npm i -g vercel
+fi
+
+# Login to Vercel (if not already logged in)
+echo "📝 Checking Vercel authentication..."
+if ! vercel whoami &> /dev/null; then
+    echo "Logging in to Vercel..."
+    vercel login
+fi
+
+# Link to Vercel project
+if [ ! -f ".vercel/project.json" ]; then
+    echo "🔗 Linking to Vercel project..."
+    vercel link --yes
+else
+    echo "✅ Already linked to Vercel project"
+fi
+
+# Set environment-specific variables
+echo "🔐 Setting environment variables for $ENV..."
+
+BRANCH_FLAG=""
+
+if [ "$ENV" == "prod" ] || [ "$ENV" == "production" ]; then
+    ENV_FILE=".env.production"
+    ENV_FLAG="--environment=production"
+    BRANCH_FLAG=""
+    ENV_NAME="production"
+elif [ "$ENV" == "stg" ] || [ "$ENV" == "staging" ]; then
+    ENV_FILE=".env.staging"
+    ENV_FLAG="--environment=preview"
+    BRANCH_FLAG="--git-branch=staging"
+    ENV_NAME="staging"
+elif [ "$ENV" == "dev" ] || [ "$ENV" == "development" ]; then
+    ENV_FILE=".env.development"
+    ENV_FLAG="--environment=preview"
+    BRANCH_FLAG="--git-branch=development"
+    ENV_NAME="development"
+else
+    echo "❌ Invalid environment. Use: prod, staging, or dev"
+    exit 1
+fi
+
+{{blobStorageSetup}}
+
+# Load environment variables from file and set them in Vercel
+if [ -f "$ENV_FILE" ]; then
+    echo "📄 Loading environment variables from $ENV_FILE..."
+
+    # Read each line from the env file
+    while IFS= read -r line; do
+        # Skip comments and empty lines
+        if [[ ! "$line" =~ ^# ]] && [[ -n "$line" ]]; then
+            # Extract key and value
+            KEY=$(echo "$line" | cut -d '=' -f 1)
+            VALUE=$(echo "$line" | cut -d '=' -f 2- | sed 's/^"//' | sed 's/"$//')
+
+            # Set the environment variable in Vercel
+            echo "   Setting $KEY..."
+            echo "$VALUE" | vercel env add "$KEY" $ENV_FLAG $BRANCH_FLAG --yes 2>/dev/null || true
+        fi
+    done < "$ENV_FILE"
+
+    echo "✅ Environment variables set for $ENV_NAME"
+else
+    echo "⚠️ No environment file found at $ENV_FILE"
+fi
+
+{{databaseMigrations}}
+
+# Deploy to Vercel
+echo "🚀 Deploying to Vercel ($ENV_NAME)..."
+
+if [ "$ENV" == "prod" ] || [ "$ENV" == "production" ]; then
+    vercel --prod
+else
+    DEPLOYMENT_URL=$(vercel --preview)
+    echo ""
+    echo "✅ Deployment complete!"
+    echo "🔗 Preview URL: $DEPLOYMENT_URL"
+
+    # Create alias for staging/dev environments
+    if [ "$ENV" == "stg" ] || [ "$ENV" == "staging" ]; then
+        ALIAS="${PROJECT_NAME}-staging.vercel.app"
+        vercel alias $DEPLOYMENT_URL $ALIAS
+        echo "🔗 Staging alias: https://$ALIAS"
+    elif [ "$ENV" == "dev" ] || [ "$ENV" == "development" ]; then
+        ALIAS="${PROJECT_NAME}-dev.vercel.app"
+        vercel alias $DEPLOYMENT_URL $ALIAS
+        echo "🔗 Development alias: https://$ALIAS"
+    fi
+fi
+
+echo ""
+echo "✅ Deployment setup complete for $ENV_NAME!"
+echo ""
+echo "📚 Next steps:"
+echo "   - Visit your deployment URL to see the app"
+echo "   - Run '{{packageManager}} run deploy:$ENV' for future deployments"
+echo "   - Run '{{packageManager}} run deploy:destroy' to remove everything"

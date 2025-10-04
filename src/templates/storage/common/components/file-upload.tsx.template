@@ -1,0 +1,63 @@
+'use client';
+
+import type { ChangeEvent } from 'react';
+import { useState } from 'react';
+
+export function FileUpload() {
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setUploadedUrl(data.url);
+    } catch (err) {
+      console.error(err);
+      setError('Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border p-4 space-y-2">
+      <input type="file" onChange={handleUpload} disabled={uploading} />
+      {uploading && <p>Uploading...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {uploadedUrl && (
+        <p className="text-sm break-all">
+          Uploaded to:{' '}
+          <a
+            href={uploadedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            {uploadedUrl}
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}

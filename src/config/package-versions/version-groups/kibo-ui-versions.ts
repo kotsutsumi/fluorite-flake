@@ -1,0 +1,36 @@
+/**
+ * Kibo UIバージョン
+ * テーブル、リッチテキストエディターなどの高機能UIコンポーネント
+ */
+export const KIBO_UI_VERSIONS = {
+    '@tanstack/react-table': '^8.20.5',
+    '@tiptap/react': '^3.5.0',
+    '@tiptap/starter-kit': '^3.5.0',
+    '@tiptap/pm': '^3.5.0',
+    '@uidotdev/usehooks': '^2.4.1',
+    '@dnd-kit/core': '^6.3.1',
+    '@dnd-kit/sortable': '^10.0.0',
+    '@dnd-kit/utilities': '^3.2.2',
+    '@dnd-kit/modifiers': '^8.0.0',
+    'date-fns': '^4.1.0',
+    'fuse.js': '^7.0.0',
+    color: '^4.2.3',
+    culori: '^4.0.1',
+    'react-use-measure': '^2.1.7',
+    'qrcode.react': '^4.2.0',
+    'react-svg-credit-card-payment-icons': '^4.1.0',
+    shiki: '^1.24.2',
+    '@shikijs/transformers': '^1.24.2',
+    lowlight: '^3.3.0',
+    '@codesandbox/sandpack-react': '^2.20.0',
+    '@tiptap/extension-code-block-lowlight': '^3.5.0',
+    '@tiptap/extension-list': '^3.5.0',
+    '@tiptap/extension-subscript': '^3.5.0',
+    '@tiptap/extension-superscript': '^3.5.0',
+    '@tiptap/extension-table': '^3.5.0',
+    '@tiptap/extension-text-style': '^3.5.0',
+    '@tiptap/extension-typography': '^3.5.0',
+    '@tiptap/extensions': '^3.5.0',
+    '@tiptap/suggestion': '^3.5.0',
+    '@tiptap/core': '^3.5.0',
+} as const;

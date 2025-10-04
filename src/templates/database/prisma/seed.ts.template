@@ -1,0 +1,102 @@
+import { PrismaClient } from '@prisma/client';
+{{authImport}}
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Clean up existing data (handle empty database gracefully)
+  try {
+    await prisma.post.deleteMany();
+{{authCleanup}}    await prisma.session.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.user.deleteMany();
+  } catch (_error) {
+    // Ignore errors during cleanup (tables might not exist yet)
+    console.log('Database cleanup skipped (fresh database)');
+  }
+
+{{authPassword}}
+
+  // Create demo users
+  const alice = await prisma.user.create({
+    data: {
+      email: 'alice@example.com',
+      name: 'Alice Johnson',
+      emailVerified: true,{{authAccountAlice}}
+    },
+  });
+
+  const bob = await prisma.user.create({
+    data: {
+      email: 'bob@example.com',
+      name: 'Bob Smith',
+      emailVerified: true,{{authAccountBob}}
+    },
+  });
+
+  const charlie = await prisma.user.create({
+    data: {
+      email: 'charlie@example.com',
+      name: 'Charlie Brown',{{authAccountCharlie}}
+    },
+  });
+
+  // Create demo posts
+  await prisma.post.createMany({
+    data: [
+      {
+        title: 'Getting Started with Next.js and Turso',
+        content: 'Next.js is a powerful React framework that enables you to build full-stack web applications. Combined with Turso, a distributed SQLite database, you get the perfect combination of developer experience and performance.',
+        published: true,
+        authorId: alice.id,
+        createdAt: new Date('2024-01-15'),
+      },
+      {
+        title: 'Why Turso is Perfect for Edge Computing',
+        content: 'Turso brings SQLite to the edge, offering low-latency database access from anywhere in the world. Its distributed nature makes it ideal for modern web applications.',
+        published: true,
+        authorId: alice.id,
+        createdAt: new Date('2024-01-18'),
+      },
+      {
+        title: 'Building Scalable Apps with Prisma',
+        content: 'Prisma provides a type-safe database client that makes working with databases a breeze. Learn how to leverage its power in your Next.js applications.',
+        published: true,
+        authorId: bob.id,
+        createdAt: new Date('2024-01-20'),
+      },
+      {
+        title: 'Draft: Advanced Turso Techniques',
+        content: 'This post is still in progress. It will cover advanced techniques for optimizing Turso performance.',
+        published: false,
+        authorId: bob.id,
+        createdAt: new Date('2024-01-22'),
+      },
+      {
+        title: 'The Future of Edge Databases',
+        content: 'Edge computing is revolutionizing how we think about data storage and retrieval. Discover what the future holds for edge databases.',
+        published: true,
+        authorId: charlie.id,
+        createdAt: new Date('2024-01-25'),
+      },
+    ],
+  });
+
+{{authOrganizations}}
+
+  console.log('✅ Database seeded successfully!');
+  console.log('');
+  console.log('📊 Created:');
+  console.log('   - 3 users');
+  console.log('   - 5 posts (4 published, 1 draft)');{{authLogs}}
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error('❌ Failed to seed database', error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

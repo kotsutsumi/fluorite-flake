@@ -1,0 +1,79 @@
+import { db } from './index';
+import { users, posts } from './schema';{{#if auth}}
+import bcrypt from 'bcryptjs';{{/if}}
+
+async function seed() {
+  console.log('🌱 Seeding database...');
+
+  // Clear existing data
+  await db.delete(posts);
+  await db.delete(users);
+
+  {{#if auth}}
+  const hashedPassword = await bcrypt.hash('Demo123!', 12);
+  {{/if}}
+
+  // Create demo users
+  const [alice] = await db.insert(users).values({
+    email: 'alice@example.com',
+    name: 'Alice Johnson',
+    emailVerified: true,
+  }).returning();
+
+  const [bob] = await db.insert(users).values({
+    email: 'bob@example.com',
+    name: 'Bob Smith',
+    emailVerified: true,
+  }).returning();
+
+  const [charlie] = await db.insert(users).values({
+    email: 'charlie@example.com',
+    name: 'Charlie Brown',
+  }).returning();
+
+  // Create demo posts
+  await db.insert(posts).values([
+    {
+      title: 'Getting Started with Next.js and {{databaseName}}',
+      content: 'Next.js is a powerful React framework that enables you to build full-stack web applications.',
+      published: true,
+      authorId: alice.id,
+    },
+    {
+      title: 'Why {{databaseName}} is Perfect for Edge Computing',
+      content: '{{databaseDescription}}',
+      published: true,
+      authorId: alice.id,
+    },
+    {
+      title: 'Building Scalable Apps with Drizzle',
+      content: 'Drizzle ORM provides a type-safe database client that makes working with databases a breeze.',
+      published: true,
+      authorId: bob.id,
+    },
+    {
+      title: 'Draft: Advanced Techniques',
+      content: 'This post is still in progress.',
+      published: false,
+      authorId: bob.id,
+    },
+    {
+      title: 'The Future of Edge Databases',
+      content: 'Edge computing is revolutionizing how we think about data storage and retrieval.',
+      published: true,
+      authorId: charlie.id,
+    },
+  ]);
+
+  console.log('✅ Database seeded successfully!');
+  console.log('');
+  console.log('📊 Created:');
+  console.log('   - 3 users');
+  console.log('   - 5 posts (4 published, 1 draft)');
+  process.exit(0);
+}
+
+seed().catch((error) => {
+  console.error('❌ Seeding failed:', error);
+  process.exit(1);
+});

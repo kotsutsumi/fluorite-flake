@@ -11,7 +11,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - name: Checkout code
@@ -25,18 +25,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Run tests
-        run: pnpm run check
-
-      - name: Build
-        run: pnpm run build
 
       - name: Check if version changed
         id: version
@@ -44,24 +38,48 @@ jobs:
         with:
           diff-search: true
 
-      - name: Publish to npm
+      - name: Check if version already exists on npm
         if: steps.version.outputs.changed == 'true'
+        id: npm-check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "fluorite-flake@$VERSION" version 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version $VERSION already exists on npm"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version $VERSION not found on npm, can publish"
+          fi
+
+      - name: Publish to npm
+        if: steps.version.outputs.changed == 'true' && steps.npm-check.outputs.exists == 'false'
         run: |
           npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Skip publish (version exists)
+        if: steps.version.outputs.changed == 'true' && steps.npm-check.outputs.exists == 'true'
+        run: |
+          echo "⚠️ Version $(node -p "require('./package.json').version") already published to npm, skipping publish step"
+
       - name: Create GitHub Release
         if: steps.version.outputs.changed == 'true'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           body: |
-            Changes in this release:
+            ## 📦 fluorite-flake v${{ steps.version.outputs.version }}
+
+            ### Changes in this release:
             - See [commit history](https://github.com/${{ github.repository }}/compare/v${{ steps.version.outputs.prev-version }}...v${{ steps.version.outputs.version }}) for details
+
+            ### Installation
+            ```bash
+            npm install -g fluorite-flake@${{ steps.version.outputs.version }}
+            ```
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}

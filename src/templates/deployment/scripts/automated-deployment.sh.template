@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -e
+
+PROJECT_NAME="{{projectName}}"
+PROJECT_NAME_CLEAN=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | tr -cs 'a-z0-9-' '-' | sed 's/^-*//; s/-*$//')
+
+echo "🎯 Automated Vercel + {{databaseType}} deployment setup..."
+echo ""
+echo "This script will:"
+echo "  1. Create cloud databases (prod, stg, dev)"
+echo "  2. Set up Vercel project with environments"
+echo "  3. Configure all environment variables"
+echo "  4. Deploy to all environments"
+echo ""
+read -p "Continue? (Y/n) " -n 1 -r
+echo ""
+
+if [[ $REPLY =~ ^[Nn]$ ]]; then
+    echo "Cancelled."
+    exit 0
+fi
+
+{{tursoSetup}}
+
+# Step 2: Set up Vercel project
+echo ""
+echo "🔗 Step 2: Linking Vercel project..."
+
+# Install Vercel CLI if needed
+if ! command -v vercel &> /dev/null; then
+    echo "Installing Vercel CLI..."
+    npm i -g vercel
+fi
+
+# Login to Vercel
+if ! vercel whoami &> /dev/null; then
+    echo "Logging in to Vercel..."
+    vercel login
+fi
+
+# Link project
+vercel link --yes
+
+# Step 3: Deploy to all environments
+echo ""
+echo "🚀 Step 3: Deploying to all environments..."
+
+# Deploy to development
+echo ""
+echo "📌 Deploying to development environment..."
+bash scripts/setup-deployment.sh dev
+
+# Deploy to staging
+echo ""
+echo "📌 Deploying to staging environment..."
+bash scripts/setup-deployment.sh staging
+
+# Deploy to production
+echo ""
+echo "📌 Deploying to production environment..."
+bash scripts/setup-deployment.sh prod
+
+echo ""
+echo "🎉 Automated deployment complete!"
+echo ""
+echo "📊 Your deployments:"
+echo "   Production: https://${PROJECT_NAME}.vercel.app"
+echo "   Staging: https://${PROJECT_NAME}-staging.vercel.app"
+echo "   Development: https://${PROJECT_NAME}-dev.vercel.app"
+echo ""
+echo "📚 Management commands:"
+echo "   {{packageManager}} run deploy:prod     - Deploy to production"
+echo "   {{packageManager}} run deploy:staging  - Deploy to staging"
+echo "   {{packageManager}} run deploy:dev      - Deploy to development"
+echo "   {{packageManager}} run deploy:destroy  - Remove everything"
