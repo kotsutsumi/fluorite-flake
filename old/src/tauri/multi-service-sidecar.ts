@@ -6,17 +6,17 @@
  * (Vercel、Supabase、Turso、AWS、GitHub、Cloudflare)用の統合インターフェースを提供します。
  */
 
-import { type WebSocket, WebSocketServer } from 'ws';
 import { EventEmitter } from 'node:events';
 import { v4 as uuidv4 } from 'uuid';
+import { type WebSocket, WebSocketServer } from 'ws';
 import { DashboardOrchestrator } from '../dashboard/dashboard-orchestrator.js';
-import { DefaultServiceFactory } from '../services/service-factory/index.js';
+import type { DashboardConfig } from '../dashboard/dashboard-orchestrator.js';
 import type {
-    ServiceConfig,
     AuthConfig,
     ServiceAction,
+    ServiceConfig,
 } from '../services/base-service-adapter/index.js';
-import type { DashboardConfig } from '../dashboard/dashboard-orchestrator.js';
+import { DefaultServiceFactory } from '../services/service-factory/index.js';
 
 /**
  * JSON-RPC 2.0メッセージタイプ

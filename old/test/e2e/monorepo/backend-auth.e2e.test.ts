@@ -1,11 +1,11 @@
+import path from 'node:path';
 /**
  * ユーザーが選択した構成（Expo + Turborepo + Turso + Prisma + Vercel Blob + 認証）で生成された monorepo の
  * Next.js バックエンドが DatabaseDemo の欠落によってビルドエラーにならないことを検証する。
  */
-import { test, expect } from '@playwright/test';
-import path from 'node:path';
+import { expect, test } from '@playwright/test';
+import { type ExecaChildProcess, execa } from 'execa';
 import fs from 'fs-extra';
-import { execa, type ExecaChildProcess } from 'execa';
 import { generateProject } from '../../helpers/project-generator.js';
 
 const SERVER_STARTUP_WAIT = 20_000; // Next.js dev サーバー起動待ち時間

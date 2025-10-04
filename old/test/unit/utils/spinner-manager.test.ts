@@ -1,10 +1,10 @@
+import chalk from 'chalk';
+import ora from 'ora';
 /**
  * スピナーマネージャー (src/utils/spinner-manager.ts) のユニットテスト
  * start/update/succeed/fail/warn/info/suspend/resume/clear の状態遷移とコンソール出力を検証
  */
-import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
-import chalk from 'chalk';
-import ora from 'ora';
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // oraのモック
 vi.mock('ora', () => ({

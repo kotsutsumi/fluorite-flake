@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fs from 'fs-extra';
-import { renderTemplate, type TemplateOptions } from './renderTemplate.js';
+import { type TemplateOptions, renderTemplate } from './renderTemplate.js';
 
 /**
  * テンプレートファイルを指定の場所に書き込む

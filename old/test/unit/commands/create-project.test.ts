@@ -1,10 +1,10 @@
+import chalk from 'chalk';
+import prompts from 'prompts';
 /**
  * プロジェクト生成コマンド (src/commands/create/create-project.ts) のユニットテスト
  * CLIモード/プロンプトモードの挙動、Monorepo選択フロー、認証無効化警告を網羅
  */
-import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
-import prompts from 'prompts';
-import chalk from 'chalk';
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // モック設定
 vi.mock('fs-extra', () => ({

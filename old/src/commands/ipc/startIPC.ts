@@ -10,7 +10,7 @@
 
 import chalk from 'chalk';
 import ora from 'ora';
-import { startIPCDaemon, setupIPCServer } from '../../ipc/ipc-integration.js';
+import { setupIPCServer, startIPCDaemon } from '../../ipc/ipc-integration.js';
 
 /**
  * IPCサーバーデーモンの起動

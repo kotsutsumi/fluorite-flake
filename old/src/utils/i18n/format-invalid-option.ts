@@ -1,6 +1,6 @@
-import type { MessageKey } from './types.js';
-import { t } from './translate.js';
 import { capitalize } from './string-utils.js';
+import { t } from './translate.js';
+import type { MessageKey } from './types.js';
 
 /**
  * 無効なオプション値のエラーメッセージをフォーマットする

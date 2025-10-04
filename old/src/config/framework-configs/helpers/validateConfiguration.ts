@@ -3,8 +3,8 @@
  */
 
 import { DATABASE_CONFIGS } from '../database-configs.js';
-import { getFrameworkConfig } from './getFrameworkConfig.js';
 import type { DatabaseType, FrameworkType, OrmType, StorageType } from '../types.js';
+import { getFrameworkConfig } from './getFrameworkConfig.js';
 
 /**
  * フレームワーク設定の組み合わせを検証

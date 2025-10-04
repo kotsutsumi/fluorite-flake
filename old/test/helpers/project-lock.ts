@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 /**
  * Cross-process semaphore for preventing concurrent project generation.
  * Uses filesystem as a coordination mechanism to ensure only one project
@@ -5,8 +7,6 @@
  */
 import { promisify } from 'node:util';
 import fs from 'fs-extra';
-import path from 'node:path';
-import os from 'node:os';
 
 const LOCK_DIR = path.join(os.tmpdir(), 'fluorite-project-locks');
 const LOCK_FILE = path.join(LOCK_DIR, 'generation.lock');

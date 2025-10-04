@@ -7,22 +7,22 @@
 
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
-import {
-    createTableWidget,
-    createLineChartWidget,
-    createGaugeWidget,
-    createLogWidget,
-    createDonutWidget,
-    updateTableData,
-    updateChartData,
-    updateGaugeData,
-    updateDonutData,
-    addLogEntry,
-    THEMES,
-    // LAYOUTS
-} from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
+import {
+    THEMES,
+    addLogEntry,
+    createDonutWidget,
+    createGaugeWidget,
+    createLineChartWidget,
+    createLogWidget,
+    createTableWidget,
+    updateChartData,
+    updateDonutData,
+    updateGaugeData,
+    updateTableData,
+    // LAYOUTS
+} from '../components/base-widget.js';
 
 export interface SupabaseDashboardConfig {
     orchestrator: DashboardOrchestrator;

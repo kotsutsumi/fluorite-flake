@@ -7,23 +7,23 @@
 
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
+import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 import {
-    createTableWidget,
+    THEMES,
+    addLogEntry,
+    // createBarChartWidget,
+    createDonutWidget,
     createLineChartWidget,
     // createGaugeWidget,
     createLogWidget,
-    // createBarChartWidget,
-    createDonutWidget,
-    updateTableData,
+    createTableWidget,
     updateChartData,
     // updateGaugeData,
     updateDonutData,
-    addLogEntry,
-    THEMES,
+    updateTableData,
     // LAYOUTS
 } from '../components/base-widget.js';
-import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
 // GitHub Dashboard data interfaces
 interface GitHubRepository {

@@ -1,10 +1,10 @@
+import path from 'node:path';
 /**
  * Flutter プロジェクト生成に関するシナリオテスト。
  * プラットフォーム別の出力や命名規則、サポート対象外オプションの拒否など、
  * Flutter 特有の制約が正しく反映されているかをテンポラリディレクトリ上で検証する。
  */
-import { describe, expect, it, afterAll } from 'vitest';
-import path from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
 import { generateProject, verifyProjectStructure } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs, readProjectFile } from '../../helpers/temp-dir.js';
 

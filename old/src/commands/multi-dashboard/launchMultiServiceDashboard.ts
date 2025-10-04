@@ -10,15 +10,15 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import { DefaultServiceFactory } from '../../services/service-factory/index.js';
-import { SUPPORTED_SERVICES, type SupportedService, type DashboardOptions } from './types.js';
 import {
     createDashboardConfig,
     createServiceConfig,
+    displayMultiCLIOutput,
+    displayMultiJSONOutput,
     getAuthConfig,
     launchMultiTUIDashboard,
-    displayMultiJSONOutput,
-    displayMultiCLIOutput,
 } from './helpers.js';
+import { type DashboardOptions, SUPPORTED_SERVICES, type SupportedService } from './types.js';
 
 /**
  * Launch multi-service dashboard

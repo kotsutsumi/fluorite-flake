@@ -1,5 +1,5 @@
-import type { MessageKey, MessageParams } from './types.js';
 import { resolveMessage } from './message-resolver.js';
+import type { MessageKey, MessageParams } from './types.js';
 
 /**
  * メッセージを翻訳する（tは'translate'の省略形）

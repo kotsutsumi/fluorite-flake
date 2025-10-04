@@ -5,7 +5,7 @@
  * 主にインスタンス化、メソッドの存在確認、IPC 接続のモックテストを行う。
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TUIDashboard } from '../../../src/tui/dashboard.js';
 
 // blessed と blessed-contrib をモック化

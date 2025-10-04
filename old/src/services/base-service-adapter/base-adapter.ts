@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { SERVICE_EVENTS } from './constants.js';
 import type {
     ActionResult,
     AuthConfig,
@@ -23,7 +24,6 @@ import type {
     ServiceMetrics,
     ServiceStatus,
 } from './types.js';
-import { SERVICE_EVENTS } from './constants.js';
 
 // ベースアダプター抽象クラス
 export abstract class BaseServiceAdapter extends EventEmitter implements ServiceAdapter {

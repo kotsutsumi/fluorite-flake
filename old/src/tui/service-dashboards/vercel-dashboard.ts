@@ -7,22 +7,22 @@
 
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
+import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
+import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 import {
-    createTableWidget,
+    THEMES,
+    addLogEntry,
+    createDonutWidget,
     createLineChartWidget,
     // createGaugeWidget,
     createLogWidget,
-    createDonutWidget,
-    updateTableData,
+    createTableWidget,
     updateChartData,
     // updateGaugeData,
     updateDonutData,
-    addLogEntry,
-    THEMES,
+    updateTableData,
     // LAYOUTS
 } from '../components/base-widget.js';
-import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
 
 export interface VercelDashboardConfig {
     orchestrator: DashboardOrchestrator;

@@ -13,7 +13,7 @@
 
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
-import { createIPCClient, type IPCClient } from '../ipc/ipc-client.js';
+import { type IPCClient, createIPCClient } from '../ipc/ipc-client.js';
 import type { WranglerDashboardData } from '../utils/wrangler-dashboard.js';
 
 /**

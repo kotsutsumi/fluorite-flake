@@ -10,7 +10,7 @@ import type {
     ServiceConfig,
     ServiceInfo,
 } from '../base-service-adapter/index.js';
-import { SERVICE_MODULES, SERVICE_INFO, type SupportedService } from './constants.js';
+import { SERVICE_INFO, SERVICE_MODULES, type SupportedService } from './constants.js';
 
 /**
  * デフォルトサービスファクトリー実装

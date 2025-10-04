@@ -8,13 +8,13 @@
  * @module IPCIntegration
  */
 
-import { createIPCServer, type IPCServer } from './ipc-server.js';
-import { createWranglerDashboard } from '../utils/wrangler-dashboard.js';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createProject } from '../commands/create/index.js';
 import type { ProjectConfig } from '../commands/create/types.js';
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createWranglerDashboard } from '../utils/wrangler-dashboard.js';
+import { type IPCServer, createIPCServer } from './ipc-server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

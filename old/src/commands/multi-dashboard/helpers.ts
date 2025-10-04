@@ -7,10 +7,10 @@
  */
 
 import chalk from 'chalk';
-import { startTUIDashboard } from '../../tui/multi-service-dashboard.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import type { DashboardConfig } from '../../dashboard/dashboard-orchestrator.js';
-import type { ServiceConfig, AuthConfig } from '../../services/base-service-adapter/index.js';
+import type { AuthConfig, ServiceConfig } from '../../services/base-service-adapter/index.js';
+import { startTUIDashboard } from '../../tui/multi-service-dashboard.js';
 import type { DashboardOptions } from './types.js';
 
 export function createDashboardConfig(options: DashboardOptions): DashboardConfig {

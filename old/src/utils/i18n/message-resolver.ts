@@ -1,6 +1,6 @@
-import type { MessageKey, MessageParams } from './types.js';
-import { messageMap } from './message-map.js';
 import { getLocale } from './locale-state.js';
+import { messageMap } from './message-map.js';
+import type { MessageKey, MessageParams } from './types.js';
 
 /**
  * メッセージキーから実際のメッセージを解決する

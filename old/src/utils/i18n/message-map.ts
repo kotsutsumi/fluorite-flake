@@ -1,4 +1,4 @@
-import type { SupportedLocale, MessageDictionary } from './types.js';
+import type { MessageDictionary, SupportedLocale } from './types.js';
 
 /**
  * 各ロケールごとのメッセージ定義

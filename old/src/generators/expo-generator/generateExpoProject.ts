@@ -2,15 +2,15 @@ import fs from 'fs-extra';
 
 import type { ProjectConfig } from '../../commands/create/types.js';
 import { createExpoAppStructure } from './helpers/createExpoAppStructure.js';
-import { generateExpoPackageJson } from './helpers/generateExpoPackageJson.js';
-import { setupExpoTypeScript } from './helpers/setupExpoTypeScript.js';
-import { setupExpoConfig } from './helpers/setupExpoConfig.js';
-import { setupMetro } from './helpers/setupMetro.js';
-import { setupBabel } from './helpers/setupBabel.js';
-import { createInitialExpoApp } from './helpers/createInitialExpoApp.js';
 import { createExpoGitignore } from './helpers/createExpoGitignore.js';
-import { setupMaestroTesting } from './helpers/setupMaestroTesting.js';
+import { createInitialExpoApp } from './helpers/createInitialExpoApp.js';
+import { generateExpoPackageJson } from './helpers/generateExpoPackageJson.js';
+import { setupBabel } from './helpers/setupBabel.js';
 import { setupExpoAuth } from './helpers/setupExpoAuth.js';
+import { setupExpoConfig } from './helpers/setupExpoConfig.js';
+import { setupExpoTypeScript } from './helpers/setupExpoTypeScript.js';
+import { setupMaestroTesting } from './helpers/setupMaestroTesting.js';
+import { setupMetro } from './helpers/setupMetro.js';
 
 /**
  * Expoプロジェクトを生成するメイン関数

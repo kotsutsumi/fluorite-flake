@@ -3,11 +3,11 @@
  * データベース・ストレージ・認証の各オプションを切り替えながら、生成物の構成ファイルや依存関係が
  * 期待どおりに出力されるかを検証する。テストは一時ディレクトリ上に実際のプロジェクトを生成して確認する。
  */
-import { describe, expect, it, afterAll } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     generateProject,
-    verifyProjectStructure,
     verifyDependencies,
+    verifyProjectStructure,
 } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 

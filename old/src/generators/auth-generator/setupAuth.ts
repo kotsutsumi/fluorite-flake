@@ -1,14 +1,14 @@
 import type { ProjectConfig } from '../../commands/create/types.js';
 import {
     addAuthDependencies,
-    writeAuthCore,
-    writeMiddleware,
-    writeAuthApiRoute,
-    writeDashboardScaffolding,
-    writeApiRoutes,
-    writeProfileUploadHelper,
-    writeHelperFunctions,
     updateSeedFileForAuth,
+    writeApiRoutes,
+    writeAuthApiRoute,
+    writeAuthCore,
+    writeDashboardScaffolding,
+    writeHelperFunctions,
+    writeMiddleware,
+    writeProfileUploadHelper,
 } from './helpers/index.js';
 
 export async function setupAuth(config: ProjectConfig) {

@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import fs from 'fs-extra';
 import type { ProjectConfig } from '../../../commands/create/types.js';
-import { writeTemplateFile } from './writeTemplateFile.js';
 import { appendEnv } from './appendEnv.js';
+import { writeTemplateFile } from './writeTemplateFile.js';
 
 /**
  * Better Auth の中核ファイル（auth.ts, auth-client.ts, auth-server.ts など）を生成する

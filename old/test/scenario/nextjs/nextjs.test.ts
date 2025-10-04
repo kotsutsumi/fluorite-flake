@@ -1,21 +1,21 @@
+import path from 'node:path';
+import { execa } from 'execa';
 /**
  * Next.js プロジェクト生成に関するシナリオテスト。
  * Fluorite Flake の CLI で生成される Next.js テンプレートが、各オプションの組み合わせに応じて
  * 必要なファイル・依存関係・環境変数を正しく出力できるかを網羅的に確認する。
  * テストでは実際にテンポラリディレクトリへプロジェクトを生成し、構成ファイルの存在や依存関係を検証する。
  */
-import { describe, expect, it, afterAll } from 'vitest';
-import path from 'node:path';
-import { execa } from 'execa';
+import { afterAll, describe, expect, it } from 'vitest';
+import type { ProjectConfig } from '../../../src/commands/create/types.js';
 import {
+    TEST_CONFIGS,
     generateProject,
-    verifyProjectStructure,
     verifyDependencies,
     verifyEnvFiles,
-    TEST_CONFIGS,
+    verifyProjectStructure,
 } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
-import type { ProjectConfig } from '../../../src/commands/create/types.js';
 
 describe('Next.js プロジェクト生成のシナリオ検証', () => {
     afterAll(async () => {

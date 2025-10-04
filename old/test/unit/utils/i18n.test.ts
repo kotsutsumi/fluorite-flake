@@ -2,7 +2,7 @@
  * 国際化ユーティリティ (src/utils/i18n/**) のユニットテスト
  * setLocale/getLocale/t の基本挙動、フォールバック、メッセージ関数を網羅
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('i18nユーティリティ', () => {
     beforeEach(() => {

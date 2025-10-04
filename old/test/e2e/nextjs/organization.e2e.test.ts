@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/project.js';
+import { expect, test } from './fixtures/project.js';
 import { createUniqueSuffix, login, logout } from './utils.js';
 
 test.use({

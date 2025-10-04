@@ -7,19 +7,19 @@
 
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
-import {
-    createTableWidget,
-    createLineChartWidget,
-    createLogWidget,
-    createDonutWidget,
-    updateTableData,
-    updateChartData,
-    updateDonutData,
-    addLogEntry,
-    THEMES,
-} from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
+import {
+    THEMES,
+    addLogEntry,
+    createDonutWidget,
+    createLineChartWidget,
+    createLogWidget,
+    createTableWidget,
+    updateChartData,
+    updateDonutData,
+    updateTableData,
+} from '../components/base-widget.js';
 
 // AWS Dashboard data interfaces
 interface EC2Instance {

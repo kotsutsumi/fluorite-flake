@@ -4,8 +4,8 @@
  */
 
 import type { ProjectConfig } from '../../../commands/create/types.js';
-import { createSetupDeploymentScript } from './createSetupDeploymentScript.js';
 import { createDestroyDeploymentScript } from './createDestroyDeploymentScript.js';
+import { createSetupDeploymentScript } from './createSetupDeploymentScript.js';
 
 /**
  * デプロイメント関連のスクリプトファイルを作成する関数

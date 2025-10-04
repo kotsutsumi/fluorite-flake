@@ -4,8 +4,8 @@
  * package.json のバージョン番号が正しく出力されることを確認する。
  */
 import { describe, expect, it } from 'vitest';
-import { runCli, expectSuccess, expectOutput } from '../../helpers/cli-runner.js';
 import packageJson from '../../../package.json';
+import { expectOutput, expectSuccess, runCli } from '../../helpers/cli-runner.js';
 
 describe('CLI version 表示の機能確認', () => {
     it('--version フラグでバージョンが表示されること', async () => {

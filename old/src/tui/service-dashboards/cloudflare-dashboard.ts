@@ -7,21 +7,21 @@
 
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
-import {
-    createTableWidget,
-    createLineChartWidget,
-    createGaugeWidget,
-    createLogWidget,
-    createBarChartWidget,
-    updateTableData,
-    updateChartData,
-    updateGaugeData,
-    addLogEntry,
-    THEMES,
-    // LAYOUTS
-} from '../components/base-widget.js';
 import type { DashboardOrchestrator } from '../../dashboard/dashboard-orchestrator.js';
 import type { ServiceDashboardData } from '../../services/base-service-adapter/index.js';
+import {
+    THEMES,
+    addLogEntry,
+    createBarChartWidget,
+    createGaugeWidget,
+    createLineChartWidget,
+    createLogWidget,
+    createTableWidget,
+    updateChartData,
+    updateGaugeData,
+    updateTableData,
+    // LAYOUTS
+} from '../components/base-widget.js';
 
 // Cloudflare Dashboard data interfaces
 interface CloudflareWorker {

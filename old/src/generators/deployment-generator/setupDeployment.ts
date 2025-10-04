@@ -4,11 +4,11 @@
  */
 
 import type { ProjectConfig } from '../../commands/create/types.js';
-import { createVercelConfig } from './helpers/createVercelConfig.js';
+import { setupTauriDeployment } from '../tauri-generator/helpers/setupTauriDeployment.js';
 import { addDeploymentScripts } from './helpers/addDeploymentScripts.js';
 import { createDeploymentScripts } from './helpers/createDeploymentScripts.js';
 import { createVercelAutomationScript } from './helpers/createVercelAutomationScript.js';
-import { setupTauriDeployment } from '../tauri-generator/helpers/setupTauriDeployment.js';
+import { createVercelConfig } from './helpers/createVercelConfig.js';
 
 /**
  * デプロイメント環境をセットアップするメイン関数

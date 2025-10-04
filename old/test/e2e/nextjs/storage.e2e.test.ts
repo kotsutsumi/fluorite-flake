@@ -1,7 +1,7 @@
-import path from 'node:path';
 import fs from 'node:fs/promises';
-import { test, expect } from './fixtures/project.js';
-import { createUniqueSuffix, login, logout, SAMPLE_AVATAR_PNG } from './utils.js';
+import path from 'node:path';
+import { expect, test } from './fixtures/project.js';
+import { SAMPLE_AVATAR_PNG, createUniqueSuffix, login, logout } from './utils.js';
 
 test.use({
     stack: {

@@ -4,14 +4,14 @@
  * マルチサービスダッシュボード機能の包括的なテストスイート。
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardOrchestrator } from '../../../src/dashboard/dashboard-orchestrator.js';
 import type {
     ServiceAdapter,
+    ServiceCapabilities,
     ServiceDashboardData,
     ServiceFactory,
     ServiceInfo,
-    ServiceCapabilities,
 } from '../../../src/services/base-service-adapter/index.js';
 
 const BASE_CAPABILITIES: ServiceCapabilities = {

@@ -1,9 +1,9 @@
+import fs from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
-import fs from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { execa, type ExecaChildProcess } from 'execa';
-import { test as base, expect, type TestInfo } from '@playwright/test';
+import { type TestInfo, test as base, expect } from '@playwright/test';
+import { type ExecaChildProcess, execa } from 'execa';
 import { generateProject } from '../../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../../helpers/temp-dir.js';
 

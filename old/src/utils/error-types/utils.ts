@@ -4,8 +4,8 @@
  * エラー処理とメッセージ抽出のためのユーティリティ関数群
  */
 
-import type { ErrorWithMessage } from './types.js';
 import { isErrorWithMessage } from './guards.js';
+import type { ErrorWithMessage } from './types.js';
 
 /**
  * 未知のエラーから安全にエラーメッセージを取得します

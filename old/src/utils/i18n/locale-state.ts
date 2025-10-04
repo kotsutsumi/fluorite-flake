@@ -1,5 +1,5 @@
+import { initialLocaleFromEnvironment, normalizeLocale } from './locale-detection.js';
 import type { SupportedLocale } from './types.js';
-import { normalizeLocale, initialLocaleFromEnvironment } from './locale-detection.js';
 
 // 現在のアクティブなロケール（初期値は環境変数から取得）
 let currentLocale: SupportedLocale = normalizeLocale(initialLocaleFromEnvironment());

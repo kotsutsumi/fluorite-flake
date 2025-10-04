@@ -9,9 +9,9 @@
  * @module IPCServer
  */
 
-import { createServer, type Server, type Socket } from 'node:net';
-import { EventEmitter } from 'node:events';
 import { randomBytes } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { type Server, type Socket, createServer } from 'node:net';
 import type { WranglerDashboardData } from '../utils/wrangler-dashboard.js';
 
 /**

@@ -12,9 +12,9 @@
  * @module TauriSidecar
  */
 
-import { spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { createIPCClient, type IPCClient } from '../ipc/ipc-client.js';
+import { type IPCClient, createIPCClient } from '../ipc/ipc-client.js';
 
 /**
  * サイドカーの設定オプション

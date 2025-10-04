@@ -15,11 +15,11 @@ import {
     setupDatabase,
 } from '../../../src/generators/database-generator/index.js';
 import {
-    createTempProject,
     cleanupAllTempDirs,
-    readProjectJson,
-    readProjectFile,
+    createTempProject,
     projectFileExists,
+    readProjectFile,
+    readProjectJson,
 } from '../../helpers/temp-dir.js';
 
 type ConfigOverrides = Partial<ProjectConfig>;

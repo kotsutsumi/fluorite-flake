@@ -7,9 +7,9 @@
 
 import { createWranglerDashboard } from '../../../utils/wrangler-dashboard.js';
 import type {
-    WranglerWorker,
-    WranglerR2Bucket,
     WranglerKVNamespace,
+    WranglerR2Bucket,
+    WranglerWorker,
 } from '../../../utils/wrangler-dashboard.js';
 import { BaseServiceAdapter } from '../../base-service-adapter/index.js';
 import type {

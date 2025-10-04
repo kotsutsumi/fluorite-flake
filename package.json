@@ -10,6 +10,9 @@
     "scripts": {
         "build": "tsc",
         "dev": "cross-env NODE_ENV=development tsx src/cli.ts",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
         "format": "biome format --write .",
         "lint": "biome lint .",
         "check": "biome check ."

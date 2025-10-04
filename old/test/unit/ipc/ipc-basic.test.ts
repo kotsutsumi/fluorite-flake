@@ -3,9 +3,9 @@
  * サーバーの起動・停止状態、メソッド登録とトークン生成、通知ブロードキャスト、クライアント初期化など
  * CLI 内部で利用する IPC インフラが仕様どおり動作し続けるかを確認することを目的としている。
  */
-import { describe, expect, it, afterEach } from 'vitest';
-import { createIPCServer } from '../../../src/ipc/ipc-server.js';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createIPCClient } from '../../../src/ipc/ipc-client.js';
+import { createIPCServer } from '../../../src/ipc/ipc-server.js';
 
 describe('IPC Basic Functionality', () => {
     let server: ReturnType<typeof createIPCServer> | undefined;

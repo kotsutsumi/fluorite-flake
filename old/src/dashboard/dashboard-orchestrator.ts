@@ -7,21 +7,21 @@
 
 import { EventEmitter } from 'node:events';
 import type {
+    ActionResult,
+    AuthConfig,
+    DashboardDataOptions,
+    HealthCheck,
+    HealthStatus,
+    LogEntry,
+    LogOptions,
+    MetricsOptions,
+    ServiceAction,
     ServiceAdapter,
     ServiceConfig,
-    AuthConfig,
     ServiceDashboardData,
-    ServiceMetrics,
-    LogEntry,
-    ServiceAction,
-    ActionResult,
-    HealthStatus,
-    HealthCheck,
-    ServiceStatus,
-    DashboardDataOptions,
-    MetricsOptions,
-    LogOptions,
     ServiceFactory,
+    ServiceMetrics,
+    ServiceStatus,
 } from '../services/base-service-adapter/index.js';
 import { serviceFactory as defaultServiceFactory } from '../services/service-factory/index.js';
 

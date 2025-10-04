@@ -27,11 +27,11 @@ import type {
     UsageMetrics,
 } from '../../base-service-adapter/index.js';
 import type {
-    VercelProject,
-    VercelDeployment,
-    VercelDomain,
     VercelAnalytics,
     VercelConfig,
+    VercelDeployment,
+    VercelDomain,
+    VercelProject,
 } from './types.js';
 
 /**

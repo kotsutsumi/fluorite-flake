@@ -3,12 +3,12 @@
  * GraphQL APIエンドポイントとページの動作を検証
  */
 
-import { test, expect } from '@playwright/test';
 import path from 'node:path';
+import { expect, test } from '@playwright/test';
+import { type ExecaChildProcess, execa } from 'execa';
 import fs from 'fs-extra';
-import { execa, type ExecaChildProcess } from 'execa';
-import { createTempDir } from '../../helpers/tempdir.js';
 import { generateProject } from '../../helpers/project-generator.js';
+import { createTempDir } from '../../helpers/tempdir.js';
 
 async function renameTemplateFiles(dir: string): Promise<void> {
     const entries = await fs.readdir(dir, { withFileTypes: true });

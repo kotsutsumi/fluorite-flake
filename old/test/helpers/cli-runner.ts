@@ -3,7 +3,7 @@
  * 出力・終了コードを収集したり、対話的入力やユーティリティ的な検証関数を提供する。
  * Vitest の機能テストから直接利用し、実際の CLI 振る舞いを再現することを目的としている。
  */
-import { spawn, type SpawnOptionsWithoutStdio } from 'node:child_process';
+import { type SpawnOptionsWithoutStdio, spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 

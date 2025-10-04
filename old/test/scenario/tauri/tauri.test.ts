@@ -3,11 +3,11 @@
  * 各種パッケージマネージャーやデプロイ設定の違いに応じて生成物が正しく揃うか、
  * また Tauri がサポートしない構成（DB やクラウドストレージ）を拒否できているかを検証する。
  */
-import { describe, expect, it, afterAll } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     generateProject,
-    verifyProjectStructure,
     verifyDependencies,
+    verifyProjectStructure,
 } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 

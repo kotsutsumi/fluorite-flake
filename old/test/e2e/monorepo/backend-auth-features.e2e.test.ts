@@ -3,10 +3,10 @@
  * Tests login, user management, organization management, and profile features
  */
 
-import { test, expect } from '@playwright/test';
 import path from 'node:path';
+import { expect, test } from '@playwright/test';
+import { type ExecaChildProcess, execa } from 'execa';
 import fs from 'fs-extra';
-import { execa, type ExecaChildProcess } from 'execa';
 import { generateProject } from '../../helpers/project-generator.js';
 
 const SERVER_STARTUP_WAIT = 25_000; // Extended wait for authentication setup

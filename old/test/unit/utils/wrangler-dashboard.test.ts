@@ -1,15 +1,15 @@
+import { execa } from 'execa';
 /**
  * Cloudflare Wrangler ダッシュボード周りのユーティリティが CLI 連携を正しく扱えるかを検証するユニットテスト。
  * Wrangler の存在確認や認証状態、リソース一覧取得、デプロイ操作など多様なコマンド呼び出しをモックし、
  * CLI からの各種操作結果が期待どおりに解析・整形されるかを網羅的にチェックする。
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { execa } from 'execa';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     WranglerDashboard,
+    type WranglerDashboardData,
     createWranglerDashboard,
     formatDashboardData,
-    type WranglerDashboardData,
 } from '../../../src/utils/wrangler-dashboard.js';
 
 vi.mock('execa');

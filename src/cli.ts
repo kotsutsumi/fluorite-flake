@@ -4,13 +4,23 @@
  */
 import { defineCommand, runMain } from 'citty';
 
-import { debugLog, isDevelopment, printDevelopmentInfo, setupDevelopmentWorkspace } from './debug.js';
+import {
+    debugLog,
+    isDevelopment,
+    printDevelopmentInfo,
+    setupDevelopmentWorkspace,
+} from './debug.js';
 import { printHeader } from './header.js';
 
 // 開発環境での初期化
 if (isDevelopment()) {
+    // 詳細な環境情報を表示
     printDevelopmentInfo();
+
+    // 開発用の一時ディレクトリをセットアップ
     setupDevelopmentWorkspace();
+
+    //
 }
 
 const main = defineCommand({

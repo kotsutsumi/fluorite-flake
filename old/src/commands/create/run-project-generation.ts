@@ -8,8 +8,8 @@ import { setupAuth } from '../../generators/auth-generator/index.js';
 import { setupDatabase } from '../../generators/database-generator/index.js';
 import { setupDeployment } from '../../generators/deployment-generator/index.js';
 import {
-    generateMonorepoProject,
     type MonorepoConfig,
+    generateMonorepoProject,
 } from '../../generators/monorepo-generator/index.js';
 import { setupStorage } from '../../generators/storage-generator/index.js';
 import { setupStorybook } from '../../generators/storybook-generator/index.js';

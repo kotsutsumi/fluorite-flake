@@ -9,9 +9,9 @@
  * @module IPCClient
  */
 
-import { Socket } from 'node:net';
 import { EventEmitter } from 'node:events';
-import type { JsonRpcRequest, JsonRpcResponse, IPCMethods } from './ipc-server.js';
+import { Socket } from 'node:net';
+import type { IPCMethods, JsonRpcRequest, JsonRpcResponse } from './ipc-server.js';
 
 /**
  * IPCクライアントのオプション設定

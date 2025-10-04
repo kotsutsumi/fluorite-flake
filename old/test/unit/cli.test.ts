@@ -1,11 +1,11 @@
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 /**
  * CLIエントリポイント (src/cli.ts) の実行テスト
  * 実際のCLIプロセスを起動して動作を検証
  */
-import { describe, it, expect } from 'vitest';
-import { spawn } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

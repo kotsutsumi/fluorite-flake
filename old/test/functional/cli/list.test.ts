@@ -4,7 +4,7 @@
  * また不正な指定やサブコマンド省略時の挙動を確認する。
  */
 import { describe, expect, it } from 'vitest';
-import { runCli, expectSuccess, expectOutput } from '../../helpers/cli-runner.js';
+import { expectOutput, expectSuccess, runCli } from '../../helpers/cli-runner.js';
 
 describe('CLI list コマンドの機能確認', () => {
     it('利用可能なフレームワーク一覧を表示できること', async () => {

@@ -3,8 +3,8 @@ import fs from 'fs-extra';
 import type { ProjectConfig } from '../../../commands/create/types.js';
 import { writeCustomAuthApi } from './writeCustomAuthApi.js';
 import { writeOrganizationsApi } from './writeOrganizationsApi.js';
-import { writeUsersApi } from './writeUsersApi.js';
 import { writeProfileApi } from './writeProfileApi.js';
+import { writeUsersApi } from './writeUsersApi.js';
 
 /**
  * 認証関連のカスタム API ルートをすべて生成する

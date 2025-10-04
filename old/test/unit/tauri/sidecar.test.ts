@@ -5,9 +5,9 @@
  * プロセスライフサイクル、IPC 接続、自動再起動、エラーハンドリングを検証する。
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
-import { TauriSidecar, SidecarState, createTauriSidecar } from '../../../src/tauri/sidecar.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SidecarState, TauriSidecar, createTauriSidecar } from '../../../src/tauri/sidecar.js';
 
 // child_process モジュールをモック化
 vi.mock('node:child_process', () => ({

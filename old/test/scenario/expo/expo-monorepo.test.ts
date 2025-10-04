@@ -1,15 +1,15 @@
+import path from 'node:path';
+import { execa } from 'execa';
+import fs from 'fs-extra';
 /**
  * Expo Monorepo プロジェクト生成に関する包括的なシナリオテスト。
  * プロジェクト生成から実際のビルド能力まで、完全なワークフローを検証する。
  */
-import { describe, expect, it, afterAll } from 'vitest';
-import path from 'node:path';
-import { execa } from 'execa';
-import fs from 'fs-extra';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     generateProject,
-    verifyProjectStructure,
     verifyDependencies,
+    verifyProjectStructure,
 } from '../../helpers/project-generator.js';
 import { cleanupAllTempDirs } from '../../helpers/temp-dir.js';
 
