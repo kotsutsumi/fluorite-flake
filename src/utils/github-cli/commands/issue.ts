@@ -525,6 +525,37 @@ export class IssueCommands {
                 : ["repos/:owner/:repo/milestones"],
         });
     }
+
+    // 簡単なIssue作成（テスト用）
+    async quickCreate(options: {
+        title: string;
+        body?: string;
+        assignee?: string[];
+        label?: string[];
+    }): Promise<GitHubCLIResponse<IssueInfo>> {
+        await authManager.requireAuth();
+
+        const flags: Record<string, any> = {
+            json: true,
+            title: options.title,
+        };
+
+        if (options.body) {
+            flags.body = options.body;
+        }
+        if (options.assignee) {
+            flags.assignee = options.assignee.join(",");
+        }
+        if (options.label) {
+            flags.label = options.label.join(",");
+        }
+
+        return await githubCLI.execute<IssueInfo>({
+            command: "issue",
+            args: ["create"],
+            flags,
+        });
+    }
 }
 
 // デフォルトエクスポート用のシングルトンインスタンス

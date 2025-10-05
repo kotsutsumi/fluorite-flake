@@ -93,6 +93,11 @@ export class AuthenticationManager {
         return await this.checkAuthStatus();
     }
 
+    // テスト用: キャッシュを強制クリア
+    clearCacheForTest(): void {
+        this.clearCache();
+    }
+
     // ログイン処理のガイド
     async promptLogin(): Promise<void> {
         const isAuthenticated = await this.isLoggedIn();

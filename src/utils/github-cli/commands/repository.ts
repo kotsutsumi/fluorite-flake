@@ -359,6 +359,49 @@ export class RepositoryCommands {
                 : ["repos/:owner/:repo/collaborators"],
         });
     }
+
+    // デフォルトブランチの取得（テスト用）
+    async getDefaultBranch(options?: {
+        repository?: string;
+    }): Promise<GitHubCLIResponse<string>> {
+        await authManager.requireAuth();
+
+        const flags: Record<string, any> = {
+            json: true,
+        };
+
+        if (options?.repository) {
+            flags.repo = options.repository;
+        }
+
+        const result = await githubCLI.execute<RepositoryInfo>({
+            command: "repo",
+            args: ["view"],
+            flags,
+        });
+
+        if (result.success && result.data?.default_branch) {
+            return {
+                success: true,
+                data: result.data.default_branch,
+                raw: result.raw,
+                exitCode: result.exitCode,
+                executionTime: result.executionTime,
+            };
+        }
+
+        return {
+            success: false,
+            data: undefined,
+            raw: result.raw,
+            error: result.error || {
+                code: "REPO_ERROR" as any,
+                message: "デフォルトブランチの取得に失敗しました",
+            },
+            exitCode: result.exitCode,
+            executionTime: result.executionTime,
+        };
+    }
 }
 
 // デフォルトエクスポート用のシングルトンインスタンス

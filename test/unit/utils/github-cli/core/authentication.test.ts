@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthenticationManager } from "../../../../../src/utils/github-cli/core/authentication.ts";
+import { GitHubCLIError } from "../../../../../src/utils/github-cli/core/error-handler.ts";
 import { GitHubCLIErrorCode } from "../../../../../src/utils/github-cli/types/common.ts";
 
 const executeRawMock = vi.hoisted(() => vi.fn());
@@ -79,9 +80,13 @@ describe("AuthenticationManager", () => {
         it("認証ステータス取得エラー時に適切なエラーを投げる", async () => {
             executeRawMock.mockRejectedValue(new Error("Command failed"));
 
-            await expect(authManager.checkAuthStatus()).rejects.toThrow(
-                GitHubCLIErrorCode.EXECUTION_FAILED
-            );
+            try {
+                await authManager.checkAuthStatus();
+                expect.fail("エラーが投げられるべきです");
+            } catch (error) {
+                expect(error).toBeInstanceOf(GitHubCLIError);
+                expect((error as GitHubCLIError).code).toBe(GitHubCLIErrorCode.AUTH_FAILED);
+            }
         });
     });
 
@@ -108,7 +113,7 @@ describe("AuthenticationManager", () => {
         it("認証済みの場合にtrueを返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: "✓ Logged in",
+                data: "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org",
             });
             const result = await authManager.isLoggedIn();
             expect(result).toBe(true);
@@ -177,11 +182,11 @@ describe("AuthenticationManager", () => {
         it("Personal Access Tokenタイプを正しく返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: "✓ Token: oauth, token type: pat",
+                data: "✓ Logged in to github.com as testuser\n✓ Token: personal access token\n✓ Token scopes: repo, read:org",
             });
 
             const type = await authManager.getTokenType();
-            expect(type).toBe("pat");
+            expect(type).toBe("personal_access_token");
         });
 
         it("トークン情報がない場合にnullを返す", async () => {
@@ -194,7 +199,10 @@ describe("AuthenticationManager", () => {
     describe("refreshAuthStatus", () => {
         it("キャッシュをクリアして新しいステータスを取得する", async () => {
             executeRawMock
-                .mockResolvedValueOnce({ success: true, data: "✓ Logged in" })
+                .mockResolvedValueOnce({
+                    success: true,
+                    data: "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org"
+                })
                 .mockResolvedValueOnce({
                     success: false,
                     data: "not logged in",
@@ -211,9 +219,15 @@ describe("AuthenticationManager", () => {
 
     describe("requireAuth", () => {
         it("認証済みかつ有効なトークンの場合に正常終了する", async () => {
-            executeRawMock.mockResolvedValue({
+            // 認証状態確認 - 成功
+            executeRawMock.mockResolvedValueOnce({
                 success: true,
-                data: "✓ Logged in",
+                data: "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org",
+            });
+            // トークン検証 - 成功
+            executeRawMock.mockResolvedValueOnce({
+                success: true,
+                data: '{"login":"testuser"}',
             });
             await expect(authManager.requireAuth()).resolves.not.toThrow();
         });
@@ -223,9 +237,14 @@ describe("AuthenticationManager", () => {
                 success: false,
                 data: "not logged in",
             });
-            await expect(authManager.requireAuth()).rejects.toThrow(
-                GitHubCLIErrorCode.AUTH_MISSING
-            );
+
+            try {
+                await authManager.requireAuth();
+                expect.fail("エラーが投げられるべきです");
+            } catch (error) {
+                expect(error).toBeInstanceOf(GitHubCLIError);
+                expect((error as GitHubCLIError).code).toBe(GitHubCLIErrorCode.AUTH_MISSING);
+            }
         });
 
         it("認証済みだがトークンが無効な場合にエラーを投げる", async () => {

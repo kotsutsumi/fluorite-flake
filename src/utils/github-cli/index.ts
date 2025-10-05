@@ -110,8 +110,9 @@ export class GitHubCLI {
         isAuthenticated: boolean;
         username: string | null;
     }> {
-        const isInstalled = await this.isAvailable();
+        // 効率的なセットアップ確認（gh --versionを一度だけ実行）
         const version = await this.getVersion();
+        const isInstalled = version !== null;
         const authStatus = await this.checkAuth();
 
         return {

@@ -49,7 +49,7 @@ export class GitHubCLIExecutor {
                 data,
                 raw: result.stdout,
                 exitCode: 0,
-                executionTime: Date.now() - startTime,
+                executionTime: Math.max(1, Date.now() - startTime),
             };
         } catch (error) {
             const githubError = handleError(error, commandString);
@@ -59,7 +59,7 @@ export class GitHubCLIExecutor {
                 error: githubError,
                 raw: error instanceof Error ? error.message : String(error),
                 exitCode: 1,
-                executionTime: Date.now() - startTime,
+                executionTime: Math.max(1, Date.now() - startTime),
             };
         }
     }
@@ -83,7 +83,7 @@ export class GitHubCLIExecutor {
                 data: result.stdout.trim(),
                 raw: result.stdout,
                 exitCode: 0,
-                executionTime: Date.now() - startTime,
+                executionTime: Math.max(1, Date.now() - startTime),
             };
         } catch (error) {
             const githubError = handleError(error, commandString);
@@ -93,7 +93,7 @@ export class GitHubCLIExecutor {
                 error: githubError,
                 raw: error instanceof Error ? error.message : String(error),
                 exitCode: 1,
-                executionTime: Date.now() - startTime,
+                executionTime: Math.max(1, Date.now() - startTime),
             };
         }
     }
@@ -183,9 +183,12 @@ export class GitHubCLIExecutor {
 
                 // 最後の試行でない場合はリトライ
                 if (attempt < options.retryCount) {
-                    // 復旧可能なエラーの場合のみリトライ
+                    // 復旧可能なエラーまたは一般的なエラーの場合はリトライ
                     const githubError = handleError(lastError, command);
-                    if (isRecoverable(githubError)) {
+                    if (
+                        isRecoverable(githubError) ||
+                        this.shouldRetryGenericError(lastError)
+                    ) {
                         await this.delay(options.retryDelay * attempt); // 指数バックオフ
                         continue;
                     }
@@ -226,6 +229,22 @@ export class GitHubCLIExecutor {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
+    // 一般的なエラーに対するリトライ判定
+    private shouldRetryGenericError(error: Error): boolean {
+        // 認証エラーや明確に復旧不可能なエラー以外はリトライする
+        const nonRetryablePatterns = [
+            /authentication/i,
+            /authorization/i,
+            /forbidden/i,
+            /not found/i,
+            /validation/i,
+        ];
+
+        return !nonRetryablePatterns.some((pattern) =>
+            pattern.test(error.message)
+        );
+    }
+
     // GitHub CLI のインストール確認
     async checkInstallation(): Promise<boolean> {
         try {
@@ -241,8 +260,19 @@ export class GitHubCLIExecutor {
         try {
             const result = await this.executeRaw("gh --version");
             if (result.success && result.data) {
-                const match = result.data.match(/gh version (\d+\.\d+\.\d+)/);
-                return match ? match[1] : null;
+                // より柔軟なバージョンマッチング
+                const versionPatterns = [
+                    /gh version (\d+\.\d+\.\d+)/, // "gh version 2.20.2"
+                    /version (\d+\.\d+\.\d+)/, // "version 2.20.2"
+                    /(\d+\.\d+\.\d+)/, // "2.20.2"
+                ];
+
+                for (const pattern of versionPatterns) {
+                    const match = result.data.match(pattern);
+                    if (match) {
+                        return match[1];
+                    }
+                }
             }
             return null;
         } catch {

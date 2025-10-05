@@ -546,9 +546,58 @@ export class PullRequestCommands {
         return await this.createPullRequest(options);
     }
 
+    // 簡単なプルリクエスト作成（テスト用）
+    async quickCreate(options: {
+        title: string;
+        body?: string;
+        base?: string;
+        head?: string;
+    }): Promise<GitHubCLIResponse<PullRequestInfo>> {
+        await authManager.requireAuth();
+
+        const flags: Record<string, any> = {
+            json: true,
+            title: options.title,
+        };
+
+        if (options.body) {
+            flags.body = options.body;
+        }
+        if (options.base) {
+            flags.base = options.base;
+        }
+        if (options.head) {
+            flags.head = options.head;
+        }
+
+        return await githubCLI.execute<PullRequestInfo>({
+            command: "pr",
+            args: ["create"],
+            flags,
+        });
+    }
+
     // 現在のブランチ名を取得
     private async getCurrentBranch(): Promise<GitHubCLIResponse<string>> {
         return await githubCLI.executeRaw("git branch --show-current");
+    }
+
+    // テスト互換性のためのシンプルなmergeメソッド
+    async merge(options: {
+        number: number;
+        mergeMethod?: "merge" | "squash" | "rebase";
+        title?: string;
+        body?: string;
+        deleteLocal?: boolean;
+        deleteRemote?: boolean;
+    }): Promise<GitHubCLIResponse<string>> {
+        return await this.mergePullRequest(options.number, {
+            mergeMethod: options.mergeMethod,
+            title: options.title,
+            body: options.body,
+            deleteLocal: options.deleteLocal,
+            deleteRemote: options.deleteRemote,
+        });
     }
 }
 
