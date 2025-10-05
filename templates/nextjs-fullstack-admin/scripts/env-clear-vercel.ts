@@ -231,7 +231,24 @@ async function main(): Promise<void> {
         };
 
         // 環境変数をクリア
-        await clearEnvironmentVariables(variablesToClear, environment, baseEnv);
+        try {
+            await clearEnvironmentVariables(variablesToClear, environment, baseEnv);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (
+                environment === 'staging' &&
+                errorMessage.includes('Environment "staging" was not found')
+            ) {
+                console.log(
+                    `  ⚠️  Note: Custom environment 'staging' does not exist in Vercel Dashboard.`
+                );
+                console.log(`     You may need to create it first:`);
+                console.log(`     1. Go to Project Settings > Environment Variables`);
+                console.log(`     2. Create a custom environment named 'staging'`);
+                console.log(`     3. Link it to the 'staging' branch`);
+            }
+            throw error;
+        }
 
         console.log(`
 ✅ Environment variables cleared successfully!`);

@@ -6,8 +6,6 @@
  * Turso / Supabase両方のデータベースタイプに対応しています。
  */
 import { resolve } from 'node:path';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
     readProjectConfig,
     readEnvFile,
@@ -16,14 +14,9 @@ import {
     checkVercelCli,
     checkVercelAuth,
     resolvePreviewKeys,
+    detectProjectRoot,
     type EnvMap,
 } from './env-tools.js';
-
-/**
- * プロジェクトルートディレクトリを取得する
- */
-const scriptDir = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(scriptDir, '../');
 
 /**
  * 環境変数を開発環境とプレビュー環境に適用する
@@ -61,6 +54,7 @@ async function main(): Promise<void> {
         console.log('   Using Development environment and mirroring to Preview\n');
 
         // 環境ファイルを読み込み
+        const projectRoot = detectProjectRoot();
         const envPath = resolve(projectRoot, '.env.development');
         console.log(`📁 Reading environment file: ${envPath}`);
 

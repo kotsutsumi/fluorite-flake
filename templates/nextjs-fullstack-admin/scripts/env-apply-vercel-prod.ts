@@ -8,8 +8,6 @@
  * ⚠️  重要: 本番環境への変更は慎重に行ってください
  */
 import { resolve } from 'node:path';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 import {
     readProjectConfig,
@@ -18,14 +16,9 @@ import {
     detectDatabaseType,
     checkVercelCli,
     checkVercelAuth,
+    detectProjectRoot,
     type EnvMap,
 } from './env-tools.js';
-
-/**
- * プロジェクトルートディレクトリを取得する
- */
-const scriptDir = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(scriptDir, '../');
 
 /**
  * ユーザー確認プロンプトを表示する
@@ -87,6 +80,7 @@ async function main(): Promise<void> {
         console.log('   ⚠️  This will affect your live application!\n');
 
         // 環境ファイルを読み込み
+        const projectRoot = detectProjectRoot();
         const envPath = resolve(projectRoot, '.env.prod');
         console.log(`📁 Reading environment file: ${envPath}`);
 

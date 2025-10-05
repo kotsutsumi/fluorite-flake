@@ -18,6 +18,8 @@
         "env:apply-vercel:staging": "tsx scripts/env-apply-vercel-staging.ts",
         "env:apply-vercel:prod": "tsx scripts/env-apply-vercel-prod.ts",
         "env:clear-vercel": "tsx scripts/env-clear-vercel.ts",
+        "env:encrypt": "tsx -e 'import(\"./scripts/env-tools.js\").then(m => m.encryptEnvFiles()).catch(console.error)'",
+        "env:decrypt": "tsx -e 'import(\"./scripts/env-tools.js\").then(m => m.decryptEnvFiles()).catch(console.error)'",
         "ci:db": "bash scripts/ci-db.sh",
         "dev": "next dev",
         "format": "biome format --write .",
