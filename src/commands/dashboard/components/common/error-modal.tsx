@@ -1,9 +1,9 @@
 /**
  * エラーモーダルコンポーネント
  */
-
-import { Box, Text, useInput } from "ink";
 import type React from "react";
+import { Box, Text, useInput } from "ink";
+
 import { setErrorMessage } from "../../state/dashboard-store.js";
 
 type ErrorModalProps = {

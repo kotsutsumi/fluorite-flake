@@ -1,9 +1,9 @@
-import fs from "node:fs";
 /**
  * Development mode debug utilities
  */
-import path from "node:path";
 import chalk from "chalk";
+import fs from "node:fs";
+import path from "node:path";
 
 import { getMessages } from "./i18n.js";
 

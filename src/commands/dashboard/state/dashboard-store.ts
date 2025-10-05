@@ -1,8 +1,8 @@
 /**
  * ダッシュボードメインストア - valtioベース状態管理
  */
-
 import { proxy } from "valtio";
+
 import type {
     AuthStatus,
     DashboardState,

@@ -1,10 +1,9 @@
 /**
  * Next.js Full-Stack Admin テンプレートジェネレーター
  */
+import { execa } from "execa";
 import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-
-import { execa } from "execa";
 
 import { copyTemplateDirectory } from "../../../utils/template-manager/index.js";
 import type { DatabaseType } from "../types.js";

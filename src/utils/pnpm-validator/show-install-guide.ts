@@ -1,3 +1,6 @@
+/**
+ * pnpmのインストールガイドを表示するユーティリティ
+ */
 import chalk from "chalk";
 
 import { getMessages } from "../../i18n.js";

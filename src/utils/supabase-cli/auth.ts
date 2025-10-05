@@ -3,7 +3,6 @@
  *
  * 認証、ログイン、ログアウト機能を提供します。
  */
-
 import { executeSupabaseCommand, throwOnError } from "./executor.js";
 import type { GlobalFlags, LoginInfo, LoginOptions } from "./types.js";
 

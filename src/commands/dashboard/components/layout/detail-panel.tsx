@@ -1,10 +1,10 @@
 /**
  * 詳細パネルコンポーネント
  */
-
-import { Box, Text, useInput } from "ink";
 import type React from "react";
+import { Box, Text, useInput } from "ink";
 import { useSnapshot } from "valtio";
+
 import { dashboardStore, setActiveTab } from "../../state/dashboard-store.js";
 import type { TabType } from "../../types/common.js";
 import { GitHubPanel } from "../services/github-panel.js";

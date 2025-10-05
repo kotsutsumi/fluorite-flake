@@ -3,7 +3,6 @@
  *
  * データベースの操作、マイグレーション、ダンプ、リセットなどの機能を提供します。
  */
-
 import { executeSupabaseCommand, throwOnError } from "./executor.js";
 import type { DatabaseOptions, GlobalFlags } from "./types.js";
 

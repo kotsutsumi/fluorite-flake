@@ -4,8 +4,8 @@
  * child_process を使用してSupabase CLIコマンドを実行し、
  * 結果を構造化されたデータとして返します。
  */
-
 import { spawn } from "node:child_process";
+
 import type {
     CommandResult,
     ExecOptions,

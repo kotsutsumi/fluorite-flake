@@ -1,3 +1,6 @@
+/**
+ * ヘッダー情報を表示するモジュール
+ */
 import chalk from "chalk";
 
 import pkg from "../package.json" with { type: "json" };

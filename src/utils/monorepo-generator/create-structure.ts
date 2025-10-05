@@ -1,3 +1,6 @@
+/**
+ * monorepoディレクトリ構造を作成するユーティリティ
+ */
 import fs from "node:fs";
 import path from "node:path";
 

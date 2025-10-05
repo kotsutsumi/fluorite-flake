@@ -1,3 +1,6 @@
+/**
+ * README.mdの内容を生成するユーティリティ
+ */
 import type { ProjectConfig } from "../../commands/create/types.js";
 import { getMessages } from "../../i18n.js";
 

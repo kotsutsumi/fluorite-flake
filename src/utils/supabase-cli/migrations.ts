@@ -3,7 +3,6 @@
  *
  * データベースマイグレーションスクリプトの管理機能を提供します。
  */
-
 import {
     executeSupabaseCommand,
     parseJsonResponse,

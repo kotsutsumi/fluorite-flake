@@ -1,3 +1,6 @@
+/**
+ * webアプリ用のpackage.jsonを作成するユーティリティ
+ */
 import fs from "node:fs";
 import path from "node:path";
 

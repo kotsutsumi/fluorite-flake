@@ -1,3 +1,6 @@
+/**
+ * プロジェクト設定作成機能
+ */
 import { validatePnpm } from "../../utils/pnpm-validator/index.js";
 import { PROJECT_TYPE_DESCRIPTIONS } from "./constants.js";
 import type {

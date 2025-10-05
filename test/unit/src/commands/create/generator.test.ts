@@ -1,10 +1,8 @@
 /**
  * プロジェクト生成機能のユニットテスト
  */
-
+import fs from "node:fs";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-
 // i18nモジュールをモック
 vi.mock("../../../../../src/i18n.js", () => ({
     getMessages: vi.fn(() => ({
@@ -31,7 +29,6 @@ vi.mock("../../../../../src/i18n.js", () => ({
         },
     })),
 }));
-
 // fsモジュールをモック
 vi.mock("node:fs", () => ({
     default: {
@@ -40,13 +37,11 @@ vi.mock("node:fs", () => ({
         writeFileSync: vi.fn(),
     },
 }));
-
 // debugモジュールをモック
 vi.mock("../../../../../src/debug.js", () => ({
     debugLog: vi.fn(),
     isDevelopment: vi.fn(() => false),
 }));
-
 // oraモジュールをモック
 vi.mock("ora", () => ({
     default: vi.fn(() => ({
@@ -57,7 +52,6 @@ vi.mock("ora", () => ({
         })),
     })),
 }));
-
 // chalkモジュールをモック
 vi.mock("chalk", () => ({
     default: {
@@ -66,21 +60,19 @@ vi.mock("chalk", () => ({
         cyan: vi.fn((text: string) => text),
     },
 }));
-
 // モノレポジェネレーターをモック
 vi.mock("../../../../../src/utils/monorepo-generator/index.js", () => ({
     copyMonorepoTemplates: vi.fn(),
     createMonorepoStructure: vi.fn(),
     createWebAppPackageJson: vi.fn(),
 }));
-
 // README生成をモック
 vi.mock("../../../../../src/utils/readme-generator/index.js", () => ({
     generateReadmeContent: vi.fn(() => "# Test Project\n\nTest README content"),
 }));
-
-import fs from "node:fs";
 import ora from "ora";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
 import { generateProject } from "../../../../../src/commands/create/generator.js";
 import type { ProjectConfig } from "../../../../../src/commands/create/types.js";
 import { debugLog, isDevelopment } from "../../../../../src/debug.js";

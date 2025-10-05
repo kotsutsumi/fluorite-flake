@@ -2,7 +2,6 @@
  * プロジェクト操作ユーティリティ
  * E2Eテストでプロジェクトファイルの操作・検証を行うためのヘルパー
  */
-
 import fs from "node:fs/promises";
 import path from "node:path";
 

@@ -1,7 +1,6 @@
 /**
  * Turso CLI 組織関連ユーティリティ
  */
-
 import { executeTursoCommand, throwOnError } from "./executor.js";
 import type { CommandResult, MemberInfo, OrganizationInfo } from "./types.js";
 

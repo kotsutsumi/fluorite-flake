@@ -2,8 +2,8 @@
  * E2Eテスト用カスタムアサーション
  * 共通的な検証ロジックを提供
  */
-
 import { expect } from "vitest";
+
 import type { CLIResult } from "./cli-runner.js";
 import type { ProjectValidation } from "./project-utils.js";
 import {

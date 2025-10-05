@@ -2,6 +2,7 @@
  * プロジェクトテンプレート選択インターフェース
  */
 import { cancel, confirm, isCancel, select } from "@clack/prompts";
+
 import { getMessages } from "../../../i18n.js";
 import { PROJECT_TYPE_DESCRIPTIONS } from "../constants.js";
 import type { ProjectType } from "../types.js";

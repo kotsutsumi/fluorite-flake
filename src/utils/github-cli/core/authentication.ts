@@ -1,7 +1,6 @@
 /**
  * GitHub CLI 認証管理システム
  */
-
 import type { AuthStatus } from "../types/common.js";
 import { GitHubCLIErrorCode } from "../types/common.js";
 import { githubCLI } from "./command-executor.js";

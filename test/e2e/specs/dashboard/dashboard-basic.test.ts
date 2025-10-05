@@ -1,9 +1,9 @@
 /**
  * ダッシュボード基本機能E2Eテスト
  */
-
 import type { ChildProcess } from "node:child_process";
 import { afterEach, beforeEach, describe, test } from "vitest";
+
 import {
     killProcess,
     sendKey,

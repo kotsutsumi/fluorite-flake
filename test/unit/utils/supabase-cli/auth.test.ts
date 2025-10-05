@@ -4,8 +4,8 @@
  * 認証関連機能（ログイン、ログアウト、認証状態確認）をテストします。
  * 実際のSupabase CLIは呼び出さず、モック化して安全にテストします。
  */
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
     getLoginInfo,
     isAuthenticated,

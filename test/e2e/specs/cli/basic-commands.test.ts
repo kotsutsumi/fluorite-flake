@@ -1,8 +1,8 @@
 /**
  * CLI基本機能E2Eテスト
  */
-
 import { describe, test } from "vitest";
+
 import {
     assertCLIResult,
     assertErrorHandling,

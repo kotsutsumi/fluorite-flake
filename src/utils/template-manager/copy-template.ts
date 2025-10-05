@@ -1,7 +1,6 @@
 /**
  * テンプレートディレクトリのコピーと整形
  */
-
 import { constants as fsConstants } from "node:fs";
 import {
     access,
@@ -14,6 +13,7 @@ import {
 } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import type { CopyTemplateOptions, CopyTemplateResult } from "./types.js";
 
 /**

@@ -1,7 +1,6 @@
 /**
  * Turso CLI 認証関連ユーティリティ
  */
-
 import { executeTursoCommand, throwOnError } from "./executor.js";
 import type { AuthTokenInfo, CommandResult, UserInfo } from "./types.js";
 

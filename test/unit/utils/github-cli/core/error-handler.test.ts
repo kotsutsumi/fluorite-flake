@@ -1,10 +1,10 @@
 /**
  * GitHub CLI エラーハンドリングシステムのテスト
  */
-
 import { describe, expect, it } from "vitest";
-import { ErrorHandler, GitHubCLIError } from "../../core/error-handler.js";
-import { GitHubCLIErrorCode } from "../../types/common.js";
+
+import { ErrorHandler, GitHubCLIError } from "../../../../../src/utils/github-cli/core/error-handler.ts";
+import { GitHubCLIErrorCode } from "../../../../../src/utils/github-cli/types/common.ts";
 
 describe("GitHubCLIError", () => {
     describe("基本機能", () => {

@@ -1,7 +1,6 @@
 /**
  * GitHub CLI Issue操作コマンド
  */
-
 import { authManager } from "../core/authentication.js";
 import { githubCLI } from "../core/command-executor.js";
 import type { GitHubCLIResponse } from "../types/common.js";

@@ -1,3 +1,8 @@
+/**
+ * Internationalization (i18n) utilities
+ * - ロケールの検出
+ * - メッセージのロードとフォーマット
+ */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

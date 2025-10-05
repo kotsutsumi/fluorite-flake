@@ -1,7 +1,6 @@
 /**
  * GitHub CLI エラーハンドリングシステム
  */
-
 import {
     GitHubCLIErrorCode,
     type GitHubCLIError as GitHubCLIErrorType,

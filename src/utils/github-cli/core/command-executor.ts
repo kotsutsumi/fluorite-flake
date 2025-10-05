@@ -1,9 +1,9 @@
 /**
  * GitHub CLI コマンド実行エンジン
  */
-
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+
 import type {
     ExecutionOptions,
     GitHubCLICommand,

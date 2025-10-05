@@ -1,3 +1,6 @@
+/**
+ * pnpm-validatorのユニットテスト
+ */
 import { execSync } from "node:child_process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

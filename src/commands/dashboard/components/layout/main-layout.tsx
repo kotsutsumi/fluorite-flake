@@ -1,11 +1,11 @@
 /**
  * メインレイアウトコンポーネント
  */
-
-import { Box, Text, useInput } from "ink";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Box, Text, useInput } from "ink";
 import { useSnapshot } from "valtio";
+
 import {
     dashboardStore,
     setActiveService,

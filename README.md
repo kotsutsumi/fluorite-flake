@@ -46,6 +46,7 @@ fluorite-flake new
 > ℹ️ **Locale**: CLI output follows your OS locale (Japanese or English). Override it with `-L, --locale <en|ja>` or set `FLUORITE_LOCALE` when testing.
 
 The CLI will guide you through:
+
 1. **Framework Selection**: Next.js, Expo, Tauri, or Flutter
 2. **Project Configuration**: Name, database, authentication, storage
 3. **Deployment Setup**: Platform-specific deployment configurations
@@ -54,6 +55,7 @@ The CLI will guide you through:
 ## 📚 Framework Features
 
 ### Next.js
+
 - **App Router**: Modern React Server Components and streaming
 - **Database Support**: Prisma or Drizzle ORM with Turso/Supabase
 - **Authentication**: Better Auth integration with session management
@@ -62,6 +64,7 @@ The CLI will guide you through:
 - **Deployment**: Vercel-optimized configuration
 
 ### Expo (React Native)
+
 - **Cross-Platform**: iOS, Android, and Web support
 - **Navigation**: Expo Router with file-based routing
 - **State Management**: Jotai for reactive state
@@ -70,6 +73,7 @@ The CLI will guide you through:
 - **Native Features**: Camera, location, push notifications ready
 
 ### Tauri
+
 - **Desktop Apps**: Rust backend + React frontend
 - **Cross-Platform**: Windows, macOS, Linux support
 - **Auto-Updates**: GitHub Releases integration
@@ -78,6 +82,7 @@ The CLI will guide you through:
 - **Native Performance**: Direct OS integration
 
 ### Flutter
+
 - **Native Performance**: Compiled to native ARM/x64 code
 - **Rich UI**: Material Design 3 with dynamic theming
 - **Navigation**: Go Router for declarative routing
@@ -103,6 +108,7 @@ maestro test .maestro/  # Run all tests
 ```
 
 Generated test files:
+
 - `smoke-test.yaml` - Basic app launch verification
 - `navigation-test.yaml` - Tab navigation testing
 - `auth-test.yaml` - Authentication flow (if auth enabled)
@@ -126,6 +132,7 @@ patrol test --target integration_test/smoke_test.dart
 ```
 
 Generated test files:
+
 - `app_test.dart` - Comprehensive app testing
 - `smoke_test.dart` - Quick smoke tests
 - `ci_test_suite.dart` - CI-specific tests
@@ -133,6 +140,7 @@ Generated test files:
 ## 🏗️ Generated Project Structures
 
 ### Next.js Structure
+
 ```
 my-nextjs-app/
 ├── src/
@@ -150,6 +158,7 @@ my-nextjs-app/
 ```
 
 ### Expo Structure
+
 ```
 my-expo-app/
 ├── app/                 # Expo Router navigation
@@ -167,6 +176,7 @@ my-expo-app/
 ```
 
 ### Flutter Structure
+
 ```
 my-flutter-app/
 ├── lib/
