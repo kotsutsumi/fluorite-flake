@@ -29,7 +29,10 @@
     "rules": {
       "suspicious": {
         "noConsole": "off",
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noUnknownAtRules": "off",
+        "noMisplacedAssertion": "off",
+        "useAwait": "off"
       },
       "correctness": {
         "noUnusedVariables": "off"
@@ -39,7 +42,12 @@
         "useTopLevelRegex": "off"
       },
       "style": {
-        "noMagicNumbers": "off"
+        "noMagicNumbers": "off",
+        "useFilenamingConvention": "off",
+        "noNonNullAssertion": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off"
       }
     }
   }

@@ -3,7 +3,6 @@
  * 共通的な検証ロジックを提供
  */
 
-// biome-ignore lint/suspicious/noMisplacedAssertion: ヘルパー関数ファイル
 import { expect } from "vitest";
 import type { CLIResult } from "./cli-runner.js";
 import type { ProjectValidation } from "./project-utils.js";
@@ -17,7 +16,6 @@ import {
  * CLI実行結果のアサーション
  * 注意: これらの関数はテスト内で使用されることを想定しています
  */
-// biome-ignore lint/suspicious/noMisplacedAssertion: ヘルパー関数として設計
 export const assertCLIResult = {
     /**
      * 成功時のアサーション

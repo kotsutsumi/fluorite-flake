@@ -8,6 +8,15 @@ import type { ProjectType } from "../types.js";
 import { isFullStackTemplate, isMonorepoRecommended } from "../validators.js";
 import type { TemplateSelectionResult } from "./types.js";
 
+type TemplateSelectorOptions = {
+    templateFilter?: (input: {
+        projectType: ProjectType;
+        templateKey: string;
+        description: string;
+    }) => boolean;
+    disableMonorepoPrompt?: boolean;
+};
+
 /**
  * テンプレートの複雑度を判定
  */
@@ -89,19 +98,37 @@ async function selectProjectTypeIfNeeded(
  * テンプレートを選択
  */
 async function selectTemplate(
-    projectType: ProjectType
+    projectType: ProjectType,
+    templateFilter?: TemplateSelectorOptions["templateFilter"]
 ): Promise<string | null> {
     const { create } = getMessages();
     const typeDescription = PROJECT_TYPE_DESCRIPTIONS[projectType];
 
+    const filteredTemplates = Object.entries(typeDescription.templates).filter(
+        ([key, description]) =>
+            !templateFilter ||
+            templateFilter({
+                projectType,
+                templateKey: key,
+                description,
+            })
+    );
+
+    const templatesToDisplay =
+        filteredTemplates.length > 0
+            ? filteredTemplates
+            : Object.entries(typeDescription.templates);
+
+    if (templatesToDisplay.length === 1) {
+        return templatesToDisplay[0][0];
+    }
+
     const templateResult = await select({
         message: create.selectTemplatePrompt(typeDescription.name),
-        options: Object.entries(typeDescription.templates).map(
-            ([key, description]) => ({
-                value: key,
-                label: `${key} - ${description}`,
-            })
-        ),
+        options: templatesToDisplay.map(([key, description]) => ({
+            value: key,
+            label: `${key} - ${description}`,
+        })),
     });
 
     if (isCancel(templateResult)) {
@@ -116,7 +143,8 @@ async function selectTemplate(
  * インタラクティブなプロジェクトテンプレート選択
  */
 export async function selectProjectTemplate(
-    initialProjectType?: ProjectType
+    initialProjectType?: ProjectType,
+    options?: TemplateSelectorOptions
 ): Promise<TemplateSelectionResult | null> {
     const { create } = getMessages();
 
@@ -127,7 +155,7 @@ export async function selectProjectTemplate(
     }
 
     // テンプレートの選択
-    const template = await selectTemplate(projectType);
+    const template = await selectTemplate(projectType, options?.templateFilter);
     if (!template) {
         return null;
     }
@@ -146,17 +174,21 @@ export async function selectProjectTemplate(
 
     // モノレポ構造の確認（推奨される場合）
     if (requiresMonorepo) {
-        const confirmResult = await confirm({
-            message: create.confirmMonorepoPrompt(template),
-            initialValue: true,
-        });
+        if (options?.disableMonorepoPrompt) {
+            useMonorepo = true;
+        } else {
+            const confirmResult = await confirm({
+                message: create.confirmMonorepoPrompt(template),
+                initialValue: true,
+            });
 
-        if (isCancel(confirmResult)) {
-            cancel(create.operationCancelled);
-            return null;
+            if (isCancel(confirmResult)) {
+                cancel(create.operationCancelled);
+                return null;
+            }
+
+            useMonorepo = Boolean(confirmResult);
         }
-
-        useMonorepo = Boolean(confirmResult);
     }
 
     return {

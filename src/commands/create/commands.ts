@@ -13,7 +13,14 @@ import {
 import { createProjectConfig } from "./config.js";
 import { generateProject } from "./generator.js";
 import { selectProjectTemplate } from "./template-selector/index.js";
+import type { ProjectType } from "./types.js";
 import { validateProjectType } from "./validators.js";
+
+const ADVANCED_TEMPLATES: Partial<Record<ProjectType, readonly string[]>> = {
+    nextjs: ["fullstack-admin"],
+    expo: ["fullstack-graphql"],
+    tauri: ["desktop-admin", "cross-platform"],
+};
 
 // 初期メッセージを取得
 const initialMessages = getMessages();
@@ -59,7 +66,16 @@ async function determineProjectTypeAndTemplate(
                 ? projectType
                 : undefined;
 
-        const selection = await selectProjectTemplate(initialProjectType);
+        const selection = await selectProjectTemplate(initialProjectType, {
+            templateFilter: ({ projectType: selectedType, templateKey }) => {
+                const allowedTemplates = ADVANCED_TEMPLATES[selectedType];
+                if (!allowedTemplates) {
+                    return true;
+                }
+                return allowedTemplates.includes(templateKey);
+            },
+            disableMonorepoPrompt: true,
+        });
         if (!selection) {
             process.exit(0);
         }

@@ -91,10 +91,22 @@ async function handleAdvancedTemplate(
     const { create } = getMessages();
     spinner.text = create.spinnerConfiguringTemplate(config.template);
 
+    const targetDirectory = config.monorepo
+        ? path.join(config.directory, "apps", "web")
+        : config.directory;
+
+    if (config.monorepo) {
+        createMonorepoStructure(config);
+        copyMonorepoTemplates(config);
+        if (!fs.existsSync(targetDirectory)) {
+            fs.mkdirSync(targetDirectory, { recursive: true });
+        }
+    }
+
     const generationContext: GenerationContext = {
         config,
-        targetDirectory: config.directory,
         useMonorepo: Boolean(config.monorepo),
+        targetDirectory,
     };
 
     // テンプレートタイプに応じて適切なジェネレーターを呼び出し

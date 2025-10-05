@@ -316,6 +316,13 @@ export async function isGitInitialized(projectPath: string): Promise<boolean> {
 }
 
 /**
+ * 除外対象ディレクトリかどうかをチェック
+ */
+function isExcludedDirectory(name: string): boolean {
+    return name === "node_modules" || name === ".git";
+}
+
+/**
  * プロジェクト内の特定パターンのファイルを検索
  */
 export async function findProjectFiles(
@@ -333,16 +340,23 @@ export async function findProjectFiles(
                 const relativePath = path.join(prefix, entry.name);
                 const fullPath = path.join(dir, entry.name);
 
-                if (entry.isFile() && pattern.test(entry.name)) {
-                    foundFiles.push(relativePath);
-                } else if (entry.isDirectory() && recursive) {
-                    // node_modules や .git は除外
-                    if (
-                        entry.name !== "node_modules" &&
-                        entry.name !== ".git"
-                    ) {
-                        await searchInDirectory(fullPath, relativePath);
+                // ファイルの場合：パターンにマッチするかチェック
+                if (entry.isFile()) {
+                    if (pattern.test(entry.name)) {
+                        foundFiles.push(relativePath);
                     }
+                    continue;
+                }
+
+                // ディレクトリの場合：再帰検索の条件をチェック
+                if (entry.isDirectory()) {
+                    if (!recursive) {
+                        continue;
+                    }
+                    if (isExcludedDirectory(entry.name)) {
+                        continue;
+                    }
+                    await searchInDirectory(fullPath, relativePath);
                 }
             }
         } catch {
