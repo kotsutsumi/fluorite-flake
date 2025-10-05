@@ -85,7 +85,9 @@ describe("AuthenticationManager", () => {
                 expect.fail("エラーが投げられるべきです");
             } catch (error) {
                 expect(error).toBeInstanceOf(GitHubCLIError);
-                expect((error as GitHubCLIError).code).toBe(GitHubCLIErrorCode.AUTH_FAILED);
+                expect((error as GitHubCLIError).code).toBe(
+                    GitHubCLIErrorCode.AUTH_FAILED
+                );
             }
         });
     });
@@ -201,7 +203,7 @@ describe("AuthenticationManager", () => {
             executeRawMock
                 .mockResolvedValueOnce({
                     success: true,
-                    data: "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org"
+                    data: "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org",
                 })
                 .mockResolvedValueOnce({
                     success: false,
@@ -243,7 +245,9 @@ describe("AuthenticationManager", () => {
                 expect.fail("エラーが投げられるべきです");
             } catch (error) {
                 expect(error).toBeInstanceOf(GitHubCLIError);
-                expect((error as GitHubCLIError).code).toBe(GitHubCLIErrorCode.AUTH_MISSING);
+                expect((error as GitHubCLIError).code).toBe(
+                    GitHubCLIErrorCode.AUTH_MISSING
+                );
             }
         });
 
