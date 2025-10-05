@@ -1,8 +1,9 @@
 /**
  * テンプレート要件検証機能
  */
-import chalk from "chalk";
+
 import { cancel, note } from "@clack/prompts";
+import chalk from "chalk";
 
 import { validatePnpm } from "../../../utils/pnpm-validator/index.js";
 import type { TemplateRequirements, TemplateSelectionResult } from "./types.js";

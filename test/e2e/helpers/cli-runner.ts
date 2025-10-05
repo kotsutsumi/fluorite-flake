@@ -2,11 +2,12 @@
  * CLI実行ヘルパー
  * E2Eテストでfluorite CLIコマンドを実行するためのユーティリティ
  */
-import { execa } from "execa";
+
 import { type ChildProcess, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execa } from "execa";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NODE_BIN = process.execPath;

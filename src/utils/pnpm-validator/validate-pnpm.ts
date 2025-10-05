@@ -1,8 +1,9 @@
 /**
  * pnpmのバージョンを検証するユーティリティ
  */
-import chalk from "chalk";
+
 import { execSync } from "node:child_process";
+import chalk from "chalk";
 
 import { getMessages } from "../../i18n.js";
 import { showPnpmInstallGuide } from "./show-install-guide.js";

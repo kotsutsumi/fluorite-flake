@@ -1,8 +1,9 @@
 /**
  * エラーモーダルコンポーネント
  */
-import type React from "react";
+
 import { Box, Text, useInput } from "ink";
+import type React from "react";
 
 import { setErrorMessage } from "../../state/dashboard-store.js";
 

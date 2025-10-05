@@ -10,6 +10,7 @@ import {
     pullRequestCommands,
     repositoryCommands,
 } from "../../../../src/utils/github-cli/index.ts";
+import { GitHubCLIErrorCode } from "../../../../src/utils/github-cli/types/common.ts";
 
 const execMock = vi.fn();
 const promisifyMock = vi.fn((fn) => fn);
@@ -57,7 +58,7 @@ describe("GitHub CLI ラッパー統合テスト", () => {
             });
 
             execMock.mockResolvedValueOnce({
-                stdout: `✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org`,
+                stdout: "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org",
                 stderr: "",
             });
 
@@ -118,7 +119,9 @@ describe("GitHub CLI ラッパー統合テスト", () => {
             const result = await repositoryCommands.getCurrentRepository();
 
             expect(result.success).toBe(false);
-            expect(result.error?.code).toBe(GitHubCLIErrorCode.EXECUTION_FAILED);
+            expect(result.error?.code).toBe(
+                GitHubCLIErrorCode.EXECUTION_FAILED
+            );
         });
     });
 
@@ -166,7 +169,9 @@ describe("GitHub CLI ラッパー統合テスト", () => {
 
     describe("エラーハンドリング統合", () => {
         it("認証エラーが適切に処理される", async () => {
-            execMock.mockRejectedValue(new Error("not logged in to github.com"));
+            execMock.mockRejectedValue(
+                new Error("not logged in to github.com")
+            );
 
             const result = await github.checkSetup();
 

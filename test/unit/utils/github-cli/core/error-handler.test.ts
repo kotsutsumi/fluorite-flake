@@ -3,7 +3,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { ErrorHandler, GitHubCLIError } from "../../../../../src/utils/github-cli/core/error-handler.ts";
+import {
+    ErrorHandler,
+    GitHubCLIError,
+} from "../../../../../src/utils/github-cli/core/error-handler.ts";
 import { GitHubCLIErrorCode } from "../../../../../src/utils/github-cli/types/common.ts";
 
 describe("GitHubCLIError", () => {

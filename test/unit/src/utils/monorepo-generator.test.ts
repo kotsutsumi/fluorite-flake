@@ -3,6 +3,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+
 // fsモジュールをモック
 vi.mock("node:fs", () => ({
     default: {
@@ -13,6 +14,7 @@ vi.mock("node:fs", () => ({
         copyFileSync: vi.fn(),
     },
 }));
+
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { ProjectConfig } from "../../../../src/commands/create/types.js";

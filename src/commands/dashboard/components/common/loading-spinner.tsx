@@ -1,9 +1,10 @@
 /**
  * ローディングスピナーコンポーネント
  */
+
+import { Box, Text } from "ink";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Box, Text } from "ink";
 
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 

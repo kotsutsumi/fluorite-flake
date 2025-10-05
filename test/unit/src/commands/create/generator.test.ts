@@ -3,6 +3,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+
 // i18nモジュールをモック
 vi.mock("../../../../../src/i18n.js", () => ({
     getMessages: vi.fn(() => ({
@@ -70,6 +71,7 @@ vi.mock("../../../../../src/utils/monorepo-generator/index.js", () => ({
 vi.mock("../../../../../src/utils/readme-generator/index.js", () => ({
     generateReadmeContent: vi.fn(() => "# Test Project\n\nTest README content"),
 }));
+
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 

@@ -149,7 +149,10 @@ describe("GitHubCLIExecutor", () => {
 
     describe("checkInstallation", () => {
         it("インストール確認が成功時にtrueを返す", async () => {
-            execMock.mockResolvedValue({ stdout: "gh version 2.20.2", stderr: "" });
+            execMock.mockResolvedValue({
+                stdout: "gh version 2.20.2",
+                stderr: "",
+            });
             const result = await executor.checkInstallation();
             expect(result).toBe(true);
         });
@@ -171,7 +174,10 @@ describe("GitHubCLIExecutor", () => {
         });
 
         it("バージョン情報が取得できない場合にnullを返す", async () => {
-            execMock.mockResolvedValue({ stdout: "invalid output", stderr: "" });
+            execMock.mockResolvedValue({
+                stdout: "invalid output",
+                stderr: "",
+            });
             const result = await executor.getVersion();
             expect(result).toBeNull();
         });

@@ -1,9 +1,10 @@
 /**
  * TUIダッシュボードコマンド定義
  */
-import React from "react";
+
 import { defineCommand } from "citty";
 import { render } from "ink";
+import React from "react";
 
 import { DashboardApp } from "./components/layout/main-layout.js";
 // サービスタイプの型定義

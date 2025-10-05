@@ -1,8 +1,9 @@
 /**
  * テンプレート情報表示機能
  */
-import chalk from "chalk";
+
 import { intro, note, outro } from "@clack/prompts";
+import chalk from "chalk";
 
 import type { ExtendedProjectConfig } from "../types.js";
 import type { TemplateRequirements, TemplateSelectionResult } from "./types.js";

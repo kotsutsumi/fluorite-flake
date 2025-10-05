@@ -1,8 +1,9 @@
 /**
  * 詳細パネルコンポーネント
  */
-import type React from "react";
+
 import { Box, Text, useInput } from "ink";
+import type React from "react";
 import { useSnapshot } from "valtio";
 
 import { dashboardStore, setActiveTab } from "../../state/dashboard-store.js";

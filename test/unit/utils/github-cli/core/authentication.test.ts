@@ -29,7 +29,8 @@ describe("AuthenticationManager", () => {
 
     describe("checkAuthStatus", () => {
         it("認証済みユーザーの情報を正しく解析する", async () => {
-            const mockAuthOutput = `✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org, user`;
+            const mockAuthOutput =
+                "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org, user";
 
             executeRawMock.mockResolvedValue({
                 success: true,
@@ -59,7 +60,8 @@ describe("AuthenticationManager", () => {
         });
 
         it("キャッシュ機能が正しく動作する", async () => {
-            const mockAuthOutput = `✓ Logged in to github.com as testuser\n✓ Token: oauth`;
+            const mockAuthOutput =
+                "✓ Logged in to github.com as testuser\n✓ Token: oauth";
 
             executeRawMock.mockResolvedValueOnce({
                 success: true,
@@ -87,7 +89,7 @@ describe("AuthenticationManager", () => {
         it("有効なトークンに対してtrueを返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: `✓ Logged in to github.com as testuser\n✓ Token: oauth`,
+                data: "✓ Logged in to github.com as testuser\n✓ Token: oauth",
             });
 
             const result = await authManager.validateToken();
@@ -104,13 +106,19 @@ describe("AuthenticationManager", () => {
 
     describe("isLoggedIn", () => {
         it("認証済みの場合にtrueを返す", async () => {
-            executeRawMock.mockResolvedValue({ success: true, data: "✓ Logged in" });
+            executeRawMock.mockResolvedValue({
+                success: true,
+                data: "✓ Logged in",
+            });
             const result = await authManager.isLoggedIn();
             expect(result).toBe(true);
         });
 
         it("未認証の場合にfalseを返す", async () => {
-            executeRawMock.mockResolvedValue({ success: false, data: "not logged in" });
+            executeRawMock.mockResolvedValue({
+                success: false,
+                data: "not logged in",
+            });
             const result = await authManager.isLoggedIn();
             expect(result).toBe(false);
         });
@@ -120,7 +128,7 @@ describe("AuthenticationManager", () => {
         it("現在のユーザー名を正しく返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: `✓ Logged in to github.com as testuser`,
+                data: "✓ Logged in to github.com as testuser",
             });
 
             const username = await authManager.getCurrentUser();
@@ -138,7 +146,7 @@ describe("AuthenticationManager", () => {
         it("トークンスコープを正しく返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: `✓ Logged in to github.com as testuser\n✓ Token scopes: repo, read:org`,
+                data: "✓ Logged in to github.com as testuser\n✓ Token scopes: repo, read:org",
             });
 
             const scopes = await authManager.getScopes();
@@ -146,7 +154,10 @@ describe("AuthenticationManager", () => {
         });
 
         it("スコープ情報がない場合に空配列を返す", async () => {
-            executeRawMock.mockResolvedValue({ success: true, data: `✓ Logged in` });
+            executeRawMock.mockResolvedValue({
+                success: true,
+                data: "✓ Logged in",
+            });
             const scopes = await authManager.getScopes();
             expect(scopes).toEqual([]);
         });
@@ -156,7 +167,7 @@ describe("AuthenticationManager", () => {
         it("OAuthトークンタイプを正しく返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: `✓ Token: oauth`,
+                data: "✓ Token: oauth",
             });
 
             const type = await authManager.getTokenType();
@@ -166,7 +177,7 @@ describe("AuthenticationManager", () => {
         it("Personal Access Tokenタイプを正しく返す", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: `✓ Token: oauth, token type: pat`,
+                data: "✓ Token: oauth, token type: pat",
             });
 
             const type = await authManager.getTokenType();
@@ -183,8 +194,11 @@ describe("AuthenticationManager", () => {
     describe("refreshAuthStatus", () => {
         it("キャッシュをクリアして新しいステータスを取得する", async () => {
             executeRawMock
-                .mockResolvedValueOnce({ success: true, data: `✓ Logged in` })
-                .mockResolvedValueOnce({ success: false, data: "not logged in" });
+                .mockResolvedValueOnce({ success: true, data: "✓ Logged in" })
+                .mockResolvedValueOnce({
+                    success: false,
+                    data: "not logged in",
+                });
 
             const status1 = await authManager.refreshAuthStatus();
             expect(status1.isAuthenticated).toBe(true);
@@ -197,12 +211,18 @@ describe("AuthenticationManager", () => {
 
     describe("requireAuth", () => {
         it("認証済みかつ有効なトークンの場合に正常終了する", async () => {
-            executeRawMock.mockResolvedValue({ success: true, data: `✓ Logged in` });
+            executeRawMock.mockResolvedValue({
+                success: true,
+                data: "✓ Logged in",
+            });
             await expect(authManager.requireAuth()).resolves.not.toThrow();
         });
 
         it("未認証の場合にエラーを投げる", async () => {
-            executeRawMock.mockResolvedValue({ success: false, data: "not logged in" });
+            executeRawMock.mockResolvedValue({
+                success: false,
+                data: "not logged in",
+            });
             await expect(authManager.requireAuth()).rejects.toThrow(
                 GitHubCLIErrorCode.AUTH_MISSING
             );
@@ -211,7 +231,7 @@ describe("AuthenticationManager", () => {
         it("認証済みだがトークンが無効な場合にエラーを投げる", async () => {
             executeRawMock.mockResolvedValue({
                 success: true,
-                data: `✓ Logged in\n✗ Token scopes: none`,
+                data: "✓ Logged in\n✗ Token scopes: none",
             });
 
             await expect(authManager.requireAuth()).rejects.toThrow(
@@ -226,7 +246,7 @@ describe("AuthenticationManager", () => {
                 authManager
             );
             const status = parseMethod(
-                `✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org`
+                "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org"
             );
 
             expect(status.isAuthenticated).toBe(true);
@@ -239,7 +259,7 @@ describe("AuthenticationManager", () => {
             const parseMethod = (authManager as any).parseAuthStatus.bind(
                 authManager
             );
-            const status = parseMethod(`× not logged in to github.com`);
+            const status = parseMethod("× not logged in to github.com");
 
             expect(status.isAuthenticated).toBe(false);
             expect(status.username).toBeUndefined();

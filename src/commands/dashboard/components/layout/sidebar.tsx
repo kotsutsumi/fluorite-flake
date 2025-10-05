@@ -1,8 +1,9 @@
 /**
  * サイドバーコンポーネント - サービス選択
  */
-import type React from "react";
+
 import { Box, Text } from "ink";
+import type React from "react";
 import { useSnapshot } from "valtio";
 
 import { dashboardStore } from "../../state/dashboard-store.js";
