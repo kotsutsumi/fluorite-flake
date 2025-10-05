@@ -179,10 +179,7 @@ describe("requiresUserAction", () => {
     });
 
     it("ユーザーアクションが不要なエラーに対してfalseを返す", () => {
-        const error = new GitHubCLIError(
-            GitHubCLIErrorCode.TIMEOUT,
-            "test"
-        );
+        const error = new GitHubCLIError(GitHubCLIErrorCode.TIMEOUT, "test");
         expect(requiresUserAction(error)).toBe(false);
     });
 });
