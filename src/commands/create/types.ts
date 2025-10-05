@@ -7,6 +7,11 @@ import type {
 } from "./constants.js";
 
 /**
+ * データベースタイプの型
+ */
+export type DatabaseType = "turso" | "supabase";
+
+/**
  * createコマンドのオプション型
  */
 export type CreateOptions = {
@@ -16,6 +21,7 @@ export type CreateOptions = {
     dir?: string;
     monorepo?: boolean;
     simple?: boolean;
+    database?: DatabaseType;
 };
 
 /**
@@ -39,6 +45,7 @@ export type ProjectConfig = {
     template?: string;
     force: boolean;
     monorepo: boolean;
+    database?: DatabaseType;
 };
 
 /**

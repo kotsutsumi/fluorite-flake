@@ -1,8 +1,9 @@
 /**
  * createコマンドのバリデーション関数
  */
+import { getMessages } from "../../i18n.js";
 import { PROJECT_TEMPLATES } from "./constants.js";
-import type { ProjectType } from "./types.js";
+import type { DatabaseType, ProjectType } from "./types.js";
 
 /**
  * プロジェクトタイプの検証
@@ -48,6 +49,23 @@ export function isMonorepoRecommended(template: string): boolean {
         template.includes("cross-platform") ||
         template.includes("desktop-admin")
     );
+}
+
+/**
+ * データベースタイプの検証
+ */
+export function validateDatabase(database: string): database is DatabaseType {
+    const validDatabases: DatabaseType[] = ["turso", "supabase"];
+    return validDatabases.includes(database as DatabaseType);
+}
+
+/**
+ * データベースタイプが無効な場合、エラーメッセージを表示
+ */
+export function showInvalidDatabaseError(database: string): void {
+    const { create } = getMessages();
+    console.error(create.invalidDatabase(database));
+    console.error(create.availableDatabases);
 }
 
 // EOF
