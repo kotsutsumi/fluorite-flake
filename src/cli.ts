@@ -2,9 +2,10 @@
 /**
  * Fluorite-flake CLI エントリーポイント
  */
-import { defineCommand, runMain } from "citty";
+import { type CommandContext, defineCommand, runMain } from "citty";
 
 import { createCommand, newCommand } from "./commands/create/index.js";
+import { dashboardCommand } from "./commands/dashboard/index.js";
 import {
     debugLog,
     isDevelopment,
@@ -34,8 +35,43 @@ const main = defineCommand({
     subCommands: {
         create: createCommand,
         new: newCommand,
+        dashboard: dashboardCommand,
     },
-    run() {
+    run(context: CommandContext) {
+        // 開発モードでのコンテキストデバッグ
+        if (isDevelopment()) {
+            debugLog("Context debug:", {
+                subCommand: context.subCommand,
+                args: context.args,
+                argsLength: context.args._.length,
+                rawArgs: process.argv,
+            });
+        }
+
+        // サブコマンドが存在する場合は何もしない
+        if (context.subCommand) {
+            return;
+        }
+
+        // コマンドライン引数にサブコマンドが含まれている場合も何もしない
+        const hasSubCommand =
+            process.argv.includes("create") ||
+            process.argv.includes("new") ||
+            process.argv.includes("dashboard");
+        if (hasSubCommand) {
+            if (isDevelopment()) {
+                debugLog(
+                    "Detected subcommand in process.argv, skipping main command"
+                );
+            }
+            return;
+        }
+
+        // 引数が渡されている場合は何もしない
+        if (context.args._.length > 0) {
+            return;
+        }
+
         const { cli } = getMessages();
 
         // 開発モードでの詳細なデバッグ情報
@@ -61,6 +97,20 @@ const main = defineCommand({
     },
 });
 
-runMain(main);
+if (isDevelopment()) {
+    debugLog("About to run main command");
+}
+
+runMain(main)
+    .then((result) => {
+        if (isDevelopment()) {
+            debugLog("Main command execution completed", result);
+        }
+    })
+    .catch((error) => {
+        if (isDevelopment()) {
+            debugLog("Main command execution failed", error);
+        }
+    });
 
 // EOF

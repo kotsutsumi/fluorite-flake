@@ -2,19 +2,35 @@
 
 ## 概要
 
-`src/commands/create/generator.ts` の実装は、monorepo 構成とシンプル構成の両方に対応したプロジェクト生成フローを提供し、i18n 化されたメッセージとスピナー演出でユーザー体験を統一しています。最新コードでは、開発用デバッグ出力や擬似タイムアウトによるステップ表示も強化されました。
+`src/commands/create/generator.ts` の実装は、monorepo 構成とシンプル構成に加えて、**Phase 2 で実装された Next.js Full-Stack Admin Template** を統合したプロジェクト生成フローを提供します。i18n化されたメッセージとスピナー演出でユーザー体験を統一し、拡張テンプレート機能により高度なプロジェクト構成を自動生成できます。
 
 ## 主な処理フロー
 
 1. `getMessages()` から取得したローカライズメッセージで `ora` スピナーを初期化。
 2. `debugLog()` で受け取った `ProjectConfig` を開発モード時に出力。
-3. `SETUP_TIMEOUT_MS` / `INSTALL_TIMEOUT_MS` / `CONFIGURE_TIMEOUT_MS` に基づく `setTimeout` 擬似待機で進捗を段階的に更新。
+3. `SETUP_TIMEOUT_MS` に基づく擬似待機で進捗を段階的に更新。
 4. プロジェクトディレクトリを存在確認し、なければ `recursive` オプション付きで作成。
-5. `config.monorepo` の真偽によって処理を分岐し、各モード専用の初期化を実行。
-6. 依存関係インストールとテンプレート整形のスピナー表示を挟んだ後、成功メッセージとプロジェクトパスを出力。
-7. 例外発生時はスピナーを `fail` に切り替え、開発モードでは詳細なデバッグログを残して再スロー。
+5. **拡張テンプレート判定**: `config.type === "nextjs"` かつ `fullstack-admin` テンプレートの場合は Phase 2 機能を実行。
+6. 拡張テンプレート利用時は `generateFullStackAdmin()` でフルスタック構成を生成、通常時は既存のmonorepo/シンプルモード処理。
+7. 拡張テンプレート以外の場合のみ、依存関係インストールとテンプレート整形のスピナー表示を実行。
+8. 成功メッセージとプロジェクトパスを出力。
+9. 例外発生時はスピナーを `fail` に切り替え、開発モードでは詳細なデバッグログを残して再スロー。
 
 ## モード別の生成内容
+
+### 拡張テンプレートモード（Phase 2）
+
+**対象**: `config.type === "nextjs"` かつ `config.template` が `"fullstack-admin"`
+
+- `generateFullStackAdmin()` で包括的なフルスタック構成を生成：
+  - NextAuth.js 認証システム
+  - Prisma ORM + PostgreSQL 設定
+  - Tailwind CSS + shadcn/ui コンポーネント
+  - API ルート（認証、ユーザー、組織管理）
+  - 管理ダッシュボード UI
+  - Vercel デプロイメント設定
+  - 環境変数管理
+  - 包括的なドキュメント
 
 ### Monorepo モード
 

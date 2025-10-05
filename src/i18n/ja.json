@@ -5,7 +5,8 @@
     "commandsHeading": "コマンド:",
     "commandLines": [
       "  create <name>    プロジェクトを新規作成します",
-      "  new <name>       create のエイリアスです"
+      "  new <name>       create のエイリアスです",
+      "  dashboard        TUIダッシュボードを起動します"
     ],
     "projectTypes": "プロジェクト種別: nextjs, expo, tauri",
     "examplesHeading": "使用例:",
@@ -32,6 +33,9 @@
     "availableProjectTypes": "利用可能な種別: nextjs, expo, tauri",
     "invalidTemplate": "❌ {projectType} 用テンプレート \"{template}\" は利用できません",
     "availableTemplates": "利用可能なテンプレート: {templates}",
+    "selectProjectTypePrompt": "プロジェクト種別を選択してください:",
+    "selectTemplatePrompt": "{typeName} 用のテンプレートを選択してください:",
+    "confirmMonorepoPrompt": "{template} テンプレートはモノレポ構造が推奨です。モノレポを有効にしますか？",
     "spinnerCreating": "{type} プロジェクトを作成中: {name}",
     "spinnerSettingUp": "{type} プロジェクトの構成を準備しています...",
     "spinnerInstallingDeps": "依存関係をインストールしています...",
@@ -60,7 +64,8 @@
       "  curl -fsSL https://get.pnpm.io/install.sh | sh -"
     ],
     "pnpmMoreInfo": "  詳細情報: https://pnpm.io/installation",
-    "promptProjectName": "プロジェクト名を入力してください: ",
+    "promptProjectName": "プロジェクト名を入力してください:",
+    "projectNamePlaceholder": "プロジェクト名（例: my-fluorite-project）",
     "usingDefaultProjectName": "ℹ️ デフォルトのプロジェクト名を使用します: my-fluorite-project",
     "invalidProjectName": "❌ 無効なプロジェクト名です。英数字、ハイフン、アンダースコアのみ使用できます。",
     "directoryExists": "⚠️ ディレクトリ '{0}' は既に存在します。",

@@ -5,7 +5,8 @@
     "commandsHeading": "Commands:",
     "commandLines": [
       "  create <name>    Create a new project",
-      "  new <name>       Create a new project (alias for create)"
+      "  new <name>       Create a new project (alias for create)",
+      "  dashboard        Launch TUI dashboard"
     ],
     "projectTypes": "Project types: nextjs, expo, tauri",
     "examplesHeading": "Examples:",
@@ -32,6 +33,9 @@
     "availableProjectTypes": "Available types: nextjs, expo, tauri",
     "invalidTemplate": "❌ Invalid template \"{template}\" for {projectType}",
     "availableTemplates": "Available templates: {templates}",
+    "selectProjectTypePrompt": "Select a project type:",
+    "selectTemplatePrompt": "Select a template for {typeName}:",
+    "confirmMonorepoPrompt": "The {template} template works best as a monorepo. Enable monorepo structure?",
     "spinnerCreating": "Creating {type} project: {name}",
     "spinnerSettingUp": "Setting up {type} project structure...",
     "spinnerInstallingDeps": "Installing dependencies...",
@@ -60,7 +64,8 @@
       "  curl -fsSL https://get.pnpm.io/install.sh | sh -"
     ],
     "pnpmMoreInfo": "  For more information: https://pnpm.io/installation",
-    "promptProjectName": "Enter project name: ",
+    "promptProjectName": "Enter project name:",
+    "projectNamePlaceholder": "Project name (e.g. my-fluorite-project)",
     "usingDefaultProjectName": "ℹ️ Using default project name: my-fluorite-project",
     "invalidProjectName": "❌ Invalid project name. Only alphanumeric characters, hyphens, and underscores are allowed.",
     "directoryExists": "⚠️ Directory '{0}' already exists.",

@@ -20,6 +20,7 @@ import type {
  * VercelCLIのNode.jsラッパークラス
  * シェル実行のエラー処理を簡素化し、TypeScript型安全性を提供
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: Vercel CLI操作を静的ヘルパー集として提供する設計を維持する
 export class VercelCLI {
     /**
      * 基本的なVercelコマンドを実行する内部メソッド
@@ -65,18 +66,32 @@ export class VercelCLI {
     private static buildGlobalArgs(options: VercelCommandOptions): string[] {
         const args: string[] = [];
 
-        if (options.debug) args.push("--debug");
-        if (options.globalConfig)
+        if (options.debug) {
+            args.push("--debug");
+        }
+        if (options.globalConfig) {
             args.push("--global-config", options.globalConfig);
-        if (options.localConfig)
+        }
+        if (options.localConfig) {
             args.push("--local-config", options.localConfig);
-        if (options.scope) args.push("--scope", options.scope);
-        if (options.token) args.push("--token", options.token);
-        if (options.noColor) args.push("--no-color");
-        if (options.yes) args.push("--yes");
+        }
+        if (options.scope) {
+            args.push("--scope", options.scope);
+        }
+        if (options.token) {
+            args.push("--token", options.token);
+        }
+        if (options.noColor) {
+            args.push("--no-color");
+        }
+        if (options.yes) {
+            args.push("--yes");
+        }
 
         // 追加の引数を末尾に追加
-        if (options.args) args.push(...options.args);
+        if (options.args) {
+            args.push(...options.args);
+        }
 
         return args;
     }
@@ -87,17 +102,76 @@ export class VercelCLI {
     private static buildDeployArgs(options: VercelDeployOptions): string[] {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.prebuilt) args.push("--prebuilt");
-        if (options.prod) args.push("--prod");
-        if (options.skipDomain) args.push("--skip-domain");
-        if (options.public) args.push("--public");
-        if (options.noWait) args.push("--no-wait");
-        if (options.force) args.push("--force");
-        if (options.withCache) args.push("--with-cache");
-        if (options.logs) args.push("--logs");
-        if (options.name) args.push("--name", options.name);
-        if (options.target) args.push("--target", options.target);
+        // ブールオプション
+        VercelCLI.addDeployBooleanOptions(args, options);
 
+        // 文字列オプション
+        VercelCLI.addDeployStringOptions(args, options);
+
+        // 配列とオブジェクトオプション
+        VercelCLI.addDeployComplexOptions(args, options);
+
+        return args;
+    }
+
+    /**
+     * デプロイのブールオプションを追加
+     */
+    private static addDeployBooleanOptions(
+        args: string[],
+        options: VercelDeployOptions
+    ): void {
+        if (options.prebuilt) {
+            args.push("--prebuilt");
+        }
+        if (options.prod) {
+            args.push("--prod");
+        }
+        if (options.skipDomain) {
+            args.push("--skip-domain");
+        }
+        if (options.public) {
+            args.push("--public");
+        }
+        if (options.noWait) {
+            args.push("--no-wait");
+        }
+        if (options.force) {
+            args.push("--force");
+        }
+        if (options.withCache) {
+            args.push("--with-cache");
+        }
+        if (options.logs) {
+            args.push("--logs");
+        }
+    }
+
+    /**
+     * デプロイの文字列オプションを追加
+     */
+    private static addDeployStringOptions(
+        args: string[],
+        options: VercelDeployOptions
+    ): void {
+        if (options.name) {
+            args.push("--name", options.name);
+        }
+        if (options.target) {
+            args.push("--target", options.target);
+        }
+        if (options.archive) {
+            args.push(`--archive=${options.archive}`);
+        }
+    }
+
+    /**
+     * デプロイの配列・オブジェクトオプションを追加
+     */
+    private static addDeployComplexOptions(
+        args: string[],
+        options: VercelDeployOptions
+    ): void {
         // 配列オプション
         if (options.regions) {
             args.push("--regions", options.regions.join(","));
@@ -105,26 +179,22 @@ export class VercelCLI {
 
         // オブジェクトオプション（key=value形式）
         if (options.buildEnv) {
-            Object.entries(options.buildEnv).forEach(([key, value]) => {
+            for (const [key, value] of Object.entries(options.buildEnv)) {
                 args.push("--build-env", `${key}=${value}`);
-            });
+            }
         }
 
         if (options.env) {
-            Object.entries(options.env).forEach(([key, value]) => {
+            for (const [key, value] of Object.entries(options.env)) {
                 args.push("--env", `${key}=${value}`);
-            });
+            }
         }
 
         if (options.meta) {
-            Object.entries(options.meta).forEach(([key, value]) => {
+            for (const [key, value] of Object.entries(options.meta)) {
                 args.push("--meta", `${key}=${value}`);
-            });
+            }
         }
-
-        if (options.archive) args.push(`--archive=${options.archive}`);
-
-        return args;
     }
 
     /**
@@ -169,15 +239,20 @@ export class VercelCLI {
     static list(options: VercelListOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.environment)
+        if (options.environment) {
             args.push("--environment", options.environment);
-        if (options.status) args.push("--status", options.status);
-        if (options.policy) args.push("--policy", options.policy);
+        }
+        if (options.status) {
+            args.push("--status", options.status);
+        }
+        if (options.policy) {
+            args.push("--policy", options.policy);
+        }
 
         if (options.meta) {
-            Object.entries(options.meta).forEach(([key, value]) => {
+            for (const [key, value] of Object.entries(options.meta)) {
                 args.push("--meta", `${key}=${value}`);
-            });
+            }
         }
 
         return VercelCLI.executeCommand(`list ${args.join(" ")}`, options);
@@ -194,8 +269,12 @@ export class VercelCLI {
         const args = VercelCLI.buildGlobalArgs(options);
         let command = "env ls";
 
-        if (environment) command += ` ${environment}`;
-        if (gitBranch) command += ` ${gitBranch}`;
+        if (environment) {
+            command += ` ${environment}`;
+        }
+        if (gitBranch) {
+            command += ` ${gitBranch}`;
+        }
 
         return VercelCLI.executeCommand(
             `${command} ${args.join(" ")}`,
@@ -234,9 +313,12 @@ export class VercelCLI {
     ): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.environment)
+        if (options.environment) {
             args.push("--environment", options.environment);
-        if (options.gitBranch) args.push("--git-branch", options.gitBranch);
+        }
+        if (options.gitBranch) {
+            args.push("--git-branch", options.gitBranch);
+        }
 
         const command = file ? `env pull ${file}` : "env pull";
         return VercelCLI.executeCommand(
@@ -251,7 +333,9 @@ export class VercelCLI {
     static domainsList(options: VercelDomainOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.limit) args.push("--limit", options.limit.toString());
+        if (options.limit) {
+            args.push("--limit", options.limit.toString());
+        }
 
         return VercelCLI.executeCommand(
             `domains ls ${args.join(" ")}`,
@@ -295,8 +379,12 @@ export class VercelCLI {
     ): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.json) args.push("--json");
-        if (options.updateRequired) args.push("--update-required");
+        if (options.json) {
+            args.push("--json");
+        }
+        if (options.updateRequired) {
+            args.push("--update-required");
+        }
 
         return VercelCLI.executeCommand(
             `project ls ${args.join(" ")}`,
@@ -341,12 +429,24 @@ export class VercelCLI {
     ): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.json) args.push("--json");
-        if (options.follow) args.push("--follow");
-        if (options.limit) args.push("--limit", options.limit.toString());
-        if (options.output) args.push("--output", options.output);
-        if (options.since) args.push("--since", options.since);
-        if (options.until) args.push("--until", options.until);
+        if (options.json) {
+            args.push("--json");
+        }
+        if (options.follow) {
+            args.push("--follow");
+        }
+        if (options.limit) {
+            args.push("--limit", options.limit.toString());
+        }
+        if (options.output) {
+            args.push("--output", options.output);
+        }
+        if (options.since) {
+            args.push("--since", options.since);
+        }
+        if (options.until) {
+            args.push("--until", options.until);
+        }
 
         return VercelCLI.executeCommand(
             `logs ${deploymentUrl} ${args.join(" ")}`,
@@ -363,8 +463,12 @@ export class VercelCLI {
     ): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.repo) args.push("--repo");
-        if (options.project) args.push("--project", options.project);
+        if (options.repo) {
+            args.push("--repo");
+        }
+        if (options.project) {
+            args.push("--project", options.project);
+        }
 
         const command = path ? `link ${path}` : "link";
         return VercelCLI.executeCommand(
@@ -379,7 +483,9 @@ export class VercelCLI {
     static dev(options: VercelDevOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.listen) args.push("--listen", options.listen);
+        if (options.listen) {
+            args.push("--listen", options.listen);
+        }
 
         return VercelCLI.executeCommand(`dev ${args.join(" ")}`, options);
     }
@@ -390,8 +496,12 @@ export class VercelCLI {
     static build(options: VercelBuildOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.prod) args.push("--prod");
-        if (options.target) args.push("--target", options.target);
+        if (options.prod) {
+            args.push("--prod");
+        }
+        if (options.target) {
+            args.push("--target", options.target);
+        }
 
         return VercelCLI.executeCommand(`build ${args.join(" ")}`, options);
     }
@@ -424,7 +534,9 @@ export class VercelCLI {
     ): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
-        if (options.safe) args.push("--safe");
+        if (options.safe) {
+            args.push("--safe");
+        }
 
         return VercelCLI.executeCommand(
             `rm ${target} ${args.join(" ")}`,

@@ -27,15 +27,9 @@ export async function confirmDirectoryOverwrite(
 
     try {
         // 上書き確認のメッセージを表示
-        const existsMessage =
-            (create as any).directoryExists ||
-            "⚠️ ディレクトリ '{0}' は既に存在します。";
-        console.log(existsMessage.replace("{0}", directoryPath));
+        console.log(create.directoryExists.replace("{0}", directoryPath));
 
-        const confirmMessage =
-            (create as any).confirmOverwrite ||
-            "削除して新しいプロジェクトを作成しますか？ (y/N): ";
-        const answer = await rl.question(confirmMessage);
+        const answer = await rl.question(create.confirmOverwrite);
 
         // y, Y, yes, Yes, YES のいずれかの場合は上書きを許可
         const confirmPattern = /^(y|yes)$/i;
@@ -45,24 +39,19 @@ export async function confirmDirectoryOverwrite(
             // 既存ディレクトリを削除
             try {
                 fs.rmSync(directoryPath, { recursive: true, force: true });
-                const removedMessage =
-                    (create as any).directoryRemoved ||
-                    "✅ 既存のディレクトリを削除しました: {0}";
-                console.log(removedMessage.replace("{0}", directoryPath));
+                console.log(
+                    create.directoryRemoved.replace("{0}", directoryPath)
+                );
                 return true;
             } catch (error) {
-                const failedMessage =
-                    (create as any).failedToRemoveDirectory ||
-                    "❌ ディレクトリの削除に失敗しました: {0}";
-                console.error(failedMessage.replace("{0}", directoryPath));
+                console.error(
+                    create.failedToRemoveDirectory.replace("{0}", directoryPath)
+                );
                 console.error(error);
                 return false;
             }
         } else {
-            const cancelledMessage =
-                (create as any).operationCancelled ||
-                "操作がキャンセルされました。";
-            console.log(cancelledMessage);
+            console.log(create.operationCancelled);
             return false;
         }
     } finally {

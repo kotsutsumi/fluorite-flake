@@ -9,7 +9,6 @@ import type { ExtendedProjectConfig } from "../types.js";
 export type GenerationContext = {
     config: ExtendedProjectConfig;
     targetDirectory: string;
-    isJavaScript: boolean;
     useMonorepo: boolean;
 };
 

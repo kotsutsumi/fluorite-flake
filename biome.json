@@ -6,12 +6,23 @@
     "indentWidth": 4
   },
   "files": {
+    "includes": [
+      "src/**",
+      "scripts/**",
+      "test/**",
+      "docs/**",
+      "*.{js,ts,json}",
+      "*.{mjs,cjs}",
+      "pnpm-lock.yaml",
+      "*.md"
+    ],
     "experimentalScannerIgnores": [
       ".vscode/**",
       "dist/**",
       "build/**",
       "coverage/**",
-      "templates/**"
+      "templates/**",
+      "node_modules/**"
     ]
   },
   "linter": {

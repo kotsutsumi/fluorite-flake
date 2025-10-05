@@ -1,6 +1,11 @@
 import { validatePnpm } from "../../utils/pnpm-validator/index.js";
-import type { PROJECT_TEMPLATES } from "./constants.js";
-import type { CreateOptions, ProjectConfig } from "./types.js";
+import { PROJECT_TYPE_DESCRIPTIONS } from "./constants.js";
+import type {
+    CreateOptions,
+    ExtendedProjectConfig,
+    ProjectConfig,
+    ProjectType,
+} from "./types.js";
 import { validateProjectType, validateTemplate } from "./validators.js";
 
 /**
@@ -34,7 +39,7 @@ export function createProjectConfig(
         return null;
     }
 
-    const typedProjectType = projectType as keyof typeof PROJECT_TEMPLATES;
+    const typedProjectType = projectType as ProjectType;
 
     // デフォルト値の設定
     const projectName = options.name || "my-fluorite-project";
@@ -54,6 +59,84 @@ export function createProjectConfig(
         template,
         force: Boolean(options.force),
         monorepo: willUseMonorepo, // 上で計算済み
+    };
+}
+
+/**
+ * 拡張プロジェクト設定を作成（詳細情報付き）
+ */
+export function createExtendedProjectConfig(
+    projectType: string,
+    options: CreateOptions
+): ExtendedProjectConfig | null {
+    // 基本設定を作成
+    const baseConfig = createProjectConfig(projectType, options);
+    if (!baseConfig) {
+        return null;
+    }
+
+    const typedProjectType = projectType as ProjectType;
+    const template = options.template || "typescript";
+
+    // プロジェクトタイプの説明情報を取得
+    const typeDescription = PROJECT_TYPE_DESCRIPTIONS[typedProjectType];
+    const templateDescription =
+        typeDescription.templates[
+            template as keyof typeof typeDescription.templates
+        ];
+
+    // テンプレートに基づく機能の判定
+    const isFullStack =
+        template.includes("fullstack") || template.includes("admin");
+    const hasAuthentication =
+        template.includes("admin") || template.includes("fullstack");
+    const hasDatabase =
+        template.includes("admin") || template.includes("fullstack");
+
+    // フレームワークの判定
+    let framework = typeDescription.name;
+    if (template.includes("graphql")) {
+        framework += " + GraphQL";
+    }
+    if (template.includes("admin")) {
+        framework += " + Admin Dashboard";
+    }
+
+    // 機能リストの作成
+    const features: string[] = [];
+    if (hasAuthentication) {
+        features.push("Authentication");
+    }
+    if (hasDatabase) {
+        features.push("Database Integration");
+    }
+    if (template.includes("admin")) {
+        features.push(
+            "Admin Dashboard",
+            "User Management",
+            "Organization Management"
+        );
+    }
+    if (template.includes("graphql")) {
+        features.push("GraphQL API", "Apollo Client/Server");
+    }
+    if (template.includes("cross-platform")) {
+        features.push("Desktop App", "Mobile App");
+    }
+    if (template.includes("desktop-admin")) {
+        features.push("Desktop App", "Admin Panel", "IPC Communication");
+    }
+
+    // 拡張設定を返す
+    return {
+        ...baseConfig,
+        description: typeDescription.description,
+        templateDescription,
+        isFullStack,
+        hasAuthentication,
+        hasDatabase,
+        framework,
+        features,
     };
 }
 

@@ -179,6 +179,9 @@ type RawLocaleMessages = {
         availableProjectTypes: string;
         invalidTemplate: string;
         availableTemplates: string;
+        selectProjectTypePrompt: string;
+        selectTemplatePrompt: string;
+        confirmMonorepoPrompt: string;
         spinnerCreating: string;
         spinnerSettingUp: string;
         spinnerInstallingDeps: string;
@@ -203,6 +206,15 @@ type RawLocaleMessages = {
         pnpmInstallGuide: string;
         pnpmInstallCommands: string[];
         pnpmMoreInfo: string;
+        promptProjectName: string;
+        usingDefaultProjectName: string;
+        invalidProjectName: string;
+        projectNamePlaceholder: string;
+        directoryExists: string;
+        confirmOverwrite: string;
+        directoryRemoved: string;
+        failedToRemoveDirectory: string;
+        operationCancelled: string;
     };
     readme: {
         title: string;
@@ -262,6 +274,9 @@ export type LocaleMessages = {
         availableProjectTypes: string;
         invalidTemplate: (template: string, projectType: string) => string;
         availableTemplates: (templates: readonly string[]) => string;
+        selectProjectTypePrompt: string;
+        selectTemplatePrompt: (typeName: string) => string;
+        confirmMonorepoPrompt: (templateName: string) => string;
         spinnerCreating: (type: string, name: string) => string;
         spinnerSettingUp: (type: string) => string;
         spinnerInstallingDeps: string;
@@ -282,6 +297,15 @@ export type LocaleMessages = {
         pnpmInstallGuide: string;
         pnpmInstallCommands: string[];
         pnpmMoreInfo: string;
+        promptProjectName: string;
+        usingDefaultProjectName: string;
+        invalidProjectName: string;
+        projectNamePlaceholder: string;
+        directoryExists: string;
+        confirmOverwrite: string;
+        directoryRemoved: string;
+        failedToRemoveDirectory: string;
+        operationCancelled: string;
     };
     readme: {
         title: string;
@@ -376,6 +400,15 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 formatMessage(rawMessages.create.availableTemplates, {
                     templates: templates.join(", "),
                 }),
+            selectProjectTypePrompt: rawMessages.create.selectProjectTypePrompt,
+            selectTemplatePrompt: (typeName: string) =>
+                formatMessage(rawMessages.create.selectTemplatePrompt, {
+                    typeName,
+                }),
+            confirmMonorepoPrompt: (templateName: string) =>
+                formatMessage(rawMessages.create.confirmMonorepoPrompt, {
+                    template: templateName,
+                }),
             spinnerCreating: (type: string, name: string) =>
                 formatMessage(rawMessages.create.spinnerCreating, {
                     type,
@@ -423,6 +456,15 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             pnpmInstallGuide: rawMessages.create.pnpmInstallGuide,
             pnpmInstallCommands: rawMessages.create.pnpmInstallCommands,
             pnpmMoreInfo: rawMessages.create.pnpmMoreInfo,
+            promptProjectName: rawMessages.create.promptProjectName,
+            usingDefaultProjectName: rawMessages.create.usingDefaultProjectName,
+            invalidProjectName: rawMessages.create.invalidProjectName,
+            projectNamePlaceholder: rawMessages.create.projectNamePlaceholder,
+            directoryExists: rawMessages.create.directoryExists,
+            confirmOverwrite: rawMessages.create.confirmOverwrite,
+            directoryRemoved: rawMessages.create.directoryRemoved,
+            failedToRemoveDirectory: rawMessages.create.failedToRemoveDirectory,
+            operationCancelled: rawMessages.create.operationCancelled,
         },
         readme: {
             title: rawMessages.readme.title,

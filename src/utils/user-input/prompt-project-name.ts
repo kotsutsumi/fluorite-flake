@@ -1,9 +1,14 @@
 /**
  * プロジェクト名の入力を促進する機能
  */
-import readline from "node:readline/promises";
+import { cancel, isCancel, text } from "@clack/prompts";
 
 import { getMessages } from "../../i18n.js";
+
+// プロジェクト名の検証に利用する正規表現
+const PROJECT_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+// 入力が空だった場合に利用するデフォルト名
+const DEFAULT_PROJECT_NAME = "my-fluorite-project";
 
 /**
  * プロジェクト名の入力を促進する
@@ -11,45 +16,42 @@ import { getMessages } from "../../i18n.js";
 export async function promptForProjectName(): Promise<string> {
     const { create } = getMessages();
 
-    // readlineインターフェースを作成
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
+    // Clack のテキストプロンプトでガイド付きの入力UIを表示
+    const response = await text({
+        message: create.promptProjectName,
+        placeholder: create.projectNamePlaceholder,
+        validate(value) {
+            const trimmed = value.trim();
+
+            // 入力が空の場合はデフォルト名を後段で採用するためバリデーションを通過させる
+            if (!trimmed) {
+                return;
+            }
+
+            // 許可文字以外が含まれている場合はエラーメッセージを表示
+            if (!PROJECT_NAME_PATTERN.test(trimmed)) {
+                return create.invalidProjectName;
+            }
+
+            return;
+        },
     });
 
-    try {
-        // プロジェクト名の入力を求める
-        const promptMessage =
-            (create as any).promptProjectName ||
-            "プロジェクト名を入力してください: ";
-        const projectName = await rl.question(promptMessage);
-
-        // 入力が空の場合はデフォルト値を使用
-        if (!projectName.trim()) {
-            const defaultMessage =
-                (create as any).usingDefaultProjectName ||
-                "ℹ️ デフォルトのプロジェクト名を使用します: my-fluorite-project";
-            console.log(defaultMessage);
-            return "my-fluorite-project";
-        }
-
-        // 入力された名前を検証
-        const trimmedName = projectName.trim();
-
-        // 基本的な名前検証（アルファベット、数字、ハイフン、アンダースコアのみ許可）
-        const namePattern = /^[a-zA-Z0-9_-]+$/;
-        if (!namePattern.test(trimmedName)) {
-            const errorMessage =
-                (create as any).invalidProjectName ||
-                "❌ 無効なプロジェクト名です。英数字、ハイフン、アンダースコアのみ使用できます。";
-            console.log(errorMessage);
-            return await promptForProjectName(); // 再帰的に再入力を求める
-        }
-
-        return trimmedName;
-    } finally {
-        rl.close();
+    // 入力がキャンセルされた場合は終了メッセージを表示して即座に終了
+    if (isCancel(response)) {
+        cancel(create.operationCancelled);
+        process.exit(0);
     }
+
+    const trimmed = response.trim();
+
+    // 入力が空の場合はデフォルト名を利用
+    if (!trimmed) {
+        console.log(create.usingDefaultProjectName);
+        return DEFAULT_PROJECT_NAME;
+    }
+
+    return trimmed;
 }
 
 // EOF

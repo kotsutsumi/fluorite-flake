@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 
 import { debugLog, isDevelopment } from "../../debug.js";
 import { getMessages } from "../../i18n.js";
@@ -14,8 +14,15 @@ import {
     createWebAppPackageJson,
 } from "../../utils/monorepo-generator/index.js";
 import { generateReadmeContent } from "../../utils/readme-generator/index.js";
-import { generateFullStackAdmin } from "./template-generators/index.js";
-import type { GenerationContext } from "./template-generators/types.js";
+import {
+    generateExpoGraphQL,
+    generateFullStackAdmin,
+    generateTauriCrossPlatform,
+} from "./template-generators/index.js";
+import type {
+    GenerationContext,
+    TemplateGenerationResult,
+} from "./template-generators/types.js";
 import type { ProjectConfig } from "./types.js";
 
 // プロジェクト生成タイムアウト定数
@@ -56,6 +63,116 @@ function getBuildCommand(type: string): string {
 }
 
 /**
+ * 拡張テンプレートかどうかを判定
+ */
+function isAdvancedTemplate(config: ProjectConfig): boolean {
+    // Next.js拡張テンプレート
+    const isNextJsAdvanced =
+        config.type === "nextjs" && config.template === "fullstack-admin";
+
+    // Expo拡張テンプレート
+    const isExpoAdvanced =
+        config.type === "expo" && config.template === "fullstack-graphql";
+
+    // Tauri拡張テンプレート
+    const isTauriAdvanced =
+        config.type === "tauri" && config.template === "cross-platform";
+
+    return isNextJsAdvanced || isExpoAdvanced || isTauriAdvanced;
+}
+
+/**
+ * 拡張テンプレートを生成
+ */
+async function handleAdvancedTemplate(
+    config: ProjectConfig,
+    spinner: Ora
+): Promise<void> {
+    const { create } = getMessages();
+    spinner.text = create.spinnerConfiguringTemplate(config.template);
+
+    const generationContext: GenerationContext = {
+        config,
+        targetDirectory: config.directory,
+        useMonorepo: Boolean(config.monorepo),
+    };
+
+    // テンプレートタイプに応じて適切なジェネレーターを呼び出し
+    let result: TemplateGenerationResult;
+    if (config.type === "nextjs") {
+        result = await generateFullStackAdmin(generationContext);
+    } else if (config.type === "expo") {
+        result = await generateExpoGraphQL(generationContext);
+    } else if (config.type === "tauri") {
+        result = await generateTauriCrossPlatform(generationContext);
+    } else {
+        throw new Error(
+            `Unsupported advanced template: ${config.type}/${config.template}`
+        );
+    }
+
+    if (!result.success) {
+        throw new Error(
+            `Template generation failed: ${result.errors?.join(", ")}`
+        );
+    }
+
+    debugLog("Advanced template generation completed", {
+        type: config.type,
+        template: config.template,
+        filesCreated: result.filesCreated?.length || 0,
+        directoriesCreated: result.directoriesCreated?.length || 0,
+        nextSteps: result.nextSteps?.length || 0,
+    });
+}
+
+/**
+ * 通常テンプレートを生成
+ */
+async function handleStandardTemplate(
+    config: ProjectConfig,
+    spinner: Ora
+): Promise<void> {
+    const { create } = getMessages();
+
+    if (config.monorepo) {
+        createMonorepoStructure(config);
+        copyMonorepoTemplates(config);
+        createWebAppPackageJson(config);
+    } else {
+        const packageJsonPath = path.join(config.directory, "package.json");
+        const packageJsonContent = {
+            name: config.name,
+            version: "0.1.0",
+            description: `A ${config.type} project created with Fluorite Flake`,
+            scripts: {
+                dev: getDevCommand(config.type),
+                build: getBuildCommand(config.type),
+            },
+            dependencies: {},
+            devDependencies: {},
+        };
+        fs.writeFileSync(
+            packageJsonPath,
+            JSON.stringify(packageJsonContent, null, 2)
+        );
+    }
+
+    // README.mdを作成（多言語対応）
+    const readmePath = path.join(config.directory, "README.md");
+    const readmeContent = generateReadmeContent(config);
+    fs.writeFileSync(readmePath, readmeContent);
+
+    // 依存関係インストールのシミュレーション
+    spinner.text = create.spinnerInstallingDeps;
+    await new Promise((resolve) => setTimeout(resolve, INSTALL_TIMEOUT_MS));
+
+    // テンプレート設定のシミュレーション
+    spinner.text = create.spinnerConfiguringTemplate(config.template);
+    await new Promise((resolve) => setTimeout(resolve, CONFIGURE_TIMEOUT_MS));
+}
+
+/**
  * 設定に基づいてプロジェクトを生成
  */
 export async function generateProject(config: ProjectConfig): Promise<void> {
@@ -76,92 +193,12 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
             fs.mkdirSync(config.directory, { recursive: true });
         }
 
-        // 拡張テンプレートの処理（Phase 2実装）
-        const shouldUseAdvancedTemplate =
-            config.type === "nextjs" &&
-            (config.template === "fullstack-admin" || config.template === "fullstack-admin-js");
-
+        // テンプレート別の処理
+        const shouldUseAdvancedTemplate = isAdvancedTemplate(config);
         if (shouldUseAdvancedTemplate) {
-            // Next.js Full-Stack Admin Template を使用
-            spinner.text = create.spinnerConfiguringTemplate(config.template);
-
-            const generationContext: GenerationContext = {
-                config,
-                targetDirectory: config.directory,
-                isJavaScript: config.template === "fullstack-admin-js"
-            };
-
-            const result = await generateFullStackAdmin(generationContext);
-
-            if (!result.success) {
-                throw new Error(`Template generation failed: ${result.errors?.join(", ")}`);
-            }
-
-            // 拡張テンプレート完了後、通常の成功フローに進む
-            debugLog("Advanced template generation completed", {
-                filesCreated: result.filesCreated?.length || 0,
-                directoriesCreated: result.directoriesCreated?.length || 0,
-                nextSteps: result.nextSteps?.length || 0
-            });
+            await handleAdvancedTemplate(config, spinner);
         } else {
-            // 通常テンプレートの処理または既存のmonorepo処理
-        }
-
-        // 拡張テンプレートを使用した場合は、追加のmonorepo処理をスキップ
-        if (!shouldUseAdvancedTemplate) {
-            // monorepoモード（または0001.mdの方針により常時monorepo-ready構造）
-            if (config.monorepo) {
-                // monorepoディレクトリ構造を作成
-                createMonorepoStructure(config);
-
-                // monorepoテンプレートファイルをコピー
-                copyMonorepoTemplates(config);
-
-                // webアプリ用package.jsonを作成
-                createWebAppPackageJson(config);
-
-                // README.mdを作成（多言語対応）
-                const readmePath = path.join(config.directory, "README.md");
-                const readmeContent = generateReadmeContent(config);
-                fs.writeFileSync(readmePath, readmeContent);
-            } else {
-                // 通常モード（従来のシンプルな構造）
-                // 基本的なpackage.jsonを作成
-                const packageJsonPath = path.join(config.directory, "package.json");
-                const packageJsonContent = {
-                    name: config.name,
-                    version: "0.1.0",
-                    description: `A ${config.type} project created with Fluorite Flake`,
-                    scripts: {
-                        dev: getDevCommand(config.type),
-                        build: getBuildCommand(config.type),
-                    },
-                    dependencies: {},
-                    devDependencies: {},
-                };
-                fs.writeFileSync(
-                    packageJsonPath,
-                    JSON.stringify(packageJsonContent, null, 2)
-                );
-
-                // README.mdを作成（多言語対応）
-                const readmePath = path.join(config.directory, "README.md");
-                const readmeContent = generateReadmeContent(config);
-                fs.writeFileSync(readmePath, readmeContent);
-            }
-        }
-
-        // 拡張テンプレートを使用していない場合のみ、通常の処理を実行
-        if (!shouldUseAdvancedTemplate) {
-            // 依存関係インストールのシミュレーション
-            spinner.text = create.spinnerInstallingDeps;
-            await new Promise((resolve) => setTimeout(resolve, INSTALL_TIMEOUT_MS));
-
-            // テンプレート設定のシミュレーション
-            spinner.text = create.spinnerConfiguringTemplate(config.template);
-            await new Promise((resolve) =>
-                setTimeout(resolve, CONFIGURE_TIMEOUT_MS)
-            );
+            await handleStandardTemplate(config, spinner);
         }
 
         // 成功メッセージの表示

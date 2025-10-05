@@ -12,9 +12,116 @@ import {
 } from "../../utils/user-input/index.js";
 import { createProjectConfig } from "./config.js";
 import { generateProject } from "./generator.js";
+import { selectProjectTemplate } from "./template-selector/index.js";
+import { validateProjectType } from "./validators.js";
 
 // 初期メッセージを取得
 const initialMessages = getMessages();
+
+/**
+ * モノレポフラグが明示的に指定されているかをチェック
+ */
+function hasExplicitMonorepoFlag(rawArgs: unknown): boolean {
+    const rawArgList = Array.isArray(rawArgs) ? rawArgs : [];
+    return rawArgList.some(
+        (arg) =>
+            ["--monorepo", "--no-monorepo", "-m"].some(
+                (flag) => arg === flag || arg.startsWith(`${flag}=`)
+            ) || arg.startsWith("--monorepo=")
+    );
+}
+
+/**
+ * プロジェクトタイプとテンプレートを決定
+ */
+async function determineProjectTypeAndTemplate(
+    args: any,
+    hasExplicitMonorepo: boolean
+): Promise<{
+    projectType: string;
+    template: string | undefined;
+    monorepoPreference: boolean | undefined;
+}> {
+    let projectType = args.type;
+    let template = args.template;
+    let monorepoPreference: boolean | undefined;
+
+    if (args.simple) {
+        monorepoPreference = false;
+    } else if (hasExplicitMonorepo) {
+        monorepoPreference = Boolean(args.monorepo);
+    }
+
+    const shouldPromptForSelection = !(projectType && template);
+    if (shouldPromptForSelection) {
+        const initialProjectType =
+            projectType && validateProjectType(projectType)
+                ? projectType
+                : undefined;
+
+        const selection = await selectProjectTemplate(initialProjectType);
+        if (!selection) {
+            process.exit(0);
+        }
+
+        projectType = selection.projectType;
+        template = selection.template;
+
+        if (
+            !(args.simple || hasExplicitMonorepo) &&
+            monorepoPreference === undefined
+        ) {
+            monorepoPreference = selection.useMonorepo;
+        }
+    }
+
+    return {
+        projectType: projectType ?? "nextjs",
+        template,
+        monorepoPreference,
+    };
+}
+
+/**
+ * createAndValidateConfig関数のオプション型
+ */
+type CreateAndValidateConfigOptions = {
+    projectType: string;
+    projectName: string;
+    template: string | undefined;
+    args: any;
+    isMonorepoMode: boolean;
+};
+
+/**
+ * プロジェクト設定を作成し検証
+ */
+async function createAndValidateConfig(
+    options: CreateAndValidateConfigOptions
+) {
+    const { projectType, projectName, template, args, isMonorepoMode } =
+        options;
+    const config = createProjectConfig(projectType, {
+        name: projectName,
+        template,
+        dir: args.dir,
+        force: args.force,
+        monorepo: isMonorepoMode,
+    });
+
+    if (!config) {
+        process.exit(1);
+    }
+
+    if (!config.force) {
+        const shouldProceed = await confirmDirectoryOverwrite(config.directory);
+        if (!shouldProceed) {
+            process.exit(0);
+        }
+    }
+
+    return config;
+}
 
 /**
  * createコマンドの定義
@@ -34,7 +141,6 @@ export const createCommand = defineCommand({
             type: "string",
             description: initialMessages.create.args.type,
             alias: "t",
-            default: "nextjs",
         },
         template: {
             type: "string",
@@ -68,7 +174,8 @@ export const createCommand = defineCommand({
         debugLog(create.debugCommandCalled, args);
 
         // monorepoモードの場合はpnpmバリデーションを実行
-        const isMonorepoMode = args.simple ? false : args.monorepo;
+        const resolvedProjectType = args.type ?? "nextjs";
+        const isMonorepoMode = args.simple ? false : (args.monorepo ?? true);
         if (isMonorepoMode) {
             const isPnpmValid = validatePnpm();
             if (!isPnpmValid) {
@@ -83,12 +190,12 @@ export const createCommand = defineCommand({
         }
 
         // プロジェクト設定を作成
-        const config = createProjectConfig(args.type, {
+        const config = createProjectConfig(resolvedProjectType, {
             name: projectName,
             template: args.template,
             dir: args.dir,
             force: args.force,
-            monorepo: args.simple ? false : args.monorepo, // --simpleフラグがあればmonorepo=false
+            monorepo: isMonorepoMode,
         });
 
         // 設定が無効な場合はエラー終了
@@ -109,10 +216,16 @@ export const createCommand = defineCommand({
         try {
             // プロジェクトを生成
             await generateProject(config);
+
+            // 開発モードでのデバッグ - コマンド完了を明示
+            debugLog("Create command completed successfully");
         } catch (_error) {
             // 生成エラーの場合はエラー終了
             process.exit(1);
         }
+
+        // 正常終了 - process.exit(0) を明示的に呼び出してメインコマンドの実行を防ぐ
+        process.exit(0);
     },
 });
 
@@ -125,7 +238,54 @@ export const newCommand = defineCommand({
         description: initialMessages.create.newCommandDescription,
     },
     args: createCommand.args,
-    run: createCommand.run,
+    async run(context) {
+        const { args, rawArgs } = context;
+        const { create } = getMessages();
+        debugLog(create.debugCommandCalled, args);
+
+        // プロジェクト名の取得
+        let projectName = args.name;
+        if (!projectName) {
+            projectName = await promptForProjectName();
+        }
+
+        // プロジェクトタイプとテンプレートの決定
+        const hasExplicitMonorepo = hasExplicitMonorepoFlag(rawArgs);
+        const { projectType, template, monorepoPreference } =
+            await determineProjectTypeAndTemplate(args, hasExplicitMonorepo);
+
+        // モノレポ設定の最終決定（明示指定 > 選択結果 > 既定 true）
+        const isMonorepoMode = args.simple
+            ? false
+            : (monorepoPreference ?? args.monorepo ?? true);
+
+        // pnpmバリデーション
+        if (isMonorepoMode) {
+            const isPnpmValid = validatePnpm();
+            if (!isPnpmValid) {
+                process.exit(1);
+            }
+        }
+
+        // プロジェクト設定の作成と検証
+        const config = await createAndValidateConfig({
+            projectType,
+            projectName,
+            template,
+            args,
+            isMonorepoMode,
+        });
+
+        // プロジェクトの生成
+        try {
+            await generateProject(config);
+            debugLog("New command completed successfully");
+        } catch (_error) {
+            process.exit(1);
+        }
+
+        process.exit(0);
+    },
 });
 
 // EOF
