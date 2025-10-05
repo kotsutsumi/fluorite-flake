@@ -59,7 +59,15 @@
       "  # or",
       "  curl -fsSL https://get.pnpm.io/install.sh | sh -"
     ],
-    "pnpmMoreInfo": "  For more information: https://pnpm.io/installation"
+    "pnpmMoreInfo": "  For more information: https://pnpm.io/installation",
+    "promptProjectName": "Enter project name: ",
+    "usingDefaultProjectName": "ℹ️ Using default project name: my-fluorite-project",
+    "invalidProjectName": "❌ Invalid project name. Only alphanumeric characters, hyphens, and underscores are allowed.",
+    "directoryExists": "⚠️ Directory '{0}' already exists.",
+    "confirmOverwrite": "Do you want to remove it and create a new project? (y/N): ",
+    "directoryRemoved": "✅ Removed existing directory: {0}",
+    "failedToRemoveDirectory": "❌ Failed to remove directory: {0}",
+    "operationCancelled": "Operation cancelled."
   },
   "readme": {
     "title": "{name}",

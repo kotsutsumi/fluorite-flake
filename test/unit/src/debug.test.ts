@@ -200,7 +200,7 @@ describe("debug utilities", () => {
             );
         });
 
-        it("should remove existing temp/dev directory before creating new one", () => {
+        it("should preserve existing temp/dev directory and only change working directory", () => {
             vi.mocked(fs.existsSync).mockReturnValue(true);
 
             setupDevelopmentWorkspace();
@@ -208,18 +208,11 @@ describe("debug utilities", () => {
             expect(fs.existsSync).toHaveBeenCalledWith(
                 "/test/current/dir/temp/dev"
             );
-            expect(fs.rmSync).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev",
-                {
-                    recursive: true,
-                }
-            );
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev",
-                {
-                    recursive: true,
-                }
-            );
+            // 既存ディレクトリは削除されない
+            expect(fs.rmSync).not.toHaveBeenCalled();
+            // 既存ディレクトリがあるので新規作成もされない
+            expect(fs.mkdirSync).not.toHaveBeenCalled();
+            // 作業ディレクトリのみ変更される
             expect(process.chdir).toHaveBeenCalledWith(
                 "/test/current/dir/temp/dev"
             );

@@ -45,10 +45,10 @@ export function setupDevelopmentWorkspace(): void {
     const { debug } = getMessages();
     const tempDir = path.join(process.cwd(), "temp", "dev");
 
-    if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true });
+    // ディレクトリが存在しない場合のみ作成（既存のプロジェクトを保持）
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
     }
-    fs.mkdirSync(tempDir, { recursive: true });
 
     // カレントディレクトリをtemp/devに変更
     process.chdir(tempDir);

@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { validatePnpm } from "../../../../src/utils/pnpm-validator/index.js";
 
-// execSyncをモック化
+// execSyncをモック化：実際のコマンド実行を防ぐ
 vi.mock("node:child_process", () => ({
     execSync: vi.fn(),
 }));
 
-// chalkとi18nをモック化
+// chalkとi18nをモック化：外部依存関係を制御する
 vi.mock("chalk", () => ({
     default: {
         red: vi.fn((text) => text),

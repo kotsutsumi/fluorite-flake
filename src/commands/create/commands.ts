@@ -5,6 +5,11 @@ import { defineCommand } from "citty";
 
 import { debugLog } from "../../debug.js";
 import { getMessages } from "../../i18n.js";
+import { validatePnpm } from "../../utils/pnpm-validator/index.js";
+import {
+    confirmDirectoryOverwrite,
+    promptForProjectName,
+} from "../../utils/user-input/index.js";
 import { createProjectConfig } from "./config.js";
 import { generateProject } from "./generator.js";
 
@@ -23,7 +28,7 @@ export const createCommand = defineCommand({
         name: {
             type: "positional",
             description: initialMessages.create.args.name,
-            required: true,
+            required: false,
         },
         type: {
             type: "string",
@@ -62,9 +67,24 @@ export const createCommand = defineCommand({
         const { create } = getMessages();
         debugLog(create.debugCommandCalled, args);
 
+        // monorepoモードの場合はpnpmバリデーションを実行
+        const isMonorepoMode = args.simple ? false : args.monorepo;
+        if (isMonorepoMode) {
+            const isPnpmValid = validatePnpm();
+            if (!isPnpmValid) {
+                process.exit(1);
+            }
+        }
+
+        // プロジェクト名が指定されていない場合は入力を促進
+        let projectName = args.name;
+        if (!projectName) {
+            projectName = await promptForProjectName();
+        }
+
         // プロジェクト設定を作成
         const config = createProjectConfig(args.type, {
-            name: args.name,
+            name: projectName,
             template: args.template,
             dir: args.dir,
             force: args.force,
@@ -74,6 +94,16 @@ export const createCommand = defineCommand({
         // 設定が無効な場合はエラー終了
         if (!config) {
             process.exit(1);
+        }
+
+        // 既存ディレクトリの確認（--forceフラグがない場合）
+        if (!config.force) {
+            const shouldProceed = await confirmDirectoryOverwrite(
+                config.directory
+            );
+            if (!shouldProceed) {
+                process.exit(0); // 操作がキャンセルされた場合は正常終了
+            }
         }
 
         try {

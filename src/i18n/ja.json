@@ -59,7 +59,15 @@
       "  # または",
       "  curl -fsSL https://get.pnpm.io/install.sh | sh -"
     ],
-    "pnpmMoreInfo": "  詳細情報: https://pnpm.io/installation"
+    "pnpmMoreInfo": "  詳細情報: https://pnpm.io/installation",
+    "promptProjectName": "プロジェクト名を入力してください: ",
+    "usingDefaultProjectName": "ℹ️ デフォルトのプロジェクト名を使用します: my-fluorite-project",
+    "invalidProjectName": "❌ 無効なプロジェクト名です。英数字、ハイフン、アンダースコアのみ使用できます。",
+    "directoryExists": "⚠️ ディレクトリ '{0}' は既に存在します。",
+    "confirmOverwrite": "削除して新しいプロジェクトを作成しますか？ (y/N): ",
+    "directoryRemoved": "✅ 既存のディレクトリを削除しました: {0}",
+    "failedToRemoveDirectory": "❌ ディレクトリの削除に失敗しました: {0}",
+    "operationCancelled": "操作がキャンセルされました。"
   },
   "readme": {
     "title": "{name}",
