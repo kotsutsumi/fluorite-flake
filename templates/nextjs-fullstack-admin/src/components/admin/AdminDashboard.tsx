@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { UserManagement } from './UserManagement';
-import { NBCMemberManagement } from './NBCMemberManagement';
+import { MemberManagement } from './MemberManagement';
 import { SponsorContentManagement } from './SponsorContentManagement';
 import { AdminStats } from './AdminStats';
 
@@ -17,7 +17,7 @@ interface AdminDashboardProps {
     user: User;
 }
 
-type TabType = 'overview' | 'users' | 'nbc-members' | 'sponsors' | 'content';
+type TabType = 'overview' | 'users' | '-members' | 'sponsors' | 'content';
 
 export function AdminDashboard({ user }: AdminDashboardProps) {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -25,7 +25,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     const tabs = [
         { id: 'overview' as const, label: '概要', icon: '📊' },
         { id: 'users' as const, label: 'ユーザー管理', icon: '👥' },
-        { id: 'nbc-members' as const, label: 'NBC会員', icon: '⭐' },
+        { id: '-members' as const, label: '会員', icon: '⭐' },
         { id: 'sponsors' as const, label: 'スポンサー', icon: '🏢' },
         { id: 'content' as const, label: 'コンテンツ管理', icon: '📺' },
     ];
@@ -35,7 +35,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             return true;
         }
         if (user.role === 'org_admin') {
-            return ['overview', 'nbc-members', 'sponsors', 'content'].includes(tabId);
+            return ['overview', '-members', 'sponsors', 'content'].includes(tabId);
         }
         return false;
     };
@@ -45,7 +45,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             {/* Sidebar */}
             <div className="w-64 bg-white shadow-md">
                 <div className="p-6">
-                    <h1 className="text-xl font-bold text-gray-800">NBC管理画面</h1>
+                    <h1 className="text-xl font-bold text-gray-800">管理画面</h1>
                     <p className="text-sm text-gray-600 mt-1">{user.name || user.email}</p>
                     <p className="text-xs text-gray-500">
                         権限: {user.role === 'admin' ? '管理者' : '組織管理者'}
@@ -90,7 +90,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                 <div className="p-8">
                     {activeTab === 'overview' && <AdminStats />}
                     {activeTab === 'users' && <UserManagement />}
-                    {activeTab === 'nbc-members' && <NBCMemberManagement />}
+                    {activeTab === '-members' && <MemberManagement />}
                     {activeTab === 'sponsors' && <SponsorContentManagement />}
                     {activeTab === 'content' && (
                         <div className="bg-white rounded-lg shadow p-6">

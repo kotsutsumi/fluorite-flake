@@ -34,16 +34,16 @@ export async function POST(request: NextRequest) {
                 {
                     email: 'member@test.com',
                     password: 'password123',
-                    name: 'Test NBC Member',
-                    role: APP_ROLES.NBC_MEMBER,
-                    nbcMemberId: 'NBC-TEST-001',
+                    name: 'Test  Member',
+                    role: APP_ROLES._MEMBER,
+                    MemberId: '-TEST-001',
                     memberSince: new Date(),
                 },
                 {
                     email: 'sponsor@test.com',
                     password: 'password123',
-                    name: 'Test NBC Sponsor',
-                    role: APP_ROLES.NBC_SPONSOR,
+                    name: 'Test  Sponsor',
+                    role: APP_ROLES._SPONSOR,
                     sponsorInfo: JSON.stringify({
                         company: 'Test Sponsor Company',
                         contactPerson: 'Test Contact',
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
                             email: userData.email,
                             name: userData.name,
                             role: userData.role,
-                            nbcMemberId: userData.nbcMemberId,
+                            MemberId: userData.MemberId,
                             memberSince: userData.memberSince,
                             sponsorInfo: userData.sponsorInfo,
                             emailVerified: true,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Create test video content
-            const nbcMemberUser = await prisma.user.findUnique({
+            const MemberUser = await prisma.user.findUnique({
                 where: { email: 'member@test.com' },
             });
 
@@ -105,26 +105,26 @@ export async function POST(request: NextRequest) {
                 where: { email: 'sponsor@test.com' },
             });
 
-            if (nbcMemberUser) {
+            if (MemberUser) {
                 await prisma.videoContent.createMany({
                     data: [
                         {
                             title: 'Test Member Video 1',
-                            description: 'Test video by NBC member',
+                            description: 'Test video by  member',
                             videoUrl: 'https://example.com/video1.mp4',
                             contentType: 'user_content',
                             isPublished: true,
                             publishedAt: new Date(),
-                            authorId: nbcMemberUser.id,
+                            authorId: MemberUser.id,
                         },
                         {
                             title: 'Test Member Video 2 (Draft)',
-                            description: 'Draft video by NBC member',
+                            description: 'Draft video by  member',
                             videoUrl: 'https://example.com/video2.mp4',
                             contentType: 'user_content',
                             isPublished: false,
                             publishedAt: null,
-                            authorId: nbcMemberUser.id,
+                            authorId: MemberUser.id,
                         },
                     ],
                 });

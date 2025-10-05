@@ -2,8 +2,8 @@ export const APP_ROLES = {
     ADMIN: 'admin',
     ORG_ADMIN: 'org_admin',
     USER: 'user',
-    NBC_MEMBER: 'nbc_member',
-    NBC_SPONSOR: 'nbc_sponsor',
+    _MEMBER: '_member',
+    _SPONSOR: '_sponsor',
 } as const;
 
 export type AppRole = (typeof APP_ROLES)[keyof typeof APP_ROLES];
@@ -12,8 +12,8 @@ export const ROLE_LABELS: Record<AppRole, string> = {
     [APP_ROLES.ADMIN]: '管理ユーザー',
     [APP_ROLES.ORG_ADMIN]: '組織管理ユーザー',
     [APP_ROLES.USER]: '一般ユーザー',
-    [APP_ROLES.NBC_MEMBER]: 'NBC会員',
-    [APP_ROLES.NBC_SPONSOR]: 'NBCスポンサー',
+    [APP_ROLES._MEMBER]: '会員',
+    [APP_ROLES._SPONSOR]: 'スポンサー',
 };
 
 // User permissions by role
@@ -22,7 +22,7 @@ export const ROLE_PERMISSIONS = {
         canManageUsers: true,
         canManageOrganizations: true,
         canViewAllContent: true,
-        canManageNBCMembers: true,
+        canManageMembers: true,
         canManageSponsorContent: true,
         canAccessAnalytics: true,
         canPostContent: true,
@@ -34,7 +34,7 @@ export const ROLE_PERMISSIONS = {
         canManageUsers: false,
         canManageOrganizations: true,
         canViewAllContent: false,
-        canManageNBCMembers: true,
+        canManageMembers: true,
         canManageSponsorContent: true,
         canAccessAnalytics: true,
         canPostContent: true,
@@ -46,7 +46,7 @@ export const ROLE_PERMISSIONS = {
         canManageUsers: false,
         canManageOrganizations: false,
         canViewAllContent: false,
-        canManageNBCMembers: false,
+        canManageMembers: false,
         canManageSponsorContent: false,
         canAccessAnalytics: false,
         canPostContent: false,
@@ -54,11 +54,11 @@ export const ROLE_PERMISSIONS = {
         canPostCommercialContent: false,
         canManageFacilities: false,
     },
-    [APP_ROLES.NBC_MEMBER]: {
+    [APP_ROLES._MEMBER]: {
         canManageUsers: false,
         canManageOrganizations: false,
         canViewAllContent: false,
-        canManageNBCMembers: false,
+        canManageMembers: false,
         canManageSponsorContent: false,
         canAccessAnalytics: false,
         canPostContent: true,
@@ -66,11 +66,11 @@ export const ROLE_PERMISSIONS = {
         canPostCommercialContent: false,
         canManageFacilities: false,
     },
-    [APP_ROLES.NBC_SPONSOR]: {
+    [APP_ROLES._SPONSOR]: {
         canManageUsers: false,
         canManageOrganizations: false,
         canViewAllContent: false,
-        canManageNBCMembers: false,
+        canManageMembers: false,
         canManageSponsorContent: false,
         canAccessAnalytics: false,
         canPostContent: true,

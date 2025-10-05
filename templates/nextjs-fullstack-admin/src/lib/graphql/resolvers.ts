@@ -90,7 +90,7 @@ interface FacilityInput {
 
 interface UserUpdateData {
     role: string;
-    nbcMemberId?: string;
+    MemberId?: string;
     memberSince?: Date;
     sponsorInfo?: string;
 }
@@ -342,7 +342,7 @@ export const resolvers = {
             };
         },
 
-        // NBC Video Content Queries
+        //  Video Content Queries
         videoContent: async (
             _: unknown,
             args: {
@@ -419,7 +419,7 @@ export const resolvers = {
             return videoContent;
         },
 
-        // NBC Facilities Queries
+        //  Facilities Queries
         facilities: async (
             _: unknown,
             args: {
@@ -503,19 +503,19 @@ export const resolvers = {
             return facility;
         },
 
-        // NBC Member Management Queries (Admin only)
-        nbcMembers: async (
+        //  Member Management Queries (Admin only)
+        Members: async (
             _: unknown,
             args: { limit?: number; offset?: number },
             context: Context
         ) => {
-            requirePermission(context, 'canManageNBCMembers');
+            requirePermission(context, 'canManageMembers');
 
             const { limit = 50, offset = 0 } = args;
 
             return await prisma.user.findMany({
                 where: {
-                    role: APP_ROLES.NBC_MEMBER,
+                    role: APP_ROLES._MEMBER,
                     isActive: true,
                 },
                 orderBy: { memberSince: 'desc' },
@@ -524,7 +524,7 @@ export const resolvers = {
             });
         },
 
-        nbcSponsors: async (
+        Sponsors: async (
             _: unknown,
             args: { limit?: number; offset?: number },
             context: Context
@@ -535,7 +535,7 @@ export const resolvers = {
 
             return await prisma.user.findMany({
                 where: {
-                    role: APP_ROLES.NBC_SPONSOR,
+                    role: APP_ROLES._SPONSOR,
                     isActive: true,
                 },
                 orderBy: { createdAt: 'desc' },
@@ -805,23 +805,23 @@ export const resolvers = {
             return true;
         },
 
-        // NBC Member Management (Admin only)
-        assignNBCMember: async (
+        //  Member Management (Admin only)
+        assignMember: async (
             _: unknown,
-            args: { input: { userId: string; nbcMemberId: string; memberSince?: Date } },
+            args: { input: { userId: string; MemberId: string; memberSince?: Date } },
             context: Context
         ) => {
-            requirePermission(context, 'canManageNBCMembers');
+            requirePermission(context, 'canManageMembers');
 
-            const { userId, nbcMemberId, memberSince } = args.input;
+            const { userId, MemberId, memberSince } = args.input;
 
-            // Check if NBC member ID is already assigned
+            // Check if  member ID is already assigned
             const existingMember = await prisma.user.findUnique({
-                where: { nbcMemberId },
+                where: { MemberId },
             });
 
             if (existingMember && existingMember.id !== userId) {
-                throw new GraphQLError('NBC Member ID already assigned to another user', {
+                throw new GraphQLError(' Member ID already assigned to another user', {
                     extensions: { code: 'BAD_USER_INPUT' },
                 });
             }
@@ -829,8 +829,8 @@ export const resolvers = {
             return await prisma.user.update({
                 where: { id: userId },
                 data: {
-                    role: APP_ROLES.NBC_MEMBER,
-                    nbcMemberId,
+                    role: APP_ROLES._MEMBER,
+                    MemberId,
                     memberSince: memberSince || new Date(),
                 },
             });
@@ -839,13 +839,13 @@ export const resolvers = {
         updateUserRole: async (
             _: unknown,
             args: {
-                input: { userId: string; role: string; nbcMemberId?: string; sponsorInfo?: string };
+                input: { userId: string; role: string; MemberId?: string; sponsorInfo?: string };
             },
             context: Context
         ) => {
             requirePermission(context, 'canManageUsers');
 
-            const { userId, role, nbcMemberId, sponsorInfo } = args.input;
+            const { userId, role, MemberId, sponsorInfo } = args.input;
 
             // Validate role
             if (!Object.values(APP_ROLES).includes(role as keyof typeof APP_ROLES)) {
@@ -856,12 +856,12 @@ export const resolvers = {
 
             const updateData: UserUpdateData = { role };
 
-            if (role === APP_ROLES.NBC_MEMBER && nbcMemberId) {
-                updateData.nbcMemberId = nbcMemberId;
+            if (role === APP_ROLES._MEMBER && MemberId) {
+                updateData.MemberId = MemberId;
                 updateData.memberSince = new Date();
             }
 
-            if (role === APP_ROLES.NBC_SPONSOR && sponsorInfo) {
+            if (role === APP_ROLES._SPONSOR && sponsorInfo) {
                 updateData.sponsorInfo = sponsorInfo;
             }
 

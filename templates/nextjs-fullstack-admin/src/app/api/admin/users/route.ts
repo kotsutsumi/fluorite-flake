@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
                 email: true,
                 name: true,
                 role: true,
-                nbcMemberId: true,
+                MemberId: true,
                 memberSince: true,
                 isActive: true,
                 createdAt: true,

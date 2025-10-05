@@ -24,8 +24,8 @@ function getErrorMessage(error: unknown): string {
 
 const TEST_ACCOUNTS = [
     { label: 'システム管理ユーザー', email: 'admin@example.com', password: 'Admin123!' },
-    { label: 'NBC組織管理ユーザー', email: 'orgadmin@example.com', password: 'OrgAdmin123!' },
-    // { label: '登録済み一般ユーザー', email: 'user@example.com', password: 'User123!' },
+    { label: '組織管理ユーザー', email: 'orgadmin@example.com', password: 'OrgAdmin123!' },
+    { label: '登録済み一般ユーザー', email: 'user@example.com', password: 'User123!' },
 ];
 
 function InnerLoginForm() {

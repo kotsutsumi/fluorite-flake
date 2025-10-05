@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface AdminStatsData {
     totalUsers: number;
-    nbcMembers: number;
-    nbcSponsors: number;
+    Members: number;
+    Sponsors: number;
     totalFacilities: number;
     pendingFacilities: number;
     totalVideoContent: number;
@@ -59,14 +59,14 @@ export function AdminStats() {
             color: 'bg-blue-500',
         },
         {
-            title: 'NBC会員',
-            value: stats.nbcMembers,
+            title: '会員',
+            value: stats.Members,
             icon: '⭐',
             color: 'bg-green-500',
         },
         {
-            title: 'NBCスポンサー',
-            value: stats.nbcSponsors,
+            title: 'スポンサー',
+            value: stats.Sponsors,
             icon: '🏢',
             color: 'bg-purple-500',
         },
@@ -139,21 +139,21 @@ export function AdminStats() {
                             <span className="font-medium">
                                 {(
                                     stats.totalUsers -
-                                    stats.nbcMembers -
-                                    stats.nbcSponsors
+                                    stats.Members -
+                                    stats.Sponsors
                                 ).toLocaleString()}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">NBC会員</span>
+                            <span className="text-gray-600">会員</span>
                             <span className="font-medium text-green-600">
-                                {stats.nbcMembers.toLocaleString()}
+                                {stats.Members.toLocaleString()}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">NBCスポンサー</span>
+                            <span className="text-gray-600">スポンサー</span>
                             <span className="font-medium text-purple-600">
-                                {stats.nbcSponsors.toLocaleString()}
+                                {stats.Sponsors.toLocaleString()}
                             </span>
                         </div>
                     </div>

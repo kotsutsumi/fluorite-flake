@@ -1,6 +1,7 @@
-import type { NextRequest } from 'next/server';
-import prisma from '@/lib/db';
 import { headers } from 'next/headers';
+import type { NextRequest } from 'next/server';
+
+import prisma from '@/lib/db';
 
 export interface AccessLogData {
     userId?: string;
@@ -130,7 +131,7 @@ export function extractAppVersion(userAgent?: string): string | undefined {
     }
 
     // Extract version from custom app user agent
-    const appMatch = userAgent.match(/CatchFuji\/(\d+\.\d+\.\d+)/);
+    const appMatch = userAgent.match(/FluoriteFlake\/(\d+\.\d+\.\d+)/);
     if (appMatch) {
         return appMatch[1];
     }

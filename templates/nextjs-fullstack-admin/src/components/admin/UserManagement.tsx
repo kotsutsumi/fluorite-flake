@@ -7,7 +7,7 @@ interface User {
     email: string;
     name?: string;
     role: string;
-    nbcMemberId?: string;
+    MemberId?: string;
     isActive: boolean;
     createdAt: string;
 }
@@ -105,8 +105,8 @@ export function UserManagement() {
             admin: '管理者',
             org_admin: '組織管理者',
             user: '一般ユーザー',
-            nbc_member: 'NBC会員',
-            nbc_sponsor: 'NBCスポンサー',
+            _member: '会員',
+            _sponsor: 'スポンサー',
         };
         return labels[role] || role;
     };
@@ -116,8 +116,8 @@ export function UserManagement() {
             admin: 'bg-red-100 text-red-800',
             org_admin: 'bg-orange-100 text-orange-800',
             user: 'bg-gray-100 text-gray-800',
-            nbc_member: 'bg-green-100 text-green-800',
-            nbc_sponsor: 'bg-blue-100 text-blue-800',
+            _member: 'bg-green-100 text-green-800',
+            _sponsor: 'bg-blue-100 text-blue-800',
         };
         return colors[role] || 'bg-gray-100 text-gray-800';
     };
@@ -168,7 +168,7 @@ export function UserManagement() {
                                         ロール
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        NBC会員ID
+                                        会員ID
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         ステータス
@@ -205,7 +205,7 @@ export function UserManagement() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {user.nbcMemberId || '未設定'}
+                                            {user.MemberId || '未設定'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
@@ -290,8 +290,8 @@ export function UserManagement() {
                                 onChange={(e) => setNewRole(e.target.value)}
                             >
                                 <option value="user">一般ユーザー</option>
-                                <option value="nbc_member">NBC会員</option>
-                                <option value="nbc_sponsor">NBCスポンサー</option>
+                                <option value="_member">会員</option>
+                                <option value="_sponsor">スポンサー</option>
                                 <option value="org_admin">組織管理者</option>
                                 <option value="admin">管理者</option>
                             </select>

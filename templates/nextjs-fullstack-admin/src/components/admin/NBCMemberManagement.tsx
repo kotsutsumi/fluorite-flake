@@ -7,15 +7,15 @@ interface User {
     email: string;
     name?: string;
     role: string;
-    nbcMemberId?: string;
+    MemberId?: string;
     memberSince?: string;
     isActive: boolean;
     createdAt: string;
 }
 
-export function NBCMemberManagement() {
+export function MemberManagement() {
     const [users, setUsers] = useState<User[]>([]);
-    const [nbcMembers, setNbcMembers] = useState<User[]>([]);
+    const [Members, setMembers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [newMemberId, setNewMemberId] = useState('');
@@ -34,15 +34,15 @@ export function NBCMemberManagement() {
         }
     }, []);
 
-    const fetchNBCMembers = useCallback(async () => {
+    const fetchMembers = useCallback(async () => {
         try {
-            const response = await fetch('/api/admin/nbc-members');
+            const response = await fetch('/api/admin/-members');
             if (response.ok) {
                 const data = await response.json();
-                setNbcMembers(data);
+                setMembers(data);
             }
         } catch (error) {
-            console.error('Failed to fetch NBC members:', error);
+            console.error('Failed to fetch  members:', error);
         } finally {
             setLoading(false);
         }
@@ -50,23 +50,23 @@ export function NBCMemberManagement() {
 
     useEffect(() => {
         fetchUsers();
-        fetchNBCMembers();
-    }, [fetchNBCMembers, fetchUsers]);
+        fetchMembers();
+    }, [fetchMembers, fetchUsers]);
 
-    const assignNBCMember = async () => {
+    const assignMember = async () => {
         if (!selectedUser || !newMemberId.trim()) {
             return;
         }
 
         try {
-            const response = await fetch('/api/admin/assign-nbc-member', {
+            const response = await fetch('/api/admin/assign--member', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     userId: selectedUser.id,
-                    nbcMemberId: newMemberId.trim(),
+                    MemberId: newMemberId.trim(),
                 }),
             });
 
@@ -75,8 +75,8 @@ export function NBCMemberManagement() {
                 setSelectedUser(null);
                 setNewMemberId('');
                 fetchUsers();
-                fetchNBCMembers();
-                alert('NBC会員IDを正常に割り当てました');
+                fetchMembers();
+                alert('会員IDを正常に割り当てました');
             } else {
                 const data = await response.json();
                 alert(data.message || 'エラーが発生しました');
@@ -86,13 +86,13 @@ export function NBCMemberManagement() {
         }
     };
 
-    const removeNBCMember = async (userId: string) => {
-        if (!confirm('この会員のNBC会員資格を取り消しますか？')) {
+    const removeMember = async (userId: string) => {
+        if (!confirm('この会員の会員資格を取り消しますか？')) {
             return;
         }
 
         try {
-            const response = await fetch('/api/admin/remove-nbc-member', {
+            const response = await fetch('/api/admin/remove--member', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -102,8 +102,8 @@ export function NBCMemberManagement() {
 
             if (response.ok) {
                 fetchUsers();
-                fetchNBCMembers();
-                alert('NBC会員資格を取り消しました');
+                fetchMembers();
+                alert('会員資格を取り消しました');
             } else {
                 const data = await response.json();
                 alert(data.message || 'エラーが発生しました');
@@ -119,11 +119,11 @@ export function NBCMemberManagement() {
             user.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredNBCMembers = nbcMembers.filter(
+    const filteredMembers = Members.filter(
         (member) =>
             member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.nbcMemberId?.toLowerCase().includes(searchTerm.toLowerCase())
+            member.MemberId?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) {
@@ -138,9 +138,9 @@ export function NBCMemberManagement() {
         <div className="space-y-6">
             <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-800">NBC会員管理</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">会員管理</h2>
                     <p className="text-sm text-gray-600 mt-1">
-                        一般ユーザーにNBC会員IDを割り当てて、NBC会員に昇格させることができます
+                        一般ユーザーに会員IDを割り当てて、会員に昇格させることができます
                     </p>
                 </div>
 
@@ -189,7 +189,7 @@ export function NBCMemberManagement() {
                                             }}
                                             className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                                         >
-                                            NBC会員に昇格
+                                            会員に昇格
                                         </button>
                                     </div>
                                 ))}
@@ -201,13 +201,13 @@ export function NBCMemberManagement() {
                             </div>
                         </div>
 
-                        {/* NBC会員一覧 */}
+                        {/* 会員一覧 */}
                         <div>
                             <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                NBC会員 ({filteredNBCMembers.length})
+                                会員 ({filteredMembers.length})
                             </h3>
                             <div className="space-y-3 max-h-96 overflow-y-auto">
-                                {filteredNBCMembers.map((member) => (
+                                {filteredMembers.map((member) => (
                                     <div
                                         key={member.id}
                                         className="flex items-center justify-between p-3 border border-green-200 rounded-lg bg-green-50"
@@ -220,7 +220,7 @@ export function NBCMemberManagement() {
                                                 {member.email}
                                             </div>
                                             <div className="text-sm font-medium text-green-700">
-                                                NBC会員ID: {member.nbcMemberId}
+                                                会員ID: {member.MemberId}
                                             </div>
                                             <div className="text-xs text-gray-400">
                                                 会員登録:{' '}
@@ -233,16 +233,16 @@ export function NBCMemberManagement() {
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => removeNBCMember(member.id)}
+                                            onClick={() => removeMember(member.id)}
                                             className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
                                         >
                                             資格取消
                                         </button>
                                     </div>
                                 ))}
-                                {filteredNBCMembers.length === 0 && (
+                                {filteredMembers.length === 0 && (
                                     <div className="text-center text-gray-500 py-8">
-                                        該当するNBC会員がいません
+                                        該当する会員がいません
                                     </div>
                                 )}
                             </div>
@@ -251,12 +251,12 @@ export function NBCMemberManagement() {
                 </div>
             </div>
 
-            {/* NBC会員ID割り当てモーダル */}
+            {/* 会員ID割り当てモーダル */}
             {showAssignModal && selectedUser && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-96">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            NBC会員ID割り当て
+                            会員ID割り当て
                         </h3>
                         <div className="mb-4">
                             <div className="text-sm text-gray-600 mb-2">対象ユーザー:</div>
@@ -270,18 +270,18 @@ export function NBCMemberManagement() {
                                 htmlFor="memberId"
                                 className="block text-sm font-medium text-gray-700 mb-2"
                             >
-                                NBC会員ID
+                                会員ID
                             </label>
                             <input
                                 type="text"
                                 id="memberId"
-                                placeholder="例: NBC-2024-001"
+                                placeholder="例: -2024-001"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 value={newMemberId}
                                 onChange={(e) => setNewMemberId(e.target.value)}
                             />
                             <div className="text-xs text-gray-500 mt-1">
-                                一意のNBC会員IDを入力してください
+                                一意の会員IDを入力してください
                             </div>
                         </div>
                         <div className="flex justify-end space-x-3">
@@ -298,7 +298,7 @@ export function NBCMemberManagement() {
                             </button>
                             <button
                                 type="button"
-                                onClick={assignNBCMember}
+                                onClick={assignMember}
                                 disabled={!newMemberId.trim()}
                                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >

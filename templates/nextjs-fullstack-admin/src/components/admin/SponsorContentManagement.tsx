@@ -44,7 +44,7 @@ export function SponsorContentManagement() {
 
     const fetchSponsors = useCallback(async () => {
         try {
-            const response = await fetch('/api/admin/nbc-sponsors');
+            const response = await fetch('/api/admin/-sponsors');
             if (response.ok) {
                 const data = await response.json();
                 setSponsors(data);
@@ -82,7 +82,7 @@ export function SponsorContentManagement() {
                 },
                 body: JSON.stringify({
                     userId,
-                    role: 'nbc_sponsor',
+                    role: '_sponsor',
                     sponsorInfo,
                 }),
             });
@@ -170,7 +170,7 @@ export function SponsorContentManagement() {
                         スポンサー・コンテンツ管理
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
-                        NBCスポンサーの管理と施設情報の承認・管理
+                        スポンサーの管理と施設情報の承認・管理
                     </p>
                 </div>
 
@@ -186,7 +186,7 @@ export function SponsorContentManagement() {
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
                             }`}
                         >
-                            NBCスポンサー ({sponsors.length})
+                            スポンサー ({sponsors.length})
                         </button>
                         <button
                             type="button"
@@ -288,7 +288,7 @@ export function SponsorContentManagement() {
                                 </table>
                                 {sponsors.length === 0 && (
                                     <div className="text-center text-gray-500 py-8">
-                                        NBCスポンサーがいません
+                                        スポンサーがいません
                                     </div>
                                 )}
                             </div>

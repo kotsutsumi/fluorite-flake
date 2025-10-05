@@ -14,43 +14,43 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { userId, nbcMemberId } = body;
+        const { userId, MemberId } = body;
 
-        if (!userId || !nbcMemberId) {
+        if (!userId || !MemberId) {
             return NextResponse.json(
-                { message: 'User ID and NBC Member ID are required' },
+                { message: 'User ID and  Member ID are required' },
                 { status: 400 }
             );
         }
 
-        // Check if NBC Member ID is already assigned
+        // Check if  Member ID is already assigned
         const existingMember = await prisma.user.findUnique({
-            where: { nbcMemberId },
+            where: { MemberId },
         });
 
         if (existingMember && existingMember.id !== userId) {
             return NextResponse.json(
-                { message: 'This NBC Member ID is already assigned to another user' },
+                { message: 'This  Member ID is already assigned to another user' },
                 { status: 400 }
             );
         }
 
-        // Update user to NBC member role
+        // Update user to  member role
         const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: {
-                role: APP_ROLES.NBC_MEMBER,
-                nbcMemberId,
+                role: APP_ROLES._MEMBER,
+                MemberId,
                 memberSince: new Date(),
             },
         });
 
         return NextResponse.json({
-            message: 'NBC Member ID assigned successfully',
+            message: ' Member ID assigned successfully',
             user: updatedUser,
         });
     } catch (error) {
-        console.error('Error assigning NBC member:', error);
+        console.error('Error assigning  member:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }

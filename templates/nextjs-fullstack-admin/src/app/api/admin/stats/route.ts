@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
         const [
             totalUsers,
-            nbcMembers,
-            nbcSponsors,
+            Members,
+            Sponsors,
             totalFacilities,
             pendingFacilities,
             totalVideoContent,
@@ -30,14 +30,14 @@ export async function GET(request: NextRequest) {
             // Total users
             prisma.user.count(),
 
-            // NBC members
+            //  members
             prisma.user.count({
-                where: { role: APP_ROLES.NBC_MEMBER, isActive: true },
+                where: { role: APP_ROLES._MEMBER, isActive: true },
             }),
 
-            // NBC sponsors
+            //  sponsors
             prisma.user.count({
-                where: { role: APP_ROLES.NBC_SPONSOR, isActive: true },
+                where: { role: APP_ROLES._SPONSOR, isActive: true },
             }),
 
             // Total facilities
@@ -68,8 +68,8 @@ export async function GET(request: NextRequest) {
 
         const stats = {
             totalUsers,
-            nbcMembers,
-            nbcSponsors,
+            Members,
+            Sponsors,
             totalFacilities,
             pendingFacilities,
             totalVideoContent,

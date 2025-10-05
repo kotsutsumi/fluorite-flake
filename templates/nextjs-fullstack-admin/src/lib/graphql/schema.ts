@@ -7,7 +7,7 @@ export const typeDefs = `#graphql
     name: String
     image: String
     role: String!
-    nbcMemberId: String
+    MemberId: String
     memberSince: DateTime
     sponsorInfo: String
     metadata: String
@@ -177,7 +177,7 @@ export const typeDefs = `#graphql
     count: Int!
   }
 
-  # NBC Video Content Types
+  #  Video Content Types
   type VideoContent {
     id: String!
     title: String!
@@ -219,7 +219,7 @@ export const typeDefs = `#graphql
     offset: Int = 0
   }
 
-  # NBC Facility Types
+  #  Facility Types
   type Facility {
     id: String!
     name: String!
@@ -266,17 +266,17 @@ export const typeDefs = `#graphql
     offset: Int = 0
   }
 
-  # NBC Member Management Types
-  input NBCMemberInput {
+  #  Member Management Types
+  input MemberInput {
     userId: String!
-    nbcMemberId: String!
+    MemberId: String!
     memberSince: DateTime
   }
 
   input UpdateUserRoleInput {
     userId: String!
     role: String!
-    nbcMemberId: String
+    MemberId: String
     sponsorInfo: String
   }
 
@@ -290,9 +290,9 @@ export const typeDefs = `#graphql
     facilities(filter: FacilityFilter): [Facility!]!
     facilityById(id: String!): Facility
 
-    # NBC Member Management (Admin only)
-    nbcMembers(limit: Int = 50, offset: Int = 0): [User!]!
-    nbcSponsors(limit: Int = 50, offset: Int = 0): [User!]!
+    #  Member Management (Admin only)
+    Members(limit: Int = 50, offset: Int = 0): [User!]!
+    Sponsors(limit: Int = 50, offset: Int = 0): [User!]!
   }
 
   extend type Mutation {
@@ -308,8 +308,8 @@ export const typeDefs = `#graphql
     publishFacility(id: String!, published: Boolean!): Facility!
     deleteFacility(id: String!): Boolean!
 
-    # NBC Member Management (Admin only)
-    assignNBCMember(input: NBCMemberInput!): User!
+    #  Member Management (Admin only)
+    assignMember(input: MemberInput!): User!
     updateUserRole(input: UpdateUserRoleInput!): User!
     deactivateUser(userId: String!): User!
     reactivateUser(userId: String!): User!

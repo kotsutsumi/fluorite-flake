@@ -16,9 +16,9 @@ model User {
   name          String?
   image         String?
   role          String       @default("user")
-  nbcMemberId   String?      @unique // NBC会員ID (管理画面で設定)
-  memberSince   DateTime?    // NBC会員登録日
-  sponsorInfo   Json?        // NBCスポンサー情報 (JSON)
+  MemberId   String?      @unique // 会員ID (管理画面で設定)
+  memberSince   DateTime?    // 会員登録日
+  sponsorInfo   Json?        // スポンサー情報 (JSON)
   metadata      Json?        // 追加のユーザーメタデータ
   isActive      Boolean      @default(true)
   createdAt     DateTime     @default(now())
@@ -194,7 +194,7 @@ model DeviceInfo {
   @@index([lastSeenAt])
 }
 
-// NBC会員向けビデオコンテンツ (リール動画)
+// 会員向けビデオコンテンツ (リール動画)
 model VideoContent {
   id              String         @id @default(cuid())
   title           String
@@ -360,7 +360,7 @@ model VideoComment {
   @@index([createdAt])
 }
 
-// NBCスポンサー向け商業施設情報
+// スポンサー向け商業施設情報
 model Facility {
   id              String      @id @default(cuid())
   name            String      // 施設名

@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const nbcMembers = await prisma.user.findMany({
+        const Members = await prisma.user.findMany({
             where: {
-                role: APP_ROLES.NBC_MEMBER,
+                role: APP_ROLES._MEMBER,
                 isActive: true,
             },
             select: {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
                 email: true,
                 name: true,
                 role: true,
-                nbcMemberId: true,
+                MemberId: true,
                 memberSince: true,
                 isActive: true,
                 createdAt: true,
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        return NextResponse.json(nbcMembers);
+        return NextResponse.json(Members);
     } catch (error) {
-        console.error('Error fetching NBC members:', error);
+        console.error('Error fetching  members:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }
