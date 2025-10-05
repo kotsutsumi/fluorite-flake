@@ -35,7 +35,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
         >
             <Box
                 borderColor="red"
-                borderStyle="double"
+                borderStyle="round"
                 flexDirection="column"
                 padding={2}
                 width={60}

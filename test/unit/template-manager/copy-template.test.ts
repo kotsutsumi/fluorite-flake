@@ -2,7 +2,7 @@
  * テンプレートコピーの基本動作を確認するテスト
  */
 
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -28,23 +28,17 @@ describe("copyTemplateDirectory", () => {
             templateName: "nextjs-fullstack-admin",
             targetDirectory,
             variableFiles: ["package.json"],
-            variables: { "{{PROJECT_NAME}}": "test-app" },
-            executableFiles: ["scripts/vercel-env-setup.sh"],
+            variables: { "{{PROJECT_PACKAGE_NAME}}": "test-app-web" },
+            executableFiles: [],
         });
 
         expect(result.files).toContain("package.json");
-        expect(result.directories).toContain("app");
+        expect(result.directories).toContain("src");
 
         const packageJson = JSON.parse(
             await readFile(join(targetDirectory, "package.json"), "utf8")
         );
-        expect(packageJson.name).toBe("test-app");
-
-        const scriptStats = await stat(
-            join(targetDirectory, "scripts", "vercel-env-setup.sh")
-        );
-        // biome-ignore lint/suspicious/noBitwiseOperators: ファイルの実行権限チェックに必要
-        expect(scriptStats.mode & 0o100).toBeGreaterThan(0);
+        expect(packageJson.name).toBe("test-app-web");
     });
 });
 

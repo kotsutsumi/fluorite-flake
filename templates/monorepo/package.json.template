@@ -1,10 +1,10 @@
 {
 	"name": "{{PROJECT_NAME}}-workspace",
 	"private": true,
-	"packageManager": "pnpm@^10.0.0",
+	"packageManager": "pnpm@10.18.0",
 	"workspaces": ["apps/*", "packages/*"],
 	"scripts": {
-		"dev": "turbo run dev --filter=apps/web",
+		"dev": "turbo run dev --filter={{PROJECT_NAME}}-web",
 		"build": "turbo run build",
 		"lint": "ultracite check",
 		"format": "ultracite fix",
@@ -27,6 +27,6 @@
 	},
 	"engines": {
 		"node": ">=20.0.0",
-		"pnpm": ">=10.0.0"
+		"pnpm": ">=10.18.0"
 	}
 }

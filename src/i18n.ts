@@ -174,6 +174,7 @@ type RawLocaleMessages = {
             force: string;
             monorepo: string;
             simple?: string;
+            database: string;
         };
         invalidProjectType: string;
         availableProjectTypes: string;
@@ -181,7 +182,10 @@ type RawLocaleMessages = {
         availableTemplates: string;
         selectProjectTypePrompt: string;
         selectTemplatePrompt: string;
+        selectDatabasePrompt: string;
         confirmMonorepoPrompt: string;
+        invalidDatabase: string;
+        availableDatabases: string;
         spinnerCreating: string;
         spinnerSettingUp: string;
         spinnerInstallingDeps: string;
@@ -207,9 +211,11 @@ type RawLocaleMessages = {
         pnpmInstallCommands: string[];
         pnpmMoreInfo: string;
         promptProjectName: string;
+        projectNamePlaceholder: string;
+        projectNameRequired: string;
+        projectAlreadyExists: string;
         usingDefaultProjectName: string;
         invalidProjectName: string;
-        projectNamePlaceholder: string;
         directoryExists: string;
         confirmOverwrite: string;
         directoryRemoved: string;
@@ -269,6 +275,7 @@ export type LocaleMessages = {
             dir: string;
             force: string;
             monorepo: string;
+            database: string;
         };
         invalidProjectType: (type: string) => string;
         availableProjectTypes: string;
@@ -276,7 +283,10 @@ export type LocaleMessages = {
         availableTemplates: (templates: readonly string[]) => string;
         selectProjectTypePrompt: string;
         selectTemplatePrompt: (typeName: string) => string;
+        selectDatabasePrompt: string;
         confirmMonorepoPrompt: (templateName: string) => string;
+        invalidDatabase: (database: string) => string;
+        availableDatabases: string;
         spinnerCreating: (type: string, name: string) => string;
         spinnerSettingUp: (type: string) => string;
         spinnerInstallingDeps: string;
@@ -298,9 +308,11 @@ export type LocaleMessages = {
         pnpmInstallCommands: string[];
         pnpmMoreInfo: string;
         promptProjectName: string;
+        projectNamePlaceholder: string;
+        projectNameRequired: string;
+        projectAlreadyExists: string;
         usingDefaultProjectName: string;
         invalidProjectName: string;
-        projectNamePlaceholder: string;
         directoryExists: string;
         confirmOverwrite: string;
         directoryRemoved: string;
@@ -387,6 +399,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 dir: rawMessages.create.args.dir,
                 force: rawMessages.create.args.force,
                 monorepo: rawMessages.create.args.monorepo,
+                database: rawMessages.create.args.database,
             },
             invalidProjectType: (type: string) =>
                 formatMessage(rawMessages.create.invalidProjectType, { type }),
@@ -405,10 +418,14 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 formatMessage(rawMessages.create.selectTemplatePrompt, {
                     typeName,
                 }),
+            selectDatabasePrompt: rawMessages.create.selectDatabasePrompt,
             confirmMonorepoPrompt: (templateName: string) =>
                 formatMessage(rawMessages.create.confirmMonorepoPrompt, {
                     template: templateName,
                 }),
+            invalidDatabase: (database: string) =>
+                formatMessage(rawMessages.create.invalidDatabase, { database }),
+            availableDatabases: rawMessages.create.availableDatabases,
             spinnerCreating: (type: string, name: string) =>
                 formatMessage(rawMessages.create.spinnerCreating, {
                     type,
@@ -457,9 +474,11 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             pnpmInstallCommands: rawMessages.create.pnpmInstallCommands,
             pnpmMoreInfo: rawMessages.create.pnpmMoreInfo,
             promptProjectName: rawMessages.create.promptProjectName,
+            projectNamePlaceholder: rawMessages.create.projectNamePlaceholder,
+            projectNameRequired: rawMessages.create.projectNameRequired,
+            projectAlreadyExists: rawMessages.create.projectAlreadyExists,
             usingDefaultProjectName: rawMessages.create.usingDefaultProjectName,
             invalidProjectName: rawMessages.create.invalidProjectName,
-            projectNamePlaceholder: rawMessages.create.projectNamePlaceholder,
             directoryExists: rawMessages.create.directoryExists,
             confirmOverwrite: rawMessages.create.confirmOverwrite,
             directoryRemoved: rawMessages.create.directoryRemoved,

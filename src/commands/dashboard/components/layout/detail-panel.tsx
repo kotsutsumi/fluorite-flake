@@ -29,6 +29,7 @@ const TABS: Array<{
  */
 export const DetailPanel: React.FC = () => {
     const snapshot = useSnapshot(dashboardStore);
+    const panelBorderColor = snapshot.activeFocus === "tabs" ? "cyan" : "gray";
 
     // キーボード入力でタブ切り替え
     useInput((input) => {
@@ -102,8 +103,8 @@ export const DetailPanel: React.FC = () => {
 
             {/* サービス別パネル */}
             <Box
-                borderColor="gray"
-                borderStyle="single"
+                borderColor={panelBorderColor}
+                borderStyle="round"
                 flexGrow={1}
                 padding={1}
             >

@@ -22,8 +22,6 @@ if (isDevelopment()) {
 
     // 開発用の一時ディレクトリをセットアップ
     setupDevelopmentWorkspace();
-
-    //
 }
 
 const main = defineCommand({

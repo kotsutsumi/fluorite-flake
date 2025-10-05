@@ -8,6 +8,9 @@ export type ServiceType = "vercel" | "turso" | "supabase" | "github";
 // タブタイプ
 export type TabType = "overview" | "operations" | "logs" | "metrics";
 
+// フォーカス領域タイプ
+export type FocusArea = "services" | "tabs" | "shortcuts";
+
 // 認証ステータス
 export type AuthStatus =
     | "unknown"
@@ -20,6 +23,7 @@ export type DashboardState = {
     // UI状態
     activeService: ServiceType;
     activeTab: TabType;
+    activeFocus: FocusArea;
     isLoading: boolean;
     errorMessage?: string;
 

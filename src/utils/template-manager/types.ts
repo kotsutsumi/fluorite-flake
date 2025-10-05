@@ -8,6 +8,7 @@ export type CopyTemplateOptions = {
     variableFiles?: string[];
     variables?: Record<string, string>;
     executableFiles?: string[];
+    excludePatterns?: string[];
 };
 
 /**

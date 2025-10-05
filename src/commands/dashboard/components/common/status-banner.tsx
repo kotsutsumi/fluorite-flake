@@ -52,9 +52,10 @@ export const StatusBanner: React.FC = () => {
     return (
         <Box
             borderColor={statusColor}
-            borderStyle="single"
+            borderStyle="round"
             justifyContent="space-between"
-            padding={1}
+            paddingX={2}
+            paddingY={1}
         >
             {/* 左側：タイトルとステータス */}
             <Box>

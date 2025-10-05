@@ -37,6 +37,5 @@
       "dependsOn": ["lint", "typecheck", "test"],
       "outputs": []
     }
-  },
-  "pipeline": {}
+  }
 }

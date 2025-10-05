@@ -6,6 +6,7 @@ import { proxy } from "valtio";
 import type {
     AuthStatus,
     DashboardState,
+    FocusArea,
     ServiceType,
     TabType,
 } from "../types/common.js";
@@ -17,6 +18,7 @@ export const dashboardStore = proxy<DashboardState>({
     // UI状態
     activeService: "vercel" as ServiceType,
     activeTab: "overview" as TabType,
+    activeFocus: "services" as FocusArea,
     isLoading: false,
     errorMessage: undefined,
 
@@ -40,6 +42,7 @@ export const dashboardStore = proxy<DashboardState>({
 export function setActiveService(service: ServiceType): void {
     dashboardStore.activeService = service;
     dashboardStore.activeTab = "overview"; // タブをリセット
+    dashboardStore.activeFocus = "services";
 }
 
 /**
@@ -48,6 +51,15 @@ export function setActiveService(service: ServiceType): void {
  */
 export function setActiveTab(tab: TabType): void {
     dashboardStore.activeTab = tab;
+    dashboardStore.activeFocus = "tabs";
+}
+
+/**
+ * フォーカス領域を設定する
+ * @param focus フォーカス対象のUI領域
+ */
+export function setActiveFocus(focus: FocusArea): void {
+    dashboardStore.activeFocus = focus;
 }
 
 /**
@@ -108,6 +120,7 @@ export function clearCache(): void {
 export function resetStore(): void {
     dashboardStore.activeService = "vercel";
     dashboardStore.activeTab = "overview";
+    dashboardStore.activeFocus = "services";
     dashboardStore.isLoading = false;
     dashboardStore.errorMessage = undefined;
     dashboardStore.authStatus = {

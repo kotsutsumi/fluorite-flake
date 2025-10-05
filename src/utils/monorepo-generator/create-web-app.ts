@@ -26,7 +26,7 @@ export function createWebAppPackageJson(config: ProjectConfig): void {
                     typecheck: "tsc --noEmit",
                 },
                 dependencies: {
-                    next: "^15.0.0",
+                    next: "^15.5.4",
                     react: "^18.0.0",
                     "react-dom": "^18.0.0",
                 },

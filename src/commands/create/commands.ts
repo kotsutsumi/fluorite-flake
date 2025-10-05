@@ -8,13 +8,19 @@ import { getMessages } from "../../i18n.js";
 import { validatePnpm } from "../../utils/pnpm-validator/index.js";
 import {
     confirmDirectoryOverwrite,
+    promptForDatabase,
     promptForProjectName,
 } from "../../utils/user-input/index.js";
 import { createProjectConfig } from "./config.js";
 import { generateProject } from "./generator.js";
 import { selectProjectTemplate } from "./template-selector/index.js";
-import type { ProjectType } from "./types.js";
-import { validateProjectType } from "./validators.js";
+import type { DatabaseType, ProjectType } from "./types.js";
+import {
+    hasDatabaseFeature,
+    showInvalidDatabaseError,
+    validateDatabase,
+    validateProjectType,
+} from "./validators.js";
 
 const ADVANCED_TEMPLATES: Partial<Record<ProjectType, readonly string[]>> = {
     nextjs: ["fullstack-admin"],
@@ -39,10 +45,41 @@ function hasExplicitMonorepoFlag(rawArgs: unknown): boolean {
 }
 
 /**
+ * データベース選択を決定
+ */
+async function determineDatabaseSelection(
+    args: { database?: string },
+    template: string | undefined
+): Promise<DatabaseType | undefined> {
+    let database: DatabaseType | undefined = args.database as DatabaseType;
+
+    // データベースが指定されているがバリデーションに失敗した場合
+    if (args.database && !validateDatabase(args.database)) {
+        showInvalidDatabaseError(args.database);
+        process.exit(1);
+    }
+
+    // データベースが指定されていない場合で、テンプレートがデータベース機能を持つ場合はプロンプト表示
+    if (!database && template && hasDatabaseFeature(template)) {
+        database = await promptForDatabase();
+        if (database === undefined) {
+            process.exit(0); // ユーザーがキャンセルした場合
+        }
+    }
+
+    return database;
+}
+
+/**
  * プロジェクトタイプとテンプレートを決定
  */
 async function determineProjectTypeAndTemplate(
-    args: any,
+    args: {
+        type?: string;
+        template?: string;
+        simple?: boolean;
+        monorepo?: boolean;
+    },
     hasExplicitMonorepo: boolean
 ): Promise<{
     projectType: string;
@@ -105,8 +142,9 @@ type CreateAndValidateConfigOptions = {
     projectType: string;
     projectName: string;
     template: string | undefined;
-    args: any;
+    args: { dir?: string; force?: boolean };
     isMonorepoMode: boolean;
+    database?: DatabaseType;
 };
 
 /**
@@ -115,14 +153,21 @@ type CreateAndValidateConfigOptions = {
 async function createAndValidateConfig(
     options: CreateAndValidateConfigOptions
 ) {
-    const { projectType, projectName, template, args, isMonorepoMode } =
-        options;
+    const {
+        projectType,
+        projectName,
+        template,
+        args,
+        isMonorepoMode,
+        database,
+    } = options;
     const config = createProjectConfig(projectType, {
         name: projectName,
         template,
         dir: args.dir,
         force: args.force,
         monorepo: isMonorepoMode,
+        database,
     });
 
     if (!config) {
@@ -184,6 +229,11 @@ export const createCommand = defineCommand({
             description: "Create a simple project (non-monorepo structure)",
             alias: "s",
         },
+        database: {
+            type: "string",
+            description: initialMessages.create.args.database,
+            alias: "db",
+        },
     },
     async run({ args }) {
         const { create } = getMessages();
@@ -205,6 +255,9 @@ export const createCommand = defineCommand({
             projectName = await promptForProjectName();
         }
 
+        // データベース選択の処理
+        const database = await determineDatabaseSelection(args, args.template);
+
         // プロジェクト設定を作成
         const config = createProjectConfig(resolvedProjectType, {
             name: projectName,
@@ -212,6 +265,7 @@ export const createCommand = defineCommand({
             dir: args.dir,
             force: args.force,
             monorepo: isMonorepoMode,
+            database,
         });
 
         // 設定が無効な場合はエラー終了
@@ -270,6 +324,9 @@ export const newCommand = defineCommand({
         const { projectType, template, monorepoPreference } =
             await determineProjectTypeAndTemplate(args, hasExplicitMonorepo);
 
+        // データベース選択の決定
+        const database = await determineDatabaseSelection(args, template);
+
         // モノレポ設定の最終決定（明示指定 > 選択結果 > 既定 true）
         const isMonorepoMode = args.simple
             ? false
@@ -290,6 +347,7 @@ export const newCommand = defineCommand({
             template,
             args,
             isMonorepoMode,
+            database,
         });
 
         // プロジェクトの生成

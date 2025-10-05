@@ -59,6 +59,7 @@ export function createProjectConfig(
         template,
         force: Boolean(options.force),
         monorepo: willUseMonorepo, // 上で計算済み
+        database: options.database, // データベース設定を追加
     };
 }
 

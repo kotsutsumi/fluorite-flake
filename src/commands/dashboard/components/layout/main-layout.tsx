@@ -79,27 +79,56 @@ export const DashboardApp: React.FC<DashboardAppProps> = ({
         );
     }
 
+    const sidebarBorderColor =
+        snapshot.activeFocus === "services" ? "cyan" : "gray";
+    const detailBorderColor = snapshot.activeFocus === "tabs" ? "cyan" : "gray";
+    const shortcutBorderColor =
+        snapshot.activeFocus === "shortcuts" ? "cyan" : "gray";
+    const shortcutTextColor = shortcutBorderColor === "cyan" ? "cyan" : "gray";
+
     return (
-        <Box flexDirection="column" height={process.stdout.rows || 24}>
+        <Box
+            flexDirection="column"
+            height={process.stdout.rows || 24}
+            padding={1}
+        >
             {/* ステータスバナー */}
             <StatusBanner />
 
             {/* メインコンテンツエリア */}
-            <Box flexDirection="row" flexGrow={1}>
+            <Box flexDirection="row" flexGrow={1} marginTop={1}>
                 {/* 左サイドバー（サービス一覧） */}
-                <Box borderColor="gray" borderStyle="single" width={20}>
+                <Box
+                    borderColor={sidebarBorderColor}
+                    borderStyle="round"
+                    paddingX={1}
+                    paddingY={1}
+                    width={24}
+                >
                     <Sidebar />
                 </Box>
 
                 {/* 右詳細パネル */}
-                <Box flexGrow={1} marginLeft={1}>
+                <Box
+                    borderColor={detailBorderColor}
+                    borderStyle="round"
+                    flexGrow={1}
+                    marginLeft={1}
+                    padding={1}
+                >
                     <DetailPanel />
                 </Box>
             </Box>
 
             {/* キーボードショートカットヘルプ */}
-            <Box borderColor="gray" borderStyle="single" paddingX={1}>
-                <Text color="gray">
+            <Box
+                borderColor={shortcutBorderColor}
+                borderStyle="round"
+                marginTop={1}
+                paddingX={2}
+                paddingY={1}
+            >
+                <Text color={shortcutTextColor}>
                     [v] Vercel [t] Turso [s] Supabase [g] GitHub [q] Quit
                 </Text>
             </Box>

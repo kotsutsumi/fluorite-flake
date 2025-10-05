@@ -4,11 +4,10 @@
 import { cancel, isCancel, text } from "@clack/prompts";
 
 import { getMessages } from "../../i18n.js";
+import { checkProjectExists } from "./check-project-exists.js";
 
 // プロジェクト名の検証に利用する正規表現
 const PROJECT_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
-// 入力が空だった場合に利用するデフォルト名
-const DEFAULT_PROJECT_NAME = "my-fluorite-project";
 
 /**
  * プロジェクト名の入力を促進する
@@ -16,42 +15,54 @@ const DEFAULT_PROJECT_NAME = "my-fluorite-project";
 export async function promptForProjectName(): Promise<string> {
     const { create } = getMessages();
 
-    // Clack のテキストプロンプトでガイド付きの入力UIを表示
-    const response = await text({
-        message: create.promptProjectName,
-        placeholder: create.projectNamePlaceholder,
-        validate(value) {
-            const trimmed = value.trim();
+    while (true) {
+        // Clack のテキストプロンプトでガイド付きの入力UIを表示
+        const response = await text({
+            message: create.promptProjectName,
+            placeholder: create.projectNamePlaceholder,
+            validate(value) {
+                // value が undefined の場合は空文字列として扱う
+                const trimmed = (value || "").trim();
 
-            // 入力が空の場合はデフォルト名を後段で採用するためバリデーションを通過させる
-            if (!trimmed) {
+                // 入力が空の場合はエラーメッセージを表示
+                if (!trimmed) {
+                    return create.projectNameRequired;
+                }
+
+                // 許可文字以外が含まれている場合はエラーメッセージを表示
+                if (!PROJECT_NAME_PATTERN.test(trimmed)) {
+                    return create.invalidProjectName;
+                }
+
                 return;
+            },
+        });
+
+        // 入力がキャンセルされた場合は終了メッセージを表示して即座に終了
+        if (isCancel(response)) {
+            cancel(create.operationCancelled);
+            process.exit(0);
+        }
+
+        // response が undefined の場合は空文字列として扱う
+        const trimmed = (response || "").trim();
+
+        // 入力が有効な場合はプロジェクト存在チェックを行う
+        if (trimmed && PROJECT_NAME_PATTERN.test(trimmed)) {
+            // プロジェクトが既に存在するかチェック
+            if (checkProjectExists(trimmed)) {
+                console.log(
+                    create.projectAlreadyExists.replace("{name}", trimmed)
+                );
+                // 既に存在する場合は再度入力を促す
+                continue;
             }
 
-            // 許可文字以外が含まれている場合はエラーメッセージを表示
-            if (!PROJECT_NAME_PATTERN.test(trimmed)) {
-                return create.invalidProjectName;
-            }
+            return trimmed;
+        }
 
-            return;
-        },
-    });
-
-    // 入力がキャンセルされた場合は終了メッセージを表示して即座に終了
-    if (isCancel(response)) {
-        cancel(create.operationCancelled);
-        process.exit(0);
+        // 空の場合は再度入力を促す（validate関数でエラーメッセージが表示される）
     }
-
-    const trimmed = response.trim();
-
-    // 入力が空の場合はデフォルト名を利用
-    if (!trimmed) {
-        console.log(create.usingDefaultProjectName);
-        return DEFAULT_PROJECT_NAME;
-    }
-
-    return trimmed;
 }
 
 // EOF
