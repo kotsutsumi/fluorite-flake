@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthenticationManager } from "../../../../../src/utils/github-cli/core/authentication.ts";
 import { GitHubCLIErrorCode } from "../../../../../src/utils/github-cli/types/common.ts";
 
-const executeRawMock = vi.fn();
+const executeRawMock = vi.hoisted(() => vi.fn());
 
 // GitHub CLI エグゼキュータのモック
 vi.mock("../../../../../src/utils/github-cli/core/command-executor.ts", () => ({

@@ -12,8 +12,8 @@ import {
 } from "../../../../src/utils/github-cli/index.ts";
 import { GitHubCLIErrorCode } from "../../../../src/utils/github-cli/types/common.ts";
 
-const execMock = vi.fn();
-const promisifyMock = vi.fn((fn) => fn);
+const execMock = vi.hoisted(() => vi.fn());
+const promisifyMock = vi.hoisted(() => vi.fn((fn) => fn));
 
 vi.mock("node:child_process", () => ({
     exec: execMock,
