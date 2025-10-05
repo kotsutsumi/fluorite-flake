@@ -1,28 +1,21 @@
 /* ベース */
 html,
 body {
-	font-family:
-		system-ui,
-		-apple-system,
-		"Segoe UI",
-		Roboto,
-		"Noto Sans JP",
-		"Hiragino Kaku Gothic ProN",
-		"Yu Gothic",
-		"Helvetica Neue",
-		Arial,
-		sans-serif;
-	line-height: 1.8;
-	font-size: 16px;
-	color: #1a1a1a;
-	background: transparent; /* VSCodeのテーマ背景を活かす */
+    font-family:
+        system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP",
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", "Helvetica Neue", Arial,
+        sans-serif;
+    line-height: 1.8;
+    font-size: 16px;
+    color: #1a1a1a;
+    background: transparent; /* VSCodeのテーマ背景を活かす */
 }
 
 /* コンテナ幅・左右余白（プレビュー域に合わせ控えめ） */
 body {
-	max-width: 860px;
-	margin: 24px auto;
-	padding: 0 20px;
+    max-width: 860px;
+    margin: 24px auto;
+    padding: 0 20px;
 }
 
 /* 見出し */
@@ -32,192 +25,193 @@ h3,
 h4,
 h5,
 h6 {
-	line-height: 1.35;
-	font-weight: 700;
-	margin: 1.6em 0 0.6em;
-	color: #111;
+    line-height: 1.35;
+    font-weight: 700;
+    margin: 1.6em 0 0.6em;
+    color: #111;
 }
 h1 {
-	font-size: 1.9rem;
-	border-bottom: 1px solid #eee;
-	padding-bottom: 0.4em;
+    font-size: 1.9rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.4em;
 }
 h2 {
-	font-size: 1.6rem;
-	border-left: 4px solid #4c9;
-	padding-left: 0.6em;
+    font-size: 1.6rem;
+    border-left: 4px solid #4c9;
+    padding-left: 0.6em;
 }
 h3 {
-	font-size: 1.3rem;
+    font-size: 1.3rem;
 }
 h4 {
-	font-size: 1.15rem;
+    font-size: 1.15rem;
 }
 
 /* 段落・リンク・強調 */
 p {
-	margin: 1em 0;
+    margin: 1em 0;
 }
 a {
-	color: #0b7;
-	text-decoration: none;
+    color: #0b7;
+    text-decoration: none;
 }
 a:hover {
-	text-decoration: underline;
+    text-decoration: underline;
 }
 strong {
-	font-weight: 700;
+    font-weight: 700;
 }
 
 /* 引用 */
 blockquote {
-	margin: 1.2em 0;
-	padding: 0.8em 1em;
-	border-left: 4px solid #cde;
-	background: rgba(204, 221, 238, 0.25);
+    margin: 1.2em 0;
+    padding: 0.8em 1em;
+    border-left: 4px solid #cde;
+    background: rgba(204, 221, 238, 0.25);
 }
 
 /* 箇条書き */
 ul,
 ol {
-	margin: 0.8em 0 0.8em 1.4em;
+    margin: 0.8em 0 0.8em 1.4em;
 }
 li {
-	margin: 0.3em 0;
+    margin: 0.3em 0;
 }
 li > ul,
 li > ol {
-	margin-top: 0.3em;
+    margin-top: 0.3em;
 }
 
 /* コード（インライン） */
 code,
 kbd {
-	font-family:
-		ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-	background: rgba(27, 31, 35, 0.06);
-	padding: 0.15em 0.35em;
-	border-radius: 0.3em;
-	font-size: 0.95em;
+    font-family:
+        ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+        monospace;
+    background: rgba(27, 31, 35, 0.06);
+    padding: 0.15em 0.35em;
+    border-radius: 0.3em;
+    font-size: 0.95em;
 }
 
 /* コードブロック */
 pre code {
-	display: block;
-	padding: 1rem 1.2rem;
-	overflow: auto;
-	border-radius: 8px;
-	background: #0f172a10; /* ほんのり */
-	border: 1px solid #e5e7eb;
+    display: block;
+    padding: 1rem 1.2rem;
+    overflow: auto;
+    border-radius: 8px;
+    background: #0f172a10; /* ほんのり */
+    border: 1px solid #e5e7eb;
 }
 pre {
-	margin: 1.2rem 0;
+    margin: 1.2rem 0;
 }
 
 /* テーブル */
 table {
-	border-collapse: collapse;
-	width: 100%;
-	margin: 1.2rem 0;
-	font-size: 0.95rem;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.2rem 0;
+    font-size: 0.95rem;
 }
 th,
 td {
-	border: 1px solid #e5e7eb;
-	padding: 0.6rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 0.6rem 0.75rem;
 }
 thead th {
-	background: #f8fafc;
-	text-align: left;
+    background: #f8fafc;
+    text-align: left;
 }
 
 /* 画像 */
 img {
-	display: block;
-	max-width: 100%;
-	height: auto;
-	margin: 1rem auto;
-	border-radius: 6px;
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1rem auto;
+    border-radius: 6px;
 }
 
 /* 注意・補足（Zenn 風 "admonition" っぽい箱） */
 .note,
 .tip,
 .warning {
-	border-left: 4px solid;
-	padding: 0.9rem 1rem;
-	margin: 1rem 0;
-	border-radius: 6px;
-	background: #f8f9fb;
+    border-left: 4px solid;
+    padding: 0.9rem 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    background: #f8f9fb;
 }
 .note {
-	border-color: #60a5fa;
+    border-color: #60a5fa;
 }
 .tip {
-	border-color: #34d399;
+    border-color: #34d399;
 }
 .warning {
-	border-color: #f59e0b;
+    border-color: #f59e0b;
 }
 
 /* TOC（Markdown拡張やプラグイン出力に合わせた素朴なスタイル） */
 nav ul,
 .toc ul {
-	list-style: none;
-	margin: 0.6rem 0;
-	padding: 0;
+    list-style: none;
+    margin: 0.6rem 0;
+    padding: 0;
 }
 nav li,
 .toc li {
-	margin: 0.2rem 0;
+    margin: 0.2rem 0;
 }
 nav a,
 .toc a {
-	text-decoration: none;
-	color: #2a7;
+    text-decoration: none;
+    color: #2a7;
 }
 
 /* 水平線 */
 hr {
-	border: none;
-	border-top: 1px solid #e5e7eb;
-	margin: 2rem 0;
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 2rem 0;
 }
 
 /* ダークテーマ側（VSCodeがダークのときに効かせたい場合） */
 @media (prefers-color-scheme: dark) {
-	html,
-	body {
-		color: #e5e7eb;
-	}
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		color: #fff;
-		border-color: #1f2937;
-	}
-	a {
-		color: #42f0a7;
-	}
-	blockquote {
-		border-left-color: #244;
-		background: rgba(36, 68, 68, 0.25);
-	}
-	pre code {
-		background: #0b1220;
-		border-color: #1f2937;
-	}
-	thead th {
-		background: #0f172a;
-	}
-	th,
-	td {
-		border-color: #1f2937;
-	}
-	hr {
-		border-top-color: #1f2937;
-	}
+    html,
+    body {
+        color: #e5e7eb;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: #fff;
+        border-color: #1f2937;
+    }
+    a {
+        color: #42f0a7;
+    }
+    blockquote {
+        border-left-color: #244;
+        background: rgba(36, 68, 68, 0.25);
+    }
+    pre code {
+        background: #0b1220;
+        border-color: #1f2937;
+    }
+    thead th {
+        background: #0f172a;
+    }
+    th,
+    td {
+        border-color: #1f2937;
+    }
+    hr {
+        border-top-color: #1f2937;
+    }
 }
