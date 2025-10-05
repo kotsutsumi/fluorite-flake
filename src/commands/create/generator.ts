@@ -14,6 +14,8 @@ import {
     createWebAppPackageJson,
 } from "../../utils/monorepo-generator/index.js";
 import { generateReadmeContent } from "../../utils/readme-generator/index.js";
+import { generateFullStackAdmin } from "./template-generators/index.js";
+import type { GenerationContext } from "./template-generators/types.js";
 import type { ProjectConfig } from "./types.js";
 
 // プロジェクト生成タイムアウト定数
@@ -74,56 +76,93 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
             fs.mkdirSync(config.directory, { recursive: true });
         }
 
-        // monorepoモード（または0001.mdの方針により常時monorepo-ready構造）
-        if (config.monorepo) {
-            // monorepoディレクトリ構造を作成
-            createMonorepoStructure(config);
+        // 拡張テンプレートの処理（Phase 2実装）
+        const shouldUseAdvancedTemplate =
+            config.type === "nextjs" &&
+            (config.template === "fullstack-admin" || config.template === "fullstack-admin-js");
 
-            // monorepoテンプレートファイルをコピー
-            copyMonorepoTemplates(config);
+        if (shouldUseAdvancedTemplate) {
+            // Next.js Full-Stack Admin Template を使用
+            spinner.text = create.spinnerConfiguringTemplate(config.template);
 
-            // webアプリ用package.jsonを作成
-            createWebAppPackageJson(config);
-
-            // README.mdを作成（多言語対応）
-            const readmePath = path.join(config.directory, "README.md");
-            const readmeContent = generateReadmeContent(config);
-            fs.writeFileSync(readmePath, readmeContent);
-        } else {
-            // 通常モード（従来のシンプルな構造）
-            // 基本的なpackage.jsonを作成
-            const packageJsonPath = path.join(config.directory, "package.json");
-            const packageJsonContent = {
-                name: config.name,
-                version: "0.1.0",
-                description: `A ${config.type} project created with Fluorite Flake`,
-                scripts: {
-                    dev: getDevCommand(config.type),
-                    build: getBuildCommand(config.type),
-                },
-                dependencies: {},
-                devDependencies: {},
+            const generationContext: GenerationContext = {
+                config,
+                targetDirectory: config.directory,
+                isJavaScript: config.template === "fullstack-admin-js"
             };
-            fs.writeFileSync(
-                packageJsonPath,
-                JSON.stringify(packageJsonContent, null, 2)
-            );
 
-            // README.mdを作成（多言語対応）
-            const readmePath = path.join(config.directory, "README.md");
-            const readmeContent = generateReadmeContent(config);
-            fs.writeFileSync(readmePath, readmeContent);
+            const result = await generateFullStackAdmin(generationContext);
+
+            if (!result.success) {
+                throw new Error(`Template generation failed: ${result.errors?.join(", ")}`);
+            }
+
+            // 拡張テンプレート完了後、通常の成功フローに進む
+            debugLog("Advanced template generation completed", {
+                filesCreated: result.filesCreated?.length || 0,
+                directoriesCreated: result.directoriesCreated?.length || 0,
+                nextSteps: result.nextSteps?.length || 0
+            });
+        } else {
+            // 通常テンプレートの処理または既存のmonorepo処理
         }
 
-        // 依存関係インストールのシミュレーション
-        spinner.text = create.spinnerInstallingDeps;
-        await new Promise((resolve) => setTimeout(resolve, INSTALL_TIMEOUT_MS));
+        // 拡張テンプレートを使用した場合は、追加のmonorepo処理をスキップ
+        if (!shouldUseAdvancedTemplate) {
+            // monorepoモード（または0001.mdの方針により常時monorepo-ready構造）
+            if (config.monorepo) {
+                // monorepoディレクトリ構造を作成
+                createMonorepoStructure(config);
 
-        // テンプレート設定のシミュレーション
-        spinner.text = create.spinnerConfiguringTemplate(config.template);
-        await new Promise((resolve) =>
-            setTimeout(resolve, CONFIGURE_TIMEOUT_MS)
-        );
+                // monorepoテンプレートファイルをコピー
+                copyMonorepoTemplates(config);
+
+                // webアプリ用package.jsonを作成
+                createWebAppPackageJson(config);
+
+                // README.mdを作成（多言語対応）
+                const readmePath = path.join(config.directory, "README.md");
+                const readmeContent = generateReadmeContent(config);
+                fs.writeFileSync(readmePath, readmeContent);
+            } else {
+                // 通常モード（従来のシンプルな構造）
+                // 基本的なpackage.jsonを作成
+                const packageJsonPath = path.join(config.directory, "package.json");
+                const packageJsonContent = {
+                    name: config.name,
+                    version: "0.1.0",
+                    description: `A ${config.type} project created with Fluorite Flake`,
+                    scripts: {
+                        dev: getDevCommand(config.type),
+                        build: getBuildCommand(config.type),
+                    },
+                    dependencies: {},
+                    devDependencies: {},
+                };
+                fs.writeFileSync(
+                    packageJsonPath,
+                    JSON.stringify(packageJsonContent, null, 2)
+                );
+
+                // README.mdを作成（多言語対応）
+                const readmePath = path.join(config.directory, "README.md");
+                const readmeContent = generateReadmeContent(config);
+                fs.writeFileSync(readmePath, readmeContent);
+            }
+        }
+
+        // 拡張テンプレートを使用していない場合のみ、通常の処理を実行
+        if (!shouldUseAdvancedTemplate) {
+            // 依存関係インストールのシミュレーション
+            spinner.text = create.spinnerInstallingDeps;
+            await new Promise((resolve) => setTimeout(resolve, INSTALL_TIMEOUT_MS));
+
+            // テンプレート設定のシミュレーション
+            spinner.text = create.spinnerConfiguringTemplate(config.template);
+            await new Promise((resolve) =>
+                setTimeout(resolve, CONFIGURE_TIMEOUT_MS)
+            );
+        }
 
         // 成功メッセージの表示
         spinner.succeed(
