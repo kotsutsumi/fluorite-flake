@@ -32,9 +32,9 @@ describe("Turso CLI Database", () => {
             );
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
-                stdout: `Name        URL                               Group
-test-db     libsql://test.turso.io           default
-prod-db     libsql://prod.turso.io           production`,
+                stdout: `NAME        GROUP      URL
+test-db     default    libsql://test.turso.io
+prod-db     production libsql://prod.turso.io`,
             });
 
             // listDatabases関数を実行
@@ -54,7 +54,7 @@ prod-db     libsql://prod.turso.io           production`,
             );
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
-                stdout: "prod-db     libsql://prod.turso.io           production",
+                stdout: "prod-db     production libsql://prod.turso.io",
             });
 
             // グループを指定してlistDatabases関数を実行
@@ -78,7 +78,7 @@ prod-db     libsql://prod.turso.io           production`,
             );
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
-                stdout: "Name        URL                               Group",
+                stdout: "NAME        GROUP      URL",
             });
 
             // listDatabases関数を実行

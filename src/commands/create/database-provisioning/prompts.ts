@@ -58,28 +58,48 @@ export async function collectDatabaseConfig(
         };
     }
 
-    // 作成モード選択
-    const mode = (await select({
-        message: "データベース作成モードを選択してください:",
-        options: [
-            {
-                value: "create",
-                label: "新規作成",
-                hint: "新しいデータベースを作成します",
-            },
-            {
-                value: "existing",
-                label: "既存利用",
-                hint: "既存のデータベースを使用します",
-            },
-        ],
-    })) as "create" | "existing";
+    // 作成モードと命名設定の取得（キャンセル時に再試行するループ）
+    let naming: { dev: string; staging: string; prod: string };
+    let mode: "create" | "existing";
 
-    // 命名設定の取得
-    const naming =
-        mode === "create"
-            ? await collectNamingConfig(projectName, provider)
-            : await selectExistingDatabases(projectName, provider);
+    while (true) {
+        // 作成モード選択
+        mode = (await select({
+            message: "データベース作成モードを選択してください:",
+            options: [
+                {
+                    value: "create",
+                    label: "新規作成",
+                    hint: "新しいデータベースを作成します",
+                },
+                {
+                    value: "existing",
+                    label: "既存利用",
+                    hint: "既存のデータベースを使用します",
+                },
+            ],
+        })) as "create" | "existing";
+
+        try {
+            // 命名設定の取得
+            naming =
+                mode === "create"
+                    ? await collectNamingConfig(projectName, provider)
+                    : await selectExistingDatabases(projectName, provider);
+            break; // 成功した場合はループを抜ける
+        } catch (error) {
+            if (
+                error instanceof Error &&
+                error.message === "DATABASE_SELECTION_CANCELLED"
+            ) {
+                // キャンセルされた場合は作成モード選択に戻る
+                console.log("📝 作成モードの選択に戻ります...");
+                continue;
+            }
+            // その他のエラーは再スロー
+            throw error;
+        }
+    }
 
     // 詳細オプションの収集
     const options = await collectDetailedOptions(mode);
@@ -264,45 +284,26 @@ async function selectExistingDatabases(
             projectName
         );
 
+        // 関連するデータベースが見つからない場合は、自動的にすべてのデータベースから選択
         if (compatibleDatabases.length === 0) {
-            throw new Error(
-                `${projectName} に関連するデータベースが見つかりません。`
+            console.log(
+                `ℹ️ プロジェクト名 "${projectName}" に関連するデータベースが見つからないため、すべてのデータベースから選択します。`
             );
+
+            // 利用可能なデータベースがない場合は新規作成モードに変更
+            if (databases.length === 0) {
+                console.warn(
+                    "⚠️ 利用可能なデータベースがありません。新規作成モードに変更します。"
+                );
+                return await collectNamingConfig(projectName, provider);
+            }
+
+            // 全データベースを選択肢として使用
+            return await selectFromAllDatabases(databases, provider);
         }
 
         // 環境別にデータベースを選択
-        const dev = (await select({
-            message: "開発環境用データベースを選択:",
-            options: compatibleDatabases.map((db) => ({
-                value: db.name,
-                label: db.name,
-                hint: db.url || "",
-            })),
-        })) as string;
-
-        const staging = (await select({
-            message: "ステージング環境用データベースを選択:",
-            options: compatibleDatabases.map((db) => ({
-                value: db.name,
-                label: db.name,
-                hint: db.url || "",
-            })),
-        })) as string;
-
-        const prod = (await select({
-            message: "本番環境用データベースを選択:",
-            options: compatibleDatabases.map((db) => ({
-                value: db.name,
-                label: db.name,
-                hint: db.url || "",
-            })),
-        })) as string;
-
-        return {
-            dev: dev as string,
-            staging: staging as string,
-            prod: prod as string,
-        };
+        return await selectFromAllDatabases(compatibleDatabases, provider);
     } catch (error) {
         console.error(
             `データベース一覧取得エラー: ${error instanceof Error ? error.message : error}`
@@ -429,6 +430,172 @@ function validateDatabaseName(
 }
 
 /**
+ * 指定されたデータベース一覧から環境別にデータベースを選択する
+ * @param databases データベース一覧
+ * @param provider データベースプロバイダ
+ * @returns 選択されたデータベース設定
+ */
+async function selectFromAllDatabases(
+    databases: Array<{ name: string; url?: string }>,
+    _provider: "turso" | "supabase"
+): Promise<{ dev: string; staging: string; prod: string }> {
+    // プロジェクトベース名でグループ化
+    const projectGroups = groupDatabasesByProject(databases);
+
+    // グループ化されたプロジェクトから選択
+    if (projectGroups.size > 1) {
+        const projectOptions = Array.from(projectGroups.entries()).map(
+            ([projectName, dbs]) => ({
+                value: projectName,
+                label: projectName,
+                hint: `${dbs.length}個のデータベース`,
+            })
+        );
+
+        // 戻るオプションを追加
+        projectOptions.push({
+            value: "__back__",
+            label: "← 前の選択に戻る",
+            hint: "データベース作成モードの選択に戻ります",
+        });
+
+        const selectedProject = await select({
+            message: "データベースプロジェクトを選択してください:",
+            options: projectOptions,
+        });
+
+        // キャンセルまたは戻るオプションの処理
+        if (isCancel(selectedProject) || selectedProject === "__back__") {
+            throw new Error("DATABASE_SELECTION_CANCELLED");
+        }
+
+        const projectDatabases =
+            projectGroups.get(selectedProject as string) || [];
+        return await selectEnvironmentDatabases(projectDatabases);
+    }
+
+    // グループが1つしかない場合は直接選択
+    const allDbs = Array.from(projectGroups.values()).flat();
+    return await selectEnvironmentDatabases(allDbs);
+}
+
+/**
+ * データベースをプロジェクトベース名でグループ化する
+ * @param databases データベース一覧
+ * @returns プロジェクト名 -> データベース一覧のマップ
+ */
+function groupDatabasesByProject(
+    databases: Array<{ name: string; url?: string }>
+): Map<string, Array<{ name: string; url?: string }>> {
+    const groups = new Map<string, Array<{ name: string; url?: string }>>();
+
+    for (const db of databases) {
+        // 環境サフィックスを除去してプロジェクトベース名を取得
+        // 例: "amp-jewelry-dev" -> "amp-jewelry"
+        const projectName = extractProjectBaseName(db.name);
+
+        if (!groups.has(projectName)) {
+            groups.set(projectName, []);
+        }
+        groups.get(projectName)!.push(db);
+    }
+
+    return groups;
+}
+
+/**
+ * データベース名からプロジェクトベース名を抽出する
+ * @param dbName データベース名
+ * @returns プロジェクトベース名
+ */
+export function extractProjectBaseName(dbName: string): string {
+    // 一般的な環境サフィックスを除去
+    const suffixes = [
+        "-dev",
+        "-development",
+        "-staging",
+        "-stg",
+        "-prod",
+        "-production",
+        "-test",
+    ];
+
+    for (const suffix of suffixes) {
+        if (dbName.endsWith(suffix)) {
+            return dbName.substring(0, dbName.length - suffix.length);
+        }
+    }
+
+    return dbName; // サフィックスが見つからない場合はそのまま返す
+}
+
+/**
+ * 環境別にデータベースを自動割り当てする
+ * @param databases 対象データベース一覧（既にプロジェクトでフィルタ済み）
+ * @returns 自動割り当てされたデータベース設定
+ */
+async function selectEnvironmentDatabases(
+    databases: Array<{ name: string; url?: string }>
+): Promise<{ dev: string; staging: string; prod: string }> {
+    // 環境別に自動分類
+    const envMapping = {
+        dev: null as string | null,
+        staging: null as string | null,
+        prod: null as string | null,
+    };
+
+    for (const db of databases) {
+        const name = db.name;
+        if (name.endsWith("-dev") || name.endsWith("-development")) {
+            envMapping.dev = name;
+        } else if (name.endsWith("-staging") || name.endsWith("-stg")) {
+            envMapping.staging = name;
+        } else if (name.endsWith("-prod") || name.endsWith("-production")) {
+            envMapping.prod = name;
+        } else {
+            // サフィックスがない場合は本番環境として扱う
+            envMapping.prod = name;
+        }
+    }
+
+    // 足りない環境があった場合の確認
+    const missingEnvs = Object.entries(envMapping)
+        .filter(([_, dbName]) => !dbName)
+        .map(([env, _]) => env);
+
+    if (missingEnvs.length > 0) {
+        console.log("ℹ️ 自動割り当て結果:");
+        console.log(`   開発環境: ${envMapping.dev || "なし"}`);
+        console.log(`   ステージング環境: ${envMapping.staging || "なし"}`);
+        console.log(`   本番環境: ${envMapping.prod || "なし"}`);
+
+        if (missingEnvs.length > 0) {
+            console.log(`⚠️ 不足している環境: ${missingEnvs.join(", ")}`);
+        }
+
+        const proceed = await confirm({
+            message: "この設定で続行しますか？",
+        });
+
+        if (isCancel(proceed) || !proceed) {
+            throw new Error("DATABASE_SELECTION_CANCELLED");
+        }
+    } else {
+        console.log("✅ 環境別データベースを自動割り当てしました:");
+        console.log(`   開発環境: ${envMapping.dev}`);
+        console.log(`   ステージング環境: ${envMapping.staging}`);
+        console.log(`   本番環境: ${envMapping.prod}`);
+    }
+
+    return {
+        dev: envMapping.dev || envMapping.prod || databases[0]?.name || "",
+        staging:
+            envMapping.staging || envMapping.prod || databases[0]?.name || "",
+        prod: envMapping.prod || databases[0]?.name || "",
+    };
+}
+
+/**
  * 互換性のあるデータベースをフィルタリングする
  * @param databases データベース一覧
  * @param projectName プロジェクト名
@@ -440,15 +607,24 @@ function filterCompatibleDatabases(
 ): Array<{ name: string; url?: string }> {
     const sanitizedProjectName = projectName
         .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-");
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
 
     return databases.filter((db) => {
         const dbName = db.name.toLowerCase();
-        return (
-            dbName.includes(sanitizedProjectName) ||
-            dbName.startsWith(sanitizedProjectName) ||
-            sanitizedProjectName.includes(dbName)
-        );
+
+        // 正確なプロジェクト環境データベース名のパターン
+        const exactPatterns = [
+            `${sanitizedProjectName}-dev`,
+            `${sanitizedProjectName}-stg`,
+            `${sanitizedProjectName}-prod`,
+            `${sanitizedProjectName}-staging`,
+            `${sanitizedProjectName}-production`,
+        ];
+
+        // 完全一致のみをチェック（サブプロジェクトとの混同を防ぐ）
+        return exactPatterns.includes(dbName);
     });
 }
 

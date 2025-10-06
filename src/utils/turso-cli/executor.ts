@@ -18,11 +18,12 @@ export function executeTursoCommand(
         let stdout = "";
         let stderr = "";
 
-        // turso コマンドを実行
+        // turso コマンドを実行（macOSでのシェル解決問題を修正）
         const child = spawn("turso", args, {
             cwd,
             env: { ...process.env, ...env },
             stdio: "pipe",
+            shell: true, // シェル経由でコマンドを実行してパス解決を確実にする
         });
 
         // タイムアウトハンドリング

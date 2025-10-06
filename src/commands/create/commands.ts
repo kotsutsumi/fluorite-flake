@@ -1,6 +1,8 @@
 /**
  * createコマンドとnewコマンドの定義
  */
+
+import { join } from "node:path";
 import { defineCommand } from "citty";
 
 import { debugLog } from "../../debug.js";
@@ -38,6 +40,41 @@ const ADVANCED_TEMPLATES: Partial<Record<ProjectType, readonly string[]>> = {
 
 // 初期メッセージを取得
 const initialMessages = getMessages();
+
+/**
+ * Tursoクラウドデータベースにテーブルを作成する
+ */
+async function createTursoTables(
+    config: any,
+    credentials: DatabaseCredentials
+): Promise<void> {
+    try {
+        const { createTablesInTursoDatabases, seedTursoDatabases } =
+            await import("../../utils/turso-cli/provisioning.js");
+
+        // アプリケーションのディレクトリを計算
+        const appDirectory = config.monorepo
+            ? join(config.directory, "apps", "web")
+            : config.directory;
+
+        // 各環境のTursoクラウドデータベースにテーブルを作成
+        await createTablesInTursoDatabases(appDirectory, credentials, [
+            "dev",
+            "staging",
+            "prod",
+        ]);
+
+        // dev環境とstaging環境にシードデータを投入
+        await seedTursoDatabases(appDirectory, credentials, ["dev", "staging"]);
+
+        console.log("✅ Tursoクラウドデータベースのテーブル作成が完了しました");
+    } catch (error) {
+        console.error(
+            `❌ Tursoクラウドデータベースのテーブル作成に失敗: ${error instanceof Error ? error.message : error}`
+        );
+        throw error;
+    }
+}
 
 /**
  * モノレポフラグが明示的に指定されているかをチェック
@@ -412,6 +449,12 @@ export const createCommand = defineCommand({
             // プロジェクトを生成
             await generateProject(config);
 
+            // データベースにテーブルを作成（Tursoクラウドデータベースにテーブル作成）
+            if (databaseCredentials && database === "turso") {
+                console.log("🗄️ Tursoクラウドデータベースにテーブルを作成中...");
+                await createTursoTables(config, databaseCredentials);
+            }
+
             // 開発モードでのデバッグ - コマンド完了を明示
             debugLog("Create command completed successfully");
         } catch (_error) {
@@ -482,6 +525,13 @@ export const newCommand = defineCommand({
         // プロジェクトの生成
         try {
             await generateProject(config);
+
+            // データベースにテーブルを作成（Tursoクラウドデータベースにテーブル作成）
+            if (databaseCredentials && database === "turso") {
+                console.log("🗄️ Tursoクラウドデータベースにテーブルを作成中...");
+                await createTursoTables(config, databaseCredentials);
+            }
+
             debugLog("New command completed successfully");
         } catch (_error) {
             process.exit(1);

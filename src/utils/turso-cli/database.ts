@@ -27,19 +27,37 @@ export async function listDatabases(group?: string): Promise<DatabaseInfo[]> {
     const databases: DatabaseInfo[] = [];
 
     for (const line of lines) {
-        // ヘッダー行をスキップ
-        if (line.includes("Name") && line.includes("URL")) {
+        // ヘッダー行をスキップ (NAME, GROUP, URLを含む行)
+        if (
+            line.includes("NAME") &&
+            line.includes("GROUP") &&
+            line.includes("URL")
+        ) {
             continue;
         }
 
-        // データベース情報を抽出（フォーマットは "name | url | group" のような形式を想定）
-        const parts = line.split(/\s+/);
-        if (parts.length >= 1) {
-            databases.push({
-                name: parts[0],
-                url: parts[1] || undefined,
-                group: parts[2] || undefined,
-            });
+        // データベース情報を抽出（固定幅フォーマットを解析）
+        // 形式: NAME                       GROUP      URL
+        const trimmedLine = line.trim();
+        if (trimmedLine && !trimmedLine.startsWith("-")) {
+            // 固定幅フォーマットをパース
+            const nameMatch = trimmedLine.match(/^(\S+)/);
+            const urlMatch = trimmedLine.match(/(libsql:\/\/[^\s]+)/);
+
+            if (nameMatch) {
+                const name = nameMatch[1];
+                // グループは名前とURLの間にある部分から抽出
+                const afterName = trimmedLine.substring(name.length).trim();
+                const groupMatch = afterName.match(/^(\S+)/);
+                const dbGroup = groupMatch ? groupMatch[1] : "default";
+                const url = urlMatch ? urlMatch[1] : undefined;
+
+                databases.push({
+                    name,
+                    url,
+                    group: dbGroup,
+                });
+            }
         }
     }
 

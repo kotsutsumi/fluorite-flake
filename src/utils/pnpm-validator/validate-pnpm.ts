@@ -2,10 +2,11 @@
  * pnpmのバージョンを検証するユーティリティ
  */
 
-import { execSync } from "node:child_process";
+import { type ExecSyncOptions, execSync } from "node:child_process";
 import chalk from "chalk";
 
 import { getMessages } from "../../i18n.js";
+import { getShellForPlatform } from "../shell-helper/index.js";
 import { showPnpmInstallGuide } from "./show-install-guide.js";
 
 /**
@@ -24,7 +25,8 @@ export function validatePnpm(): boolean {
         const versionOutput = execSync("pnpm --version", {
             encoding: "utf8",
             stdio: ["ignore", "pipe", "ignore"],
-        }).trim();
+            shell: getShellForPlatform(), // クロスプラットフォーム対応：プラットフォーム固有のシェルを使用
+        } satisfies ExecSyncOptions).trim();
 
         // バージョン文字列を保存
         const version = versionOutput;

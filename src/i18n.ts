@@ -3,10 +3,11 @@
  * - ロケールの検出
  * - メッセージのロードとフォーマット
  */
-import { execSync } from "node:child_process";
+import { type ExecSyncOptions, execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getShellForPlatform } from "./utils/shell-helper/index.js";
 
 // 現在のファイルのディレクトリを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -110,7 +111,8 @@ function detectLocaleFromMacOS(): SupportedLocale | undefined {
             encoding: "utf8",
             timeout: 1000,
             stdio: ["ignore", "pipe", "ignore"],
-        }).trim();
+            shell: getShellForPlatform(), // クロスプラットフォーム対応：プラットフォーム固有のシェルを使用
+        } satisfies ExecSyncOptions).trim();
 
         const normalizedAppleLocale = normalizeLocale(appleLocale);
         if (normalizedAppleLocale) {
@@ -122,7 +124,8 @@ function detectLocaleFromMacOS(): SupportedLocale | undefined {
             encoding: "utf8",
             timeout: 1000,
             stdio: ["ignore", "pipe", "ignore"],
-        });
+            shell: getShellForPlatform(), // クロスプラットフォーム対応：プラットフォーム固有のシェルを使用
+        } satisfies ExecSyncOptions);
 
         // 配列の最初の言語を抽出（括弧とクォートを除去）
         const firstLanguage = appleLanguages.match(APPLE_LANGUAGE_PATTERN)?.[1];

@@ -11,7 +11,7 @@
         "db:migrate": "prisma migrate dev",
         "db:push": "prisma db push",
         "db:push:force": "prisma db push --force-reset --skip-generate",
-        "db:reset": "prisma db push --force-reset --skip-generate && tsx prisma/seed.ts",
+        "db:reset": "prisma db push --force-reset && prisma generate && tsx prisma/seed.ts",
         "db:seed": "tsx prisma/seed.ts",
         "db:studio": "prisma studio",
         "env:apply-vercel": "tsx scripts/env-apply-vercel.ts",
@@ -153,7 +153,6 @@
         "@types/color": "^4.2.0",
         "@types/culori": "^4.0.1",
         "@types/lodash.throttle": "^4.1.9",
-        "@types/qrcode": "^1.5.5",
-        "fluorite-flake": "^0.5.0"
+        "@types/qrcode": "^1.5.5"
     }
 }

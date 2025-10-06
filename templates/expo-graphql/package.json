@@ -9,7 +9,6 @@
     "dev": "concurrently \"npm run backend:dev\" \"npm run expo:start\""
   },
   "devDependencies": {
-    "concurrently": "^8.2.0",
-    "fluorite-flake": "^0.5.0"
+    "concurrently": "^8.2.0"
   }
 }

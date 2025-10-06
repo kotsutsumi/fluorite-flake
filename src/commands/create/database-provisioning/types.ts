@@ -54,6 +54,8 @@ export type ProvisioningResult = {
         url: string;
         status: "created" | "existing" | "failed";
     }[];
+    /** セットアップ手順 */
+    setupInstructions?: string[];
 };
 
 /**
@@ -80,6 +82,8 @@ export type TursoProvisioningOptions = {
     preserveExisting: boolean;
     /** データベースの場所 */
     location?: string;
+    /** 既存データベース使用時の命名設定 */
+    existingNaming?: { dev: string; staging: string; prod: string };
 };
 
 /**

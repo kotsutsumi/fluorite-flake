@@ -259,30 +259,103 @@ async function selectPrismaSchema(
     await copyFile(source, destination);
 }
 
+async function validateEnvironmentVariables(
+    appDirectory: string
+): Promise<boolean> {
+    const envFiles = [".env", ".env.development"];
+    let hasValidConfig = false;
+
+    for (const envFile of envFiles) {
+        try {
+            const envPath = join(appDirectory, envFile);
+            const envContent = await readFile(envPath, "utf-8");
+
+            // DATABASE_URLまたはPRISMA_DATABASE_URLの存在チェック
+            const hasDatabaseUrl =
+                /(?:DATABASE_URL|PRISMA_DATABASE_URL)\s*=\s*.+/.test(
+                    envContent
+                );
+
+            if (hasDatabaseUrl) {
+                console.log(`✅ ${envFile} にデータベース設定が見つかりました`);
+                hasValidConfig = true;
+                break;
+            }
+        } catch (error) {
+            // ファイルが存在しない場合は無視して続行
+        }
+    }
+
+    if (!hasValidConfig) {
+        console.warn("⚠️ 環境変数ファイルにデータベース設定が見つかりません");
+        console.warn(
+            "   DATABASE_URLまたはPRISMA_DATABASE_URLを設定してください"
+        );
+    }
+
+    return hasValidConfig;
+}
+
 async function runSetupCommands(
     projectRoot: string,
     appDirectory: string
 ): Promise<void> {
+    console.log("📦 依存関係をインストール中...");
     await execa("pnpm", ["install"], {
         cwd: projectRoot,
         stdio: "inherit",
     });
 
+    console.log("🔍 環境変数の設定を確認中...");
+    const hasValidEnv = await validateEnvironmentVariables(appDirectory);
+
+    console.log("🔧 Prismaクライアントを生成中...");
     await execa("pnpm", ["db:generate"], {
         cwd: appDirectory,
         stdio: "inherit",
     });
 
-    try {
-        await execa("pnpm", ["db:reset"], {
-            cwd: appDirectory,
-            stdio: "inherit",
-        });
-    } catch (error) {
-        console.warn(
-            "⚠️ pnpm db:reset が失敗しました。環境変数の設定が完了していない可能性があるためスキップします。",
-            error
+    if (hasValidEnv) {
+        console.log("🗄️ データベースのセットアップを実行中...");
+        try {
+            // ステップ1: データベースプッシュ
+            console.log("  ステップ1: データベーススキーマをプッシュ中...");
+            await execa("pnpm", ["db:push"], {
+                cwd: appDirectory,
+                stdio: "inherit",
+            });
+
+            // ステップ2: Prismaクライアント再生成（確実に最新にする）
+            console.log("  ステップ2: Prismaクライアントを再生成中...");
+            await execa("pnpm", ["db:generate"], {
+                cwd: appDirectory,
+                stdio: "inherit",
+            });
+
+            // ステップ3: シードデータ投入
+            console.log("  ステップ3: シードデータを投入中...");
+            await execa("pnpm", ["db:seed"], {
+                cwd: appDirectory,
+                stdio: "inherit",
+            });
+
+            console.log("✅ データベースセットアップが完了しました");
+        } catch (error) {
+            console.error("❌ データベースセットアップに失敗しました:");
+            console.error(error instanceof Error ? error.message : error);
+            console.log("🔧 手動でのセットアップ手順:");
+            console.log("  1. 環境変数ファイルでデータベース接続情報を確認");
+            console.log("  2. pnpm db:push を実行してテーブルを作成");
+            console.log("  3. pnpm db:seed を実行してサンプルデータを投入");
+        }
+    } else {
+        console.log(
+            "⏭️ 環境変数未設定のため、データベースセットアップをスキップしました"
         );
+        console.log("🔧 手動でのセットアップ手順:");
+        console.log("  1. .env ファイルにデータベース接続情報を設定");
+        console.log("  2. pnpm db:push を実行してテーブルを作成");
+        console.log("  3. pnpm db:seed を実行してサンプルデータを投入");
     }
 }
 

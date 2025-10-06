@@ -1,5 +1,6 @@
-import { execSync } from "node:child_process";
+import { type ExecSyncOptions, execSync } from "node:child_process";
 
+import { getShellForPlatform } from "../shell-helper/index.js";
 import type {
     VercelBuildOptions,
     VercelCommandOptions,
@@ -41,7 +42,8 @@ export class VercelCLI {
                 encoding: "utf8",
                 cwd: options.cwd || process.cwd(),
                 stdio: ["ignore", "pipe", "pipe"],
-            });
+                shell: getShellForPlatform(), // クロスプラットフォーム対応：プラットフォーム固有のシェルを使用
+            } satisfies ExecSyncOptions);
 
             return {
                 success: true,
@@ -214,7 +216,8 @@ export class VercelCLI {
                 encoding: "utf8",
                 cwd: options.cwd || process.cwd(),
                 stdio: ["ignore", "pipe", "pipe"],
-            });
+                shell: getShellForPlatform(), // クロスプラットフォーム対応：プラットフォーム固有のシェルを使用
+            } satisfies ExecSyncOptions);
 
             return {
                 success: true,

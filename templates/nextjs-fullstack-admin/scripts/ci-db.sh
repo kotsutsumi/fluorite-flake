@@ -193,36 +193,71 @@ echo "  DATABASE_URL: ${DATABASE_URL:0:50}..." # 最初の50文字のみ表示�
 setup_database() {
     if [[ "${DB_ENV}" == "development" ]] && [[ -z "${VERCEL:-}" ]]; then
         # ローカル開発環境での完全リセット
-        echo "Running pnpm db:push:force for local development"
+        echo "Running complete database reset for local development"
+        echo "Step 1: Force reset database schema..."
         pnpm db:push:force
-        echo "Running pnpm db:seed for local development"
+        echo "Step 2: Generate Prisma client..."
+        pnpm db:generate
+        echo "Step 3: Seed initial data..."
         pnpm db:seed
-        echo "Development database reset and seeded"
+        echo "Development database reset and seeded successfully"
     elif [[ "${DB_ENV}" == "development" ]] || [[ "${DB_ENV}" == "staging" ]] || [[ "${DB_ENV}" == "production" ]]; then
         echo "Handling ${DB_ENV} environment database setup"
 
-        # Prismaスキーマをプッシュしてテーブルを作成
-        echo "Running pnpm db:push to ensure tables exist..."
+        # 段階的なデータベースセットアップ
+        echo "Step 1: Push database schema to ensure tables exist..."
         pnpm db:push
 
-        # 初期シードが必要かチェック（Userテーブルが空の場合のみ）
-        echo "Checking if initial seed is needed..."
+        echo "Step 2: Generate/update Prisma client..."
+        pnpm db:generate
+
+        # データベース接続テスト
+        echo "Step 3: Testing database connection..."
         set +e
-        USER_COUNT=$(pnpm exec tsx -e "
+        CONNECTION_TEST=$(pnpm exec tsx -e "
             import { PrismaClient } from '@prisma/client';
             const prisma = new PrismaClient();
-            prisma.user.count()
-                .then(count => { console.log(count); process.exit(0); })
-                .catch(() => { console.log(0); process.exit(0); });
+            prisma.\$connect()
+                .then(() => {
+                    console.log('connection_success');
+                    return prisma.\$disconnect();
+                })
+                .then(() => process.exit(0))
+                .catch((error) => {
+                    console.log('connection_failed');
+                    console.error(error.message);
+                    process.exit(1);
+                });
         " 2>/dev/null)
         set -e
 
-        if [[ "${USER_COUNT}" == "0" ]] || [[ -z "${USER_COUNT}" ]]; then
-            echo "No users found, running initial seed..."
-            pnpm db:seed
-            echo "Initial seed completed"
+        if [[ "${CONNECTION_TEST}" == *"connection_success"* ]]; then
+            echo "✅ Database connection successful"
+
+            # 初期シードが必要かチェック（Userテーブルが空の場合のみ）
+            echo "Step 4: Checking if initial seed is needed..."
+            set +e
+            USER_COUNT=$(pnpm exec tsx -e "
+                import { PrismaClient } from '@prisma/client';
+                const prisma = new PrismaClient();
+                prisma.user.count()
+                    .then(count => { console.log(count); return prisma.\$disconnect(); })
+                    .then(() => process.exit(0))
+                    .catch(() => { console.log(0); process.exit(0); });
+            " 2>/dev/null)
+            set -e
+
+            if [[ "${USER_COUNT}" == "0" ]] || [[ -z "${USER_COUNT}" ]]; then
+                echo "No users found, running initial seed..."
+                pnpm db:seed
+                echo "Initial seed completed"
+            else
+                echo "Database already has ${USER_COUNT} users, skipping seed"
+            fi
         else
-            echo "Database already has ${USER_COUNT} users, skipping seed"
+            echo "❌ Database connection failed"
+            echo "Please check your DATABASE_URL and authentication credentials"
+            exit 1
         fi
     else
         echo "Running pnpm db:migrate for ${DB_ENV}"

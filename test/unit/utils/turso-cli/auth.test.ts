@@ -50,6 +50,27 @@ describe("Turso CLI Auth", () => {
             ]);
         });
 
+        it("シンプルなユーザー名形式でも正しく取得する", async () => {
+            // executeTursoCommandのモックを設定（シンプルなユーザー名のみ）
+            const { executeTursoCommand } = await import(
+                "../../../../src/utils/turso-cli/executor.js"
+            );
+            vi.mocked(executeTursoCommand).mockResolvedValue({
+                success: true,
+                stdout: "kotsutsumi",
+            });
+
+            // whoami関数を実行
+            const result = await whoami();
+
+            // 結果を検証
+            expect(result.username).toBe("kotsutsumi");
+            expect(executeTursoCommand).toHaveBeenCalledWith([
+                "auth",
+                "whoami",
+            ]);
+        });
+
         it("パース不可能な出力の場合エラーを投げる", async () => {
             // executeTursoCommandのモックを設定（パース不可能な出力）
             const { executeTursoCommand } = await import(
@@ -57,7 +78,7 @@ describe("Turso CLI Auth", () => {
             );
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
-                stdout: "Invalid output format",
+                stdout: "not logged in",
             });
 
             // エラーが投げられることを検証

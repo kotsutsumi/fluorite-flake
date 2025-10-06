@@ -3,6 +3,7 @@
  */
 
 import { spinner } from "@clack/prompts";
+import { extractProjectBaseName } from "./prompts.js";
 import type {
     DatabaseCredentials,
     DatabaseProvisioningConfig,
@@ -46,10 +47,16 @@ export class DatabaseProvisioningService {
 
             s.stop("データベースプロビジョニングが完了しました");
 
+            // データベース作成後にテーブル作成の準備状況を確認
+            const setupInstructions = this.generateSetupInstructions(
+                config.provider
+            );
+
             return {
                 success: true,
                 credentials,
                 databases: this.generateDatabaseList(config, credentials),
+                setupInstructions,
             };
         } catch (error) {
             s.stop("データベースプロビジョニングに失敗しました");
@@ -135,9 +142,15 @@ export class DatabaseProvisioningService {
         );
 
         const options: TursoProvisioningOptions = {
-            projectName: config.naming.prod,
+            // 既存データベース使用時は、プロジェクト名を正しく設定
+            projectName:
+                config.mode === "existing"
+                    ? extractProjectBaseName(config.naming.prod)
+                    : config.naming.prod,
             environments: ["dev", "staging", "prod"],
             preserveExisting: config.options.preserveData,
+            existingNaming:
+                config.mode === "existing" ? config.naming : undefined,
         };
 
         const result = await provisionTursoDatabases(options);
@@ -360,6 +373,40 @@ export class DatabaseProvisioningService {
             action: "unknown_error_logged",
             message: "予期しないエラーが発生しました",
         };
+    }
+
+    /**
+     * データベースセットアップ手順を生成する
+     * @param provider データベースプロバイダー
+     * @returns セットアップ手順
+     */
+    private generateSetupInstructions(
+        provider: "turso" | "supabase"
+    ): string[] {
+        const commonInstructions = [
+            "✅ データベースが作成されました",
+            "📋 次のステップでテーブルを作成してください:",
+        ];
+
+        if (provider === "turso") {
+            return [
+                ...commonInstructions,
+                "1. プロジェクトディレクトリに移動",
+                "2. pnpm db:push を実行してテーブルを作成",
+                "3. pnpm db:generate を実行してPrismaクライアントを生成",
+                "4. pnpm db:seed を実行してサンプルデータを投入",
+                "5. pnpm dev を実行してアプリケーションを起動",
+            ];
+        }
+        return [
+            ...commonInstructions,
+            "1. Supabaseダッシュボードでプロジェクトの準備完了を確認",
+            "2. プロジェクトディレクトリに移動",
+            "3. pnpm db:push を実行してテーブルを作成",
+            "4. pnpm db:generate を実行してPrismaクライアントを生成",
+            "5. pnpm db:seed を実行してサンプルデータを投入",
+            "6. pnpm dev を実行してアプリケーションを起動",
+        ];
     }
 
     /**

@@ -11,15 +11,30 @@ export async function whoami(): Promise<UserInfo> {
     const result = await executeTursoCommand(["auth", "whoami"]);
     throwOnError(result, "turso auth whoami");
 
-    // 出力からユーザー名を抽出（通常は "Logged in as: username" の形式）
-    const match = result.stdout?.match(/Logged in as:\s*(.+)/);
-    if (!match) {
-        throw new Error("Unable to parse whoami output");
+    // 出力からユーザー名を抽出
+    // パターン1: "Logged in as: username" の形式
+    // パターン2: 単純に "username" のみの形式
+    const stdout = result.stdout?.trim() || "";
+
+    const loggedInMatch = stdout.match(/Logged in as:\s*(.+)/);
+    if (loggedInMatch) {
+        return {
+            username: loggedInMatch[1].trim(),
+        };
     }
 
-    return {
-        username: match[1].trim(),
-    };
+    // 単純にユーザー名のみが出力される場合（新しいバージョンのTurso CLI）
+    if (
+        stdout &&
+        !stdout.includes("not logged in") &&
+        !stdout.includes("error")
+    ) {
+        return {
+            username: stdout,
+        };
+    }
+
+    throw new Error(`Unable to parse whoami output: "${stdout}"`);
 }
 
 /**
