@@ -13,50 +13,41 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get current date for recent registrations
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const now = new Date();
+        const lastMonth = new Date(now);
+        lastMonth.setMonth(now.getMonth() - 1);
 
         const [
             totalUsers,
             Members,
-            Sponsors,
-            totalFacilities,
-            pendingFacilities,
-            totalVideoContent,
-            publishedVideoContent,
+            totalOrganizations,
+            activeSessions,
+            deviceCount,
+            accessLogsLastMonth,
             recentRegistrations,
         ] = await Promise.all([
-            // Total users
             prisma.user.count(),
-
-            //  members
             prisma.user.count({
                 where: { role: APP_ROLES._MEMBER, isActive: true },
             }),
-
-            //  sponsors
-            prisma.user.count({
-                where: { role: APP_ROLES._SPONSOR, isActive: true },
+            prisma.organization.count(),
+            prisma.session.count({
+                where: {
+                    expiresAt: {
+                        gt: now,
+                    },
+                },
             }),
-
-            // Total facilities
-            prisma.facility.count(),
-
-            // Pending facilities (not published)
-            prisma.facility.count({
-                where: { isPublished: false },
+            prisma.deviceInfo.count({
+                where: { isActive: true },
             }),
-
-            // Total video content
-            prisma.videoContent.count(),
-
-            // Published video content
-            prisma.videoContent.count({
-                where: { isPublished: true },
+            prisma.accessLog.count({
+                where: {
+                    createdAt: {
+                        gte: lastMonth,
+                    },
+                },
             }),
-
-            // Recent registrations (last month)
             prisma.user.count({
                 where: {
                     createdAt: {
@@ -69,11 +60,10 @@ export async function GET(request: NextRequest) {
         const stats = {
             totalUsers,
             Members,
-            Sponsors,
-            totalFacilities,
-            pendingFacilities,
-            totalVideoContent,
-            publishedVideoContent,
+            totalOrganizations,
+            activeSessions,
+            deviceCount,
+            accessLogsLastMonth,
             recentRegistrations,
         };
 
@@ -83,3 +73,5 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }
+
+// EOF

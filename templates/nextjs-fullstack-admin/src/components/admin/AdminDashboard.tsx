@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { UserManagement } from './UserManagement';
 import { MemberManagement } from './MemberManagement';
-import { SponsorContentManagement } from './SponsorContentManagement';
 import { AdminStats } from './AdminStats';
 
 interface User {
@@ -17,7 +16,7 @@ interface AdminDashboardProps {
     user: User;
 }
 
-type TabType = 'overview' | 'users' | '-members' | 'sponsors' | 'content';
+type TabType = 'overview' | 'users' | '-members' | 'content';
 
 export function AdminDashboard({ user }: AdminDashboardProps) {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -26,7 +25,6 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
         { id: 'overview' as const, label: '概要', icon: '📊' },
         { id: 'users' as const, label: 'ユーザー管理', icon: '👥' },
         { id: '-members' as const, label: '会員', icon: '⭐' },
-        { id: 'sponsors' as const, label: 'スポンサー', icon: '🏢' },
         { id: 'content' as const, label: 'コンテンツ管理', icon: '📺' },
     ];
 
@@ -35,7 +33,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             return true;
         }
         if (user.role === 'org_admin') {
-            return ['overview', '-members', 'sponsors', 'content'].includes(tabId);
+            return ['overview', '-members', 'content'].includes(tabId);
         }
         return false;
     };
@@ -91,12 +89,11 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                     {activeTab === 'overview' && <AdminStats />}
                     {activeTab === 'users' && <UserManagement />}
                     {activeTab === '-members' && <MemberManagement />}
-                    {activeTab === 'sponsors' && <SponsorContentManagement />}
                     {activeTab === 'content' && (
                         <div className="bg-white rounded-lg shadow p-6">
                             <h2 className="text-xl font-semibold mb-4">コンテンツ管理</h2>
                             <p className="text-gray-600">
-                                動画コンテンツと施設情報の管理機能を実装予定
+                                コンテンツ管理機能は今後のアップデートで追加予定です
                             </p>
                         </div>
                     )}
@@ -105,3 +102,5 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
         </div>
     );
 }
+
+// EOF

@@ -69,30 +69,10 @@ interface AccessLogInput {
     deviceId?: string;
 }
 
-interface VideoContentInput {
-    title: string;
-    description?: string;
-    contentType?: string;
-    videoUrl?: string;
-    thumbnailUrl?: string;
-    isPublished?: boolean;
-}
-
-interface FacilityInput {
-    name: string;
-    category: string;
-    address?: string;
-    description?: string;
-    imageUrl?: string;
-    isFeatured?: boolean;
-    isPublished?: boolean;
-}
-
 interface UserUpdateData {
     role: string;
-    MemberId?: string;
-    memberSince?: Date;
-    sponsorInfo?: string;
+    MemberId?: string | null;
+    memberSince?: Date | null;
 }
 
 // Helper function to check user permissions
@@ -341,168 +321,6 @@ export const resolvers = {
                 hourlyStats,
             };
         },
-
-        //  Video Content Queries
-        videoContent: async (
-            _: unknown,
-            args: {
-                filter?: {
-                    contentType?: string;
-                    authorId?: string;
-                    isPublished?: boolean;
-                    limit?: number;
-                    offset?: number;
-                };
-            },
-            context: Context
-        ) => {
-            const {
-                contentType,
-                authorId,
-                isPublished,
-                limit = 20,
-                offset = 0,
-            } = args.filter || {};
-
-            interface VideoContentWhere {
-                contentType?: string;
-                authorId?: string;
-                isPublished?: boolean;
-            }
-
-            const where: VideoContentWhere = {};
-
-            if (contentType) {
-                where.contentType = contentType;
-            }
-
-            if (authorId) {
-                where.authorId = authorId;
-            }
-
-            // Only show published content unless user is admin or content owner
-            if (isPublished !== undefined) {
-                where.isPublished = isPublished;
-            } else if (!context.user || !hasPermission(context.user, 'canViewAllContent')) {
-                where.isPublished = true;
-            }
-
-            return await prisma.videoContent.findMany({
-                where,
-                include: { author: true },
-                orderBy: { createdAt: 'desc' },
-                take: Math.min(limit, 50),
-                skip: offset,
-            });
-        },
-
-        videoContentById: async (_: unknown, args: { id: string }, context: Context) => {
-            const videoContent = await prisma.videoContent.findUnique({
-                where: { id: args.id },
-                include: { author: true },
-            });
-
-            if (!videoContent) {
-                return null;
-            }
-
-            // Check if user can view this content
-            if (
-                !videoContent.isPublished &&
-                (!context.user ||
-                    (videoContent.authorId !== context.user.id &&
-                        !hasPermission(context.user, 'canViewAllContent')))
-            ) {
-                return null;
-            }
-
-            return videoContent;
-        },
-
-        //  Facilities Queries
-        facilities: async (
-            _: unknown,
-            args: {
-                filter?: {
-                    category?: string;
-                    ownerId?: string;
-                    isPublished?: boolean;
-                    isFeatured?: boolean;
-                    limit?: number;
-                    offset?: number;
-                };
-            },
-            context: Context
-        ) => {
-            const {
-                category,
-                ownerId,
-                isPublished,
-                isFeatured,
-                limit = 20,
-                offset = 0,
-            } = args.filter || {};
-
-            interface FacilityWhere {
-                category?: string;
-                ownerId?: string;
-                isPublished?: boolean;
-                isFeatured?: boolean;
-            }
-
-            const where: FacilityWhere = {};
-
-            if (category) {
-                where.category = category;
-            }
-
-            if (ownerId) {
-                where.ownerId = ownerId;
-            }
-
-            if (isFeatured !== undefined) {
-                where.isFeatured = isFeatured;
-            }
-
-            // Only show published facilities unless user is admin or facility owner
-            if (isPublished !== undefined) {
-                where.isPublished = isPublished;
-            } else if (!context.user || !hasPermission(context.user, 'canManageSponsorContent')) {
-                where.isPublished = true;
-            }
-
-            return await prisma.facility.findMany({
-                where,
-                include: { owner: true },
-                orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }],
-                take: Math.min(limit, 50),
-                skip: offset,
-            });
-        },
-
-        facilityById: async (_: unknown, args: { id: string }, context: Context) => {
-            const facility = await prisma.facility.findUnique({
-                where: { id: args.id },
-                include: { owner: true },
-            });
-
-            if (!facility) {
-                return null;
-            }
-
-            // Check if user can view this facility
-            if (
-                !facility.isPublished &&
-                (!context.user ||
-                    (facility.ownerId !== context.user.id &&
-                        !hasPermission(context.user, 'canManageSponsorContent')))
-            ) {
-                return null;
-            }
-
-            return facility;
-        },
-
         //  Member Management Queries (Admin only)
         Members: async (
             _: unknown,
@@ -519,26 +337,6 @@ export const resolvers = {
                     isActive: true,
                 },
                 orderBy: { memberSince: 'desc' },
-                take: Math.min(limit, 100),
-                skip: offset,
-            });
-        },
-
-        Sponsors: async (
-            _: unknown,
-            args: { limit?: number; offset?: number },
-            context: Context
-        ) => {
-            requirePermission(context, 'canManageSponsorContent');
-
-            const { limit = 50, offset = 0 } = args;
-
-            return await prisma.user.findMany({
-                where: {
-                    role: APP_ROLES._SPONSOR,
-                    isActive: true,
-                },
-                orderBy: { createdAt: 'desc' },
                 take: Math.min(limit, 100),
                 skip: offset,
             });
@@ -838,16 +636,13 @@ export const resolvers = {
 
         updateUserRole: async (
             _: unknown,
-            args: {
-                input: { userId: string; role: string; MemberId?: string; sponsorInfo?: string };
-            },
+            args: { input: { userId: string; role: string; MemberId?: string } },
             context: Context
         ) => {
             requirePermission(context, 'canManageUsers');
 
-            const { userId, role, MemberId, sponsorInfo } = args.input;
+            const { userId, role, MemberId } = args.input;
 
-            // Validate role
             if (!Object.values(APP_ROLES).includes(role as keyof typeof APP_ROLES)) {
                 throw new GraphQLError('Invalid role', {
                     extensions: { code: 'BAD_USER_INPUT' },
@@ -861,8 +656,9 @@ export const resolvers = {
                 updateData.memberSince = new Date();
             }
 
-            if (role === APP_ROLES._SPONSOR && sponsorInfo) {
-                updateData.sponsorInfo = sponsorInfo;
+            if (role === APP_ROLES.USER) {
+                updateData.MemberId = null;
+                updateData.memberSince = null;
             }
 
             return await prisma.user.update({
@@ -888,268 +684,7 @@ export const resolvers = {
                 data: { isActive: true },
             });
         },
-
-        // Video Content Management
-        createVideoContent: async (
-            _: unknown,
-            args: { input: VideoContentInput },
-            context: Context
-        ) => {
-            requireAuth(context);
-
-            // Check if user can post content
-            if (!hasPermission(context.user, 'canPostContent')) {
-                throw new GraphQLError('Not authorized to post content', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            return await prisma.videoContent.create({
-                data: {
-                    ...args.input,
-                    authorId: context.user.id,
-                },
-                include: { author: true },
-            });
-        },
-
-        updateVideoContent: async (
-            _: unknown,
-            args: { id: string; input: VideoContentInput },
-            context: Context
-        ) => {
-            requireAuth(context);
-
-            const videoContent = await prisma.videoContent.findUnique({
-                where: { id: args.id },
-            });
-
-            if (!videoContent) {
-                throw new GraphQLError('Video content not found', {
-                    extensions: { code: 'NOT_FOUND' },
-                });
-            }
-
-            // Check ownership or admin permission
-            if (
-                videoContent.authorId !== context.user.id &&
-                !hasPermission(context.user, 'canViewAllContent')
-            ) {
-                throw new GraphQLError('Not authorized to update this content', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            return await prisma.videoContent.update({
-                where: { id: args.id },
-                data: args.input,
-                include: { author: true },
-            });
-        },
-
-        publishVideoContent: async (
-            _: unknown,
-            args: { id: string; published: boolean },
-            context: Context
-        ) => {
-            requireAuth(context);
-
-            const videoContent = await prisma.videoContent.findUnique({
-                where: { id: args.id },
-            });
-
-            if (!videoContent) {
-                throw new GraphQLError('Video content not found', {
-                    extensions: { code: 'NOT_FOUND' },
-                });
-            }
-
-            // Check ownership or admin permission
-            if (
-                videoContent.authorId !== context.user.id &&
-                !hasPermission(context.user, 'canViewAllContent')
-            ) {
-                throw new GraphQLError('Not authorized to publish this content', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            return await prisma.videoContent.update({
-                where: { id: args.id },
-                data: {
-                    isPublished: args.published,
-                    publishedAt: args.published ? new Date() : null,
-                },
-                include: { author: true },
-            });
-        },
-
-        deleteVideoContent: async (_: unknown, args: { id: string }, context: Context) => {
-            requireAuth(context);
-
-            const videoContent = await prisma.videoContent.findUnique({
-                where: { id: args.id },
-            });
-
-            if (!videoContent) {
-                throw new GraphQLError('Video content not found', {
-                    extensions: { code: 'NOT_FOUND' },
-                });
-            }
-
-            // Check ownership or admin permission
-            if (
-                videoContent.authorId !== context.user.id &&
-                !hasPermission(context.user, 'canViewAllContent')
-            ) {
-                throw new GraphQLError('Not authorized to delete this content', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            await prisma.videoContent.delete({
-                where: { id: args.id },
-            });
-
-            return true;
-        },
-
-        // Facility Management
-        createFacility: async (_: unknown, args: { input: FacilityInput }, context: Context) => {
-            requireAuth(context);
-
-            // Check if user can manage facilities
-            if (!hasPermission(context.user, 'canManageFacilities')) {
-                throw new GraphQLError('Not authorized to create facilities', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            return await prisma.facility.create({
-                data: {
-                    ...args.input,
-                    ownerId: context.user.id,
-                },
-                include: { owner: true },
-            });
-        },
-
-        updateFacility: async (
-            _: unknown,
-            args: { id: string; input: FacilityInput },
-            context: Context
-        ) => {
-            requireAuth(context);
-
-            const facility = await prisma.facility.findUnique({
-                where: { id: args.id },
-            });
-
-            if (!facility) {
-                throw new GraphQLError('Facility not found', {
-                    extensions: { code: 'NOT_FOUND' },
-                });
-            }
-
-            // Check ownership or admin permission
-            if (
-                facility.ownerId !== context.user.id &&
-                !hasPermission(context.user, 'canManageSponsorContent')
-            ) {
-                throw new GraphQLError('Not authorized to update this facility', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            return await prisma.facility.update({
-                where: { id: args.id },
-                data: args.input,
-                include: { owner: true },
-            });
-        },
-
-        publishFacility: async (
-            _: unknown,
-            args: { id: string; published: boolean },
-            context: Context
-        ) => {
-            requireAuth(context);
-
-            const facility = await prisma.facility.findUnique({
-                where: { id: args.id },
-            });
-
-            if (!facility) {
-                throw new GraphQLError('Facility not found', {
-                    extensions: { code: 'NOT_FOUND' },
-                });
-            }
-
-            // Check ownership or admin permission
-            if (
-                facility.ownerId !== context.user.id &&
-                !hasPermission(context.user, 'canManageSponsorContent')
-            ) {
-                throw new GraphQLError('Not authorized to publish this facility', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            return await prisma.facility.update({
-                where: { id: args.id },
-                data: {
-                    isPublished: args.published,
-                    publishedAt: args.published ? new Date() : null,
-                },
-                include: { owner: true },
-            });
-        },
-
-        deleteFacility: async (_: unknown, args: { id: string }, context: Context) => {
-            requireAuth(context);
-
-            const facility = await prisma.facility.findUnique({
-                where: { id: args.id },
-            });
-
-            if (!facility) {
-                throw new GraphQLError('Facility not found', {
-                    extensions: { code: 'NOT_FOUND' },
-                });
-            }
-
-            // Check ownership or admin permission
-            if (
-                facility.ownerId !== context.user.id &&
-                !hasPermission(context.user, 'canManageSponsorContent')
-            ) {
-                throw new GraphQLError('Not authorized to delete this facility', {
-                    extensions: { code: 'FORBIDDEN' },
-                });
-            }
-
-            await prisma.facility.delete({
-                where: { id: args.id },
-            });
-
-            return true;
-        },
-    },
-
-    // New resolvers for VideoContent and Facility types
-    VideoContent: {
-        author: async (parent: { authorId: string }) => {
-            return await prisma.user.findUnique({
-                where: { id: parent.authorId },
-            });
-        },
-    },
-
-    Facility: {
-        owner: async (parent: { ownerId: string }) => {
-            return await prisma.user.findUnique({
-                where: { id: parent.ownerId },
-            });
-        },
     },
 };
+
+// EOF

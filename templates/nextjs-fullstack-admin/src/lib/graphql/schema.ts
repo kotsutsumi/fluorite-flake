@@ -9,7 +9,6 @@ export const typeDefs = `#graphql
     role: String!
     MemberId: String
     memberSince: DateTime
-    sponsorInfo: String
     metadata: String
     isActive: Boolean!
     memberships: [Membership!]!
@@ -177,95 +176,6 @@ export const typeDefs = `#graphql
     count: Int!
   }
 
-  #  Video Content Types
-  type VideoContent {
-    id: String!
-    title: String!
-    description: String
-    videoUrl: String!
-    thumbnailUrl: String
-    duration: Int
-    contentType: String!
-    isPublished: Boolean!
-    publishedAt: DateTime
-    tags: String
-    location: String
-    viewCount: Int!
-    likeCount: Int!
-    metadata: String
-    authorId: String!
-    author: User!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-  }
-
-  input VideoContentInput {
-    title: String!
-    description: String
-    videoUrl: String!
-    thumbnailUrl: String
-    duration: Int
-    contentType: String = "user_content"
-    tags: String
-    location: String
-    metadata: String
-  }
-
-  input VideoContentFilter {
-    contentType: String
-    authorId: String
-    isPublished: Boolean
-    limit: Int = 20
-    offset: Int = 0
-  }
-
-  #  Facility Types
-  type Facility {
-    id: String!
-    name: String!
-    description: String
-    category: String!
-    address: String
-    location: String
-    contactInfo: String
-    operatingHours: String
-    amenities: String
-    images: String
-    isPublished: Boolean!
-    publishedAt: DateTime
-    isFeatured: Boolean!
-    rating: Float
-    reviewCount: Int!
-    metadata: String
-    ownerId: String!
-    owner: User!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-  }
-
-  input FacilityInput {
-    name: String!
-    description: String
-    category: String!
-    address: String
-    location: String
-    contactInfo: String
-    operatingHours: String
-    amenities: String
-    images: String
-    isFeatured: Boolean = false
-    metadata: String
-  }
-
-  input FacilityFilter {
-    category: String
-    ownerId: String
-    isPublished: Boolean
-    isFeatured: Boolean
-    limit: Int = 20
-    offset: Int = 0
-  }
-
   #  Member Management Types
   input MemberInput {
     userId: String!
@@ -277,37 +187,15 @@ export const typeDefs = `#graphql
     userId: String!
     role: String!
     MemberId: String
-    sponsorInfo: String
   }
 
   # Extended Query and Mutation types
   extend type Query {
-    # Video Content
-    videoContent(filter: VideoContentFilter): [VideoContent!]!
-    videoContentById(id: String!): VideoContent
-
-    # Facilities
-    facilities(filter: FacilityFilter): [Facility!]!
-    facilityById(id: String!): Facility
-
     #  Member Management (Admin only)
     Members(limit: Int = 50, offset: Int = 0): [User!]!
-    Sponsors(limit: Int = 50, offset: Int = 0): [User!]!
   }
 
   extend type Mutation {
-    # Video Content Management
-    createVideoContent(input: VideoContentInput!): VideoContent!
-    updateVideoContent(id: String!, input: VideoContentInput!): VideoContent!
-    publishVideoContent(id: String!, published: Boolean!): VideoContent!
-    deleteVideoContent(id: String!): Boolean!
-
-    # Facility Management
-    createFacility(input: FacilityInput!): Facility!
-    updateFacility(id: String!, input: FacilityInput!): Facility!
-    publishFacility(id: String!, published: Boolean!): Facility!
-    deleteFacility(id: String!): Boolean!
-
     #  Member Management (Admin only)
     assignMember(input: MemberInput!): User!
     updateUserRole(input: UpdateUserRoleInput!): User!
@@ -315,3 +203,5 @@ export const typeDefs = `#graphql
     reactivateUser(userId: String!): User!
   }
 `;
+
+// EOF

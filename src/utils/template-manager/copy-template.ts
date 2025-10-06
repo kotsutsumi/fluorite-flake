@@ -16,6 +16,13 @@ import { fileURLToPath } from "node:url";
 
 import type { CopyTemplateOptions, CopyTemplateResult } from "./types.js";
 
+const DEFAULT_EXCLUDE_PATTERNS = [
+    "node_modules/**",
+    ".turbo/**",
+    ".next/**",
+    "dist/**",
+];
+
 /**
  * ファイルパスがパターンと一致するかチェック
  */
@@ -146,12 +153,13 @@ export async function copyTemplateDirectory(
         throw new Error(`テンプレートが見つかりません: ${sourceDir}`);
     }
 
+    const excludePatterns = [
+        ...DEFAULT_EXCLUDE_PATTERNS,
+        ...(options.excludePatterns ?? []),
+    ];
+
     // ファイル一覧を取得（除外パターンを適用）
-    const entries = await collectEntries(
-        sourceDir,
-        "",
-        options.excludePatterns || []
-    );
+    const entries = await collectEntries(sourceDir, "", excludePatterns);
 
     // ターゲットディレクトリを作成
     await mkdir(options.targetDirectory, { recursive: true });
