@@ -1,10 +1,15 @@
 /**
  * createコマンドの型定義
  */
+import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
 import type {
     PROJECT_TEMPLATES,
     PROJECT_TYPE_DESCRIPTIONS,
 } from "./constants.js";
+import type {
+    DatabaseCredentials,
+    DatabaseProvisioningConfig,
+} from "./database-provisioning/types.js";
 
 /**
  * データベースタイプの型
@@ -46,6 +51,9 @@ export type ProjectConfig = {
     force: boolean;
     monorepo: boolean;
     database?: DatabaseType;
+    databaseConfig?: DatabaseProvisioningConfig;
+    databaseCredentials?: DatabaseCredentials;
+    blobConfig?: BlobConfiguration;
 };
 
 /**

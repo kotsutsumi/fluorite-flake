@@ -255,9 +255,7 @@ export function MemberManagement() {
             {showAssignModal && selectedUser && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-96">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            会員ID割り当て
-                        </h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">会員ID割り当て</h3>
                         <div className="mb-4">
                             <div className="text-sm text-gray-600 mb-2">対象ユーザー:</div>
                             <div className="font-medium">

@@ -5,9 +5,11 @@
     "backend:dev": "cd backend && npm run dev",
     "expo:start": "cd expo && expo start",
     "install:all": "npm install && cd backend && npm install && cd ../expo && npm install",
+    "cleanup:deploy": "tsx scripts/cleanup-deploy.ts",
     "dev": "concurrently \"npm run backend:dev\" \"npm run expo:start\""
   },
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "fluorite-flake": "^0.5.0"
   }
 }

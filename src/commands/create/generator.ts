@@ -15,6 +15,7 @@ import {
     createWebAppPackageJson,
 } from "../../utils/monorepo-generator/index.js";
 import { generateReadmeContent } from "../../utils/readme-generator/index.js";
+import { syncRootScripts } from "../../utils/workspace-manager/index.js";
 import {
     generateExpoGraphQL,
     generateFullStackAdmin,
@@ -108,6 +109,9 @@ async function handleAdvancedTemplate(
         config,
         useMonorepo: Boolean(config.monorepo),
         targetDirectory,
+        databaseConfig: config.databaseConfig,
+        databaseCredentials: config.databaseCredentials,
+        blobConfig: config.blobConfig,
     };
 
     // テンプレートタイプに応じて適切なジェネレーターを呼び出し
@@ -212,6 +216,10 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
             await handleAdvancedTemplate(config, spinner);
         } else {
             await handleStandardTemplate(config, spinner);
+        }
+
+        if (config.monorepo) {
+            await syncRootScripts(config.directory);
         }
 
         // 成功メッセージの表示

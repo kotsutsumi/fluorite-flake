@@ -63,6 +63,9 @@ export function createProjectConfig(
         force: Boolean(options.force),
         monorepo: willUseMonorepo, // 上で計算済み
         database: options.database, // データベース設定を追加
+        databaseConfig: undefined,
+        databaseCredentials: undefined,
+        blobConfig: undefined,
     };
 }
 

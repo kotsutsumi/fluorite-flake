@@ -11,8 +11,16 @@ import {
     promptForDatabase,
     promptForProjectName,
 } from "../../utils/user-input/index.js";
+import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
 import { createProjectConfig } from "./config.js";
+import { collectDatabaseConfig } from "./database-provisioning/prompts.js";
+import { DatabaseProvisioningService } from "./database-provisioning/service.js";
+import type {
+    DatabaseCredentials,
+    DatabaseProvisioningConfig,
+} from "./database-provisioning/types.js";
 import { generateProject } from "./generator.js";
+import { collectBlobConfiguration } from "./prompts/blob-prompts.js";
 import { selectProjectTemplate } from "./template-selector/index.js";
 import type { DatabaseType, ProjectType } from "./types.js";
 import {
@@ -68,6 +76,96 @@ async function determineDatabaseSelection(
     }
 
     return database;
+}
+
+/**
+ * データベース選択とプロビジョニング設定を処理
+ */
+async function handleDatabaseAndBlobSetup(
+    args: { database?: string },
+    template: string | undefined,
+    projectName: string
+): Promise<{
+    database: DatabaseType | undefined;
+    databaseConfig: DatabaseProvisioningConfig | undefined;
+    databaseCredentials: DatabaseCredentials | undefined;
+    blobConfig: BlobConfiguration | undefined;
+}> {
+    // データベース選択の決定
+    const database = await determineDatabaseSelection(args, template);
+
+    let databaseConfig: DatabaseProvisioningConfig | undefined;
+    let databaseCredentials: DatabaseCredentials | undefined;
+
+    // データベースが選択された場合、プロビジョニング設定を収集
+    if (database) {
+        try {
+            databaseConfig = await collectDatabaseConfig(projectName, database);
+
+            // プロビジョニングをスキップする場合以外は、実際にプロビジョニングを実行
+            if (!databaseConfig.options.skipProvisioning) {
+                const provisioningService = new DatabaseProvisioningService();
+                const result =
+                    await provisioningService.provision(databaseConfig);
+
+                if (!result.success) {
+                    console.error(
+                        `❌ データベースプロビジョニングに失敗しました: ${result.error}`
+                    );
+                    process.exit(1);
+                }
+
+                databaseCredentials = result.credentials;
+
+                console.log("✅ データベースプロビジョニングが完了しました");
+                if (result.databases) {
+                    for (const db of result.databases) {
+                        console.log(
+                            `  - ${db.environment}: ${db.name} (${db.status})`
+                        );
+                    }
+                }
+            }
+        } catch (error) {
+            if (
+                error instanceof Error &&
+                error.message === "DATABASE_PROVISIONING_CANCELLED"
+            ) {
+                console.warn(
+                    "⚠️ データベース設定をキャンセルしました。処理を終了します。"
+                );
+                process.exit(0);
+            }
+
+            console.error(
+                `❌ データベース設定収集に失敗しました: ${
+                    error instanceof Error ? error.message : error
+                }`
+            );
+            process.exit(1);
+        }
+    }
+
+    // Blob設定の収集（Vercelプロジェクトの場合のみ）
+    let blobConfig: BlobConfiguration | undefined;
+    if (
+        template &&
+        (template.includes("nextjs") || template.includes("vercel"))
+    ) {
+        try {
+            const config = await collectBlobConfiguration(projectName);
+            blobConfig = config || undefined;
+            if (blobConfig) {
+                console.log(`✅ Vercel Blob設定完了: ${blobConfig.storeName}`);
+            }
+        } catch (error) {
+            console.warn(
+                `⚠️ Vercel Blob設定をスキップします: ${error instanceof Error ? error.message : error}`
+            );
+        }
+    }
+
+    return { database, databaseConfig, databaseCredentials, blobConfig };
 }
 
 /**
@@ -145,6 +243,9 @@ type CreateAndValidateConfigOptions = {
     args: { dir?: string; force?: boolean };
     isMonorepoMode: boolean;
     database?: DatabaseType;
+    databaseConfig?: DatabaseProvisioningConfig;
+    databaseCredentials?: DatabaseCredentials;
+    blobConfig?: BlobConfiguration;
 };
 
 /**
@@ -160,6 +261,9 @@ async function createAndValidateConfig(
         args,
         isMonorepoMode,
         database,
+        databaseConfig,
+        databaseCredentials,
+        blobConfig,
     } = options;
     const config = createProjectConfig(projectType, {
         name: projectName,
@@ -172,6 +276,16 @@ async function createAndValidateConfig(
 
     if (!config) {
         process.exit(1);
+    }
+
+    if (databaseConfig) {
+        config.databaseConfig = databaseConfig;
+    }
+    if (databaseCredentials) {
+        config.databaseCredentials = databaseCredentials;
+    }
+    if (blobConfig) {
+        config.blobConfig = blobConfig;
     }
 
     if (!config.force) {
@@ -255,8 +369,9 @@ export const createCommand = defineCommand({
             projectName = await promptForProjectName();
         }
 
-        // データベース選択の処理
-        const database = await determineDatabaseSelection(args, args.template);
+        // データベース選択とプロビジョニング設定の処理
+        const { database, databaseConfig, databaseCredentials, blobConfig } =
+            await handleDatabaseAndBlobSetup(args, args.template, projectName);
 
         // プロジェクト設定を作成
         const config = createProjectConfig(resolvedProjectType, {
@@ -271,6 +386,16 @@ export const createCommand = defineCommand({
         // 設定が無効な場合はエラー終了
         if (!config) {
             process.exit(1);
+        }
+
+        if (databaseConfig) {
+            config.databaseConfig = databaseConfig;
+        }
+        if (databaseCredentials) {
+            config.databaseCredentials = databaseCredentials;
+        }
+        if (blobConfig) {
+            config.blobConfig = blobConfig;
         }
 
         // 既存ディレクトリの確認（--forceフラグがない場合）
@@ -324,8 +449,9 @@ export const newCommand = defineCommand({
         const { projectType, template, monorepoPreference } =
             await determineProjectTypeAndTemplate(args, hasExplicitMonorepo);
 
-        // データベース選択の決定
-        const database = await determineDatabaseSelection(args, template);
+        // データベース選択とプロビジョニング設定の処理
+        const { database, databaseConfig, databaseCredentials, blobConfig } =
+            await handleDatabaseAndBlobSetup(args, template, projectName);
 
         // モノレポ設定の最終決定（明示指定 > 選択結果 > 既定 true）
         const isMonorepoMode = args.simple
@@ -348,6 +474,9 @@ export const newCommand = defineCommand({
             args,
             isMonorepoMode,
             database,
+            databaseConfig,
+            databaseCredentials,
+            blobConfig,
         });
 
         // プロジェクトの生成

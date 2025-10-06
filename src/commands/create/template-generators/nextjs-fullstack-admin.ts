@@ -40,17 +40,50 @@ function slugify(value: string): string {
         .slice(0, 50);
 }
 
-function buildEnvReplacements(
-    database: DatabaseType,
-    projectName: string
-): Record<string, string> {
+function buildEnvReplacements({
+    database,
+    projectName,
+    credentials,
+    databaseConfig,
+    blobConfig,
+}: {
+    database: DatabaseType;
+    projectName: string;
+    credentials?: GenerationContext["databaseCredentials"];
+    databaseConfig?: GenerationContext["databaseConfig"];
+    blobConfig?: GenerationContext["blobConfig"];
+}): Record<string, string> {
     const slug = slugify(projectName) || "app";
+    const naming = databaseConfig?.naming ?? {
+        dev: `${slug}-dev`,
+        staging: `${slug}-staging`,
+        prod: slug,
+    };
+
+    const applyBlobReplacements = (target: Record<string, string>) => {
+        const tokenValue = blobConfig?.enabled ? blobConfig.token : "";
+        const storeIdValue = blobConfig?.enabled ? blobConfig.storeId : "";
+
+        const entries: [string, string][] = [
+            ["{{LOCAL_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{LOCAL_BLOB_STORE_ID}}", storeIdValue],
+            ["{{DEV_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{DEV_BLOB_STORE_ID}}", storeIdValue],
+            ["{{STAGING_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{STAGING_BLOB_STORE_ID}}", storeIdValue],
+            ["{{PROD_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{PROD_BLOB_STORE_ID}}", storeIdValue],
+        ];
+
+        for (const [key, value] of entries) {
+            target[key] = value;
+        }
+    };
 
     if (database === "turso") {
-        const stagingUrl = `libsql://${slug}-staging.turso.io`;
-        const prodUrl = `libsql://${slug}.turso.io`;
+        const fallbackUrl = (name: string) => `libsql://${name}.turso.io`;
 
-        return {
+        const replacements: Record<string, string> = {
             "{{DATABASE_PROVIDER}}": "turso",
             "{{LOCAL_DATABASE_URL}}": "file:./dev.db",
             "{{LOCAL_DIRECT_DATABASE_URL}}": "file:./dev.db",
@@ -58,66 +91,123 @@ function buildEnvReplacements(
             "{{LOCAL_TURSO_AUTH_TOKEN}}": "",
             "{{LOCAL_SUPABASE_URL}}": "",
             "{{LOCAL_SUPABASE_SERVICE_ROLE_KEY}}": "",
-            "{{DEV_DATABASE_URL}}": "file:./dev.db",
-            "{{DEV_DIRECT_DATABASE_URL}}": "file:./dev.db",
-            "{{DEV_PRISMA_DATABASE_URL}}": "file:./dev.db",
-            "{{DEV_TURSO_DATABASE_URL}}": "",
-            "{{DEV_TURSO_AUTH_TOKEN}}": "",
+            "{{DEV_DATABASE_URL}}": fallbackUrl(naming.dev),
+            "{{DEV_DIRECT_DATABASE_URL}}": fallbackUrl(naming.dev),
+            "{{DEV_PRISMA_DATABASE_URL}}": fallbackUrl(naming.dev),
+            "{{DEV_TURSO_DATABASE_URL}}": fallbackUrl(naming.dev),
+            "{{DEV_TURSO_AUTH_TOKEN}}": credentials?.tokens?.dev ?? "",
             "{{DEV_SUPABASE_URL}}": "",
             "{{DEV_SUPABASE_SERVICE_ROLE_KEY}}": "",
-            "{{STAGING_DATABASE_URL}}": stagingUrl,
-            "{{STAGING_DIRECT_DATABASE_URL}}": stagingUrl,
-            "{{STAGING_PRISMA_DATABASE_URL}}": "file:./dev.db",
-            "{{STAGING_TURSO_DATABASE_URL}}": stagingUrl,
-            "{{STAGING_TURSO_AUTH_TOKEN}}": "",
+            "{{STAGING_DATABASE_URL}}": fallbackUrl(naming.staging),
+            "{{STAGING_DIRECT_DATABASE_URL}}": fallbackUrl(naming.staging),
+            "{{STAGING_PRISMA_DATABASE_URL}}": fallbackUrl(naming.staging),
+            "{{STAGING_TURSO_DATABASE_URL}}": fallbackUrl(naming.staging),
+            "{{STAGING_TURSO_AUTH_TOKEN}}": credentials?.tokens?.staging ?? "",
             "{{STAGING_SUPABASE_URL}}": "",
             "{{STAGING_SUPABASE_SERVICE_ROLE_KEY}}": "",
-            "{{PROD_DATABASE_URL}}": prodUrl,
-            "{{PROD_DIRECT_DATABASE_URL}}": prodUrl,
-            "{{PROD_PRISMA_DATABASE_URL}}": "file:./dev.db",
-            "{{PROD_TURSO_DATABASE_URL}}": prodUrl,
-            "{{PROD_TURSO_AUTH_TOKEN}}": "",
+            "{{PROD_DATABASE_URL}}": fallbackUrl(naming.prod),
+            "{{PROD_DIRECT_DATABASE_URL}}": fallbackUrl(naming.prod),
+            "{{PROD_PRISMA_DATABASE_URL}}": fallbackUrl(naming.prod),
+            "{{PROD_TURSO_DATABASE_URL}}": fallbackUrl(naming.prod),
+            "{{PROD_TURSO_AUTH_TOKEN}}": credentials?.tokens?.prod ?? "",
             "{{PROD_SUPABASE_URL}}": "",
             "{{PROD_SUPABASE_SERVICE_ROLE_KEY}}": "",
         };
+
+        const applyUrls = (env: "dev" | "staging" | "prod") => {
+            const url = credentials?.urls?.[env];
+            if (!url) {
+                return;
+            }
+            const upper = env.toUpperCase();
+            replacements[`{{${upper}_DATABASE_URL}}`] = url;
+            replacements[`{{${upper}_DIRECT_DATABASE_URL}}`] = url;
+            replacements[`{{${upper}_PRISMA_DATABASE_URL}}`] = url;
+            replacements[`{{${upper}_TURSO_DATABASE_URL}}`] = url;
+        };
+
+        applyUrls("dev");
+        applyUrls("staging");
+        applyUrls("prod");
+        applyBlobReplacements(replacements);
+
+        return replacements;
     }
 
-    const supabaseHost = `https://${slug}.supabase.co`;
     const localUrl = "postgresql://postgres:postgres@localhost:5432/postgres";
-    const remotePlaceholder =
-        "postgresql://YOUR_SUPABASE_USER:YOUR_SUPABASE_PASSWORD@YOUR_SUPABASE_HOST:5432/postgres";
     const serviceRolePlaceholder = "your-supabase-service-role-key";
+    const supabaseHost = (name: string) => `https://${name}.supabase.co`;
+    const supabaseConnection = (name: string) =>
+        `postgresql://postgres:YOUR_SUPABASE_PASSWORD@db.${name}.supabase.co:5432/postgres`;
 
-    return {
+    const replacements: Record<string, string> = {
         "{{DATABASE_PROVIDER}}": "supabase",
         "{{LOCAL_DATABASE_URL}}": localUrl,
         "{{LOCAL_DIRECT_DATABASE_URL}}": localUrl,
         "{{LOCAL_PRISMA_DATABASE_URL}}": localUrl,
         "{{LOCAL_TURSO_AUTH_TOKEN}}": "",
-        "{{LOCAL_SUPABASE_URL}}": supabaseHost,
-        "{{LOCAL_SUPABASE_SERVICE_ROLE_KEY}}": serviceRolePlaceholder,
-        "{{DEV_DATABASE_URL}}": remotePlaceholder,
-        "{{DEV_DIRECT_DATABASE_URL}}": remotePlaceholder,
-        "{{DEV_PRISMA_DATABASE_URL}}": remotePlaceholder,
+        "{{LOCAL_SUPABASE_URL}}": supabaseHost(naming.dev),
+        "{{LOCAL_SUPABASE_SERVICE_ROLE_KEY}}":
+            credentials?.tokens?.dev ?? serviceRolePlaceholder,
+        "{{DEV_DATABASE_URL}}": supabaseConnection(naming.dev),
+        "{{DEV_DIRECT_DATABASE_URL}}": supabaseConnection(naming.dev),
+        "{{DEV_PRISMA_DATABASE_URL}}": supabaseConnection(naming.dev),
         "{{DEV_TURSO_DATABASE_URL}}": "",
         "{{DEV_TURSO_AUTH_TOKEN}}": "",
-        "{{DEV_SUPABASE_URL}}": supabaseHost,
-        "{{DEV_SUPABASE_SERVICE_ROLE_KEY}}": serviceRolePlaceholder,
-        "{{STAGING_DATABASE_URL}}": remotePlaceholder,
-        "{{STAGING_DIRECT_DATABASE_URL}}": remotePlaceholder,
-        "{{STAGING_PRISMA_DATABASE_URL}}": remotePlaceholder,
+        "{{DEV_SUPABASE_URL}}": supabaseHost(naming.dev),
+        "{{DEV_SUPABASE_SERVICE_ROLE_KEY}}":
+            credentials?.tokens?.dev ?? serviceRolePlaceholder,
+        "{{STAGING_DATABASE_URL}}": supabaseConnection(naming.staging),
+        "{{STAGING_DIRECT_DATABASE_URL}}": supabaseConnection(naming.staging),
+        "{{STAGING_PRISMA_DATABASE_URL}}": supabaseConnection(naming.staging),
         "{{STAGING_TURSO_DATABASE_URL}}": "",
         "{{STAGING_TURSO_AUTH_TOKEN}}": "",
-        "{{STAGING_SUPABASE_URL}}": supabaseHost,
-        "{{STAGING_SUPABASE_SERVICE_ROLE_KEY}}": serviceRolePlaceholder,
-        "{{PROD_DATABASE_URL}}": remotePlaceholder,
-        "{{PROD_DIRECT_DATABASE_URL}}": remotePlaceholder,
-        "{{PROD_PRISMA_DATABASE_URL}}": remotePlaceholder,
+        "{{STAGING_SUPABASE_URL}}": supabaseHost(naming.staging),
+        "{{STAGING_SUPABASE_SERVICE_ROLE_KEY}}":
+            credentials?.tokens?.staging ?? serviceRolePlaceholder,
+        "{{PROD_DATABASE_URL}}": supabaseConnection(naming.prod),
+        "{{PROD_DIRECT_DATABASE_URL}}": supabaseConnection(naming.prod),
+        "{{PROD_PRISMA_DATABASE_URL}}": supabaseConnection(naming.prod),
         "{{PROD_TURSO_DATABASE_URL}}": "",
         "{{PROD_TURSO_AUTH_TOKEN}}": "",
-        "{{PROD_SUPABASE_URL}}": supabaseHost,
-        "{{PROD_SUPABASE_SERVICE_ROLE_KEY}}": serviceRolePlaceholder,
+        "{{PROD_SUPABASE_URL}}": supabaseHost(naming.prod),
+        "{{PROD_SUPABASE_SERVICE_ROLE_KEY}}":
+            credentials?.tokens?.prod ?? serviceRolePlaceholder,
     };
+
+    const applySupabaseUrls = (env: "dev" | "staging" | "prod") => {
+        const url = credentials?.urls?.[env];
+        if (!url) {
+            return;
+        }
+        const upper = env.toUpperCase();
+        replacements[`{{${upper}_DATABASE_URL}}`] = url;
+        replacements[`{{${upper}_DIRECT_DATABASE_URL}}`] = url;
+        replacements[`{{${upper}_PRISMA_DATABASE_URL}}`] = url;
+    };
+
+    const applySupabaseTokens = (env: "dev" | "staging" | "prod") => {
+        const token = credentials?.tokens?.[env];
+        if (!token) {
+            return;
+        }
+        const upper = env.toUpperCase();
+        replacements[`{{${upper}_SUPABASE_SERVICE_ROLE_KEY}}`] = token;
+        if (env === "dev") {
+            replacements["{{LOCAL_SUPABASE_SERVICE_ROLE_KEY}}"] = token;
+        }
+    };
+
+    applySupabaseUrls("dev");
+    applySupabaseUrls("staging");
+    applySupabaseUrls("prod");
+
+    applySupabaseTokens("dev");
+    applySupabaseTokens("staging");
+    applySupabaseTokens("prod");
+    applyBlobReplacements(replacements);
+
+    return replacements;
 }
 
 async function replacePlaceholders(
@@ -135,10 +225,21 @@ async function replacePlaceholders(
 
 async function configureEnvironmentFiles(
     appDirectory: string,
-    database: DatabaseType,
-    projectName: string
+    options: {
+        database: DatabaseType;
+        projectName: string;
+        credentials?: GenerationContext["databaseCredentials"];
+        databaseConfig?: GenerationContext["databaseConfig"];
+        blobConfig?: GenerationContext["blobConfig"];
+    }
 ): Promise<void> {
-    const replacements = buildEnvReplacements(database, projectName);
+    const replacements = buildEnvReplacements({
+        database: options.database,
+        projectName: options.projectName,
+        credentials: options.credentials,
+        databaseConfig: options.databaseConfig,
+        blobConfig: options.blobConfig,
+    });
 
     await Promise.all(
         ENV_FILES.map(async (filename) => {
@@ -233,11 +334,13 @@ export async function generateFullStackAdmin(
             )
         );
 
-        await configureEnvironmentFiles(
-            targetDirectory,
-            config.database,
-            config.name
-        );
+        await configureEnvironmentFiles(targetDirectory, {
+            database: config.database,
+            projectName: config.name,
+            credentials: context.databaseCredentials,
+            databaseConfig: context.databaseConfig,
+            blobConfig: context.blobConfig,
+        });
 
         await selectPrismaSchema(targetDirectory, config.database);
 

@@ -20,12 +20,6 @@ const NAV_ITEMS: Array<{
         roles: [APP_ROLES.ADMIN, APP_ROLES.ORG_ADMIN, APP_ROLES.USER],
     },
     {
-        href: '/access-history',
-        label: 'アクセス履歴',
-        icon: BarChart3,
-        roles: [APP_ROLES.ADMIN, APP_ROLES.ORG_ADMIN],
-    },
-    {
         href: '/organizations',
         label: '組織管理',
         icon: Building2,
@@ -42,6 +36,12 @@ const NAV_ITEMS: Array<{
         label: 'プロフィール',
         icon: UserRound,
         roles: [APP_ROLES.ADMIN, APP_ROLES.ORG_ADMIN, APP_ROLES.USER],
+    },
+    {
+        href: '/access-history',
+        label: 'アクセス履歴',
+        icon: BarChart3,
+        roles: [APP_ROLES.ADMIN, APP_ROLES.ORG_ADMIN],
     },
 ] as const;
 

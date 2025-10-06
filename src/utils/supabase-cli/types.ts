@@ -63,6 +63,8 @@ export type GlobalFlags = {
 export type ProjectInfo = {
     /** プロジェクト ID */
     id: string;
+    /** プロジェクト参照 */
+    ref: string;
     /** プロジェクト名 */
     name: string;
     /** 組織 ID */

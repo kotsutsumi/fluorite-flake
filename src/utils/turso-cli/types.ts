@@ -35,6 +35,7 @@ export type DatabaseCreateOptions = {
     sizeLimit?: string;
     canary?: boolean;
     wait?: boolean;
+    location?: string;
 };
 
 export type DatabaseToken = {

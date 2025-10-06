@@ -12,6 +12,7 @@
     "tauri:build": "tauri build",
     "tauri:android": "tauri android dev",
     "tauri:ios": "tauri ios dev",
+    "cleanup:deploy": "tsx scripts/cleanup-deploy.ts",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\""
   },
@@ -33,6 +34,7 @@
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "fluorite-flake": "^0.5.0"
   }
 }
