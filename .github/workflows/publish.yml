@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 全履歴を取得してタグ情報を確実に入手
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -32,11 +34,36 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run tests
+        run: pnpm test:run
+
+      - name: Build package
+        run: pnpm build
+
       - name: Check if version changed
         id: version
-        uses: EndBug/version-check@v2
-        with:
-          diff-search: true
+        run: |
+          # 現在のpackage.jsonからバージョンを取得
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # 前のタグと比較してバージョン変更をチェック
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_VERSION=${LATEST_TAG#v}
+
+          echo "Latest tag: $LATEST_TAG"
+          echo "Latest version: $LATEST_VERSION"
+          echo "Current version: $CURRENT_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed from $LATEST_VERSION to $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged: $CURRENT_VERSION"
+          fi
+
+          echo "prev-version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if version already exists on npm
         if: steps.version.outputs.changed == 'true'
@@ -54,8 +81,13 @@ jobs:
       - name: Publish to npm
         if: steps.version.outputs.changed == 'true' && steps.npm-check.outputs.exists == 'false'
         run: |
+          echo "🚀 Publishing fluorite-flake@${{ steps.version.outputs.version }} to npm..."
           npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+
+          # 実際の公開実行
           pnpm publish --access public --no-git-checks
+
+          echo "✅ Successfully published fluorite-flake@${{ steps.version.outputs.version }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

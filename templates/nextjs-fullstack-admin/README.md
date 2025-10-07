@@ -18,6 +18,8 @@ pnpm db:reset
 pnpm dev
 ```
 
+> ℹ️ `pnpm dev`/`pnpm start` 実行時には `scripts/ensure-db.ts` が自動で Prisma スキーマの反映とシード投入を行い、`Session` テーブルなど必須テーブルの作成漏れを防ぎます。
+
 ## 環境変数
 
 テンプレートには以下の環境ファイルが含まれています。生成時に選択したデータベースに応じて主要なプレースホルダーは自動で設定されます。必要に応じて本番用の値に更新してください。
@@ -27,7 +29,7 @@ pnpm dev
 - `.env.staging`
 - `.env.prod`
 
-ローカル開発（`.env` / `.env.development`）では SQLite (`file:../prisma/dev.db`) を利用する設定が既定です。そのまま `pnpm db:reset` を実行すれば起動用の初期データが投入されます。
+ローカル開発（`.env` / `.env.development`）では SQLite (`file:./prisma/dev.db`) を利用する設定が既定です。そのまま `pnpm db:reset` を実行すれば起動用の初期データが投入されます。
 
 ### Turso を利用する場合
 - `DATABASE_PROVIDER=turso`

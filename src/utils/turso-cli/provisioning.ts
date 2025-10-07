@@ -20,6 +20,26 @@ import {
 /**
  * Tursoプロビジョニング結果の型
  */
+function stripEnvironmentSuffix(name: string): string {
+    const suffixes = [
+        "-dev",
+        "-development",
+        "-staging",
+        "-stg",
+        "-prod",
+        "-production",
+        "-test",
+    ];
+
+    for (const suffix of suffixes) {
+        if (name.endsWith(suffix)) {
+            return name.slice(0, name.length - suffix.length);
+        }
+    }
+
+    return name;
+}
+
 export interface TursoProvisioningResult extends ProvisioningResult {
     credentials: DatabaseCredentials;
 }
@@ -47,6 +67,7 @@ export async function provisionTursoDatabases(
     const naming = options.existingNaming
         ? options.existingNaming
         : await validateTursoNaming(options.projectName);
+    options.projectName;
 
     // 4. 並行でデータベース作成・トークン生成
     const credentials: DatabaseCredentials = {
@@ -189,7 +210,8 @@ export async function validateTursoNaming(
             .slice(0, 24); // 環境サフィックス用に余裕を持たせる
     };
 
-    const baseName = sanitizeForTurso(projectName);
+    const baseProjectName = stripEnvironmentSuffix(projectName);
+    const baseName = sanitizeForTurso(baseProjectName);
 
     if (baseName.length < 3) {
         throw new Error(
@@ -200,7 +222,7 @@ export async function validateTursoNaming(
     const naming = {
         dev: `${baseName}-dev`,
         staging: `${baseName}-stg`,
-        prod: baseName, // 本番環境はベース名のみ（環境サフィックスなし）
+        prod: `${baseName}-prod`,
     };
 
     // 命名制約チェック

@@ -16,6 +16,8 @@ Next.js プロジェクト生成機能は、`src/commands/create` 配下にお�
 - Prisma スキーマ選択とマイグレーション
 - Vercel Blob設定統合
 - セットアップコマンド実行
+- `scripts/ensure-db.ts` による開発サーバー起動前のスキーマ反映・シード投入
+- 環境変数暗号化の自動実行（ユーザープロンプト無し）
 
 **重要な関数**:
 1. `generateFullStackAdmin()` - メイン生成関数（369行）
@@ -26,7 +28,7 @@ Next.js プロジェクト生成機能は、`src/commands/create` 配下にお�
 
 **データベース対応**:
 - **Turso**: SQLite互換のエッジデータベース
-  - ローカル: `file:../prisma/dev.db`
+  - ローカル: `file:./prisma/dev.db`
   - リモート: `libsql://[name].turso.io`
   - 認証トークン管理
 - **Supabase**: PostgreSQLベースのBaaS

@@ -361,8 +361,8 @@ function generateDefaultNaming(
 
     return {
         dev: `${sanitizedName}-dev`,
-        staging: `${sanitizedName}-staging`,
-        prod: sanitizedName, // 本番環境は環境サフィックスなし
+        staging: `${sanitizedName}-stg`,
+        prod: `${sanitizedName}-prod`,
     };
 }
 
