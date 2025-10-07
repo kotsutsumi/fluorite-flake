@@ -78,7 +78,16 @@
     "confirmOverwrite": "Do you want to remove it and create a new project? (y/N): ",
     "directoryRemoved": "✅ Removed existing directory: {0}",
     "failedToRemoveDirectory": "❌ Failed to remove directory: {0}",
-    "operationCancelled": "Operation cancelled."
+    "operationCancelled": "Operation cancelled.",
+    "envEncryption": {
+      "confirmPrompt": "🔐 Would you like to encrypt environment variables for secure team sharing?",
+      "processing": "🔐 Encrypting environment variables...",
+      "success": "✅ Generated env-files.zip ({zipPath})",
+      "failed": "❌ Failed to encrypt environment variables",
+      "skipped": "ℹ️ Environment variable encryption skipped",
+      "manualCommand": "Manual execution: pnpm env:encrypt",
+      "shareInstruction": "📤 When sharing with your team, please securely share the password"
+    }
   },
   "readme": {
     "title": "{name}",

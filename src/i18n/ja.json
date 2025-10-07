@@ -78,7 +78,16 @@
     "confirmOverwrite": "削除して新しいプロジェクトを作成しますか？ (y/N): ",
     "directoryRemoved": "✅ 既存のディレクトリを削除しました: {0}",
     "failedToRemoveDirectory": "❌ ディレクトリの削除に失敗しました: {0}",
-    "operationCancelled": "操作がキャンセルされました。"
+    "operationCancelled": "操作がキャンセルされました。",
+    "envEncryption": {
+      "confirmPrompt": "🔐 環境変数を安全に共有するため暗号化を実行しますか？",
+      "processing": "🔐 環境変数を暗号化中...",
+      "success": "✅ env-files.zip を生成しました（{zipPath}）",
+      "failed": "❌ 環境変数の暗号化に失敗しました",
+      "skipped": "ℹ️ 環境変数の暗号化をスキップしました",
+      "manualCommand": "手動実行: pnpm env:encrypt",
+      "shareInstruction": "📤 チームに渡す際はパスワードを安全に共有してください"
+    }
   },
   "readme": {
     "title": "{name}",

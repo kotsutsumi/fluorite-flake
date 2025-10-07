@@ -80,11 +80,31 @@ export async function provisionTursoDatabases(
                 );
             }
 
-            const url = await getDatabaseUrl(dbName);
-            const token = await createDatabaseToken(dbName);
+            // URLとトークンの取得を個別にエラーハンドリング
+            let url = "";
+            let token = "";
+
+            try {
+                url = await getDatabaseUrl(dbName);
+                console.log(`🔗 ${env}環境: データベースURL取得完了`);
+            } catch (urlError) {
+                throw new Error(
+                    `データベースURL取得失敗: ${urlError instanceof Error ? urlError.message : urlError}`
+                );
+            }
+
+            try {
+                const tokenResult = await createDatabaseToken(dbName);
+                token = tokenResult.token;
+                console.log(`🔑 ${env}環境: トークン生成完了`);
+            } catch (tokenError) {
+                throw new Error(
+                    `トークン生成失敗: ${tokenError instanceof Error ? tokenError.message : tokenError}`
+                );
+            }
 
             credentials.urls[env] = url;
-            credentials.tokens[env] = token.token;
+            credentials.tokens[env] = token;
 
             databases.push({
                 environment: env,
@@ -93,9 +113,12 @@ export async function provisionTursoDatabases(
                 status: exists ? "existing" : "created",
             });
         } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : String(error);
             console.error(
-                `❌ ${env}環境データベース '${dbName}' の処理に失敗: ${error instanceof Error ? error.message : error}`
+                `❌ ${env}環境データベース '${dbName}' の処理に失敗: ${errorMessage}`
             );
+            console.error(`   エラー詳細: ${errorMessage}`);
 
             databases.push({
                 environment: env,
@@ -108,16 +131,32 @@ export async function provisionTursoDatabases(
 
     await Promise.allSettled(createPromises);
 
-    // 失敗したデータベースがある場合はエラー
+    // 失敗したデータベースがある場合の処理
     const failedDatabases = databases.filter((db) => db.status === "failed");
+    const successfulDatabases = databases.filter(
+        (db) => db.status !== "failed"
+    );
+
     if (failedDatabases.length > 0) {
-        throw new Error(
-            `以下のデータベースの作成に失敗しました: ${failedDatabases.map((db) => db.name).join(", ")}`
+        console.warn("⚠️ 一部のデータベース処理が失敗しました:");
+        for (const db of failedDatabases) {
+            console.warn(`   - ${db.name} (${db.environment}環境)`);
+        }
+
+        if (successfulDatabases.length === 0) {
+            throw new Error(
+                `すべてのデータベースの処理に失敗しました: ${failedDatabases.map((db) => db.name).join(", ")}`
+            );
+        }
+
+        console.log(
+            `✅ 成功したデータベース: ${successfulDatabases.length}/${databases.length}`
         );
     }
 
-    // credentials の完全性を検証
-    for (const env of options.environments) {
+    // credentials の完全性を検証（成功したデータベースのみ）
+    const successfulEnvs = successfulDatabases.map((db) => db.environment);
+    for (const env of successfulEnvs) {
         if (!(credentials.urls[env] && credentials.tokens[env])) {
             throw new Error(
                 `${env}環境の認証情報が不完全です - URL: ${credentials.urls[env] ? "設定済み" : "未設定"}, Token: ${credentials.tokens[env] ? "設定済み" : "未設定"}`

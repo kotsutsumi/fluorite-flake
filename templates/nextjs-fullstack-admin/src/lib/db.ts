@@ -8,7 +8,7 @@ type LibSQLConfig = {
     authToken?: string;
 };
 
-const DEFAULT_SQLITE_URL = 'file:./dev.db';
+const DEFAULT_SQLITE_URL = 'file:../prisma/dev.db';
 const DEFAULT_SUPABASE_URL = 'postgresql://postgres:postgres@localhost:5432/postgres';
 
 function resolveProvider(): DatabaseProvider {

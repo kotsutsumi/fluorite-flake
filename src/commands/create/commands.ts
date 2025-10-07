@@ -128,6 +128,8 @@ async function handleDatabaseAndBlobSetup(
     databaseCredentials: DatabaseCredentials | undefined;
     blobConfig: BlobConfiguration | undefined;
 }> {
+    console.log("🚀 handleDatabaseAndBlobSetup が呼び出されました");
+    console.log(`  template: "${template}"`);
     // データベース選択の決定
     const database = await determineDatabaseSelection(args, template);
 
@@ -183,12 +185,21 @@ async function handleDatabaseAndBlobSetup(
         }
     }
 
-    // Blob設定の収集（Vercelプロジェクトの場合のみ）
+    // Blob設定の収集（Next.jsフルスタックテンプレートの場合のみ）
     let blobConfig: BlobConfiguration | undefined;
-    if (
-        template &&
-        (template.includes("nextjs") || template.includes("vercel"))
-    ) {
+    const shouldConfigureBlob = (
+        projectType: string,
+        templateName: string | undefined
+    ) => projectType === "nextjs" && templateName === "fullstack-admin";
+
+    // デバッグ情報を出力
+    console.log("🔍 Blob設定デバッグ情報:");
+    console.log(`  template: "${template}"`);
+    console.log(
+        `  shouldConfigureBlob: ${shouldConfigureBlob("nextjs", template)}`
+    );
+
+    if (template && shouldConfigureBlob("nextjs", template)) {
         try {
             const config = await collectBlobConfiguration(projectName);
             blobConfig = config || undefined;

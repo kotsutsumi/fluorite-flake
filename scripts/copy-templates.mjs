@@ -5,23 +5,38 @@ import { fileURLToPath } from "node:url";
 async function copyTemplates() {
     const currentDir = fileURLToPath(new URL(".", import.meta.url));
     const rootDir = resolve(currentDir, "..");
-    const sourceDir = resolve(rootDir, "templates");
-    const targetDir = resolve(rootDir, "dist", "templates");
+    const templatesDir = resolve(rootDir, "templates");
+    const i18nDir = resolve(rootDir, "src", "i18n");
+    const distDir = resolve(rootDir, "dist");
+    const targetTemplatesDir = resolve(distDir, "templates");
+    const targetI18nDir = resolve(distDir, "i18n");
 
+    // distディレクトリを作成
+    await mkdir(distDir, { recursive: true });
+
+    // templatesディレクトリをコピー
     try {
-        await stat(sourceDir);
+        await stat(templatesDir);
+        await rm(targetTemplatesDir, { recursive: true, force: true });
+        await cp(templatesDir, targetTemplatesDir, { recursive: true });
+        console.log("✅ templates ディレクトリを dist にコピーしました");
     } catch {
         console.warn(
             "テンプレートディレクトリが存在しないためコピーをスキップします。"
         );
-        return;
     }
 
-    await rm(targetDir, { recursive: true, force: true });
-    await mkdir(resolve(rootDir, "dist"), { recursive: true });
-    await cp(sourceDir, targetDir, { recursive: true });
-
-    console.log("✅ templates ディレクトリを dist にコピーしました");
+    // i18nディレクトリをコピー
+    try {
+        await stat(i18nDir);
+        await rm(targetI18nDir, { recursive: true, force: true });
+        await cp(i18nDir, targetI18nDir, { recursive: true });
+        console.log("✅ i18n ディレクトリを dist にコピーしました");
+    } catch {
+        console.warn(
+            "i18nディレクトリが存在しないためコピーをスキップします。"
+        );
+    }
 }
 
 copyTemplates().catch((error) => {

@@ -35,6 +35,9 @@ yarn-error.log*
 !.env.staging
 !.env.prod
 
+# Environment variable encryption
+env-files.zip
+
 # Database files
 prisma/dev.db
 *.db

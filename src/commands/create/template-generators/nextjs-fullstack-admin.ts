@@ -5,7 +5,8 @@
 import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execa } from "execa";
-
+import { getMessages } from "../../../i18n.js";
+import { shouldEncryptEnv } from "../../../utils/env-encryption/index.js";
 import { copyTemplateDirectory } from "../../../utils/template-manager/index.js";
 import type { DatabaseType } from "../types.js";
 import type { GenerationContext, TemplateGenerationResult } from "./types.js";
@@ -27,9 +28,8 @@ const DATABASE_SETUP_STEP: Record<DatabaseType, string> = {
 
 const SHARED_NEXT_STEPS = [
     "2. .env ファイル内のプレースホルダーを実際の値に置き換えてください",
-    "3. Prisma マイグレーションを実行してください (pnpm db:migrate)",
-    "4. 開発サーバーを起動してください (pnpm dev)",
-    "5. 管理者アカウントでログインし、各管理画面の動作を確認してください",
+    "3. 開発サーバーを起動してください (pnpm dev)",
+    "4. 管理者アカウントでログインし、各管理画面の動作を確認してください",
 ];
 
 function slugify(value: string): string {
@@ -38,6 +38,97 @@ function slugify(value: string): string {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 50);
+}
+
+/**
+ * Blob環境変数の置換を構築する
+ * @param blobConfig Blob設定
+ * @param target 置換対象のオブジェクト
+ */
+function buildBlobEnvReplacements(
+    blobConfig?: GenerationContext["blobConfig"],
+    _target?: Record<string, string>
+): (envTarget: Record<string, string>) => void {
+    return (envTarget: Record<string, string>) => {
+        if (!blobConfig?.enabled) {
+            // Blob機能が無効化されている場合は空文字で置換
+            const emptyEntries: [string, string][] = [
+                ["{{LOCAL_BLOB_READ_WRITE_TOKEN}}", ""],
+                ["{{LOCAL_BLOB_STORE_ID}}", ""],
+                ["{{LOCAL_BLOB_BASE_URL}}", ""],
+                ["{{LOCAL_BLOB_TOKEN_ID}}", ""],
+                ["{{LOCAL_BLOB_TOKEN_SCOPE}}", ""],
+                ["{{DEV_BLOB_READ_WRITE_TOKEN}}", ""],
+                ["{{DEV_BLOB_STORE_ID}}", ""],
+                ["{{DEV_BLOB_BASE_URL}}", ""],
+                ["{{DEV_BLOB_TOKEN_ID}}", ""],
+                ["{{DEV_BLOB_TOKEN_SCOPE}}", ""],
+                ["{{STAGING_BLOB_READ_WRITE_TOKEN}}", ""],
+                ["{{STAGING_BLOB_STORE_ID}}", ""],
+                ["{{STAGING_BLOB_BASE_URL}}", ""],
+                ["{{STAGING_BLOB_TOKEN_ID}}", ""],
+                ["{{STAGING_BLOB_TOKEN_SCOPE}}", ""],
+                ["{{PROD_BLOB_READ_WRITE_TOKEN}}", ""],
+                ["{{PROD_BLOB_STORE_ID}}", ""],
+                ["{{PROD_BLOB_BASE_URL}}", ""],
+                ["{{PROD_BLOB_TOKEN_ID}}", ""],
+                ["{{PROD_BLOB_TOKEN_SCOPE}}", ""],
+            ];
+
+            for (const [key, value] of emptyEntries) {
+                envTarget[key] = value;
+            }
+            return;
+        }
+
+        // Blob機能が有効な場合の値設定
+        const tokenValue = blobConfig.token || "";
+        const storeIdValue = blobConfig.storeId || "";
+        const storeUrlValue = blobConfig.storeUrl || "";
+        const tokenIdValue = blobConfig.tokenId || "";
+        const tokenScopeValue = blobConfig.tokenScope || "";
+
+        // 安全性のために、機密情報が未設定の場合は警告を表示
+        if (!tokenValue) {
+            console.warn(
+                "⚠️ Blob設定が有効ですが、トークンが設定されていません"
+            );
+        }
+
+        const entries: [string, string][] = [
+            ["{{LOCAL_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{LOCAL_BLOB_STORE_ID}}", storeIdValue],
+            ["{{LOCAL_BLOB_BASE_URL}}", storeUrlValue],
+            ["{{LOCAL_BLOB_TOKEN_ID}}", tokenIdValue],
+            ["{{LOCAL_BLOB_TOKEN_SCOPE}}", tokenScopeValue],
+            ["{{DEV_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{DEV_BLOB_STORE_ID}}", storeIdValue],
+            ["{{DEV_BLOB_BASE_URL}}", storeUrlValue],
+            ["{{DEV_BLOB_TOKEN_ID}}", tokenIdValue],
+            ["{{DEV_BLOB_TOKEN_SCOPE}}", tokenScopeValue],
+            ["{{STAGING_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{STAGING_BLOB_STORE_ID}}", storeIdValue],
+            ["{{STAGING_BLOB_BASE_URL}}", storeUrlValue],
+            ["{{STAGING_BLOB_TOKEN_ID}}", tokenIdValue],
+            ["{{STAGING_BLOB_TOKEN_SCOPE}}", tokenScopeValue],
+            ["{{PROD_BLOB_READ_WRITE_TOKEN}}", tokenValue],
+            ["{{PROD_BLOB_STORE_ID}}", storeIdValue],
+            ["{{PROD_BLOB_BASE_URL}}", storeUrlValue],
+            ["{{PROD_BLOB_TOKEN_ID}}", tokenIdValue],
+            ["{{PROD_BLOB_TOKEN_SCOPE}}", tokenScopeValue],
+        ];
+
+        for (const [key, value] of entries) {
+            envTarget[key] = value;
+        }
+
+        // 自動生成されたトークンの場合、デバッグ情報を出力
+        if (blobConfig.isAutoGenerated) {
+            console.log(
+                `🔑 自動生成されたトークンを環境変数に設定します (スコープ: ${tokenScopeValue})`
+            );
+        }
+    };
 }
 
 function buildEnvReplacements({
@@ -60,41 +151,25 @@ function buildEnvReplacements({
         prod: slug,
     };
 
-    const applyBlobReplacements = (target: Record<string, string>) => {
-        const tokenValue = blobConfig?.enabled ? blobConfig.token : "";
-        const storeIdValue = blobConfig?.enabled ? blobConfig.storeId : "";
-
-        const entries: [string, string][] = [
-            ["{{LOCAL_BLOB_READ_WRITE_TOKEN}}", tokenValue],
-            ["{{LOCAL_BLOB_STORE_ID}}", storeIdValue],
-            ["{{DEV_BLOB_READ_WRITE_TOKEN}}", tokenValue],
-            ["{{DEV_BLOB_STORE_ID}}", storeIdValue],
-            ["{{STAGING_BLOB_READ_WRITE_TOKEN}}", tokenValue],
-            ["{{STAGING_BLOB_STORE_ID}}", storeIdValue],
-            ["{{PROD_BLOB_READ_WRITE_TOKEN}}", tokenValue],
-            ["{{PROD_BLOB_STORE_ID}}", storeIdValue],
-        ];
-
-        for (const [key, value] of entries) {
-            target[key] = value;
-        }
-    };
+    const applyBlobReplacements = buildBlobEnvReplacements(blobConfig);
 
     if (database === "turso") {
         const fallbackUrl = (name: string) => `libsql://${name}.turso.io`;
 
+        const localSqliteUrl = "file:../prisma/dev.db";
+
         const replacements: Record<string, string> = {
             "{{DATABASE_PROVIDER}}": "turso",
-            "{{LOCAL_DATABASE_URL}}": "file:./dev.db",
-            "{{LOCAL_DIRECT_DATABASE_URL}}": "file:./dev.db",
-            "{{LOCAL_PRISMA_DATABASE_URL}}": "file:./dev.db",
+            "{{LOCAL_DATABASE_URL}}": localSqliteUrl,
+            "{{LOCAL_DIRECT_DATABASE_URL}}": localSqliteUrl,
+            "{{LOCAL_PRISMA_DATABASE_URL}}": localSqliteUrl,
             "{{LOCAL_TURSO_AUTH_TOKEN}}": "",
             "{{LOCAL_SUPABASE_URL}}": "",
             "{{LOCAL_SUPABASE_SERVICE_ROLE_KEY}}": "",
-            "{{DEV_DATABASE_URL}}": fallbackUrl(naming.dev),
-            "{{DEV_DIRECT_DATABASE_URL}}": fallbackUrl(naming.dev),
-            "{{DEV_PRISMA_DATABASE_URL}}": fallbackUrl(naming.dev),
-            "{{DEV_TURSO_DATABASE_URL}}": fallbackUrl(naming.dev),
+            "{{DEV_DATABASE_URL}}": localSqliteUrl,
+            "{{DEV_DIRECT_DATABASE_URL}}": localSqliteUrl,
+            "{{DEV_PRISMA_DATABASE_URL}}": localSqliteUrl,
+            "{{DEV_TURSO_DATABASE_URL}}": "",
             "{{DEV_TURSO_AUTH_TOKEN}}": credentials?.tokens?.dev ?? "",
             "{{DEV_SUPABASE_URL}}": "",
             "{{DEV_SUPABASE_SERVICE_ROLE_KEY}}": "",
@@ -360,6 +435,54 @@ async function runSetupCommands(
 }
 
 /**
+ * 環境変数暗号化を実行し、結果をnextStepsに反映
+ */
+async function processEnvEncryption(
+    appDirectory: string,
+    _isMonorepo: boolean,
+    nextSteps: string[]
+): Promise<string[]> {
+    const messages = getMessages();
+
+    try {
+        // 暗号化実行環境チェック
+        const envCheck = await shouldEncryptEnv(appDirectory);
+
+        if (!envCheck.canExecute) {
+            // 実行できない場合はマニュアル手順を追加
+            console.log(messages.create.envEncryption.skipped);
+            console.log(`  理由: ${envCheck.reason}`);
+
+            const manualSteps = [
+                ...nextSteps,
+                `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
+                `   (${envCheck.reason})`,
+            ];
+            return manualSteps;
+        }
+
+        // 環境変数暗号化をスキップ（プロンプトを表示しない）
+        console.log(messages.create.envEncryption.skipped);
+        const skippedSteps = [
+            ...nextSteps,
+            `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
+        ];
+        return skippedSteps;
+    } catch (error) {
+        // 予期しないエラー
+        console.error(messages.create.envEncryption.failed);
+        console.error(error instanceof Error ? error.message : error);
+
+        const errorSteps = [
+            ...nextSteps,
+            `❌ 暗号化処理でエラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
+            `🔐 手動実行: ${messages.create.envEncryption.manualCommand}`,
+        ];
+        return errorSteps;
+    }
+}
+
+/**
  * Next.js フルスタック管理テンプレートをディレクトリコピーで生成
  */
 export async function generateFullStackAdmin(
@@ -422,11 +545,21 @@ export async function generateFullStackAdmin(
             : targetDirectory;
         await runSetupCommands(projectRoot, targetDirectory);
 
+        // データベースの初期化（マイグレーション + シーダー）を実行
+        await initializeDatabase(targetDirectory, config.monorepo);
+
+        // 環境変数暗号化を実行し、nextStepsを更新
+        const updatedNextSteps = await processEnvEncryption(
+            targetDirectory,
+            config.monorepo,
+            nextSteps
+        );
+
         return {
             success: true,
             filesCreated,
             directoriesCreated,
-            nextSteps,
+            nextSteps: updatedNextSteps,
         };
     } catch (error) {
         return {
@@ -436,6 +569,47 @@ export async function generateFullStackAdmin(
             nextSteps,
             errors: [error instanceof Error ? error.message : String(error)],
         };
+    }
+}
+
+/**
+ * データベースの初期化（マイグレーション + シーダー実行）
+ */
+async function initializeDatabase(
+    targetDirectory: string,
+    isMonorepo: boolean
+): Promise<void> {
+    console.log("🔄 データベースを初期化中...");
+
+    try {
+        if (isMonorepo) {
+            // モノレポの場合は、プロジェクトルートから filterを指定して実行
+            const projectPath = targetDirectory.replace(
+                `${process.cwd()}/`,
+                ""
+            );
+            await execa("pnpm", ["--filter", projectPath, "db:reset"], {
+                cwd: process.cwd(),
+                stdio: "inherit",
+                timeout: 120_000, // 2分のタイムアウト
+            });
+        } else {
+            // 単一リポジトリの場合は、プロジェクトディレクトリで直接実行
+            await execa("pnpm", ["db:reset"], {
+                cwd: targetDirectory,
+                stdio: "inherit",
+                timeout: 120_000, // 2分のタイムアウト
+            });
+        }
+
+        console.log("✅ データベースの初期化が完了しました");
+    } catch (error) {
+        console.error("❌ データベースの初期化に失敗しました:", error);
+        console.log("💡 手動でデータベースの初期化を実行してください:");
+        console.log("   pnpm db:reset");
+
+        // エラーが発生してもプロジェクト生成は継続する
+        // （後で手動実行できるため）
     }
 }
 

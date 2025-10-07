@@ -27,7 +27,7 @@ pnpm dev
 - `.env.staging`
 - `.env.prod`
 
-ローカル開発（`.env` / `.env.development`）では SQLite (`file:./dev.db`) を利用する設定が既定です。そのまま `pnpm db:reset` を実行すれば起動用の初期データが投入されます。
+ローカル開発（`.env` / `.env.development`）では SQLite (`file:../prisma/dev.db`) を利用する設定が既定です。そのまま `pnpm db:reset` を実行すれば起動用の初期データが投入されます。
 
 ### Turso を利用する場合
 - `DATABASE_PROVIDER=turso`
