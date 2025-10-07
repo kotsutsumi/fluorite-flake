@@ -6,7 +6,11 @@ import { copyFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execa } from "execa";
 import { getMessages } from "../../../i18n.js";
-import { shouldEncryptEnv } from "../../../utils/env-encryption/index.js";
+import {
+    createEncryptionPrompt,
+    runEnvEncryption,
+    shouldEncryptEnv,
+} from "../../../utils/env-encryption/index.js";
 import { copyTemplateDirectory } from "../../../utils/template-manager/index.js";
 import type { DatabaseType } from "../types.js";
 import type { GenerationContext, TemplateGenerationResult } from "./types.js";
@@ -439,7 +443,7 @@ async function runSetupCommands(
  */
 async function processEnvEncryption(
     appDirectory: string,
-    _isMonorepo: boolean,
+    isMonorepo: boolean,
     nextSteps: string[]
 ): Promise<string[]> {
     const messages = getMessages();
@@ -461,13 +465,49 @@ async function processEnvEncryption(
             return manualSteps;
         }
 
-        // 環境変数暗号化をスキップ（プロンプトを表示しない）
-        console.log(messages.create.envEncryption.skipped);
-        const skippedSteps = [
-            ...nextSteps,
-            `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
-        ];
-        return skippedSteps;
+        // ユーザーに暗号化するかどうかを確認
+        const promptResult = await createEncryptionPrompt();
+
+        if (promptResult.cancelled) {
+            // プロンプトがキャンセルされた場合
+            console.log(messages.create.envEncryption.skipped);
+            const cancelledSteps = [
+                ...nextSteps,
+                `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
+            ];
+            return cancelledSteps;
+        }
+
+        if (!promptResult.shouldEncrypt) {
+            // ユーザーが暗号化をスキップした場合
+            console.log(messages.create.envEncryption.skipped);
+            const skippedSteps = [
+                ...nextSteps,
+                `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
+            ];
+            return skippedSteps;
+        }
+
+        // 暗号化を実行
+        const encryptionResult = await runEnvEncryption(appDirectory, isMonorepo);
+
+        if (encryptionResult.success && encryptionResult.zipPath) {
+            // 暗号化成功
+            const successSteps = [
+                ...nextSteps,
+                `✅ 環境変数を暗号化しました (${encryptionResult.zipPath})`,
+                "📤 チームメンバーとパスワードを安全に共有してください",
+            ];
+            return successSteps;
+        } else {
+            // 暗号化失敗
+            const failureSteps = [
+                ...nextSteps,
+                `❌ 暗号化に失敗しました: ${encryptionResult.error || "不明なエラー"}`,
+                `🔐 手動実行: ${messages.create.envEncryption.manualCommand}`,
+            ];
+            return failureSteps;
+        }
     } catch (error) {
         // 予期しないエラー
         console.error(messages.create.envEncryption.failed);
