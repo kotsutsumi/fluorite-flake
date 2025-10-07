@@ -1,0 +1,5 @@
+{
+  "markdown.styles": [".vscode/markdown.css"],
+  "markdown-mermaid.lightModeTheme": "neutral",
+  "markdown-mermaid.darkModeTheme": "dark"
+}

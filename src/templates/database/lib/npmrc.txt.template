@@ -1,3 +1,0 @@
-# Allow pnpm to properly handle Prisma client generation
-public-hoist-pattern[]=@prisma/client
-public-hoist-pattern[]=prisma

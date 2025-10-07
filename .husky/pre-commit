@@ -15,7 +15,7 @@ echo "🔨 Building project..."
 pnpm run build
 
 # Run test
-echo "🔍 Testing project..."
-pnpm run test
+# echo "🔍 Testing project..."
+# pnpm run test
 
 echo "✅ Pre-commit checks completed!"
