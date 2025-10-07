@@ -1,2 +1,6 @@
 packages:
-  - '.'
+  - .
+
+ignoredBuiltDependencies:
+  - '@biomejs/biome'
+  - esbuild

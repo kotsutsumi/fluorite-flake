@@ -1,0 +1,62 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+fluorite-cloud.json
+.storage/
+test-results/
+.turbo/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env.local
+.env.example
+!.env
+!.env.development
+!.env.staging
+!.env.prod
+
+# Environment variable encryption
+env-files.zip
+
+# Database files
+prisma/dev.db
+*.db
+*.sqlite
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Serena
+.serena/
+
+# Dynamic Prisma schemas
+prisma/schema.*.prisma
+!prisma/schema.supabase.prisma
+!prisma/schema.turso.prisma
+
+# Playwright
+playwright-report/

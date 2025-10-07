@@ -1,25 +1,21 @@
 /**
- * createコマンド関連モジュールの再エクスポート
- * プロジェクト生成機能の中核となる関数群を外部に公開
+ * createコマンドモジュールのエクスポート統合
+ *
+ * 元のcreate.tsファイルの機能を複数のファイルに分割し、
+ * このindex.tsファイルで統合してエクスポートします。
  */
 
-// プロジェクト作成のメインエントリーポイント（対話形式・CLI引数両対応）
-export { createProject } from './create-project.js';
+// コマンド定義のエクスポート
+export { createCommand, newCommand } from "./commands.js";
+// 設定作成関数のエクスポート
+export { createProjectConfig } from "./config.js";
+// 定数のエクスポート
+export { PROJECT_TEMPLATES } from "./constants.js";
+// プロジェクト生成関数のエクスポート
+export { generateProject } from "./generator.js";
+// 型定義のエクスポート
+export type { CreateOptions, ProjectConfig } from "./types.js";
+// バリデーション関数のエクスポート
+export { validateProjectType, validateTemplate } from "./validators.js";
 
-// 認証設定のテキスト情報を取得する関数
-export { getAuthText } from './get-auth-text.js';
-
-// デプロイメント設定のテキスト情報を取得する関数
-export { getDeploymentText } from './get-deployment-text.js';
-
-// フレームワーク固有のプロジェクト生成処理を実行する関数
-export { generateFrameworkProject } from './generate-framework-project.js';
-
-// プロジェクト設定が完全かどうかを判定する関数
-export { isConfigComplete } from './is-config-complete.js';
-
-// プロジェクト生成の実行処理を担当する関数
-export { runProjectGeneration } from './run-project-generation.js';
-
-// プロジェクト設定の型定義
-export type { ProjectConfig } from './types.js';
+// EOF
