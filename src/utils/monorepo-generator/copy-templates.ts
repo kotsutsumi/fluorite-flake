@@ -17,7 +17,9 @@ function findPackageRoot(startPath: string): string {
         const packageJsonPath = path.join(currentPath, "package.json");
         if (fs.existsSync(packageJsonPath)) {
             try {
-                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+                const packageJson = JSON.parse(
+                    fs.readFileSync(packageJsonPath, "utf-8")
+                );
                 // fluorite-flakeパッケージかどうか確認
                 if (packageJson.name === "fluorite-flake") {
                     return currentPath;
