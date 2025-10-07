@@ -273,6 +273,13 @@ type RawLocaleMessages = {
             manualCommand: string;
             shareInstruction: string;
         };
+        confirmation: {
+            title: string;
+            projectInfo: string;
+            databaseInfo: string;
+            continuePrompt: string;
+            cancelled: string;
+        };
     };
     readme: {
         title: string;
@@ -293,6 +300,15 @@ type RawLocaleMessages = {
         buildingCommands: string[];
         testingHeading: string;
         testingCommands: string[];
+    };
+    common: {
+        enabled: string;
+        disabled: string;
+        projectName: string;
+        projectType: string;
+        template: string;
+        monorepo: string;
+        outputDir: string;
     };
     debug: {
         devModeEnabled: string;
@@ -414,6 +430,13 @@ export type LocaleMessages = {
             manualCommand: string;
             shareInstruction: string;
         };
+        confirmation: {
+            title: string;
+            projectInfo: string;
+            databaseInfo: string;
+            continuePrompt: string;
+            cancelled: string;
+        };
     };
     readme: {
         title: string;
@@ -434,6 +457,15 @@ export type LocaleMessages = {
         buildingCommands: string[];
         testingHeading: string;
         testingCommands: string[];
+    };
+    common: {
+        enabled: string;
+        disabled: string;
+        projectName: string;
+        projectType: string;
+        template: string;
+        monorepo: string;
+        outputDir: string;
     };
     debug: {
         devModeEnabled: string;
@@ -631,6 +663,13 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 shareInstruction:
                     rawMessages.create.envEncryption.shareInstruction,
             },
+            confirmation: {
+                title: rawMessages.create.confirmation.title,
+                projectInfo: rawMessages.create.confirmation.projectInfo,
+                databaseInfo: rawMessages.create.confirmation.databaseInfo,
+                continuePrompt: rawMessages.create.confirmation.continuePrompt,
+                cancelled: rawMessages.create.confirmation.cancelled,
+            },
         },
         readme: {
             title: rawMessages.readme.title,
@@ -656,6 +695,15 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             buildingCommands: rawMessages.readme.buildingCommands,
             testingHeading: rawMessages.readme.testingHeading,
             testingCommands: rawMessages.readme.testingCommands,
+        },
+        common: {
+            enabled: rawMessages.common.enabled,
+            disabled: rawMessages.common.disabled,
+            projectName: rawMessages.common.projectName,
+            projectType: rawMessages.common.projectType,
+            template: rawMessages.common.template,
+            monorepo: rawMessages.common.monorepo,
+            outputDir: rawMessages.common.outputDir,
         },
         debug: {
             devModeEnabled: rawMessages.debug.devModeEnabled,

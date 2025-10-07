@@ -1,0 +1,158 @@
+---
+title: Overview
+description: Introduction to the Fluorite Flake CLI and what you can find in the docs.
+sidebarTitle: Overview
+theme:
+  sidebar: true
+  toc: true
+---
+
+<Hero
+  kicker="Scaffold with confidence"
+  title="Fluorite Flake Documentation"
+  description="Opinionated scaffolding for product teams that demand production-ready standards, end-to-end localization, and batteries-included workflows."
+>
+  <HeroActions>
+    <HeroPrimary href="/en/getting-started/">Launch Quickstart</HeroPrimary>
+    <HeroSecondary href="/en/cli/">Browse CLI Reference</HeroSecondary>
+    <HeroSecondary href="https://github.com/kotsutsumi/fluorite-flake/tree/main/templates">Explore Templates</HeroSecondary>
+  </HeroActions>
+  <HeroStats>
+    <HeroStat value="5 min" label="TO FIRST SCAFFOLD" />
+    <HeroStat value="3 stacks" label="NEXT.JS · EXPO · TAURI" />
+    <HeroStat value="100% typed" label="STRICT TS + BIOME" />
+  </HeroStats>
+</Hero>
+
+<Section
+  eyebrow="Why teams choose Fluorite Flake"
+  title="Production-grade defaults for modern engineering orgs"
+  description="Every scaffold mirrors the repository’s rules so you can focus on product work instead of plumbing."
+>
+  <FeatureGrid>
+    <FeatureCard
+      icon="⚡"
+      title="Launch real projects, not demos"
+      description="Templates ship with TypeScript-first configs, Biome linting, Vitest coverage, and deployment-ready scripts."
+    >
+      <ul className="list-disc space-y-2 pl-5 marker:text-sky-500">
+        <li>Shared tsconfig and pnpm workspace settings tuned for Node.js 20+</li>
+        <li>CLI prompts wire optional integrations like Supabase, Turso, and Git init</li>
+        <li>Dev mode spins up debuggable sandboxes with localized console output</li>
+      </ul>
+    </FeatureCard>
+    <FeatureCard
+      icon="🌐"
+      title="Localized by default"
+      description="Englishと日本語のコピーが同梱され、CLIは自動でロケール検出し、FLUORITE_LOCALEで強制上書きできます。"
+    >
+      <ul className="list-disc space-y-2 pl-5 marker:text-sky-500">
+        <li>Repository messages share a single typed schema for consistency</li>
+        <li>Docs mirror CLI output so support teams can cross-reference behaviour</li>
+        <li>Test suites verify multi-locale messaging before every release</li>
+      </ul>
+    </FeatureCard>
+    <FeatureCard
+      icon="🛡️"
+      title="Guardrails for scale"
+      description="Git hooks, CI-ready scripts, and optional monorepo layout help large teams stay aligned."
+    >
+      <ul className="list-disc space-y-2 pl-5 marker:text-sky-500">
+        <li>Opinionated workspace manager keeps generated files inside safe directories</li>
+        <li>Environment encryption utilities keep secrets distribution compliant</li>
+        <li>Template-specific Vitest scenarios protect regression-sensitive flows</li>
+      </ul>
+    </FeatureCard>
+  </FeatureGrid>
+</Section>
+
+<Section
+  eyebrow="From zero to fully scaffolded"
+  title="Build once, then automate the repetition"
+  description="Whether you are onboarding a new hire or bootstrapping a proof of concept, the workflow stays the same."
+>
+  <StepTimeline>
+    <StepItem
+      title="Install on demand"
+      description="Use pnpm dlx to always run the latest release without a global install."
+    >
+      <pre className="overflow-x-auto rounded-2xl bg-slate-950 p-4 text-sm text-slate-100">
+{`
+pnpm dlx fluorite-flake create my-app
+`}
+      </pre>
+      <p>
+        The CLI validates Node, pnpm, and workspace prerequisites before making changes to disk.
+      </p>
+    </StepItem>
+    <StepItem
+      title="Shape the stack"
+      description="Pick frameworks, package managers, database providers, and optional integrations with guardrails for incompatible combos."
+    >
+      <p>
+        Every prompt is localized and mirrored in these docs so you can prepare answers ahead of time or script the run with flags like
+        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--template nextjs</code>
+        and
+        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--no-install</code>.
+      </p>
+    </StepItem>
+    <StepItem
+      title="Verify and commit"
+      description="Run the preconfigured quality gates before sharing the repo."
+    >
+      <pre className="overflow-x-auto rounded-2xl bg-slate-950 p-4 text-sm text-slate-100">
+{`
+pnpm build && pnpm test && pnpm lint
+`}
+      </pre>
+      <p>
+        Husky hooks and task-specific scripts keep every project aligned with the Fluorite Flake repository itself.
+      </p>
+    </StepItem>
+  </StepTimeline>
+</Section>
+
+<Section
+  eyebrow="Built for product teams"
+  title="Scale knowledge, not entropy"
+  description="Governance, localization, and developer experience all live in one CLI so rolling out new services stays consistent across squads."
+>
+  <Testimonial
+    quote="Fluorite Flake captures the standards we enforce at scale—strict typing, automated quality gates, and localized messaging—so new teams ship production-ready code on day one."
+    author="Mika Nakahara"
+    role="Principal Engineer, Fluorite Platform"
+  />
+</Section>
+
+<Section
+  eyebrow="Keep exploring"
+  title="Essential resources"
+  description="Jump into the deep dives, reference material, and change history that back the CLI."
+>
+  <ResourceGrid>
+    <ResourceCard
+      icon="🚀"
+      title="Quickstart"
+      description="Follow the step-by-step guide to install the CLI and ship your first scaffold."
+      href="/en/getting-started/"
+    />
+    <ResourceCard
+      icon="🧭"
+      title="CLI Reference"
+      description="Every flag, environment variable, and automation hook documented in one place."
+      href="/en/cli/"
+    />
+    <ResourceCard
+      icon="📦"
+      title="Template Source"
+      description="Study the maintained templates and extend them for your private stacks."
+      href="https://github.com/kotsutsumi/fluorite-flake/tree/main/templates"
+    />
+    <ResourceCard
+      icon="📣"
+      title="Release Notes"
+      description="Track new features, template refreshes, and breaking changes before upgrading."
+      href="https://github.com/kotsutsumi/fluorite-flake/releases"
+    />
+  </ResourceGrid>
+</Section>

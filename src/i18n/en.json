@@ -28,7 +28,7 @@
       "force": "Force creation (overwrite existing)",
       "monorepo": "Create as monorepo structure (default: true)",
       "simple": "Create a simple project (non-monorepo structure)",
-      "database": "Database to use (turso|supabase)"
+      "database": "Database to use (turso|supabase|sqlite)"
     },
     "invalidProjectType": "❌ Invalid project type: {type}",
     "availableProjectTypes": "Available types: nextjs, expo, tauri",
@@ -39,7 +39,7 @@
     "selectDatabasePrompt": "Select a database:",
     "confirmMonorepoPrompt": "The {template} template works best as a monorepo. Enable monorepo structure?",
     "invalidDatabase": "❌ Invalid database type: {database}",
-    "availableDatabases": "Available databases: turso, supabase",
+    "availableDatabases": "Available databases: turso, supabase, sqlite",
     "spinnerCreating": "Creating {type} project: {name}",
     "spinnerSettingUp": "Setting up {type} project structure...",
     "spinnerInstallingDeps": "Installing dependencies...",
@@ -87,6 +87,13 @@
       "skipped": "ℹ️ Environment variable encryption skipped",
       "manualCommand": "Manual execution: pnpm env:encrypt",
       "shareInstruction": "📤 When sharing with your team, please securely share the password"
+    },
+    "confirmation": {
+      "title": "Configuration Confirmation",
+      "projectInfo": "Project Information",
+      "databaseInfo": "Database Configuration",
+      "continuePrompt": "Do you want to proceed with this configuration?",
+      "cancelled": "Project creation cancelled"
     }
   },
   "readme": {
@@ -108,6 +115,15 @@
     "buildingCommands": ["pnpm build"],
     "testingHeading": "Testing",
     "testingCommands": ["pnpm test"]
+  },
+  "common": {
+    "enabled": "enabled",
+    "disabled": "disabled",
+    "projectName": "Project Name",
+    "projectType": "Project Type",
+    "template": "Template",
+    "monorepo": "Monorepo",
+    "outputDir": "Output Directory"
   },
   "debug": {
     "devModeEnabled": "🔧 Development mode enabled",

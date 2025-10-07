@@ -36,6 +36,7 @@ vi.mock("node:fs", () => ({
         existsSync: vi.fn(),
         mkdirSync: vi.fn(),
         writeFileSync: vi.fn(),
+        readFileSync: vi.fn(),
     },
 }));
 // debugモジュールをモック
@@ -112,13 +113,15 @@ describe("プロジェクト生成機能", () => {
         vi.mocked(ora).mockReturnValue(mockOra);
 
         // fsモックのデフォルト動作
-        vi.mocked(fs.existsSync).mockReturnValue(false);
-        vi.mocked(fs.mkdirSync).mockImplementation(() => {
+        const mockFs = vi.mocked(fs);
+        mockFs.existsSync.mockReturnValue(false);
+        mockFs.mkdirSync.mockImplementation(() => {
             // モック関数：ディレクトリ作成のシミュレーション
         });
-        vi.mocked(fs.writeFileSync).mockImplementation(() => {
+        mockFs.writeFileSync.mockImplementation(() => {
             // モック関数：ファイル書き込みのシミュレーション
         });
+        mockFs.readFileSync.mockReturnValue("mock file content");
 
         // debugモックのデフォルト動作
         vi.mocked(isDevelopment).mockReturnValue(false);
@@ -151,7 +154,10 @@ describe("プロジェクト生成機能", () => {
 
             // 検証: モノレポ関連の関数が呼ばれること
             expect(createMonorepoStructure).toHaveBeenCalledWith(config);
-            expect(copyMonorepoTemplates).toHaveBeenCalledWith(config);
+            expect(copyMonorepoTemplates).toHaveBeenCalledWith(
+                config,
+                undefined
+            );
             expect(createWebAppPackageJson).toHaveBeenCalledWith(config);
 
             // 検証: README.mdが作成されること
@@ -432,6 +438,92 @@ describe("プロジェクト生成機能", () => {
             expect(spinnerTexts).toContain("Installing dependencies...");
             expect(spinnerTexts).toContain(
                 "Configuring typescript template..."
+            );
+        });
+
+        test("Next.jsプロジェクトで.gitignoreファイルが生成されること", async () => {
+            // fsモジュールのモック設定
+            const mockFs = vi.mocked(fs);
+
+            // fs.readFileSyncのモック設定（テンプレートファイル読み込み用）
+            mockFs.readFileSync.mockReturnValue(
+                "# Mock gitignore content\nnode_modules/\n.next/"
+            );
+            mockFs.existsSync.mockReturnValue(true);
+
+            // テストデータ準備
+            const config: ProjectConfig = {
+                type: "nextjs",
+                name: "gitignore-test",
+                directory: "gitignore-test",
+                template: "typescript",
+                force: false,
+                monorepo: false,
+            };
+
+            // テスト実行
+            await generateProject(config);
+
+            // 検証: .gitignoreファイルが作成されること
+            expect(fs.writeFileSync).toHaveBeenCalledWith(
+                path.join(config.directory, ".gitignore"),
+                expect.any(String)
+            );
+        });
+
+        test("Next.js以外のプロジェクトでは.gitignoreファイルが生成されないこと", async () => {
+            // テストデータ準備
+            const config: ProjectConfig = {
+                type: "expo",
+                name: "no-gitignore-test",
+                directory: "no-gitignore-test",
+                template: "typescript",
+                force: false,
+                monorepo: false,
+            };
+
+            // テスト実行
+            await generateProject(config);
+
+            // 検証: .gitignoreファイルが作成されないこと
+            expect(fs.writeFileSync).not.toHaveBeenCalledWith(
+                path.join(config.directory, ".gitignore"),
+                expect.any(String)
+            );
+        });
+
+        test(".gitignoreテンプレートが見つからない場合、フォールバックが使用されること", async () => {
+            // fsモジュールのモック設定
+            const mockFs = vi.mocked(fs);
+
+            // fs.readFileSyncがエラーを投げるように設定
+            mockFs.readFileSync.mockImplementation((filePath) => {
+                if (
+                    typeof filePath === "string" &&
+                    filePath.includes("gitignore")
+                ) {
+                    throw new Error("Template not found");
+                }
+                return "{}";
+            });
+
+            // テストデータ準備
+            const config: ProjectConfig = {
+                type: "nextjs",
+                name: "fallback-test",
+                directory: "fallback-test",
+                template: "typescript",
+                force: false,
+                monorepo: false,
+            };
+
+            // テスト実行
+            await generateProject(config);
+
+            // 検証: フォールバック.gitignoreが作成されること
+            expect(fs.writeFileSync).toHaveBeenCalledWith(
+                path.join(config.directory, ".gitignore"),
+                expect.stringContaining("# Dependencies\nnode_modules/")
             );
         });
     });

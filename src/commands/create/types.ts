@@ -14,7 +14,7 @@ import type {
 /**
  * データベースタイプの型
  */
-export type DatabaseType = "turso" | "supabase";
+export type DatabaseType = "turso" | "supabase" | "sqlite";
 
 /**
  * createコマンドのオプション型
@@ -54,6 +54,7 @@ export type ProjectConfig = {
     databaseConfig?: DatabaseProvisioningConfig;
     databaseCredentials?: DatabaseCredentials;
     blobConfig?: BlobConfiguration;
+    pnpmVersion?: string;
 };
 
 /**

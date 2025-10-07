@@ -1,0 +1,52 @@
+---
+title: Quickstart
+description: Install the Fluorite Flake CLI and scaffold your first project in minutes.
+---
+
+# Quickstart
+
+This section walks you through installing the CLI, generating a project, and verifying the development workflow.
+
+## Prerequisites
+
+- Node.js 20 or newer
+- pnpm 8 or newer (use `corepack enable` to pin the pnpm version)
+
+Verify your environment:
+
+```bash
+node --version
+pnpm --version
+```
+
+## Install and Scaffold
+
+Run the CLI through `pnpm dlx` so you always execute the latest release without a global install.
+
+```bash
+pnpm dlx fluorite-flake create my-app
+```
+
+Follow the interactive prompts to pick a template, package manager, and optional integrations. The CLI validates your selections and reports any missing prerequisites.
+
+## Explore the Generated Project
+
+After creation, review the template README and start the dev server. For a Next.js project, run:
+
+```bash
+cd my-app
+pnpm install
+pnpm dev
+```
+
+To enable verbose logging during scaffolding, set `FLUORITE_DEBUG=true`:
+
+```bash
+FLUORITE_DEBUG=true pnpm dlx fluorite-flake create sample
+```
+
+## Next Steps
+
+- See **CLI Reference** for every flag and prompt
+- Inspect template sources under `templates/` inside this repo
+- When adding a private template, extend the logic in `src/commands/create` and add coverage in `test/`

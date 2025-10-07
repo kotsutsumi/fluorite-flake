@@ -47,6 +47,12 @@ function parseLibSQLConfig(rawUrl: string | undefined): LibSQLConfig {
 }
 
 function ensurePrismaEnv(url: string): void {
+    // libsql://URLが既に設定されている場合は上書きしない
+    const currentUrl = process.env.DATABASE_URL;
+    if (currentUrl?.startsWith('libsql://')) {
+        return;
+    }
+
     if (!process.env.DATABASE_URL) {
         process.env.DATABASE_URL = url;
     }
@@ -118,7 +124,15 @@ if (provider === 'turso') {
     const authToken = process.env.TURSO_AUTH_TOKEN ?? parsed.authToken ?? undefined;
 
     if (url.startsWith('libsql://')) {
-        ensurePrismaEnv(normalizeSqliteUrl(DEFAULT_SQLITE_URL));
+        if (!process.env.DATABASE_URL) {
+            process.env.DATABASE_URL = url;
+        }
+        if (!process.env.PRISMA_DATABASE_URL) {
+            process.env.PRISMA_DATABASE_URL = url;
+        }
+        if (!process.env.DIRECT_DATABASE_URL) {
+            process.env.DIRECT_DATABASE_URL = url;
+        }
 
         const adapter = new PrismaLibSQL({
             url,
@@ -133,28 +147,31 @@ if (provider === 'turso') {
         const normalizedUrl = normalizeSqliteUrl(url);
         ensurePrismaEnv(normalizedUrl);
 
+        // ローカルSQLiteの場合もPrismaLibSQLアダプターを使用
+        const adapter = new PrismaLibSQL({
+            url: normalizedUrl,
+            authToken: undefined, // ローカルファイルなのでトークン不要
+        });
+
         prisma = new PrismaClient({
-            datasources: {
-                db: {
-                    url: normalizedUrl,
-                },
-            },
+            adapter,
             log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
         });
     }
 } else {
+    // Supabase (PostgreSQL) の場合
     const databaseUrl =
         process.env.DATABASE_URL ?? process.env.DIRECT_DATABASE_URL ?? DEFAULT_SUPABASE_URL;
-    const normalizedDatabaseUrl = normalizeSqliteUrl(databaseUrl);
 
-    ensurePrismaEnv(normalizedDatabaseUrl);
+    // PostgreSQLなので正規化は不要、環境変数設定のみ
+    if (!process.env.DATABASE_URL) {
+        process.env.DATABASE_URL = databaseUrl;
+    }
+    if (!process.env.PRISMA_DATABASE_URL) {
+        process.env.PRISMA_DATABASE_URL = databaseUrl;
+    }
 
     prisma = new PrismaClient({
-        datasources: {
-            db: {
-                url: normalizedDatabaseUrl,
-            },
-        },
         log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
 }

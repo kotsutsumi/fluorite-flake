@@ -1,0 +1,165 @@
+---
+title: 概要
+description: Fluorite Flake CLI の目的と全体像を説明します。
+sidebarTitle: 概要
+theme:
+  sidebar: true
+  toc: true
+---
+
+<Hero
+  kicker="プロダクト開発の初速を底上げ"
+  title="Fluorite Flake ドキュメント"
+  description="本番運用を前提にしたテンプレート、国際化済みの CLI メッセージ、品質ゲートをワンコマンドで導入できます。"
+>
+  <HeroActions>
+    <HeroPrimary href="/ja/getting-started/">
+      クイックスタートを見る
+    </HeroPrimary>
+    <HeroSecondary href="/ja/cli/">
+      CLI リファレンスを確認
+    </HeroSecondary>
+    <HeroSecondary href="https://github.com/kotsutsumi/fluorite-flake/tree/main/templates">
+      テンプレートを開く
+    </HeroSecondary>
+  </HeroActions>
+  <HeroStats>
+    <HeroStat value="5 分" label="初回スキャフォールド" />
+    <HeroStat value="3 つ" label="NEXT.JS・EXPO・TAURI" />
+    <HeroStat value="100%" label="Strict TypeScript" />
+  </HeroStats>
+</Hero>
+
+<Section
+  eyebrow="Fluorite Flake を選ぶ理由"
+  title="本番品質の初期設定を最初から"
+  description="リポジトリの規約をそのままテンプレートに落とし込み、プロダクト開発へ即座に移行できます。"
+>
+  <FeatureGrid>
+    <FeatureCard
+      icon="⚡"
+      title="デモではなく実運用前提"
+      description="TypeScript・Biome・Vitest・デプロイ用スクリプトを同梱し、CI に直結できます。"
+    >
+      <ul className="list-disc space-y-2 pl-5 marker:text-sky-500">
+        <li>Node.js 20+ に最適化した tsconfig と pnpm ワークスペース設定</li>
+        <li>Supabase・Turso・Git 初期化などの統合をプロンプトでガイド</li>
+        <li>開発モードではローカライズされたデバッグログで挙動を可視化</li>
+      </ul>
+    </FeatureCard>
+    <FeatureCard
+      icon="🌐"
+      title="国際化を前提に設計"
+      description="英語と日本語のコピーを共有スキーマで管理し、FLUORITE_LOCALE で任意に切り替えられます。"
+    >
+      <ul className="list-disc space-y-2 pl-5 marker:text-sky-500">
+        <li>CLI とドキュメントが同一メッセージを参照するためサポートが容易</li>
+        <li>Vitest の多言語テストで翻訳漏れや差異を事前に検知</li>
+        <li>プロンプト内容を本ドキュメントで事前確認し、スクリプト化も可能</li>
+      </ul>
+    </FeatureCard>
+    <FeatureCard
+      icon="🛡️"
+      title="スケールする組織のガードレール"
+      description="Git フック、CI 向けスクリプト、モノレポ構成の推奨で大規模チームでも整合性を維持します。"
+    >
+      <ul className="list-disc space-y-2 pl-5 marker:text-sky-500">
+        <li>ワークスペースマネージャーが生成物を安全なディレクトリに限定</li>
+        <li>環境変数暗号化ユーティリティで Secrets 配布を自動化</li>
+        <li>テンプレート固有の Vitest シナリオで重要な導線を保護</li>
+      </ul>
+    </FeatureCard>
+  </FeatureGrid>
+</Section>
+
+<Section
+  eyebrow="ゼロから本番準備まで"
+  title="一度作れば、あとは繰り返すだけ"
+  description="新メンバーのオンボーディングでも PoC でも、変わらない手順で品質を担保できます。"
+>
+  <StepTimeline>
+    <StepItem
+      title="必要なときだけ導入"
+      description="pnpm dlx で常に最新リリースを取得し、グローバルインストールは不要です。"
+    >
+      <pre className="overflow-x-auto rounded-2xl bg-slate-950 p-4 text-sm text-slate-100">
+{`
+pnpm dlx fluorite-flake create my-app
+`}
+      </pre>
+      <p>
+        実行前に Node・pnpm・ディレクトリ構成を検証し、不整合があればガイドを表示します。
+      </p>
+    </StepItem>
+    <StepItem
+      title="スタックを形にする"
+      description="フレームワーク、パッケージマネージャー、データベース、統合オプションを整合性チェック付きで選択できます。"
+    >
+      <p>
+        すべてのプロンプトは本ドキュメントに掲載されているため、回答を事前共有したり
+        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--template nextjs</code>
+        や
+        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--no-install</code>
+        などのフラグで自動化することもできます。
+      </p>
+    </StepItem>
+    <StepItem
+      title="検証して共有"
+      description="リポジトリと同じ品質ゲートをプロジェクト内で実行し、Pull Request 前に統一された状態を保ちます。"
+    >
+      <pre className="overflow-x-auto rounded-2xl bg-slate-950 p-4 text-sm text-slate-100">
+{`
+pnpm build && pnpm test && pnpm lint
+`}
+      </pre>
+      <p>
+        Husky フックと専用スクリプトにより、どのテンプレートでも同じワークフローを再現できます。
+      </p>
+    </StepItem>
+  </StepTimeline>
+</Section>
+
+<Section
+  eyebrow="プロダクトチームのために"
+  title="知見をスケールさせ、混乱を抑える"
+  description="ガバナンス・ローカライズ・DX を CLI 一つに集約し、新サービスの立ち上げでもチーム間の認識を揃えます。"
+>
+  <Testimonial
+    quote="Strict TypeScript、検証済みの品質ゲート、多言語対応という Fluorite の標準がそのままテンプレート化され、新チームでも初日から本番クオリティで開発できます。"
+    author="中原 美佳"
+    role="Fluorite Platform プリンシパルエンジニア"
+  />
+</Section>
+
+<Section
+  eyebrow="さらに知る"
+  title="チェックしておきたいリソース"
+  description="詳細ガイド、リファレンス、更新履歴を追いかけて、CLI の進化を逃さないようにしましょう。"
+>
+  <ResourceGrid>
+    <ResourceCard
+      icon="🚀"
+      title="クイックスタート"
+      description="CLI の導入から初回スキャフォールドまでを手順付きで解説します。"
+      href="/ja/getting-started/"
+    />
+    <ResourceCard
+      icon="🧭"
+      title="CLI リファレンス"
+      description="すべてのフラグ、環境変数、自動化フックを一覧できます。"
+      href="/ja/cli/"
+    />
+    <ResourceCard
+      icon="📦"
+      title="テンプレートソース"
+      description="メンテナンスされているテンプレートを調べ、自社向けに拡張しましょう。"
+      href="https://github.com/kotsutsumi/fluorite-flake/tree/main/templates"
+    />
+    <ResourceCard
+      icon="📣"
+      title="リリースノート"
+      description="新機能や breaking change を事前にキャッチし、安全にアップグレード。"
+      href="https://github.com/kotsutsumi/fluorite-flake/releases"
+    />
+  </ResourceGrid>
+</Section>

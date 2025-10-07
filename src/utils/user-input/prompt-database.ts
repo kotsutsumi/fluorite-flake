@@ -25,6 +25,11 @@ export async function promptForDatabase(): Promise<DatabaseType | undefined> {
                 label: "Supabase - オープンソースのPostgreSQLベースのクラウドデータベース",
                 hint: "リアルタイム機能とRLS付き",
             },
+            {
+                value: "sqlite" as const,
+                label: "ローカル SQLite - プロビジョニング不要のローカルデータベース",
+                hint: "ローカル開発専用（即座に開始可能）",
+            },
         ],
     });
 

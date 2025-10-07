@@ -1,0 +1,43 @@
+---
+title: CLI リファレンス
+description: Fluorite Flake CLI のコマンドと主要オプションをまとめます。
+---
+
+# CLI リファレンス
+
+`fluorite-flake` は単一コマンドで複数テンプレートを生成できるよう設計されています。ここでは主要なフラグとユースケースをまとめます。
+
+## 基本コマンド
+
+```bash
+pnpm dlx fluorite-flake create <project-name> [options]
+```
+
+オプション無しで実行すると、テンプレートの種類や依存関係を対話形式で決定します。
+
+## 主なオプション
+
+| フラグ | 説明 |
+| --- | --- |
+| `--template <name>` | `nextjs`, `expo`, `tauri` などテンプレートを直接指定します。 |
+| `--no-install` | 依存関係のインストールをスキップします。CI でテンプレートだけ生成したい場合に便利です。 |
+| `--git` | Git リポジトリ初期化と初回コミットを自動化します。 |
+| `--debug` | 詳細ログを有効化します。問題解析に利用してください。 |
+
+## 国際化
+
+CLI のメッセージは `FLUORITE_LOCALE` 環境変数で強制的にロケールを指定できます。サポートしている値は `en` と `ja` です。
+
+```bash
+FLUORITE_LOCALE=ja pnpm dlx fluorite-flake create sample
+```
+
+## テンプレートの更新
+
+テンプレートを更新する際は `templates/` ディレクトリの該当サブディレクトリを編集し、`pnpm build` でアーティファクトを更新してください。テンプレートごとに付属のスクリプト（`scripts/`）やテスト (`test/`) を確認すると、依存関係や生成プロセスの理解が深まります。
+
+## 参考資料
+
+- `src/commands/create` : CLI のコアロジック
+- `test/e2e` : エンドツーエンドテストのサンプル
+- `docs/` : 過去の設計メモやレビュー記録

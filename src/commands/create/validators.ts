@@ -55,7 +55,7 @@ export function isMonorepoRecommended(template: string): boolean {
  * データベースタイプの検証
  */
 export function validateDatabase(database: string): database is DatabaseType {
-    const validDatabases: DatabaseType[] = ["turso", "supabase"];
+    const validDatabases: DatabaseType[] = ["turso", "supabase", "sqlite"];
     return validDatabases.includes(database as DatabaseType);
 }
 

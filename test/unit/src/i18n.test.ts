@@ -135,6 +135,14 @@ describe("国際化ユーティリティ", () => {
                                 shareInstruction:
                                     "Please securely share the password",
                             },
+                            confirmation: {
+                                title: "Configuration Confirmation",
+                                projectInfo: "Project Information",
+                                databaseInfo: "Database Configuration",
+                                continuePrompt:
+                                    "Do you want to proceed with this configuration?",
+                                cancelled: "Project creation cancelled",
+                            },
                         },
                         readme: {
                             title: "{name}",
@@ -164,6 +172,15 @@ describe("国際化ユーティリティ", () => {
                             buildingCommands: ["pnpm build"],
                             testingHeading: "Testing",
                             testingCommands: ["pnpm test"],
+                        },
+                        common: {
+                            enabled: "enabled",
+                            disabled: "disabled",
+                            projectName: "Project Name",
+                            projectType: "Project Type",
+                            template: "Template",
+                            monorepo: "Monorepo",
+                            outputDir: "Output Directory",
                         },
                         debug: {
                             devModeEnabled: "Dev mode",
@@ -240,6 +257,15 @@ describe("国際化ユーティリティ", () => {
                                 shareInstruction:
                                     "パスワードを安全に共有してください",
                             },
+                            confirmation: {
+                                title: "設定確認",
+                                projectInfo: "プロジェクト情報",
+                                databaseInfo: "データベース設定",
+                                continuePrompt:
+                                    "この設定でプロジェクトを作成しますか？",
+                                cancelled:
+                                    "プロジェクト作成をキャンセルしました",
+                            },
                         },
                         readme: {
                             title: "{name}",
@@ -269,6 +295,15 @@ describe("国際化ユーティリティ", () => {
                             buildingCommands: ["pnpm build"],
                             testingHeading: "テスト",
                             testingCommands: ["pnpm test"],
+                        },
+                        common: {
+                            enabled: "有効",
+                            disabled: "無効",
+                            projectName: "プロジェクト名",
+                            projectType: "プロジェクトタイプ",
+                            template: "テンプレート",
+                            monorepo: "モノレポ",
+                            outputDir: "出力ディレクトリ",
                         },
                         debug: {
                             devModeEnabled: "開発モード",

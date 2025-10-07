@@ -15,6 +15,7 @@ import {
     createWebAppPackageJson,
 } from "../../utils/monorepo-generator/index.js";
 import { generateReadmeContent } from "../../utils/readme-generator/index.js";
+import { createSpinnerController } from "../../utils/spinner-control/index.js";
 import { syncRootScripts } from "../../utils/workspace-manager/index.js";
 import {
     generateExpoGraphQL,
@@ -99,7 +100,7 @@ async function handleAdvancedTemplate(
 
     if (config.monorepo) {
         createMonorepoStructure(config);
-        copyMonorepoTemplates(config);
+        copyMonorepoTemplates(config, config.pnpmVersion);
         if (!fs.existsSync(targetDirectory)) {
             fs.mkdirSync(targetDirectory, { recursive: true });
         }
@@ -114,10 +115,16 @@ async function handleAdvancedTemplate(
         blobConfig: config.blobConfig,
     };
 
+    // スピナー制御を作成
+    const spinnerController = createSpinnerController(spinner);
+
     // テンプレートタイプに応じて適切なジェネレーターを呼び出し
     let result: TemplateGenerationResult;
     if (config.type === "nextjs") {
-        result = await generateFullStackAdmin(generationContext);
+        result = await generateFullStackAdmin(
+            generationContext,
+            spinnerController
+        );
     } else if (config.type === "expo") {
         result = await generateExpoGraphQL(generationContext);
     } else if (config.type === "tauri") {
@@ -154,7 +161,7 @@ async function handleStandardTemplate(
 
     if (config.monorepo) {
         createMonorepoStructure(config);
-        copyMonorepoTemplates(config);
+        copyMonorepoTemplates(config, config.pnpmVersion);
         createWebAppPackageJson(config);
     } else {
         const packageJsonPath = path.join(config.directory, "package.json");
@@ -179,6 +186,57 @@ async function handleStandardTemplate(
     const readmePath = path.join(config.directory, "README.md");
     const readmeContent = generateReadmeContent(config);
     fs.writeFileSync(readmePath, readmeContent);
+
+    // .gitignoreを作成（Next.jsの場合）
+    if (config.type === "nextjs") {
+        const gitignorePath = path.join(config.directory, ".gitignore");
+        const gitignoreTemplatePath = path.join(
+            path.dirname(new URL(import.meta.url).pathname),
+            "../../../templates/shared/nextjs/gitignore"
+        );
+
+        try {
+            const gitignoreContent = fs.readFileSync(
+                gitignoreTemplatePath,
+                "utf8"
+            );
+            fs.writeFileSync(gitignorePath, gitignoreContent);
+        } catch (error) {
+            debugLog("Warning: Could not copy .gitignore template", { error });
+            // フォールバック：基本的な.gitignoreを作成
+            const basicGitignore = `# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment variables
+.env
+.env.local
+
+# Build output
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# macOS
+.DS_Store
+`;
+            fs.writeFileSync(gitignorePath, basicGitignore);
+        }
+    }
 
     // 依存関係インストールのシミュレーション
     spinner.text = create.spinnerInstallingDeps;

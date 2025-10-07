@@ -1,0 +1,41 @@
+---
+title: CLI Reference
+description: Reference for Fluorite Flake commands and flags.
+---
+
+# CLI Reference
+
+`fluorite-flake` is a single entrypoint that scaffolds all supported templates. Use the command below to start a new project:
+
+```bash
+pnpm dlx fluorite-flake create <project-name> [options]
+```
+
+If you omit options, the CLI prompts you to choose a template, optional services, and additional setup tasks.
+
+## Common Flags
+
+| Flag | Description |
+| --- | --- |
+| `--template <name>` | Bypass prompts and select a template such as `nextjs`, `expo`, or `tauri`. |
+| `--no-install` | Skip dependency installation. Useful in CI where you only need generated sources. |
+| `--git` | Initialize a Git repository and create the first commit automatically. |
+| `--debug` | Enable detailed logs for diagnostics. |
+
+## Internationalization
+
+Force the CLI locale with `FLUORITE_LOCALE=ja` or `FLUORITE_LOCALE=en`. If unset, the CLI detects the OS locale and falls back to English.
+
+```bash
+FLUORITE_LOCALE=ja pnpm dlx fluorite-flake create sample
+```
+
+## Template Maintenance
+
+Update templates under `templates/` and run `pnpm build` to refresh distribution artifacts. Review tests in `test/e2e` for end-to-end coverage and update them whenever template behavior changes.
+
+## Helpful References
+
+- `src/commands/create` — core scaffolding logic
+- `test/e2e` — integration coverage for the CLI
+- `docs/` — design notes and historical decisions

@@ -47,8 +47,10 @@ export async function collectDatabaseConfig(
             `⚠️ ${getProviderLabel(provider)} CLI の認証が未完了のため、プロビジョニングをスキップします。`
         );
         return {
+            type: provider,
             provider,
             mode: "create",
+            databaseName: projectName,
             naming: defaultNaming,
             options: {
                 preserveData: false,
@@ -105,8 +107,10 @@ export async function collectDatabaseConfig(
     const options = await collectDetailedOptions(mode);
 
     return {
+        type: provider,
         provider,
         mode,
+        databaseName: naming.dev, // devの名前をベースとして使用
         naming,
         options,
     };

@@ -73,6 +73,22 @@ function normalizeLocalDatabaseEnv(): string | null {
     return fileUrl;
 }
 
+function resolveRemoteLibsqlUrl(): string | null {
+    const candidates: (string | undefined)[] = [
+        process.env.DATABASE_URL,
+        process.env.PRISMA_DATABASE_URL,
+        process.env.DIRECT_DATABASE_URL,
+        process.env.TURSO_DATABASE_URL,
+        process.env.LIBSQL_DATABASE_URL,
+    ];
+
+    return (
+        candidates.find(
+            (value): value is string => typeof value === 'string' && value.startsWith('libsql://')
+        ) ?? null
+    );
+}
+
 function isMissingTableError(error: unknown): boolean {
     if (error && typeof error === 'object') {
         const maybeCode = (error as { code?: string }).code;
@@ -106,17 +122,41 @@ async function hasSessionTable(prisma: PrismaClient): Promise<boolean> {
 }
 
 async function ensureDatabase(): Promise<void> {
+    // 1. .envファイル読み込み
     loadEnvFiles();
-    const normalizedDatabaseUrl = normalizeLocalDatabaseEnv();
-    const commandEnv: NodeJS.ProcessEnv = normalizedDatabaseUrl
-        ? {
-              ...process.env,
-              DATABASE_URL: normalizedDatabaseUrl,
-              DIRECT_DATABASE_URL: normalizedDatabaseUrl,
-              PRISMA_DATABASE_URL: normalizedDatabaseUrl,
-          }
-        : process.env;
 
+    // 2. URL正規化（libsql://優先、次にfile:の絶対パス変換）
+    const remoteLibsqlUrl = resolveRemoteLibsqlUrl();
+    const normalizedDatabaseUrl = remoteLibsqlUrl ?? normalizeLocalDatabaseEnv();
+
+    // 3. 環境変数設定
+    const baseEnv: NodeJS.ProcessEnv = { ...process.env };
+
+    if (normalizedDatabaseUrl) {
+        baseEnv.DATABASE_URL = normalizedDatabaseUrl;
+        baseEnv.DIRECT_DATABASE_URL = normalizedDatabaseUrl;
+        baseEnv.PRISMA_DATABASE_URL = normalizedDatabaseUrl;
+
+        // Prisma CLIが使用する環境変数も更新
+        process.env.DATABASE_URL = normalizedDatabaseUrl;
+        process.env.DIRECT_DATABASE_URL = normalizedDatabaseUrl;
+        process.env.PRISMA_DATABASE_URL = normalizedDatabaseUrl;
+    }
+
+    if (remoteLibsqlUrl) {
+        const authToken = process.env.TURSO_AUTH_TOKEN ?? process.env.LIBSQL_AUTH_TOKEN;
+        if (authToken) {
+            baseEnv.TURSO_AUTH_TOKEN = authToken;
+            baseEnv.LIBSQL_AUTH_TOKEN = authToken;
+            process.env.TURSO_AUTH_TOKEN = authToken;
+            process.env.LIBSQL_AUTH_TOKEN = authToken;
+        }
+    }
+
+    const commandEnv: NodeJS.ProcessEnv =
+        normalizedDatabaseUrl || remoteLibsqlUrl ? baseEnv : process.env;
+
+    // 4. lib/db import（環境変数確定後）
     const { default: prisma } = await import('../src/lib/db');
 
     try {
