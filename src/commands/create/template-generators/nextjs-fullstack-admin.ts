@@ -489,7 +489,10 @@ async function processEnvEncryption(
         }
 
         // 暗号化を実行
-        const encryptionResult = await runEnvEncryption(appDirectory, isMonorepo);
+        const encryptionResult = await runEnvEncryption(
+            appDirectory,
+            isMonorepo
+        );
 
         if (encryptionResult.success && encryptionResult.zipPath) {
             // 暗号化成功
@@ -499,15 +502,14 @@ async function processEnvEncryption(
                 "📤 チームメンバーとパスワードを安全に共有してください",
             ];
             return successSteps;
-        } else {
-            // 暗号化失敗
-            const failureSteps = [
-                ...nextSteps,
-                `❌ 暗号化に失敗しました: ${encryptionResult.error || "不明なエラー"}`,
-                `🔐 手動実行: ${messages.create.envEncryption.manualCommand}`,
-            ];
-            return failureSteps;
         }
+        // 暗号化失敗
+        const failureSteps = [
+            ...nextSteps,
+            `❌ 暗号化に失敗しました: ${encryptionResult.error || "不明なエラー"}`,
+            `🔐 手動実行: ${messages.create.envEncryption.manualCommand}`,
+        ];
+        return failureSteps;
     } catch (error) {
         // 予期しないエラー
         console.error(messages.create.envEncryption.failed);

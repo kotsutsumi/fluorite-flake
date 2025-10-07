@@ -122,13 +122,18 @@ describe("国際化ユーティリティ", () => {
                             pnpmMoreInfo:
                                 "More info: https://pnpm.io/installation",
                             envEncryption: {
-                                confirmPrompt: "Would you like to encrypt environment variables?",
-                                processing: "Encrypting environment variables...",
+                                confirmPrompt:
+                                    "Would you like to encrypt environment variables?",
+                                processing:
+                                    "Encrypting environment variables...",
                                 success: "Generated env-files.zip ({zipPath})",
                                 failed: "Failed to encrypt environment variables",
-                                skipped: "Environment variable encryption skipped",
-                                manualCommand: "Manual execution: pnpm env:encrypt",
-                                shareInstruction: "Please securely share the password"
+                                skipped:
+                                    "Environment variable encryption skipped",
+                                manualCommand:
+                                    "Manual execution: pnpm env:encrypt",
+                                shareInstruction:
+                                    "Please securely share the password",
                             },
                         },
                         readme: {
@@ -227,11 +232,13 @@ describe("国際化ユーティリティ", () => {
                             envEncryption: {
                                 confirmPrompt: "環境変数を暗号化しますか？",
                                 processing: "環境変数を暗号化中...",
-                                success: "env-files.zip を生成しました（{zipPath}）",
+                                success:
+                                    "env-files.zip を生成しました（{zipPath}）",
                                 failed: "環境変数の暗号化に失敗しました",
                                 skipped: "環境変数の暗号化をスキップしました",
                                 manualCommand: "手動実行: pnpm env:encrypt",
-                                shareInstruction: "パスワードを安全に共有してください"
+                                shareInstruction:
+                                    "パスワードを安全に共有してください",
                             },
                         },
                         readme: {
