@@ -17,6 +17,26 @@ import {
 /**
  * Supabaseプロビジョニング結果の型
  */
+function stripEnvironmentSuffix(name: string): string {
+    const suffixes = [
+        "-dev",
+        "-development",
+        "-staging",
+        "-stg",
+        "-prod",
+        "-production",
+        "-test",
+    ];
+
+    for (const suffix of suffixes) {
+        if (name.endsWith(suffix)) {
+            return name.slice(0, name.length - suffix.length);
+        }
+    }
+
+    return name;
+}
+
 export interface SupabaseProvisioningResult extends ProvisioningResult {
     credentials: DatabaseCredentials;
 }
@@ -158,12 +178,13 @@ export async function validateSupabaseNaming(
         return sanitized;
     };
 
-    const baseName = sanitizeForSupabase(projectName);
+    const baseProjectName = stripEnvironmentSuffix(projectName);
+    const baseName = sanitizeForSupabase(baseProjectName);
 
     const naming = {
         dev: `${baseName}-dev`,
-        staging: `${baseName}-staging`,
-        prod: baseName,
+        staging: `${baseName}-stg`,
+        prod: `${baseName}-prod`,
     };
 
     // 命名制約チェック

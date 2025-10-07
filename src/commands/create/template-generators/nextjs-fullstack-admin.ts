@@ -2,12 +2,13 @@
  * Next.js Full-Stack Admin テンプレートジェネレーター
  */
 
+import { existsSync } from "node:fs";
 import { copyFile, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { execa } from "execa";
 import { getMessages } from "../../../i18n.js";
 import {
-    createEncryptionPrompt,
     runEnvEncryption,
     shouldEncryptEnv,
 } from "../../../utils/env-encryption/index.js";
@@ -42,6 +43,39 @@ function slugify(value: string): string {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 50);
+}
+
+function parseEnvContent(content: string): Record<string, string> {
+    const entries: Record<string, string> = {};
+
+    for (const line of content.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) {
+            continue;
+        }
+
+        const delimiterIndex = trimmed.indexOf("=");
+        if (delimiterIndex === -1) {
+            continue;
+        }
+
+        const key = trimmed.slice(0, delimiterIndex).trim();
+        if (!key) {
+            continue;
+        }
+
+        let value = trimmed.slice(delimiterIndex + 1).trim();
+        if (
+            (value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))
+        ) {
+            value = value.slice(1, -1);
+        }
+
+        entries[key] = value;
+    }
+
+    return entries;
 }
 
 /**
@@ -160,7 +194,7 @@ function buildEnvReplacements({
     if (database === "turso") {
         const fallbackUrl = (name: string) => `libsql://${name}.turso.io`;
 
-        const localSqliteUrl = "file:../prisma/dev.db";
+        const localSqliteUrl = "file:./prisma/dev.db";
 
         const replacements: Record<string, string> = {
             "{{DATABASE_PROVIDER}}": "turso",
@@ -375,6 +409,80 @@ async function validateEnvironmentVariables(
     return hasValidConfig;
 }
 
+function normalizeSqliteFileUrl(appDirectory: string, rawUrl: string): string {
+    const withoutScheme = rawUrl.slice("file:".length);
+
+    if (withoutScheme.length === 0) {
+        return rawUrl;
+    }
+
+    if (withoutScheme.startsWith("/") || isAbsolute(withoutScheme)) {
+        return rawUrl;
+    }
+
+    const absolutePath = resolve(appDirectory, withoutScheme);
+    return pathToFileURL(absolutePath).toString();
+}
+
+async function readLocalEnvVariables(
+    appDirectory: string
+): Promise<Record<string, string>> {
+    const envFiles = [".env.local", ".env"];
+    const variables: Record<string, string> = {};
+
+    for (const file of envFiles) {
+        const filePath = join(appDirectory, file);
+        if (!existsSync(filePath)) {
+            continue;
+        }
+
+        const content = await readFile(filePath, "utf-8");
+        const parsed = parseEnvContent(content);
+
+        for (const [key, value] of Object.entries(parsed)) {
+            variables[key] = value;
+        }
+    }
+
+    return variables;
+}
+
+async function buildPrismaCommandEnv(
+    appDirectory: string
+): Promise<NodeJS.ProcessEnv | undefined> {
+    const envValues = await readLocalEnvVariables(appDirectory);
+    const provider = (envValues.DATABASE_PROVIDER ?? "").toLowerCase();
+
+    const candidates = [
+        envValues.PRISMA_DATABASE_URL,
+        envValues.DATABASE_URL,
+        envValues.DIRECT_DATABASE_URL,
+    ];
+
+    let sqliteCandidate = candidates.find(
+        (value): value is string =>
+            typeof value === "string" && value.startsWith("file:")
+    );
+
+    if (!sqliteCandidate && provider === "turso") {
+        sqliteCandidate = "file:./prisma/dev.db";
+    }
+
+    if (!sqliteCandidate) {
+        return;
+    }
+
+    const normalizedUrl = normalizeSqliteFileUrl(appDirectory, sqliteCandidate);
+
+    return {
+        ...process.env,
+        ...envValues,
+        DATABASE_URL: normalizedUrl,
+        DIRECT_DATABASE_URL: normalizedUrl,
+        PRISMA_DATABASE_URL: normalizedUrl,
+    };
+}
+
 async function runSetupCommands(
     projectRoot: string,
     appDirectory: string
@@ -387,11 +495,13 @@ async function runSetupCommands(
 
     console.log("🔍 環境変数の設定を確認中...");
     const hasValidEnv = await validateEnvironmentVariables(appDirectory);
+    const prismaCommandEnv = await buildPrismaCommandEnv(appDirectory);
 
     console.log("🔧 Prismaクライアントを生成中...");
     await execa("pnpm", ["db:generate"], {
         cwd: appDirectory,
         stdio: "inherit",
+        env: prismaCommandEnv ?? process.env,
     });
 
     if (hasValidEnv) {
@@ -402,6 +512,7 @@ async function runSetupCommands(
             await execa("pnpm", ["db:push"], {
                 cwd: appDirectory,
                 stdio: "inherit",
+                env: prismaCommandEnv ?? process.env,
             });
 
             // ステップ2: Prismaクライアント再生成（確実に最新にする）
@@ -409,6 +520,7 @@ async function runSetupCommands(
             await execa("pnpm", ["db:generate"], {
                 cwd: appDirectory,
                 stdio: "inherit",
+                env: prismaCommandEnv ?? process.env,
             });
 
             // ステップ3: シードデータ投入
@@ -416,6 +528,7 @@ async function runSetupCommands(
             await execa("pnpm", ["db:seed"], {
                 cwd: appDirectory,
                 stdio: "inherit",
+                env: prismaCommandEnv ?? process.env,
             });
 
             console.log("✅ データベースセットアップが完了しました");
@@ -449,78 +562,57 @@ async function processEnvEncryption(
     const messages = getMessages();
 
     try {
-        // 暗号化実行環境チェック
         const envCheck = await shouldEncryptEnv(appDirectory);
 
         if (!envCheck.canExecute) {
-            // 実行できない場合はマニュアル手順を追加
             console.log(messages.create.envEncryption.skipped);
-            console.log(`  理由: ${envCheck.reason}`);
+            if (envCheck.reason) {
+                console.log(`  理由: ${envCheck.reason}`);
+            }
 
-            const manualSteps = [
+            return [
                 ...nextSteps,
                 `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
-                `   (${envCheck.reason})`,
-            ];
-            return manualSteps;
+                envCheck.reason ? `   (${envCheck.reason})` : undefined,
+            ].filter(Boolean) as string[];
         }
 
-        // ユーザーに暗号化するかどうかを確認
-        const promptResult = await createEncryptionPrompt();
-
-        if (promptResult.cancelled) {
-            // プロンプトがキャンセルされた場合
-            console.log(messages.create.envEncryption.skipped);
-            const cancelledSteps = [
-                ...nextSteps,
-                `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
-            ];
-            return cancelledSteps;
-        }
-
-        if (!promptResult.shouldEncrypt) {
-            // ユーザーが暗号化をスキップした場合
-            console.log(messages.create.envEncryption.skipped);
-            const skippedSteps = [
-                ...nextSteps,
-                `🔐 環境変数暗号化: ${messages.create.envEncryption.manualCommand}`,
-            ];
-            return skippedSteps;
-        }
-
-        // 暗号化を実行
         const encryptionResult = await runEnvEncryption(
             appDirectory,
             isMonorepo
         );
 
         if (encryptionResult.success && encryptionResult.zipPath) {
-            // 暗号化成功
-            const successSteps = [
+            return [
                 ...nextSteps,
                 `✅ 環境変数を暗号化しました (${encryptionResult.zipPath})`,
                 "📤 チームメンバーとパスワードを安全に共有してください",
             ];
-            return successSteps;
         }
-        // 暗号化失敗
-        const failureSteps = [
+
+        console.error(
+            `❌ 暗号化に失敗しました: ${
+                encryptionResult.error ?? "不明なエラー"
+            }`
+        );
+        return [
             ...nextSteps,
-            `❌ 暗号化に失敗しました: ${encryptionResult.error || "不明なエラー"}`,
-            `🔐 手動実行: ${messages.create.envEncryption.manualCommand}`,
+            `❌ 暗号化に失敗しました: ${
+                encryptionResult.error ?? "不明なエラー"
+            }`,
+            `🔐 ${messages.create.envEncryption.manualCommand}`,
         ];
-        return failureSteps;
     } catch (error) {
-        // 予期しないエラー
         console.error(messages.create.envEncryption.failed);
         console.error(error instanceof Error ? error.message : error);
 
-        const errorSteps = [
+        return [
             ...nextSteps,
-            `❌ 暗号化処理でエラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
-            `🔐 手動実行: ${messages.create.envEncryption.manualCommand}`,
+            `❌ 暗号化処理でエラー: ${
+                error instanceof Error ? error.message : "不明なエラー"
+            }`,
+            `🔐 ${messages.create.envEncryption.manualCommand}`,
         ];
-        return errorSteps;
     }
 }
 
@@ -588,7 +680,8 @@ export async function generateFullStackAdmin(
         await runSetupCommands(projectRoot, targetDirectory);
 
         // データベースの初期化（マイグレーション + シーダー）を実行
-        await initializeDatabase(targetDirectory, config.monorepo);
+        // runSetupCommands内で実行されるため、重複を避けるためにコメントアウト
+        // await initializeDatabase(targetDirectory, config.monorepo);
 
         // 環境変数暗号化を実行し、nextStepsを更新
         const updatedNextSteps = await processEnvEncryption(
@@ -611,47 +704,6 @@ export async function generateFullStackAdmin(
             nextSteps,
             errors: [error instanceof Error ? error.message : String(error)],
         };
-    }
-}
-
-/**
- * データベースの初期化（マイグレーション + シーダー実行）
- */
-async function initializeDatabase(
-    targetDirectory: string,
-    isMonorepo: boolean
-): Promise<void> {
-    console.log("🔄 データベースを初期化中...");
-
-    try {
-        if (isMonorepo) {
-            // モノレポの場合は、プロジェクトルートから filterを指定して実行
-            const projectPath = targetDirectory.replace(
-                `${process.cwd()}/`,
-                ""
-            );
-            await execa("pnpm", ["--filter", projectPath, "db:reset"], {
-                cwd: process.cwd(),
-                stdio: "inherit",
-                timeout: 120_000, // 2分のタイムアウト
-            });
-        } else {
-            // 単一リポジトリの場合は、プロジェクトディレクトリで直接実行
-            await execa("pnpm", ["db:reset"], {
-                cwd: targetDirectory,
-                stdio: "inherit",
-                timeout: 120_000, // 2分のタイムアウト
-            });
-        }
-
-        console.log("✅ データベースの初期化が完了しました");
-    } catch (error) {
-        console.error("❌ データベースの初期化に失敗しました:", error);
-        console.log("💡 手動でデータベースの初期化を実行してください:");
-        console.log("   pnpm db:reset");
-
-        // エラーが発生してもプロジェクト生成は継続する
-        // （後で手動実行できるため）
     }
 }
 
