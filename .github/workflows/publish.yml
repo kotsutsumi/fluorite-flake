@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 全履歴を取得してタグ情報を確実に入手
+          fetch-depth: 0 # 全履歴を取得してタグ情報を確実に入手
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -83,10 +83,6 @@ jobs:
         run: |
           echo "🚀 Publishing fluorite-flake@${{ steps.version.outputs.version }} to npm..."
           npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
-
-          # パッケージ内容の確認
-          echo "📦 Package contents:"
-          pnpm pack --dry-run
 
           # 実際の公開実行
           pnpm publish --access public --no-git-checks
