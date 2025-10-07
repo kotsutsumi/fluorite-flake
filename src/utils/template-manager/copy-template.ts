@@ -44,11 +44,41 @@ function isExcludedByPattern(filePath: string, patterns: string[]): boolean {
 }
 
 /**
+ * パッケージルートディレクトリを動的に検索する
+ */
+async function findPackageRoot(startPath: string): Promise<string> {
+    let currentPath = startPath;
+
+    while (currentPath !== dirname(currentPath)) {
+        const packageJsonPath = join(currentPath, "package.json");
+        try {
+            await access(packageJsonPath, fsConstants.R_OK);
+            const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8"));
+            // fluorite-flakeパッケージかどうか確認
+            if (packageJson.name === "fluorite-flake") {
+                return currentPath;
+            }
+        } catch {
+            // package.jsonの読み込みに失敗した場合は続行
+        }
+        currentPath = dirname(currentPath);
+    }
+
+    // フォールバック: 従来の方法
+    const fallbackCurrentDir = dirname(fileURLToPath(import.meta.url));
+    return resolve(fallbackCurrentDir, "../../../");
+}
+
+/**
  * テンプレートのルートディレクトリを解決
  */
 async function resolveTemplateRoot(): Promise<string> {
     const currentDir = dirname(fileURLToPath(import.meta.url));
+    const packageRoot = await findPackageRoot(currentDir);
+
     const candidates = [
+        resolve(packageRoot, "templates"),
+        resolve(packageRoot, "dist/templates"),
         resolve(currentDir, "../../templates"),
         resolve(currentDir, "../../../templates"),
     ];

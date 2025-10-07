@@ -7,24 +7,47 @@ import { fileURLToPath } from "node:url";
 
 import type { ProjectConfig } from "../../commands/create/types.js";
 
-// 現在のファイルのディレクトリを取得
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/**
+ * パッケージルートディレクトリを動的に検索する
+ */
+function findPackageRoot(startPath: string): string {
+    let currentPath = startPath;
+
+    while (currentPath !== path.dirname(currentPath)) {
+        const packageJsonPath = path.join(currentPath, "package.json");
+        if (fs.existsSync(packageJsonPath)) {
+            try {
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+                // fluorite-flakeパッケージかどうか確認
+                if (packageJson.name === "fluorite-flake") {
+                    return currentPath;
+                }
+            } catch {
+                // package.jsonの読み込みに失敗した場合は続行
+            }
+        }
+        currentPath = path.dirname(currentPath);
+    }
+
+    // フォールバック: 従来の方法
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    return path.join(__dirname, "..", "..", "..");
+}
 
 /**
  * monorepoテンプレートファイルをコピー
  */
 export function copyMonorepoTemplates(config: ProjectConfig): void {
     const { directory, name } = config;
-    // プロジェクトルートのtemplatesディレクトリを参照
-    const templateDir = path.join(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        "templates",
-        "monorepo"
-    );
+
+    // パッケージルートディレクトリを取得
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const packageRoot = findPackageRoot(__dirname);
+
+    // templatesディレクトリのパスを決定
+    const templateDir = path.join(packageRoot, "templates", "monorepo");
 
     // package.json.templateを処理してコピー
     const packageJsonTemplate = fs.readFileSync(
