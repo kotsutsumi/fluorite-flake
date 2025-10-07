@@ -46,11 +46,8 @@ jobs:
       - name: Check types
         run: pnpm exec tsc --noEmit
 
-      - name: Run unit tests
-        run: pnpm run test:unit
-
-      - name: Run functional tests
-        run: pnpm run test:functional
+      - name: Run tests
+        run: pnpm run test
 
       - name: Test CLI
         run: |
