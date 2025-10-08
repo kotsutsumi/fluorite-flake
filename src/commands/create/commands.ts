@@ -8,7 +8,12 @@ import { defineCommand } from "citty";
 import { debugLog } from "../../debug.js";
 import { getMessages } from "../../i18n.js";
 import { validatePnpmWithDetails } from "../../utils/pnpm-validator/index.js";
-import { confirmDirectoryOverwrite, promptForDatabase, promptForProjectName } from "../../utils/user-input/index.js";
+import {
+    confirmDirectoryOverwrite,
+    promptForDatabase,
+    promptForDocsGeneration,
+    promptForProjectName,
+} from "../../utils/user-input/index.js";
 import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
 import { createProjectConfig } from "./config.js";
 import type { ConfirmationInputs } from "./confirmation/index.js";
@@ -195,6 +200,9 @@ async function collectUserInputs(
         projectName
     );
 
+    // ドキュメント生成の選択
+    const shouldGenerateDocs = await promptForDocsGeneration();
+
     // モノレポ設定の最終決定
     const finalMonorepoPreference = args.simple ? false : (monorepoPreference ?? args.monorepo ?? true);
 
@@ -207,6 +215,7 @@ async function collectUserInputs(
         blobConfig,
         monorepoPreference: finalMonorepoPreference,
         outputDirectory: args.dir,
+        shouldGenerateDocs,
     };
 }
 
@@ -283,6 +292,7 @@ type CreateAndValidateConfigOptions = {
     databaseCredentials?: DatabaseCredentials;
     blobConfig?: BlobConfiguration;
     pnpmVersion?: string;
+    shouldGenerateDocs?: boolean;
 };
 
 /**
@@ -300,6 +310,7 @@ async function createAndValidateConfig(options: CreateAndValidateConfigOptions) 
         databaseCredentials,
         blobConfig,
         pnpmVersion,
+        shouldGenerateDocs,
     } = options;
     const config = createProjectConfig(projectType, {
         name: projectName,
@@ -325,6 +336,9 @@ async function createAndValidateConfig(options: CreateAndValidateConfigOptions) 
     }
     if (pnpmVersion) {
         config.pnpmVersion = pnpmVersion;
+    }
+    if (shouldGenerateDocs !== undefined) {
+        config.shouldGenerateDocs = shouldGenerateDocs;
     }
 
     if (!config.force) {
@@ -459,6 +473,7 @@ export const createCommand = defineCommand({
             databaseCredentials,
             blobConfig: inputs.blobConfig,
             pnpmVersion,
+            shouldGenerateDocs: inputs.shouldGenerateDocs,
         });
 
         // 既存ディレクトリの確認（--forceフラグがない場合）
@@ -562,6 +577,7 @@ export const newCommand = defineCommand({
             databaseCredentials,
             blobConfig: inputs.blobConfig,
             pnpmVersion,
+            shouldGenerateDocs: inputs.shouldGenerateDocs,
         });
 
         // プロジェクトの生成

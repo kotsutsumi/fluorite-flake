@@ -9,6 +9,7 @@ import ora, { type Ora } from "ora";
 
 import { debugLog, isDevelopment } from "../../debug.js";
 import { getMessages } from "../../i18n.js";
+import { copyDocsTemplate, createDocsPackageJson } from "../../utils/docs-generator/index.js";
 import {
     copyMonorepoTemplates,
     createMonorepoStructure,
@@ -133,6 +134,56 @@ async function handleAdvancedTemplate(config: ProjectConfig, spinner: Ora): Prom
 }
 
 /**
+ * ドキュメントサイトを生成
+ */
+async function handleDocsGeneration(config: ProjectConfig, spinner: Ora): Promise<void> {
+    if (!config.shouldGenerateDocs) {
+        return;
+    }
+
+    spinner.text = "📚 Nextraドキュメントサイトを生成中...";
+
+    try {
+        // Nextraテンプレートをコピー
+        const docsTemplateOptions = {
+            projectName: config.name,
+            outputPath: config.directory,
+            isMonorepo: config.monorepo,
+            title: `${config.name} Documentation`,
+            description: `Documentation for ${config.name}`,
+        };
+
+        const templateCopySuccess = await copyDocsTemplate(docsTemplateOptions);
+        if (!templateCopySuccess) {
+            throw new Error("ドキュメントテンプレートのコピーに失敗しました");
+        }
+
+        // package.jsonを生成
+        const packageJsonOptions = {
+            projectName: config.name,
+            outputPath: config.directory,
+            isMonorepo: config.monorepo,
+            reactVersion: "^19.1.0",
+            nextVersion: "^15.5.4",
+            nextraVersion: "^4.6.0",
+        };
+
+        const packageJsonSuccess = await createDocsPackageJson(packageJsonOptions);
+        if (!packageJsonSuccess) {
+            throw new Error("ドキュメント用package.jsonの生成に失敗しました");
+        }
+
+        debugLog("Documentation generation completed", {
+            projectName: config.name,
+            isMonorepo: config.monorepo,
+        });
+    } catch (error) {
+        console.error("❌ ドキュメント生成中にエラーが発生しました:", error);
+        throw error;
+    }
+}
+
+/**
  * 通常テンプレートを生成
  */
 async function handleStandardTemplate(config: ProjectConfig, spinner: Ora): Promise<void> {
@@ -246,6 +297,9 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
         } else {
             await handleStandardTemplate(config, spinner);
         }
+
+        // ドキュメント生成処理
+        await handleDocsGeneration(config, spinner);
 
         if (config.monorepo) {
             await syncRootScripts(config.directory);

@@ -31,6 +31,8 @@ export type ConfirmationInputs = {
     monorepoPreference: boolean;
     /** 出力ディレクトリ */
     outputDirectory?: string;
+    /** ドキュメントサイト生成フラグ */
+    shouldGenerateDocs?: boolean;
 };
 
 /**
@@ -59,6 +61,9 @@ export async function displayConfirmation(inputs: ConfirmationInputs): Promise<b
     console.log(
         `   ${messages.common.monorepo}: ${inputs.monorepoPreference ? messages.common.enabled : messages.common.disabled}`
     );
+    if (inputs.shouldGenerateDocs !== undefined) {
+        console.log(`   ドキュメントサイト生成: ${inputs.shouldGenerateDocs ? "有効" : "無効"}`);
+    }
     if (inputs.outputDirectory) {
         console.log(`   ${messages.common.outputDir}: ${inputs.outputDirectory}`);
     }

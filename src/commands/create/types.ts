@@ -48,6 +48,7 @@ export type ProjectConfig = {
     databaseCredentials?: DatabaseCredentials;
     blobConfig?: BlobConfiguration;
     pnpmVersion?: string;
+    shouldGenerateDocs?: boolean; // ドキュメント生成フラグ
 };
 
 /**

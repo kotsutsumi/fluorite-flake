@@ -58,6 +58,7 @@ export function createProjectConfig(projectType: string, options: CreateOptions)
         databaseConfig: undefined,
         databaseCredentials: undefined,
         blobConfig: undefined,
+        shouldGenerateDocs: false, // デフォルトでドキュメント生成なし
     };
 }
 
