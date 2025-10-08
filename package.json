@@ -33,6 +33,7 @@
   "author": "Kazuhiro Kotsutsumi <kotsutsumi@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "2.2.0",
     "@playwright/test": "^1.55.1",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.2",
