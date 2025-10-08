@@ -11,6 +11,8 @@
         "build": "tsc && pnpm run copy:templates",
         "copy:templates": "node scripts/copy-templates.mjs",
         "dev": "cross-env NODE_ENV=development tsx src/cli.ts",
+        "dev:all": "pnpm -r --parallel dev",
+        "dev:web": "pnpm --filter web dev",
         "test": "vitest",
         "test:run": "vitest run",
         "test:coverage": "vitest run --coverage",
