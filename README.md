@@ -1,11 +1,12 @@
 <div align="center">
   <img src="web/public/fluorite-flake-logo.png" alt="Fluorite-flake" width="200" height="200" />
 
-  # Fluorite-flake 🚀
+# Fluorite-flake 🚀
 
-  [![CI](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml/badge.svg)](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml)
-  [![npm version](https://badge.fury.io/js/fluorite-flake.svg)](https://badge.fury.io/js/fluorite-flake)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml/badge.svg)](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/fluorite-flake.svg)](https://badge.fury.io/js/fluorite-flake)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 </div>
 
 A powerful multi-framework project generator and CLI utility that creates production-ready applications with modern best practices, comprehensive testing, mobile support, and integrated documentation. Now includes advanced resource management, sophisticated spinner controls, and localized user interfaces.
@@ -361,7 +362,6 @@ MIT © Fluorite-flake Contributors
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/kotsutsumi/fluorite-flake/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/kotsutsumi/fluorite-flake/discussions)
 
 ---
 

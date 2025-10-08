@@ -16,6 +16,8 @@ export type AppInfo = {
     scripts: Record<string, string>;
     /** package.jsonの内容 */
     packageJson: any;
+    /** 依存関係がインストールされているか */
+    hasDependencies: boolean;
 };
 
 /**

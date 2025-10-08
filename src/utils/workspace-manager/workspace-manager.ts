@@ -22,12 +22,14 @@ export class WorkspaceManager {
             apps: await Promise.all(
                 apps.map(async (appPath) => {
                     const packageJson = await this.readPackageJson(appPath);
+                    const hasDependencies = await this.checkDependenciesInstalled(appPath);
                     return {
                         name: packageJson.name || path.basename(appPath),
                         type: this.detectAppType(appPath, packageJson),
                         path: appPath,
                         scripts: packageJson.scripts || {},
                         packageJson,
+                        hasDependencies,
                     };
                 })
             ),
@@ -128,6 +130,32 @@ export class WorkspaceManager {
         } catch {
             return {};
         }
+    }
+
+    /**
+     * 依存関係のインストール状況をチェック
+     */
+    private async checkDependenciesInstalled(appPath: string): Promise<boolean> {
+        try {
+            const nodeModulesPath = path.join(appPath, "node_modules");
+            await fs.access(nodeModulesPath);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * 依存関係未インストールアプリに対する警告ログ出力
+     */
+    private logDependencyWarnings(appsWithoutDependencies: AppInfo[]): void {
+        console.warn("⚠️ 以下のアプリで依存関係がインストールされていません:");
+        for (const app of appsWithoutDependencies) {
+            console.warn(`   - ${app.name} (${path.relative(process.cwd(), app.path)})`);
+        }
+        console.warn("   これらのアプリはスクリプト実行から除外されます。");
+        console.warn("   依存関係をインストールするには `pnpm install` を実行してください。");
+        console.warn("");
     }
 
     /**
@@ -246,8 +274,14 @@ export class WorkspaceManager {
      * 集約スクリプト生成
      */
     private generateAggregatedScripts(workspace: WorkspaceConfig, scripts: ScriptMap): void {
-        // 開発サーバー全体起動
-        const devApps = workspace.apps.filter((app) => app.scripts.dev || app.scripts.start);
+        // 依存関係がインストールされていないアプリに対する警告
+        const appsWithoutDependencies = workspace.apps.filter((app) => !app.hasDependencies);
+        if (appsWithoutDependencies.length > 0) {
+            this.logDependencyWarnings(appsWithoutDependencies);
+        }
+
+        // 開発サーバー全体起動（依存関係がインストールされているアプリのみ）
+        const devApps = workspace.apps.filter((app) => app.hasDependencies && (app.scripts.dev || app.scripts.start));
         if (devApps.length > 0) {
             const devCommands = devApps.map((app) => {
                 const scriptName = app.scripts.dev ? "dev" : "start";
@@ -256,26 +290,26 @@ export class WorkspaceManager {
             scripts.dev = devCommands.join(" & ");
         }
 
-        // 全体ビルド
-        const buildApps = workspace.apps.filter((app) => app.scripts.build);
+        // 全体ビルド（依存関係がインストールされているアプリのみ）
+        const buildApps = workspace.apps.filter((app) => app.hasDependencies && app.scripts.build);
         if (buildApps.length > 0) {
             scripts["build:all"] = buildApps.map((app) => this.buildFilterCommand(app.name, "build")).join(" && ");
         }
 
-        // 全体テスト
-        const testApps = workspace.apps.filter((app) => app.scripts.test);
+        // 全体テスト（依存関係がインストールされているアプリのみ）
+        const testApps = workspace.apps.filter((app) => app.hasDependencies && app.scripts.test);
         if (testApps.length > 0) {
             scripts["test:all"] = testApps.map((app) => this.buildFilterCommand(app.name, "test")).join(" && ");
         }
 
-        // 全体リント
-        const lintApps = workspace.apps.filter((app) => app.scripts.lint);
+        // 全体リント（依存関係がインストールされているアプリのみ）
+        const lintApps = workspace.apps.filter((app) => app.hasDependencies && app.scripts.lint);
         if (lintApps.length > 0) {
             scripts["lint:all"] = lintApps.map((app) => this.buildFilterCommand(app.name, "lint")).join(" && ");
         }
 
-        // 全体型チェック
-        const typecheckApps = workspace.apps.filter((app) => app.scripts.typecheck);
+        // 全体型チェック（依存関係がインストールされているアプリのみ）
+        const typecheckApps = workspace.apps.filter((app) => app.hasDependencies && app.scripts.typecheck);
         if (typecheckApps.length > 0) {
             scripts["typecheck:all"] = typecheckApps
                 .map((app) => this.buildFilterCommand(app.name, "typecheck"))

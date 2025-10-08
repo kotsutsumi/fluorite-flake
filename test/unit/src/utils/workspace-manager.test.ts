@@ -36,6 +36,7 @@ describe("WorkspaceManager", () => {
                             "env:apply": "node scripts/env-apply",
                         },
                         packageJson: {},
+                        hasDependencies: true,
                     },
                     {
                         name: "mobile",
@@ -46,6 +47,7 @@ describe("WorkspaceManager", () => {
                             build: "expo build",
                         },
                         packageJson: {},
+                        hasDependencies: true,
                     },
                 ],
                 packages: [],
@@ -75,6 +77,23 @@ describe("syncRootScripts", () => {
         await fs.mkdir(path.join(projectRoot, "apps", "mobile"), {
             recursive: true,
         });
+
+        // node_modulesディレクトリを作成（依存関係チェックのため）
+        await fs.mkdir(path.join(projectRoot, "apps", "web", "node_modules"), {
+            recursive: true,
+        });
+        await fs.mkdir(path.join(projectRoot, "apps", "mobile", "node_modules"), {
+            recursive: true,
+        });
+
+        // pnpm-workspace.yamlを作成
+        await fs.writeFile(
+            path.join(projectRoot, "pnpm-workspace.yaml"),
+            `packages:
+  - "apps/*"
+  - "packages/*"
+`
+        );
 
         await fs.writeFile(
             path.join(projectRoot, "package.json"),
