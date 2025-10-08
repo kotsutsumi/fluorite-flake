@@ -19,6 +19,7 @@ export const PROJECT_TEMPLATES = {
         "navigation",
         "javascript",
         "fullstack-graphql", // Expo + Next.js GraphQL バックエンド
+        "fullstack-admin", // Expo + Admin Panel + GraphQL Backend
     ],
     tauri: [
         "typescript",
@@ -55,6 +56,7 @@ export const PROJECT_TYPE_DESCRIPTIONS = {
             navigation: "Stack navigation",
             javascript: "JavaScript with navigation",
             "fullstack-graphql": "Mobile + Web with GraphQL Backend (TypeScript)",
+            "fullstack-admin": "Mobile + Admin Panel with GraphQL Backend (TypeScript)",
         },
     },
     tauri: {
