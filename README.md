@@ -42,21 +42,30 @@ pnpm add -g fluorite-flake
 
 ## 🚀 Quick Start
 
-### Create a New Project
+### CLI Commands
 
 ```bash
-# Interactive mode (recommended)
+# Show help
+fluorite-flake --help
+
+# Create a new project (interactive mode)
 fluorite-flake create
 
-# Or use the alias
-fluorite-flake new
+# Create with specific options
+fluorite-flake create my-app --type nextjs --template typescript
+
+# Alternative create command
+fluorite-flake new my-app
+
+# Launch TUI dashboard (beta)
+fluorite-flake dashboard
 ```
 
 > ℹ️ **Locale**: CLI output follows your OS locale (Japanese or English). Override it with `-L, --locale <en|ja>` or set `FLUORITE_LOCALE` when testing.
 
 The CLI will guide you through:
 
-1. **Framework Selection**: Next.js, Expo, Tauri, or Flutter
+1. **Framework Selection**: Next.js, Expo, or Tauri
 2. **Project Configuration**: Name, database, authentication, storage
 3. **Deployment Setup**: Platform-specific deployment configurations
 4. **Package Manager**: Choose your preferred package manager
@@ -116,28 +125,6 @@ Generated test files:
 - `auth-test.yaml` - Authentication flow (if auth enabled)
 - `ci-test-suite.yaml` - CI/CD automation suite
 
-### Patrol (Flutter Projects)
-
-Generated Flutter projects include Patrol integration tests:
-
-```bash
-# Install Patrol CLI
-dart pub global activate patrol_cli
-
-# Bootstrap Patrol (one-time setup)
-cd your-flutter-project
-patrol bootstrap
-
-# Run tests
-patrol test --target integration_test/app_test.dart
-patrol test --target integration_test/smoke_test.dart
-```
-
-Generated test files:
-
-- `app_test.dart` - Comprehensive app testing
-- `smoke_test.dart` - Quick smoke tests
-- `ci_test_suite.dart` - CI-specific tests
 
 ## 🏗️ Generated Project Structures
 
@@ -177,24 +164,22 @@ my-expo-app/
 └── expo-env.d.ts       # TypeScript definitions
 ```
 
-### Flutter Structure
+### Tauri Structure
 
 ```
-my-flutter-app/
-├── lib/
-│   ├── main.dart       # App entry point
-│   ├── screens/        # Screen widgets
-│   ├── widgets/        # Reusable widgets
-│   ├── models/         # Data models
-│   ├── services/       # Business logic
+my-tauri-app/
+├── src-tauri/          # Rust backend
+│   ├── src/
+│   │   ├── main.rs     # Main entry point
+│   │   └── lib.rs      # Library code
+│   ├── Cargo.toml      # Rust dependencies
+│   └── tauri.conf.json # Tauri configuration
+├── src/                # Frontend (React/TypeScript)
+│   ├── App.tsx         # Main React component
+│   ├── components/     # React components
 │   └── utils/          # Utility functions
-├── integration_test/   # Patrol E2E tests
-│   ├── app_test.dart
-│   └── smoke_test.dart
-├── test/              # Unit/widget tests
-├── assets/            # Images and fonts
-├── patrol.yaml        # Patrol configuration
-└── pubspec.yaml       # Dependencies
+├── public/             # Static assets
+└── package.json        # Node.js dependencies
 ```
 
 ## 🧪 Testing

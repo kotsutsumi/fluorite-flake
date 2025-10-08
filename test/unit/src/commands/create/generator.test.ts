@@ -27,6 +27,10 @@ vi.mock("node:fs", () => ({
         mkdirSync: vi.fn(),
         writeFileSync: vi.fn(),
         readFileSync: vi.fn(),
+        accessSync: vi.fn(),
+        constants: {
+            W_OK: 2,
+        },
     },
 }));
 // debugモジュールをモック
@@ -50,6 +54,7 @@ vi.mock("chalk", () => ({
         green: vi.fn((text: string) => text),
         red: vi.fn((text: string) => text),
         cyan: vi.fn((text: string) => text),
+        yellow: vi.fn((text: string) => text),
     },
 }));
 // モノレポジェネレーターをモック
@@ -112,6 +117,9 @@ describe("プロジェクト生成機能", () => {
             // モック関数：ファイル書き込みのシミュレーション
         });
         mockFs.readFileSync.mockReturnValue("mock file content");
+        mockFs.accessSync.mockImplementation(() => {
+            // モック関数：権限チェックが成功（例外を投げない）
+        });
 
         // debugモックのデフォルト動作
         vi.mocked(isDevelopment).mockReturnValue(false);

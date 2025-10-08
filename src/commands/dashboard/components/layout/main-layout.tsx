@@ -77,33 +77,54 @@ export const DashboardApp: React.FC<DashboardAppProps> = ({ initialService }) =>
     const shortcutTextColor = shortcutBorderColor === "cyan" ? "cyan" : "gray";
 
     return (
-        <Box flexDirection="column" height={process.stdout.rows || 24} padding={1}>
+        <Box key="dashboard-root" flexDirection="column" height={process.stdout.rows || 24} padding={1}>
             {/* ステータスバナー */}
-            <StatusBanner />
+            <StatusBanner key="status-banner" />
 
             {/* メインコンテンツエリア */}
-            <Box flexDirection="row" flexGrow={1} marginTop={1}>
+            <Box key="main-content" flexDirection="row" flexGrow={1} marginTop={1}>
                 {/* 左サイドバー（サービス一覧） */}
-                <Box borderColor={sidebarBorderColor} borderStyle="round" paddingX={1} paddingY={1} width={24}>
+                <Box
+                    key="sidebar-container"
+                    borderColor={sidebarBorderColor}
+                    borderStyle="round"
+                    paddingX={1}
+                    paddingY={1}
+                    width={24}
+                >
                     <Sidebar />
                 </Box>
 
                 {/* 右詳細パネル */}
-                <Box borderColor={detailBorderColor} borderStyle="round" flexGrow={1} marginLeft={1} padding={1}>
+                <Box
+                    key="detail-container"
+                    borderColor={detailBorderColor}
+                    borderStyle="round"
+                    flexGrow={1}
+                    marginLeft={1}
+                    padding={1}
+                >
                     <DetailPanel />
                 </Box>
             </Box>
 
             {/* キーボードショートカットヘルプ */}
-            <Box borderColor={shortcutBorderColor} borderStyle="round" marginTop={1} paddingX={2} paddingY={1}>
+            <Box
+                key="shortcuts-help"
+                borderColor={shortcutBorderColor}
+                borderStyle="round"
+                marginTop={1}
+                paddingX={2}
+                paddingY={1}
+            >
                 <Text color={shortcutTextColor}>[v] Vercel [t] Turso [s] Supabase [g] GitHub [q] Quit</Text>
             </Box>
 
             {/* ローディングオーバーレイ */}
-            {snapshot.isLoading && <LoadingSpinner />}
+            {snapshot.isLoading && <LoadingSpinner key="loading-spinner" />}
 
             {/* エラーモーダル */}
-            {snapshot.errorMessage && <ErrorModal message={snapshot.errorMessage} />}
+            {snapshot.errorMessage && <ErrorModal key="error-modal" message={snapshot.errorMessage} />}
         </Box>
     );
 };

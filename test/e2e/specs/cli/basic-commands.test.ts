@@ -16,7 +16,7 @@ describe("CLI基本機能 E2E テスト", () => {
 
             assertCLIResult.all(result, {
                 exitCode: 0,
-                containsOutput: ["使用方法", "コマンド", "create", "dashboard"],
+                containsOutput: ["USAGE", "COMMANDS", "create", "dashboard"],
                 maxDuration: PERFORMANCE_THRESHOLDS.CLI.HELP,
             });
 
@@ -28,14 +28,14 @@ describe("CLI基本機能 E2E テスト", () => {
             const result = await runCLI(["-h"]);
 
             assertCLIResult.success(result);
-            assertCLIResult.containsOutput(result, "使用方法");
+            assertCLIResult.containsOutput(result, "USAGE");
         });
 
         test("引数なしでヘルプが表示される", async () => {
             const result = await runCLI([]);
 
             assertCLIResult.success(result);
-            assertCLIResult.containsOutput(result, "使用方法");
+            assertCLIResult.containsOutput(result, "USAGE");
         });
 
         test("create コマンドのヘルプが表示される", async () => {
