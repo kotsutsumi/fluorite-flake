@@ -35,9 +35,7 @@ describe("copyTemplateDirectory", () => {
         expect(result.files).toContain("package.json");
         expect(result.directories).toContain("src");
 
-        const packageJson = JSON.parse(
-            await readFile(join(targetDirectory, "package.json"), "utf8")
-        );
+        const packageJson = JSON.parse(await readFile(join(targetDirectory, "package.json"), "utf8"));
         expect(packageJson.name).toBe("test-app-web");
     });
 });

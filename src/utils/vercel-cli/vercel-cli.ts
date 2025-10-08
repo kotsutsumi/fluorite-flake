@@ -27,15 +27,11 @@ export class VercelCLI {
     /**
      * 基本的なVercelコマンドを実行する内部メソッド
      */
-    private static executeCommand(
-        command: string,
-        options: VercelCommandOptions = {}
-    ): VercelCommandResult {
+    private static executeCommand(command: string, options: VercelCommandOptions = {}): VercelCommandResult {
         try {
             // グローバルオプションを構築
             const globalArgs = VercelCLI.buildGlobalArgs(options);
-            const fullCommand =
-                `vercel ${command} ${globalArgs.join(" ")}`.trim();
+            const fullCommand = `vercel ${command} ${globalArgs.join(" ")}`.trim();
 
             // execSyncでコマンド実行
             const stdout = execSync(fullCommand, {
@@ -120,10 +116,7 @@ export class VercelCLI {
     /**
      * デプロイのブールオプションを追加
      */
-    private static addDeployBooleanOptions(
-        args: string[],
-        options: VercelDeployOptions
-    ): void {
+    private static addDeployBooleanOptions(args: string[], options: VercelDeployOptions): void {
         if (options.prebuilt) {
             args.push("--prebuilt");
         }
@@ -153,10 +146,7 @@ export class VercelCLI {
     /**
      * デプロイの文字列オプションを追加
      */
-    private static addDeployStringOptions(
-        args: string[],
-        options: VercelDeployOptions
-    ): void {
+    private static addDeployStringOptions(args: string[], options: VercelDeployOptions): void {
         if (options.name) {
             args.push("--name", options.name);
         }
@@ -171,10 +161,7 @@ export class VercelCLI {
     /**
      * デプロイの配列・オブジェクトオプションを追加
      */
-    private static addDeployComplexOptions(
-        args: string[],
-        options: VercelDeployOptions
-    ): void {
+    private static addDeployComplexOptions(args: string[], options: VercelDeployOptions): void {
         // 配列オプション
         if (options.regions) {
             args.push("--regions", options.regions.join(","));
@@ -203,10 +190,7 @@ export class VercelCLI {
     /**
      * プロジェクトをデプロイ
      */
-    static deploy(
-        path?: string,
-        options: VercelDeployOptions = {}
-    ): VercelCommandResult {
+    static deploy(path?: string, options: VercelDeployOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildDeployArgs(options);
         const command = path ? `deploy ${path}` : "deploy";
 
@@ -265,11 +249,7 @@ export class VercelCLI {
     /**
      * 環境変数を一覧表示
      */
-    static envList(
-        environment?: string,
-        gitBranch?: string,
-        options: VercelEnvOptions = {}
-    ): VercelCommandResult {
+    static envList(environment?: string, gitBranch?: string, options: VercelEnvOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
         let command = "env ls";
 
@@ -280,10 +260,7 @@ export class VercelCLI {
             command += ` ${gitBranch}`;
         }
 
-        return VercelCLI.executeCommand(
-            `${command} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`${command} ${args.join(" ")}`, options);
     }
 
     /**
@@ -297,24 +274,15 @@ export class VercelCLI {
     /**
      * 環境変数を削除
      */
-    static envRemove(
-        name: string,
-        options: VercelEnvOptions = {}
-    ): VercelCommandResult {
+    static envRemove(name: string, options: VercelEnvOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
-        return VercelCLI.executeCommand(
-            `env rm ${name} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`env rm ${name} ${args.join(" ")}`, options);
     }
 
     /**
      * 環境変数をローカルに同期
      */
-    static envPull(
-        file?: string,
-        options: VercelEnvOptions = {}
-    ): VercelCommandResult {
+    static envPull(file?: string, options: VercelEnvOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.environment) {
@@ -325,10 +293,7 @@ export class VercelCLI {
         }
 
         const command = file ? `env pull ${file}` : "env pull";
-        return VercelCLI.executeCommand(
-            `${command} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`${command} ${args.join(" ")}`, options);
     }
 
     /**
@@ -341,46 +306,29 @@ export class VercelCLI {
             args.push("--limit", options.limit.toString());
         }
 
-        return VercelCLI.executeCommand(
-            `domains ls ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`domains ls ${args.join(" ")}`, options);
     }
 
     /**
      * ドメインを追加
      */
-    static domainsAdd(
-        domain: string,
-        options: VercelDomainOptions = {}
-    ): VercelCommandResult {
+    static domainsAdd(domain: string, options: VercelDomainOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
-        return VercelCLI.executeCommand(
-            `domains add ${domain} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`domains add ${domain} ${args.join(" ")}`, options);
     }
 
     /**
      * ドメインを削除
      */
-    static domainsRemove(
-        domain: string,
-        options: VercelDomainOptions = {}
-    ): VercelCommandResult {
+    static domainsRemove(domain: string, options: VercelDomainOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
-        return VercelCLI.executeCommand(
-            `domains rm ${domain} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`domains rm ${domain} ${args.join(" ")}`, options);
     }
 
     /**
      * プロジェクト一覧を取得
      */
-    static projectList(
-        options: VercelProjectOptions = {}
-    ): VercelCommandResult {
+    static projectList(options: VercelProjectOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.json) {
@@ -390,47 +338,29 @@ export class VercelCLI {
             args.push("--update-required");
         }
 
-        return VercelCLI.executeCommand(
-            `project ls ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`project ls ${args.join(" ")}`, options);
     }
 
     /**
      * プロジェクトを追加
      */
-    static projectAdd(
-        name: string,
-        options: VercelCommandOptions = {}
-    ): VercelCommandResult {
+    static projectAdd(name: string, options: VercelCommandOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
-        return VercelCLI.executeCommand(
-            `project add ${name} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`project add ${name} ${args.join(" ")}`, options);
     }
 
     /**
      * プロジェクトを削除
      */
-    static projectRemove(
-        name: string,
-        options: VercelCommandOptions = {}
-    ): VercelCommandResult {
+    static projectRemove(name: string, options: VercelCommandOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
-        return VercelCLI.executeCommand(
-            `project rm ${name} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`project rm ${name} ${args.join(" ")}`, options);
     }
 
     /**
      * ログを取得
      */
-    static logs(
-        deploymentUrl: string,
-        options: VercelLogsOptions = {}
-    ): VercelCommandResult {
+    static logs(deploymentUrl: string, options: VercelLogsOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.json) {
@@ -452,19 +382,13 @@ export class VercelCLI {
             args.push("--until", options.until);
         }
 
-        return VercelCLI.executeCommand(
-            `logs ${deploymentUrl} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`logs ${deploymentUrl} ${args.join(" ")}`, options);
     }
 
     /**
      * プロジェクトをローカルディレクトリにリンク
      */
-    static link(
-        path?: string,
-        options: VercelLinkOptions = {}
-    ): VercelCommandResult {
+    static link(path?: string, options: VercelLinkOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.repo) {
@@ -475,10 +399,7 @@ export class VercelCLI {
         }
 
         const command = path ? `link ${path}` : "link";
-        return VercelCLI.executeCommand(
-            `${command} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`${command} ${args.join(" ")}`, options);
     }
 
     /**
@@ -513,72 +434,48 @@ export class VercelCLI {
     /**
      * デプロイを昇格
      */
-    static promote(
-        deploymentUrl: string,
-        options: VercelPromoteOptions = {}
-    ): VercelCommandResult {
+    static promote(deploymentUrl: string, options: VercelPromoteOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.timeout !== undefined) {
             args.push("--timeout", options.timeout.toString());
         }
 
-        return VercelCLI.executeCommand(
-            `promote ${deploymentUrl} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`promote ${deploymentUrl} ${args.join(" ")}`, options);
     }
 
     /**
      * デプロイまたはプロジェクトを削除
      */
-    static remove(
-        target: string,
-        options: VercelRemoveOptions = {}
-    ): VercelCommandResult {
+    static remove(target: string, options: VercelRemoveOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.safe) {
             args.push("--safe");
         }
 
-        return VercelCLI.executeCommand(
-            `rm ${target} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`rm ${target} ${args.join(" ")}`, options);
     }
 
     /**
      * 本番エイリアスを過去デプロイにロールバック
      */
-    static rollback(
-        deploymentUrl: string,
-        options: VercelRollbackOptions = {}
-    ): VercelCommandResult {
+    static rollback(deploymentUrl: string, options: VercelRollbackOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
 
         if (options.timeout !== undefined) {
             args.push("--timeout", options.timeout.toString());
         }
 
-        return VercelCLI.executeCommand(
-            `rollback ${deploymentUrl} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`rollback ${deploymentUrl} ${args.join(" ")}`, options);
     }
 
     /**
      * デプロイを再実行
      */
-    static redeploy(
-        deploymentUrl: string,
-        options: VercelCommandOptions = {}
-    ): VercelCommandResult {
+    static redeploy(deploymentUrl: string, options: VercelCommandOptions = {}): VercelCommandResult {
         const args = VercelCLI.buildGlobalArgs(options);
-        return VercelCLI.executeCommand(
-            `redeploy ${deploymentUrl} ${args.join(" ")}`,
-            options
-        );
+        return VercelCLI.executeCommand(`redeploy ${deploymentUrl} ${args.join(" ")}`, options);
     }
 
     /**
@@ -608,10 +505,7 @@ export class VercelCLI {
     /**
      * 汎用コマンド実行（上記にないコマンド用）
      */
-    static execute(
-        command: string,
-        options: VercelCommandOptions = {}
-    ): VercelCommandResult {
+    static execute(command: string, options: VercelCommandOptions = {}): VercelCommandResult {
         return VercelCLI.executeCommand(command, options);
     }
 }

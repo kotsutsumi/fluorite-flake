@@ -3,10 +3,7 @@
  */
 
 import type { BlobConfiguration } from "../../../utils/vercel-cli/blob-types.js";
-import type {
-    DatabaseCredentials,
-    DatabaseProvisioningConfig,
-} from "../database-provisioning/types.js";
+import type { DatabaseCredentials, DatabaseProvisioningConfig } from "../database-provisioning/types.js";
 import type { ExtendedProjectConfig } from "../types.js";
 
 /**

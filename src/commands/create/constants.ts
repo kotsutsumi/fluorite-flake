@@ -43,8 +43,7 @@ export const PROJECT_TYPE_DESCRIPTIONS = {
             "app-router": "App Router structure",
             "pages-router": "Pages Router structure",
             javascript: "JavaScript with App Router",
-            "fullstack-admin":
-                "Full-Stack Admin with Auth, Organizations, Users (TypeScript)",
+            "fullstack-admin": "Full-Stack Admin with Auth, Organizations, Users (TypeScript)",
         },
     },
     expo: {
@@ -55,8 +54,7 @@ export const PROJECT_TYPE_DESCRIPTIONS = {
             tabs: "Tab-based navigation",
             navigation: "Stack navigation",
             javascript: "JavaScript with navigation",
-            "fullstack-graphql":
-                "Mobile + Web with GraphQL Backend (TypeScript)",
+            "fullstack-graphql": "Mobile + Web with GraphQL Backend (TypeScript)",
         },
     },
     tauri: {

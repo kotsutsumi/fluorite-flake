@@ -1,7 +1,7 @@
 {
 	"name": "{{PROJECT_NAME}}-workspace",
 	"private": true,
-	"packageManager": "pnpm@10.18.0",
+	"packageManager": "pnpm@{{PNPM_VERSION}}",
 	"workspaces": ["apps/*", "packages/*"],
 	"scripts": {
 		"dev": "turbo run dev --filter={{PROJECT_NAME}}-web",
@@ -27,6 +27,6 @@
 	},
 	"engines": {
 		"node": ">=20.0.0",
-		"pnpm": ">=10.18.0"
+		"pnpm": ">={{PNPM_MAJOR_VERSION}}"
 	}
 }

@@ -25,10 +25,7 @@ export function printDevelopmentInfo(): void {
     console.log(chalk.gray(debug.cwdLabel), chalk.gray(process.cwd()));
 
     // Node.jsバージョン情報
-    console.log(
-        chalk.gray(debug.nodeVersionLabel),
-        chalk.gray(process.version)
-    );
+    console.log(chalk.gray(debug.nodeVersionLabel), chalk.gray(process.version));
 
     // コマンドライン引数情報
     const args = process.argv.slice(2);
@@ -69,10 +66,7 @@ export function debugLog(message: string, data?: unknown): void {
     const { debug } = getMessages();
 
     // デバッグメッセージを表示
-    console.log(
-        chalk.gray(debug.debugMessage(message)),
-        data ? chalk.gray(JSON.stringify(data, null, 2)) : ""
-    );
+    console.log(chalk.gray(debug.debugMessage(message)), data ? chalk.gray(JSON.stringify(data, null, 2)) : "");
 }
 
 // EOF

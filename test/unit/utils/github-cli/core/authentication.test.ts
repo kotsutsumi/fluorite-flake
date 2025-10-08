@@ -61,8 +61,7 @@ describe("AuthenticationManager", () => {
         });
 
         it("キャッシュ機能が正しく動作する", async () => {
-            const mockAuthOutput =
-                "✓ Logged in to github.com as testuser\n✓ Token: oauth";
+            const mockAuthOutput = "✓ Logged in to github.com as testuser\n✓ Token: oauth";
 
             executeRawMock.mockResolvedValueOnce({
                 success: true,
@@ -85,9 +84,7 @@ describe("AuthenticationManager", () => {
                 expect.fail("エラーが投げられるべきです");
             } catch (error) {
                 expect(error).toBeInstanceOf(GitHubCLIError);
-                expect((error as GitHubCLIError).code).toBe(
-                    GitHubCLIErrorCode.AUTH_FAILED
-                );
+                expect((error as GitHubCLIError).code).toBe(GitHubCLIErrorCode.AUTH_FAILED);
             }
         });
     });
@@ -245,9 +242,7 @@ describe("AuthenticationManager", () => {
                 expect.fail("エラーが投げられるべきです");
             } catch (error) {
                 expect(error).toBeInstanceOf(GitHubCLIError);
-                expect((error as GitHubCLIError).code).toBe(
-                    GitHubCLIErrorCode.AUTH_MISSING
-                );
+                expect((error as GitHubCLIError).code).toBe(GitHubCLIErrorCode.AUTH_MISSING);
             }
         });
 
@@ -257,17 +252,13 @@ describe("AuthenticationManager", () => {
                 data: "✓ Logged in\n✗ Token scopes: none",
             });
 
-            await expect(authManager.requireAuth()).rejects.toThrow(
-                GitHubCLIErrorCode.PERMISSION_DENIED
-            );
+            await expect(authManager.requireAuth()).rejects.toThrow(GitHubCLIErrorCode.PERMISSION_DENIED);
         });
     });
 
     describe("parseAuthStatus（プライベートメソッドテスト）", () => {
         it("複合的な認証情報を正しく解析する", () => {
-            const parseMethod = (authManager as any).parseAuthStatus.bind(
-                authManager
-            );
+            const parseMethod = (authManager as any).parseAuthStatus.bind(authManager);
             const status = parseMethod(
                 "✓ Logged in to github.com as testuser\n✓ Token: oauth\n✓ Token scopes: repo, read:org"
             );
@@ -279,9 +270,7 @@ describe("AuthenticationManager", () => {
         });
 
         it("部分的な認証情報も正しく解析する", () => {
-            const parseMethod = (authManager as any).parseAuthStatus.bind(
-                authManager
-            );
+            const parseMethod = (authManager as any).parseAuthStatus.bind(authManager);
             const status = parseMethod("× not logged in to github.com");
 
             expect(status.isAuthenticated).toBe(false);

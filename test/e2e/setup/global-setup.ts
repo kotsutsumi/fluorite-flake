@@ -40,12 +40,7 @@ export async function setup(): Promise<void> {
  * 出力ディレクトリの作成
  */
 async function createOutputDirectories(): Promise<void> {
-    const directories = [
-        "test/e2e/reports",
-        "test/e2e/outputs",
-        "test/e2e/screenshots",
-        "test/e2e/logs",
-    ];
+    const directories = ["test/e2e/reports", "test/e2e/outputs", "test/e2e/screenshots", "test/e2e/logs"];
 
     for (const dir of directories) {
         const dirPath = path.resolve(__dirname, "../../../", dir);
@@ -65,9 +60,7 @@ async function verifyProjectBuild(): Promise<void> {
         await fs.access(cliPath);
         console.log("🔧 プロジェクトビルドを確認しました");
     } catch {
-        throw new Error(
-            "プロジェクトがビルドされていません。'pnpm build' を実行してください。"
-        );
+        throw new Error("プロジェクトがビルドされていません。'pnpm build' を実行してください。");
     }
 }
 
@@ -78,9 +71,7 @@ async function verifyCLIAvailability(): Promise<void> {
     const isAvailable = await checkCLIAvailable();
 
     if (!isAvailable) {
-        throw new Error(
-            "fluorite CLI が利用できません。プロジェクトをビルドしてください。"
-        );
+        throw new Error("fluorite CLI が利用できません。プロジェクトをビルドしてください。");
     }
 
     console.log("⚡ CLI の利用可能性を確認しました");
@@ -92,15 +83,10 @@ async function verifyCLIAvailability(): Promise<void> {
 async function verifyTestEnvironment(): Promise<void> {
     // Node.js バージョン確認
     const nodeVersion = process.version;
-    const majorVersion = Number.parseInt(
-        nodeVersion.slice(1).split(".")[0],
-        10
-    );
+    const majorVersion = Number.parseInt(nodeVersion.slice(1).split(".")[0], 10);
 
     if (majorVersion < 18) {
-        throw new Error(
-            `Node.js 18.0.0 以上が必要です。現在のバージョン: ${nodeVersion}`
-        );
+        throw new Error(`Node.js 18.0.0 以上が必要です。現在のバージョン: ${nodeVersion}`);
     }
 
     // 環境変数の確認

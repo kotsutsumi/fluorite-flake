@@ -12,11 +12,7 @@ export type TabType = "overview" | "operations" | "logs" | "metrics";
 export type FocusArea = "services" | "tabs" | "shortcuts";
 
 // 認証ステータス
-export type AuthStatus =
-    | "unknown"
-    | "authenticated"
-    | "unauthenticated"
-    | "error";
+export type AuthStatus = "unknown" | "authenticated" | "unauthenticated" | "error";
 
 // ダッシュボード状態
 export type DashboardState = {

@@ -19,10 +19,7 @@ export function generateReadmeContent(config: ProjectConfig): string {
 /**
  * シンプルプロジェクト用のREADME内容を生成
  */
-function generateSimpleReadme(
-    config: ProjectConfig,
-    readme: ReturnType<typeof getMessages>["readme"]
-): string {
+function generateSimpleReadme(config: ProjectConfig, readme: ReturnType<typeof getMessages>["readme"]): string {
     const { name, type, template } = config;
 
     // 基本的なコマンドリストを作成
@@ -54,10 +51,7 @@ ${readme.convertToMonorepoCommand}
 /**
  * モノレポプロジェクト用のREADME内容を生成
  */
-function generateMonorepoReadme(
-    config: ProjectConfig,
-    readme: ReturnType<typeof getMessages>["readme"]
-): string {
+function generateMonorepoReadme(config: ProjectConfig, readme: ReturnType<typeof getMessages>["readme"]): string {
     const { name } = config;
 
     // 開発コマンドリストを作成
@@ -66,14 +60,10 @@ function generateMonorepoReadme(
         .join("\n\n");
 
     // ビルドコマンドリストを作成
-    const buildingCommands = readme.buildingCommands
-        .map((cmd: string) => `\`\`\`bash\n${cmd}\n\`\`\``)
-        .join("\n\n");
+    const buildingCommands = readme.buildingCommands.map((cmd: string) => `\`\`\`bash\n${cmd}\n\`\`\``).join("\n\n");
 
     // テストコマンドリストを作成
-    const testingCommands = readme.testingCommands
-        .map((cmd: string) => `\`\`\`bash\n${cmd}\n\`\`\``)
-        .join("\n\n");
+    const testingCommands = readme.testingCommands.map((cmd: string) => `\`\`\`bash\n${cmd}\n\`\`\``).join("\n\n");
 
     return `# ${readme.title.replace("{name}", name)}
 

@@ -50,9 +50,7 @@ export class PathResolver {
      */
     resolveEnvFiles(context: ExecutionContext, appName: string): EnvFilePaths {
         const basePath =
-            context.type === "monorepo-root"
-                ? path.join(context.rootPath, "apps", appName)
-                : context.rootPath;
+            context.type === "monorepo-root" ? path.join(context.rootPath, "apps", appName) : context.rootPath;
 
         return {
             development: path.join(basePath, ".env.development"),
@@ -73,11 +71,7 @@ export class PathResolver {
         const appRoot =
             context.type === "app-directory"
                 ? context.rootPath
-                : path.join(
-                      context.rootPath,
-                      "apps",
-                      context.currentApp || "web"
-                  );
+                : path.join(context.rootPath, "apps", context.currentApp || "web");
 
         return path.resolve(appRoot, scriptPath);
     }
@@ -90,10 +84,7 @@ export class PathResolver {
 
         while (currentPath !== path.dirname(currentPath)) {
             // ワークスペースファイルをチェック
-            const workspaceFiles = [
-                "pnpm-workspace.yaml",
-                "pnpm-workspace.yml",
-            ];
+            const workspaceFiles = ["pnpm-workspace.yaml", "pnpm-workspace.yml"];
 
             for (const workspaceFile of workspaceFiles) {
                 try {
@@ -107,10 +98,7 @@ export class PathResolver {
             // package.jsonのworkspacesフィールドをチェック
             try {
                 const packageJsonPath = path.join(currentPath, "package.json");
-                const packageJsonContent = await fs.readFile(
-                    packageJsonPath,
-                    "utf-8"
-                );
+                const packageJsonContent = await fs.readFile(packageJsonPath, "utf-8");
                 const packageJson = JSON.parse(packageJsonContent);
 
                 if (packageJson.workspaces) {
@@ -164,10 +152,7 @@ export class PathResolver {
         // package.jsonのworkspacesフィールドをチェック
         try {
             const packageJsonPath = path.join(dirPath, "package.json");
-            const packageJsonContent = await fs.readFile(
-                packageJsonPath,
-                "utf-8"
-            );
+            const packageJsonContent = await fs.readFile(packageJsonPath, "utf-8");
             const packageJson = JSON.parse(packageJsonContent);
 
             return !!packageJson.workspaces;

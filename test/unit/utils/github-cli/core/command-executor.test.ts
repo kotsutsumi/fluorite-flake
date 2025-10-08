@@ -73,9 +73,7 @@ describe("GitHubCLIExecutor", () => {
             const command = {} as GitHubCLICommand;
             const result = await executor.execute(command);
             expect(result.success).toBe(false);
-            expect(result.error?.code).toBe(
-                GitHubCLIErrorCode.VALIDATION_ERROR
-            );
+            expect(result.error?.code).toBe(GitHubCLIErrorCode.VALIDATION_ERROR);
         });
 
         it("危険なコマンドを拒否する", async () => {
@@ -84,9 +82,7 @@ describe("GitHubCLIExecutor", () => {
             };
             const result = await executor.execute(command);
             expect(result.success).toBe(false);
-            expect(result.error?.code).toBe(
-                GitHubCLIErrorCode.VALIDATION_ERROR
-            );
+            expect(result.error?.code).toBe(GitHubCLIErrorCode.VALIDATION_ERROR);
         });
     });
 
@@ -105,9 +101,7 @@ describe("GitHubCLIExecutor", () => {
 
     describe("buildCommandString", () => {
         it("基本的なコマンドを正しく構築する", () => {
-            const buildMethod = (executor as any).buildCommandString.bind(
-                executor
-            );
+            const buildMethod = (executor as any).buildCommandString.bind(executor);
 
             const command1: GitHubCLICommand = {
                 command: "repo",
@@ -122,9 +116,7 @@ describe("GitHubCLIExecutor", () => {
         });
 
         it("フラグを正しく構築する", () => {
-            const buildMethod = (executor as any).buildCommandString.bind(
-                executor
-            );
+            const buildMethod = (executor as any).buildCommandString.bind(executor);
 
             const command: GitHubCLICommand = {
                 command: "repo",

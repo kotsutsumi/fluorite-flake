@@ -34,9 +34,7 @@ describe("モノレポ生成機能", () => {
         vi.mocked(fs.mkdirSync).mockImplementation(() => {
             // モック関数：ディレクトリ作成のシミュレーション
         });
-        vi.mocked(fs.readFileSync).mockReturnValue(
-            "mock template content {{PROJECT_NAME}}"
-        );
+        vi.mocked(fs.readFileSync).mockReturnValue("mock template content {{PROJECT_NAME}}");
         vi.mocked(fs.writeFileSync).mockImplementation(() => {
             // モック関数：ファイル書き込みのシミュレーション
         });
@@ -64,18 +62,9 @@ describe("モノレポ生成機能", () => {
             expect(fs.mkdirSync).toHaveBeenCalledWith("test-monorepo", {
                 recursive: true,
             });
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("test-monorepo", "apps"),
-                { recursive: true }
-            );
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("test-monorepo", "packages"),
-                { recursive: true }
-            );
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("test-monorepo", "apps", "web"),
-                { recursive: true }
-            );
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("test-monorepo", "apps"), { recursive: true });
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("test-monorepo", "packages"), { recursive: true });
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("test-monorepo", "apps", "web"), { recursive: true });
 
             // 検証: mkdirSyncが4回呼ばれること（4つのディレクトリ）
             expect(fs.mkdirSync).toHaveBeenCalledTimes(4);
@@ -107,10 +96,7 @@ describe("モノレポ生成機能", () => {
             vi.mocked(fs.existsSync).mockImplementation((dirPath) => {
                 const pathStr = dirPath.toString();
                 // test-partialとtest-partial/appsディレクトリのみ存在
-                return (
-                    pathStr === "test-partial" ||
-                    pathStr === path.join("test-partial", "apps")
-                );
+                return pathStr === "test-partial" || pathStr === path.join("test-partial", "apps");
             });
 
             // テストデータ準備
@@ -127,23 +113,14 @@ describe("モノレポ生成機能", () => {
             createMonorepoStructure(config);
 
             // 検証: 存在しないディレクトリのみ作成されること（作成順序に従って）
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("test-partial", "packages"),
-                { recursive: true }
-            );
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("test-partial", "apps", "web"),
-                { recursive: true }
-            );
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("test-partial", "packages"), { recursive: true });
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("test-partial", "apps", "web"), { recursive: true });
 
             // 検証: 存在するディレクトリは作成されないこと
             expect(fs.mkdirSync).not.toHaveBeenCalledWith("test-partial", {
                 recursive: true,
             });
-            expect(fs.mkdirSync).not.toHaveBeenCalledWith(
-                path.join("test-partial", "apps"),
-                { recursive: true }
-            );
+            expect(fs.mkdirSync).not.toHaveBeenCalledWith(path.join("test-partial", "apps"), { recursive: true });
 
             // 検証: 正確に2回呼ばれること（packages と apps/web）
             expect(fs.mkdirSync).toHaveBeenCalledTimes(2);
@@ -171,10 +148,7 @@ describe("モノレポ生成機能", () => {
             copyMonorepoTemplates(config);
 
             // 検証: package.json.templateが読み込まれること
-            expect(fs.readFileSync).toHaveBeenCalledWith(
-                expect.stringContaining("package.json.template"),
-                "utf-8"
-            );
+            expect(fs.readFileSync).toHaveBeenCalledWith(expect.stringContaining("package.json.template"), "utf-8");
 
             // 検証: プロジェクト名が置換されてpackage.jsonが作成されること
             expect(fs.writeFileSync).toHaveBeenCalledWith(
@@ -206,10 +180,7 @@ describe("モノレポ生成機能", () => {
             // モックの設定: 一部のファイルのみ存在
             vi.mocked(fs.existsSync).mockImplementation((filePath) => {
                 const pathStr = filePath.toString();
-                return (
-                    pathStr.includes("package.json.template") ||
-                    pathStr.includes("turbo.json")
-                );
+                return pathStr.includes("package.json.template") || pathStr.includes("turbo.json");
             });
 
             // テストデータ準備
@@ -286,8 +257,7 @@ describe("モノレポ生成機能", () => {
             );
 
             // 検証: package.jsonの内容が正しいこと
-            const writtenContent = vi.mocked(fs.writeFileSync).mock
-                .calls[0][1] as string;
+            const writtenContent = vi.mocked(fs.writeFileSync).mock.calls[0][1] as string;
             const packageJson = JSON.parse(writtenContent);
 
             expect(packageJson.name).toBe("nextjs-app-web");
@@ -313,8 +283,7 @@ describe("モノレポ生成機能", () => {
             createWebAppPackageJson(config);
 
             // 検証: package.jsonの内容が正しいこと
-            const writtenContent = vi.mocked(fs.writeFileSync).mock
-                .calls[0][1] as string;
+            const writtenContent = vi.mocked(fs.writeFileSync).mock.calls[0][1] as string;
             const packageJson = JSON.parse(writtenContent);
 
             expect(packageJson.name).toBe("expo-app-mobile");
@@ -340,8 +309,7 @@ describe("モノレポ生成機能", () => {
             createWebAppPackageJson(config);
 
             // 検証: package.jsonの内容が正しいこと
-            const writtenContent = vi.mocked(fs.writeFileSync).mock
-                .calls[0][1] as string;
+            const writtenContent = vi.mocked(fs.writeFileSync).mock.calls[0][1] as string;
             const packageJson = JSON.parse(writtenContent);
 
             expect(packageJson.name).toBe("tauri-app-desktop");
@@ -349,9 +317,7 @@ describe("モノレポ生成機能", () => {
             expect(packageJson.scripts.dev).toBe("vite");
             expect(packageJson.scripts.tauri).toBe("tauri");
             expect(packageJson.dependencies["@tauri-apps/api"]).toBeDefined();
-            expect(
-                packageJson.devDependencies["@tauri-apps/cli"]
-            ).toBeDefined();
+            expect(packageJson.devDependencies["@tauri-apps/cli"]).toBeDefined();
         });
 
         test("サポートされていないプロジェクトタイプの場合、エラーが投げられること", () => {
@@ -366,20 +332,14 @@ describe("モノレポ生成機能", () => {
             };
 
             // テスト実行と検証
-            expect(() => createWebAppPackageJson(config)).toThrow(
-                "Unsupported project type: unsupported"
-            );
+            expect(() => createWebAppPackageJson(config)).toThrow("Unsupported project type: unsupported");
 
             // 検証: ファイルが作成されないこと
             expect(fs.writeFileSync).not.toHaveBeenCalled();
         });
 
         test("全プロジェクトタイプで共通のスクリプトが含まれること", () => {
-            const projectTypes: Array<"nextjs" | "expo" | "tauri"> = [
-                "nextjs",
-                "expo",
-                "tauri",
-            ];
+            const projectTypes: Array<"nextjs" | "expo" | "tauri"> = ["nextjs", "expo", "tauri"];
 
             for (const type of projectTypes) {
                 // モックをリセット
@@ -399,8 +359,7 @@ describe("モノレポ生成機能", () => {
                 createWebAppPackageJson(config);
 
                 // 検証: 共通スクリプトが含まれること
-                const writtenContent = vi.mocked(fs.writeFileSync).mock
-                    .calls[0][1] as string;
+                const writtenContent = vi.mocked(fs.writeFileSync).mock.calls[0][1] as string;
                 const packageJson = JSON.parse(writtenContent);
 
                 expect(packageJson.scripts.lint).toBe("ultracite check");
@@ -424,8 +383,7 @@ describe("モノレポ生成機能", () => {
             createWebAppPackageJson(config);
 
             // 検証: プロジェクト名が正しく使用されること
-            const writtenContent = vi.mocked(fs.writeFileSync).mock
-                .calls[0][1] as string;
+            const writtenContent = vi.mocked(fs.writeFileSync).mock.calls[0][1] as string;
             const packageJson = JSON.parse(writtenContent);
 
             expect(packageJson.name).toBe("my-awesome-project_2024-web");
@@ -448,11 +406,7 @@ describe("モノレポ生成機能", () => {
             vi.mocked(fs.existsSync).mockImplementation((filePath) => {
                 const pathStr = filePath.toString();
                 // テンプレートファイルは存在するが、ディレクトリは存在しない
-                return (
-                    pathStr.includes("templates") ||
-                    pathStr.includes(".template") ||
-                    pathStr.includes("turbo.json")
-                );
+                return pathStr.includes("templates") || pathStr.includes(".template") || pathStr.includes("turbo.json");
             });
 
             // テスト実行: 全ての関数を順番に実行
@@ -464,18 +418,11 @@ describe("モノレポ生成機能", () => {
             expect(fs.mkdirSync).toHaveBeenCalledWith("integration-test", {
                 recursive: true,
             });
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("integration-test", "apps"),
-                { recursive: true }
-            );
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("integration-test", "packages"),
-                { recursive: true }
-            );
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                path.join("integration-test", "apps", "web"),
-                { recursive: true }
-            );
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("integration-test", "apps"), { recursive: true });
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("integration-test", "packages"), { recursive: true });
+            expect(fs.mkdirSync).toHaveBeenCalledWith(path.join("integration-test", "apps", "web"), {
+                recursive: true,
+            });
 
             // 検証: テンプレートファイルがコピーされること
             expect(fs.writeFileSync).toHaveBeenCalledWith(

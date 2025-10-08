@@ -1,44 +1,64 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.5/schema.json",
-  "extends": ["ultracite"],
-  "formatter": {
-    "indentStyle": "space",
-    "indentWidth": 4
-  },
-  "files": {
-    "experimentalScannerIgnores": [
-      ".vscode/**",
-      "dist/**",
-      "build/**",
-      "coverage/**",
-      "templates/**",
-      "node_modules/**"
-    ]
-  },
-  "linter": {
-    "rules": {
-      "suspicious": {
-        "noConsole": "off",
-        "noExplicitAny": "off",
-        "noUnknownAtRules": "off",
-        "noMisplacedAssertion": "off",
-        "useAwait": "off"
-      },
-      "correctness": {
-        "noUnusedVariables": "off"
-      },
-      "performance": {
-        "noBarrelFile": "off",
-        "useTopLevelRegex": "off"
-      },
-      "style": {
-        "noMagicNumbers": "off",
-        "useFilenamingConvention": "off",
-        "noNonNullAssertion": "off"
-      },
-      "complexity": {
-        "noExcessiveCognitiveComplexity": "off"
-      }
+    "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 120
+    },
+    "files": {
+        "maxSize": 2097152,
+        "experimentalScannerIgnores": [
+            ".vscode/**",
+            "dist/**",
+            "build/**",
+            "coverage/**",
+            "templates/**",
+            "node_modules/**",
+            "temp/**",
+            "web/**/*",
+            "web.bak/**/*",
+            "refs/**/*",
+            "*.d.ts",
+            "**/.next/**",
+            "**/node_modules/**",
+            "**/coverage/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/web/**",
+            "**/web.bak/**",
+            "**/refs/**"
+        ]
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "suspicious": {
+                "noConsole": "off",
+                "noExplicitAny": "off",
+                "noMisplacedAssertion": "off"
+            },
+            "correctness": {
+                "noUnusedVariables": "off"
+            },
+            "performance": {
+                "noBarrelFile": "off"
+            },
+            "style": {
+                "noNonNullAssertion": "off",
+                "useFilenamingConvention": "off"
+            },
+            "complexity": {
+                "noExcessiveCognitiveComplexity": "off"
+            }
+        }
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "trailingCommas": "es5",
+            "semicolons": "always"
+        }
     }
-  }
 }

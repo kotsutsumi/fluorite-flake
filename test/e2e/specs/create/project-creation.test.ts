@@ -5,15 +5,8 @@ import { afterEach, beforeEach, describe, test } from "vitest";
 
 import { assertCLIResult, assertProject } from "../../helpers/assertions.js";
 import { runCLI } from "../../helpers/cli-runner.js";
-import {
-    createTempDirectory,
-    type TempDirectory,
-} from "../../helpers/temp-manager.js";
-import {
-    PERFORMANCE_THRESHOLDS,
-    PROJECT_TYPES,
-    shouldSkipTest,
-} from "../../setup/test-config.js";
+import { createTempDirectory, type TempDirectory } from "../../helpers/temp-manager.js";
+import { PERFORMANCE_THRESHOLDS, PROJECT_TYPES, shouldSkipTest } from "../../setup/test-config.js";
 
 describe("プロジェクト生成 E2E テスト", () => {
     let tempDir: TempDirectory;
@@ -31,13 +24,10 @@ describe("プロジェクト生成 E2E テスト", () => {
     describe("Next.js プロジェクト生成", () => {
         test("TypeScript Next.js プロジェクトが正常に生成される", async () => {
             const projectName = "test-nextjs-ts";
-            const result = await runCLI(
-                ["create", projectName, "--type", "nextjs", "--typescript"],
-                {
-                    cwd: tempDir.path,
-                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--type", "nextjs", "--typescript"], {
+                cwd: tempDir.path,
+                timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
+            });
 
             // CLI実行結果を検証
             assertCLIResult.all(result, {
@@ -51,25 +41,16 @@ describe("プロジェクト生成 E2E テスト", () => {
             await assertProject.exists(projectPath);
             await assertProject.isType(projectPath, "nextjs");
             await assertProject.hasTypeScript(projectPath, true);
-            await assertProject.hasFiles(
-                projectPath,
-                PROJECT_TYPES.NEXTJS.expectedFiles
-            );
-            await assertProject.hasDependencies(
-                projectPath,
-                PROJECT_TYPES.NEXTJS.expectedDependencies
-            );
+            await assertProject.hasFiles(projectPath, PROJECT_TYPES.NEXTJS.expectedFiles);
+            await assertProject.hasDependencies(projectPath, PROJECT_TYPES.NEXTJS.expectedDependencies);
         });
 
         test("JavaScript Next.js プロジェクトが正常に生成される", async () => {
             const projectName = "test-nextjs-js";
-            const result = await runCLI(
-                ["create", projectName, "--type", "nextjs", "--javascript"],
-                {
-                    cwd: tempDir.path,
-                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--type", "nextjs", "--javascript"], {
+                cwd: tempDir.path,
+                timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
+            });
 
             assertCLIResult.success(result);
 
@@ -86,12 +67,9 @@ describe("プロジェクト生成 E2E テスト", () => {
             // 既存ディレクトリを作成
             await createTempDirectory({ prefix: projectName });
 
-            const result = await runCLI(
-                ["create", projectName, "--type", "nextjs"],
-                {
-                    cwd: tempDir.path,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--type", "nextjs"], {
+                cwd: tempDir.path,
+            });
 
             // エラーが適切に処理されることを確認
             assertCLIResult.failure(result);
@@ -106,27 +84,18 @@ describe("プロジェクト生成 E2E テスト", () => {
             }
 
             const projectName = "test-expo-ts";
-            const result = await runCLI(
-                ["create", projectName, "--type", "expo", "--typescript"],
-                {
-                    cwd: tempDir.path,
-                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.EXPO,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--type", "expo", "--typescript"], {
+                cwd: tempDir.path,
+                timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.EXPO,
+            });
 
             assertCLIResult.success(result);
 
             const projectPath = `${tempDir.path}/${projectName}`;
             await assertProject.exists(projectPath);
             await assertProject.isType(projectPath, "expo");
-            await assertProject.hasFiles(
-                projectPath,
-                PROJECT_TYPES.EXPO.expectedFiles
-            );
-            await assertProject.hasDependencies(
-                projectPath,
-                PROJECT_TYPES.EXPO.expectedDependencies
-            );
+            await assertProject.hasFiles(projectPath, PROJECT_TYPES.EXPO.expectedFiles);
+            await assertProject.hasDependencies(projectPath, PROJECT_TYPES.EXPO.expectedDependencies);
         });
     });
 
@@ -137,27 +106,18 @@ describe("プロジェクト生成 E2E テスト", () => {
             }
 
             const projectName = "test-tauri-ts";
-            const result = await runCLI(
-                ["create", projectName, "--type", "tauri", "--typescript"],
-                {
-                    cwd: tempDir.path,
-                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.TAURI,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--type", "tauri", "--typescript"], {
+                cwd: tempDir.path,
+                timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.TAURI,
+            });
 
             assertCLIResult.success(result);
 
             const projectPath = `${tempDir.path}/${projectName}`;
             await assertProject.exists(projectPath);
             await assertProject.isType(projectPath, "tauri");
-            await assertProject.hasFiles(
-                projectPath,
-                PROJECT_TYPES.TAURI.expectedFiles
-            );
-            await assertProject.hasDependencies(
-                projectPath,
-                PROJECT_TYPES.TAURI.expectedDependencies
-            );
+            await assertProject.hasFiles(projectPath, PROJECT_TYPES.TAURI.expectedFiles);
+            await assertProject.hasDependencies(projectPath, PROJECT_TYPES.TAURI.expectedDependencies);
         });
     });
 
@@ -168,13 +128,10 @@ describe("プロジェクト生成 E2E テスト", () => {
             }
 
             const projectName = "test-monorepo";
-            const result = await runCLI(
-                ["create", projectName, "--monorepo", "--typescript"],
-                {
-                    cwd: tempDir.path,
-                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.MONOREPO,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--monorepo", "--typescript"], {
+                cwd: tempDir.path,
+                timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.MONOREPO,
+            });
 
             assertCLIResult.success(result);
 
@@ -192,12 +149,9 @@ describe("プロジェクト生成 E2E テスト", () => {
 
     describe("エラーハンドリング", () => {
         test("無効なプロジェクトタイプでエラーが発生", async () => {
-            const result = await runCLI(
-                ["create", "test-project", "--type", "invalid-type"],
-                {
-                    cwd: tempDir.path,
-                }
-            );
+            const result = await runCLI(["create", "test-project", "--type", "invalid-type"], {
+                cwd: tempDir.path,
+            });
 
             assertCLIResult.failure(result);
             assertCLIResult.containsError(result, "無効な");
@@ -213,12 +167,9 @@ describe("プロジェクト生成 E2E テスト", () => {
         });
 
         test("無効な文字を含むプロジェクト名でエラーが発生", async () => {
-            const result = await runCLI(
-                ["create", "invalid/project@name", "--type", "nextjs"],
-                {
-                    cwd: tempDir.path,
-                }
-            );
+            const result = await runCLI(["create", "invalid/project@name", "--type", "nextjs"], {
+                cwd: tempDir.path,
+            });
 
             assertCLIResult.failure(result);
             assertCLIResult.containsError(result, "無効な文字");
@@ -232,19 +183,13 @@ describe("プロジェクト生成 E2E テスト", () => {
             }
 
             const projectName = "perf-test-nextjs";
-            const result = await runCLI(
-                ["create", projectName, "--type", "nextjs", "--typescript"],
-                {
-                    cwd: tempDir.path,
-                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
-                }
-            );
+            const result = await runCLI(["create", projectName, "--type", "nextjs", "--typescript"], {
+                cwd: tempDir.path,
+                timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
+            });
 
             assertCLIResult.success(result);
-            assertCLIResult.performanceThreshold(
-                result,
-                PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS
-            );
+            assertCLIResult.performanceThreshold(result, PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS);
         });
 
         test("複数プロジェクトの並行生成", async () => {
@@ -258,19 +203,10 @@ describe("プロジェクト生成 E2E テスト", () => {
             ];
 
             const promises = projects.map((project) =>
-                runCLI(
-                    [
-                        "create",
-                        project.name,
-                        "--type",
-                        project.type,
-                        "--typescript",
-                    ],
-                    {
-                        cwd: tempDir.path,
-                        timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
-                    }
-                )
+                runCLI(["create", project.name, "--type", project.type, "--typescript"], {
+                    cwd: tempDir.path,
+                    timeout: PERFORMANCE_THRESHOLDS.PROJECT_CREATION.NEXTJS,
+                })
             );
 
             const results = await Promise.all(promises);

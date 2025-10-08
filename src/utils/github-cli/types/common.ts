@@ -59,8 +59,7 @@ export const GitHubCLIErrorCode = {
     UNKNOWN_ERROR: "UNKNOWN_ERROR",
 } as const;
 
-export type GitHubCLIErrorCode =
-    (typeof GitHubCLIErrorCode)[keyof typeof GitHubCLIErrorCode];
+export type GitHubCLIErrorCode = (typeof GitHubCLIErrorCode)[keyof typeof GitHubCLIErrorCode];
 
 // 認証ステータス
 export type AuthStatus = {

@@ -9,10 +9,7 @@ import {
     listBlobStores,
     validateBlobToken,
 } from "../../../../src/utils/vercel-cli/blob-operations.js";
-import {
-    BlobErrorCode,
-    BlobOperationError,
-} from "../../../../src/utils/vercel-cli/blob-types.js";
+import { BlobErrorCode, BlobOperationError } from "../../../../src/utils/vercel-cli/blob-types.js";
 
 // VercelCLIモジュールをモック化
 vi.mock("../../../../src/utils/vercel-cli/vercel-cli.js", () => ({
@@ -21,9 +18,7 @@ vi.mock("../../../../src/utils/vercel-cli/vercel-cli.js", () => ({
     },
 }));
 
-const mockVercelCLI = await import(
-    "../../../../src/utils/vercel-cli/vercel-cli.js"
-);
+const mockVercelCLI = await import("../../../../src/utils/vercel-cli/vercel-cli.js");
 
 describe("createBlobToken", () => {
     it("正常なAPIレスポンスでトークンを作成する", async () => {
@@ -125,9 +120,7 @@ describe("listBlobStores", () => {
             stderr: "Network error",
         });
 
-        await expect(
-            listBlobStores({ token: "blob_rw_test_token" })
-        ).rejects.toThrow(BlobOperationError);
+        await expect(listBlobStores({ token: "blob_rw_test_token" })).rejects.toThrow(BlobOperationError);
     });
 });
 

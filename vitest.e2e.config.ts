@@ -10,13 +10,7 @@ export default defineConfig({
         // E2Eテスト専用の設定
         name: "e2e",
         include: ["test/e2e/**/*.test.ts"],
-        exclude: [
-            "test/unit/**",
-            "test/functional/**",
-            "test/scenario/**",
-            "**/node_modules/**",
-            "**/dist/**",
-        ],
+        exclude: ["test/unit/**", "test/functional/**", "test/scenario/**", "**/node_modules/**", "**/dist/**"],
 
         // タイムアウト設定
         testTimeout: 60_000, // 1分（プロジェクト生成等の時間のかかるテスト用）
@@ -36,9 +30,7 @@ export default defineConfig({
         retry: process.env.CI ? 2 : 0, // CIでのみリトライ
 
         // レポーター設定
-        reporter: process.env.CI
-            ? ["verbose", "junit", "github-actions"]
-            : ["verbose", "html"],
+        reporter: process.env.CI ? ["verbose", "junit", "github-actions"] : ["verbose", "html"],
 
         outputFile: {
             junit: "test/e2e/reports/junit.xml",

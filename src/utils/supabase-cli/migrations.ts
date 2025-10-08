@@ -3,11 +3,7 @@
  *
  * データベースマイグレーションスクリプトの管理機能を提供します。
  */
-import {
-    executeSupabaseCommand,
-    parseJsonResponse,
-    throwOnError,
-} from "./executor.js";
+import { executeSupabaseCommand, parseJsonResponse, throwOnError } from "./executor.js";
 import type { DatabaseOptions, GlobalFlags, MigrationInfo } from "./types.js";
 
 /**
@@ -17,10 +13,7 @@ import type { DatabaseOptions, GlobalFlags, MigrationInfo } from "./types.js";
  * @param globalFlags - グローバルフラグ
  * @returns Promise<void>
  */
-export async function createMigration(
-    migrationName: string,
-    globalFlags: GlobalFlags = {}
-): Promise<void> {
+export async function createMigration(migrationName: string, globalFlags: GlobalFlags = {}): Promise<void> {
     const args = ["migration", "new", migrationName];
 
     // グローバルフラグの追加
@@ -215,10 +208,7 @@ export async function downMigrations(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<void>
  */
-export async function fetchMigrations(
-    options: DatabaseOptions = {},
-    globalFlags: GlobalFlags = {}
-): Promise<void> {
+export async function fetchMigrations(options: DatabaseOptions = {}, globalFlags: GlobalFlags = {}): Promise<void> {
     const args = ["migration", "fetch"];
 
     // オプションの追加
@@ -394,11 +384,7 @@ export async function migrationExists(
 ): Promise<boolean> {
     try {
         const migrations = await listMigrations(options, globalFlags);
-        return migrations.some(
-            (migration) =>
-                migration.name === migrationName ||
-                migration.version === migrationName
-        );
+        return migrations.some((migration) => migration.name === migrationName || migration.version === migrationName);
     } catch {
         return false;
     }

@@ -6,12 +6,7 @@ import { type CommandContext, defineCommand, runMain } from "citty";
 
 import { createCommand, newCommand } from "./commands/create/index.js";
 import { dashboardCommand } from "./commands/dashboard/index.js";
-import {
-    debugLog,
-    isDevelopment,
-    printDevelopmentInfo,
-    setupDevelopmentWorkspace,
-} from "./debug.js";
+import { debugLog, isDevelopment, printDevelopmentInfo, setupDevelopmentWorkspace } from "./debug.js";
 import { printHeader } from "./header.js";
 import { getMessages } from "./i18n.js";
 
@@ -53,14 +48,10 @@ const main = defineCommand({
 
         // コマンドライン引数にサブコマンドが含まれている場合も何もしない
         const hasSubCommand =
-            process.argv.includes("create") ||
-            process.argv.includes("new") ||
-            process.argv.includes("dashboard");
+            process.argv.includes("create") || process.argv.includes("new") || process.argv.includes("dashboard");
         if (hasSubCommand) {
             if (isDevelopment()) {
-                debugLog(
-                    "Detected subcommand in process.argv, skipping main command"
-                );
+                debugLog("Detected subcommand in process.argv, skipping main command");
             }
             return;
         }

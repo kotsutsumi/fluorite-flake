@@ -10,10 +10,7 @@ import { resolve } from "node:path";
  * @param baseDir ベースディレクトリ（デフォルトは現在のディレクトリ）
  * @returns ディレクトリが存在する場合はtrue
  */
-export function checkProjectExists(
-    projectName: string,
-    baseDir: string = process.cwd()
-): boolean {
+export function checkProjectExists(projectName: string, baseDir: string = process.cwd()): boolean {
     // プロジェクト名を使ってディレクトリパスを構築
     const projectPath = resolve(baseDir, projectName);
 

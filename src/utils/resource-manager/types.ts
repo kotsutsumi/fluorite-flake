@@ -131,11 +131,7 @@ export type RiskAssessment = {
  */
 export type RiskFactor = {
     /** リスクタイプ */
-    type:
-        | "data_loss"
-        | "service_disruption"
-        | "dependency_break"
-        | "cost_impact";
+    type: "data_loss" | "service_disruption" | "dependency_break" | "cost_impact";
     /** 重要度 */
     severity: "low" | "medium" | "high" | "critical";
     /** 説明 */

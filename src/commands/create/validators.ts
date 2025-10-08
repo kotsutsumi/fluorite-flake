@@ -44,18 +44,14 @@ export function hasDatabaseFeature(template: string): boolean {
  * モノレポ構造が推奨されるテンプレートかどうかを判定
  */
 export function isMonorepoRecommended(template: string): boolean {
-    return (
-        template.includes("fullstack") ||
-        template.includes("cross-platform") ||
-        template.includes("desktop-admin")
-    );
+    return template.includes("fullstack") || template.includes("cross-platform") || template.includes("desktop-admin");
 }
 
 /**
  * データベースタイプの検証
  */
 export function validateDatabase(database: string): database is DatabaseType {
-    const validDatabases: DatabaseType[] = ["turso", "supabase"];
+    const validDatabases: DatabaseType[] = ["turso", "supabase", "sqlite"];
     return validDatabases.includes(database as DatabaseType);
 }
 

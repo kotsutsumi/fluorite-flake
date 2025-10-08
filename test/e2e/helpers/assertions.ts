@@ -6,11 +6,7 @@ import { expect } from "vitest";
 
 import type { CLIResult } from "./cli-runner.js";
 import type { ProjectValidation } from "./project-utils.js";
-import {
-    fileExists,
-    getProjectInfo,
-    readPackageJson,
-} from "./project-utils.js";
+import { fileExists, getProjectInfo, readPackageJson } from "./project-utils.js";
 
 /**
  * CLI実行結果のアサーション
@@ -21,10 +17,7 @@ export const assertCLIResult = {
      * 成功時のアサーション
      */
     success(result: CLIResult, message?: string): void {
-        expect(
-            result.exitCode,
-            message || `CLI should succeed. stderr: ${result.stderr}`
-        ).toBe(0);
+        expect(result.exitCode, message || `CLI should succeed. stderr: ${result.stderr}`).toBe(0);
     },
 
     /**
@@ -97,13 +90,8 @@ export const assertProject = {
      * プロジェクトが存在することをアサート
      */
     async exists(projectPath: string): Promise<void> {
-        const packageJsonExists = await fileExists(
-            `${projectPath}/package.json`
-        );
-        expect(
-            packageJsonExists,
-            `Project should exist at ${projectPath}`
-        ).toBe(true);
+        const packageJsonExists = await fileExists(`${projectPath}/package.json`);
+        expect(packageJsonExists, `Project should exist at ${projectPath}`).toBe(true);
     },
 
     /**
@@ -120,10 +108,7 @@ export const assertProject = {
     /**
      * 特定の依存関係が含まれることをアサート
      */
-    async hasDependencies(
-        projectPath: string,
-        dependencies: string[]
-    ): Promise<void> {
+    async hasDependencies(projectPath: string, dependencies: string[]): Promise<void> {
         const packageJson = await readPackageJson(projectPath);
         const allDeps = {
             ...packageJson.dependencies,
@@ -131,10 +116,7 @@ export const assertProject = {
         };
 
         for (const dep of dependencies) {
-            expect(
-                allDeps,
-                `Dependency ${dep} should be installed`
-            ).toHaveProperty(dep);
+            expect(allDeps, `Dependency ${dep} should be installed`).toHaveProperty(dep);
         }
     },
 
@@ -143,9 +125,7 @@ export const assertProject = {
      */
     async isType(projectPath: string, expectedType: string): Promise<void> {
         const info = await getProjectInfo(projectPath);
-        expect(info.type, `Project should be of type ${expectedType}`).toBe(
-            expectedType
-        );
+        expect(info.type, `Project should be of type ${expectedType}`).toBe(expectedType);
     },
 
     /**
@@ -153,10 +133,7 @@ export const assertProject = {
      */
     async hasTypeScript(projectPath: string, expected = true): Promise<void> {
         const info = await getProjectInfo(projectPath);
-        expect(
-            info.hasTypeScript,
-            `Project should ${expected ? "have" : "not have"} TypeScript`
-        ).toBe(expected);
+        expect(info.hasTypeScript, `Project should ${expected ? "have" : "not have"} TypeScript`).toBe(expected);
     },
 
     /**
@@ -164,10 +141,7 @@ export const assertProject = {
      */
     async isMonorepo(projectPath: string, expected = true): Promise<void> {
         const info = await getProjectInfo(projectPath);
-        expect(
-            info.isMonorepo,
-            `Project should ${expected ? "be" : "not be"} a monorepo`
-        ).toBe(expected);
+        expect(info.isMonorepo, `Project should ${expected ? "be" : "not be"} a monorepo`).toBe(expected);
     },
 
     /**
@@ -175,15 +149,12 @@ export const assertProject = {
      */
     validation(validation: ProjectValidation, shouldBeValid = true): void {
         if (shouldBeValid) {
-            expect(
-                validation.isValid,
-                `Project validation should pass. Errors: ${validation.errors.join(", ")}`
-            ).toBe(true);
+            expect(validation.isValid, `Project validation should pass. Errors: ${validation.errors.join(", ")}`).toBe(
+                true
+            );
             expect(validation.errors).toHaveLength(0);
         } else {
-            expect(validation.isValid, "Project validation should fail").toBe(
-                false
-            );
+            expect(validation.isValid, "Project validation should fail").toBe(false);
             expect(validation.errors.length).toBeGreaterThan(0);
         }
     },
@@ -206,10 +177,9 @@ export const assertProject = {
         expect(info.size.fileCount).toBeLessThanOrEqual(maxFiles);
 
         if (maxSizeBytes !== undefined) {
-            expect(
-                info.size.totalSize,
-                `Project size should be less than ${maxSizeBytes} bytes`
-            ).toBeLessThanOrEqual(maxSizeBytes);
+            expect(info.size.totalSize, `Project size should be less than ${maxSizeBytes} bytes`).toBeLessThanOrEqual(
+                maxSizeBytes
+            );
         }
     },
 };
@@ -222,24 +192,16 @@ export const assertPerformance = {
      * 実行時間がしきい値以下であることをアサート
      */
     executionTime(actualMs: number, maxMs: number, operation: string): void {
-        expect(
-            actualMs,
-            `${operation} should complete within ${maxMs}ms`
-        ).toBeLessThanOrEqual(maxMs);
+        expect(actualMs, `${operation} should complete within ${maxMs}ms`).toBeLessThanOrEqual(maxMs);
     },
 
     /**
      * メモリ使用量がしきい値以下であることをアサート
      */
-    memoryUsage(
-        actualBytes: number,
-        maxBytes: number,
-        operation: string
-    ): void {
-        expect(
-            actualBytes,
-            `${operation} should use less than ${maxBytes} bytes of memory`
-        ).toBeLessThanOrEqual(maxBytes);
+    memoryUsage(actualBytes: number, maxBytes: number, operation: string): void {
+        expect(actualBytes, `${operation} should use less than ${maxBytes} bytes of memory`).toBeLessThanOrEqual(
+            maxBytes
+        );
     },
 
     /**
@@ -257,18 +219,13 @@ export const assertPerformance = {
         },
         operation: string
     ): void {
-        expect(
-            results.averageTime,
-            `${operation} average time should be within threshold`
-        ).toBeLessThanOrEqual(thresholds.averageTime);
-        expect(
-            results.maxTime,
-            `${operation} max time should be within threshold`
-        ).toBeLessThanOrEqual(thresholds.maxTime);
-        expect(
-            results.minTime,
-            `${operation} min time should be positive`
-        ).toBeGreaterThan(0);
+        expect(results.averageTime, `${operation} average time should be within threshold`).toBeLessThanOrEqual(
+            thresholds.averageTime
+        );
+        expect(results.maxTime, `${operation} max time should be within threshold`).toBeLessThanOrEqual(
+            thresholds.maxTime
+        );
+        expect(results.minTime, `${operation} min time should be positive`).toBeGreaterThan(0);
     },
 };
 
@@ -283,44 +240,23 @@ export const assertI18n = {
         if (language === "ja") {
             // 日本語文字（ひらがな、カタカナ、漢字）が含まれるかチェック
             const japaneseRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
-            expect(
-                japaneseRegex.test(text),
-                "Text should contain Japanese characters"
-            ).toBe(true);
+            expect(japaneseRegex.test(text), "Text should contain Japanese characters").toBe(true);
         } else {
             // 英語の一般的なメッセージパターンをチェック
-            const englishWords = [
-                "command",
-                "error",
-                "help",
-                "version",
-                "create",
-                "project",
-            ];
-            const hasEnglishWords = englishWords.some((word) =>
-                text.toLowerCase().includes(word)
-            );
-            expect(hasEnglishWords, "Text should contain English words").toBe(
-                true
-            );
+            const englishWords = ["command", "error", "help", "version", "create", "project"];
+            const hasEnglishWords = englishWords.some((word) => text.toLowerCase().includes(word));
+            expect(hasEnglishWords, "Text should contain English words").toBe(true);
         }
     },
 
     /**
      * ロケール固有のメッセージをアサート
      */
-    localeSpecificMessage(
-        result: CLIResult,
-        locale: "ja" | "en",
-        expectedPatterns: string[]
-    ): void {
+    localeSpecificMessage(result: CLIResult, locale: "ja" | "en", expectedPatterns: string[]): void {
         const output = result.stdout + result.stderr;
 
         for (const pattern of expectedPatterns) {
-            expect(
-                output,
-                `Output should contain locale-specific pattern: ${pattern}`
-            ).toContain(pattern);
+            expect(output, `Output should contain locale-specific pattern: ${pattern}`).toContain(pattern);
         }
 
         // ロケール固有の文字チェック
@@ -337,10 +273,7 @@ export const assertErrorHandling = {
      */
     appropriateErrorMessage(result: CLIResult, context: string): void {
         assertCLIResult.failure(result);
-        expect(
-            result.stderr,
-            `Should provide helpful error message for ${context}`
-        ).not.toBe("");
+        expect(result.stderr, `Should provide helpful error message for ${context}`).not.toBe("");
 
         // エラーメッセージに最低限の情報が含まれているかチェック
         const hasUsefulInfo =
@@ -358,16 +291,10 @@ export const assertErrorHandling = {
         assertCLIResult.failure(result);
 
         // スタックトレースが含まれていないことを確認（ユーザーフレンドリー）
-        expect(
-            result.stderr,
-            "Error should not contain stack trace"
-        ).not.toMatch(/at .+:\d+:\d+/);
+        expect(result.stderr, "Error should not contain stack trace").not.toMatch(/at .+:\d+:\d+/);
 
         // エラーメッセージが空でないことを確認
-        expect(
-            result.stderr.trim(),
-            "Error message should not be empty"
-        ).not.toBe("");
+        expect(result.stderr.trim(), "Error message should not be empty").not.toBe("");
     },
 };
 

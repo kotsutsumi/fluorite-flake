@@ -27,9 +27,7 @@ describe("Turso CLI Database", () => {
     describe("listDatabases", () => {
         it("データベース一覧を正しく取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: `NAME        GROUP      URL
@@ -49,9 +47,7 @@ prod-db     production libsql://prod.turso.io`,
 
         it("グループフィルターを指定してデータベース一覧を取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "prod-db     production libsql://prod.turso.io",
@@ -63,19 +59,12 @@ prod-db     production libsql://prod.turso.io`,
             // 結果を検証
             expect(result).toHaveLength(1);
             expect(result[0].name).toBe("prod-db");
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "list",
-                "--group",
-                "production",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "list", "--group", "production"]);
         });
 
         it("空の結果を正しく処理する", async () => {
             // executeTursoCommandのモックを設定（空の結果）
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "NAME        GROUP      URL",
@@ -92,9 +81,7 @@ prod-db     production libsql://prod.turso.io`,
     describe("createDatabase", () => {
         it("基本的なデータベース作成コマンドを実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Database 'test-db' created successfully",
@@ -105,18 +92,12 @@ prod-db     production libsql://prod.turso.io`,
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "create",
-                "test-db",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "create", "test-db"]);
         });
 
         it("オプション付きでデータベース作成コマンドを実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Database 'test-db' created successfully in group 'production'",
@@ -147,9 +128,7 @@ prod-db     production libsql://prod.turso.io`,
 
         it("fromFileオプション付きでデータベース作成コマンドを実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Database 'test-db' created from file",
@@ -177,9 +156,7 @@ prod-db     production libsql://prod.turso.io`,
     describe("destroyDatabase", () => {
         it("確認付きでデータベース削除コマンドを実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Database 'test-db' destroyed",
@@ -190,18 +167,12 @@ prod-db     production libsql://prod.turso.io`,
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "destroy",
-                "test-db",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "destroy", "test-db"]);
         });
 
         it("確認スキップでデータベース削除コマンドを実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Database 'test-db' destroyed",
@@ -212,21 +183,14 @@ prod-db     production libsql://prod.turso.io`,
 
             // --yesオプションが追加されることを検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "destroy",
-                "test-db",
-                "--yes",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "destroy", "test-db", "--yes"]);
         });
     });
 
     describe("showDatabase", () => {
         it("データベース情報を正しく取得・パースする", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: `Name: test-db
@@ -244,18 +208,12 @@ Locations: nrt, ord`,
             expect(result.url).toBe("libsql://test.turso.io");
             expect(result.httpUrl).toBe("https://test.turso.io");
             expect(result.group).toBe("default");
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "show",
-                "test-db",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "show", "test-db"]);
         });
 
         it("最小限の情報のみ含む出力を正しく処理する", async () => {
             // executeTursoCommandのモックを設定（最小限の情報）
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Name: test-db",
@@ -275,9 +233,7 @@ Locations: nrt, ord`,
     describe("getDatabaseUrl", () => {
         it("デフォルトURL（libsql://）を取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "libsql://test.turso.io",
@@ -288,19 +244,12 @@ Locations: nrt, ord`,
 
             // 結果を検証
             expect(result).toBe("libsql://test.turso.io");
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "show",
-                "test-db",
-                "--url",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "show", "test-db", "--url"]);
         });
 
         it("HTTP URLを取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "https://test.turso.io",
@@ -311,21 +260,14 @@ Locations: nrt, ord`,
 
             // 結果を検証
             expect(result).toBe("https://test.turso.io");
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "show",
-                "test-db",
-                "--http-url",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "show", "test-db", "--http-url"]);
         });
     });
 
     describe("createDatabaseToken", () => {
         it("基本的なデータベーストークンを作成する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
@@ -337,19 +279,12 @@ Locations: nrt, ord`,
             // 結果を検証
             expect(result.token).toBe("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9");
             expect(result.readOnly).toBeUndefined();
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "db",
-                "tokens",
-                "create",
-                "test-db",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["db", "tokens", "create", "test-db"]);
         });
 
         it("オプション付きでデータベーストークンを作成する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",

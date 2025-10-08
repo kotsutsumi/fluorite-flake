@@ -144,9 +144,7 @@ describe("GitHub CLI ラッパー統合テスト", () => {
             const result = await repositoryCommands.getCurrentRepository();
 
             expect(result.success).toBe(false);
-            expect(result.error?.code).toBe(
-                GitHubCLIErrorCode.EXECUTION_FAILED
-            );
+            expect(result.error?.code).toBe(GitHubCLIErrorCode.EXECUTION_FAILED);
         });
     });
 
@@ -217,9 +215,7 @@ describe("GitHub CLI ラッパー統合テスト", () => {
             });
 
             // 認証確認は失敗（ログインしていない）
-            execMock.mockRejectedValueOnce(
-                new Error("not logged in to github.com")
-            );
+            execMock.mockRejectedValueOnce(new Error("not logged in to github.com"));
 
             const result = await github.checkSetup();
 
@@ -363,10 +359,7 @@ describe("GitHub CLI ラッパー統合テスト", () => {
 
             // 認証キャッシュが効く場合は、事前の認証確認（2回）+ 各リポジトリ情報取得（5回）= 7回
             // 十分なモックを設定しているので、実際の呼び出し回数は7回以上になる可能性がある
-            expect(execMock).toHaveBeenCalledWith(
-                expect.stringContaining("gh repo view"),
-                expect.anything()
-            );
+            expect(execMock).toHaveBeenCalledWith(expect.stringContaining("gh repo view"), expect.anything());
         });
     });
 });

@@ -6,10 +6,14 @@
  * データベースプロビジョニング設定
  */
 export type DatabaseProvisioningConfig = {
+    /** データベースタイプ */
+    type: "turso" | "supabase";
     /** DBプロバイダ */
     provider: "turso" | "supabase";
     /** 作成モード */
-    mode: "create" | "existing";
+    mode: "create" | "existing" | "link";
+    /** データベース名 */
+    databaseName: string;
     /** 環境別の命名設定 */
     naming: {
         dev: string;

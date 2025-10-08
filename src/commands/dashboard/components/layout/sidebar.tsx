@@ -67,25 +67,18 @@ export const Sidebar: React.FC = () => {
                 return (
                     <Box key={service.key} marginBottom={0}>
                         <Box width={2}>
-                            <Text color={isActive ? "yellow" : "gray"}>
-                                {isActive ? ">" : " "}
-                            </Text>
+                            <Text color={isActive ? "yellow" : "gray"}>{isActive ? ">" : " "}</Text>
                         </Box>
                         <Box width={2}>
                             <Text color={service.color}>{service.icon}</Text>
                         </Box>
                         <Box flexGrow={1}>
-                            <Text
-                                bold={isActive}
-                                color={isActive ? "yellow" : "white"}
-                            >
+                            <Text bold={isActive} color={isActive ? "yellow" : "white"}>
                                 {service.name}
                             </Text>
                         </Box>
                         <Box>
-                            <Text color={authIndicator.color}>
-                                {authIndicator.symbol}
-                            </Text>
+                            <Text color={authIndicator.color}>{authIndicator.symbol}</Text>
                         </Box>
                     </Box>
                 );

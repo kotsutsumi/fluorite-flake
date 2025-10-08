@@ -16,14 +16,10 @@ export type { ServiceType } from "./types/common.js";
  * ダッシュボードを起動する
  * @param initialService 初期表示するサービス
  */
-export async function launchDashboard(
-    initialService?: ServiceType
-): Promise<void> {
+export async function launchDashboard(initialService?: ServiceType): Promise<void> {
     try {
         // ダッシュボードアプリケーションをレンダリング
-        const { waitUntilExit } = render(
-            React.createElement(DashboardApp, { initialService })
-        );
+        const { waitUntilExit } = render(React.createElement(DashboardApp, { initialService }));
 
         // アプリケーションの終了を待機
         await waitUntilExit();
@@ -44,8 +40,7 @@ export const dashboardCommand = defineCommand({
     args: {
         service: {
             type: "string",
-            description:
-                "Start with specific service (vercel|turso|supabase|github)",
+            description: "Start with specific service (vercel|turso|supabase|github)",
         },
     },
     async run({ args }) {

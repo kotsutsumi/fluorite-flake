@@ -2,26 +2,13 @@
  * テンプレートディレクトリのコピーと整形
  */
 import { constants as fsConstants } from "node:fs";
-import {
-    access,
-    chmod,
-    mkdir,
-    readdir,
-    readFile,
-    stat,
-    writeFile,
-} from "node:fs/promises";
+import { access, chmod, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { CopyTemplateOptions, CopyTemplateResult } from "./types.js";
 
-const DEFAULT_EXCLUDE_PATTERNS = [
-    "node_modules/**",
-    ".turbo/**",
-    ".next/**",
-    "dist/**",
-];
+const DEFAULT_EXCLUDE_PATTERNS = ["node_modules/**", ".turbo/**", ".next/**", "dist/**"];
 
 /**
  * ファイルパスがパターンと一致するかチェック
@@ -30,10 +17,7 @@ function isExcludedByPattern(filePath: string, patterns: string[]): boolean {
     for (const pattern of patterns) {
         // シンプルなグロブパターン（**を含む）をサポート
         // 先にドット（.）をエスケープしてから、ワイルドカードを処理
-        const regexPattern = pattern
-            .replace(/\./g, "\\.")
-            .replace(/\*\*/g, ".*")
-            .replace(/\*/g, "[^/]*");
+        const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*");
 
         const regex = new RegExp(`^${regexPattern}$`);
         if (regex.test(filePath)) {
@@ -53,9 +37,7 @@ async function findPackageRoot(startPath: string): Promise<string> {
         const packageJsonPath = join(currentPath, "package.json");
         try {
             await access(packageJsonPath, fsConstants.R_OK);
-            const packageJson = JSON.parse(
-                await readFile(packageJsonPath, "utf-8")
-            );
+            const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8"));
             // fluorite-flakeパッケージかどうか確認
             if (packageJson.name === "fluorite-flake") {
                 return currentPath;
@@ -94,9 +76,7 @@ async function resolveTemplateRoot(): Promise<string> {
         }
     }
 
-    throw new Error(
-        `テンプレートディレクトリが見つかりません: ${candidates.join(", ")}`
-    );
+    throw new Error(`テンプレートディレクトリが見つかりません: ${candidates.join(", ")}`);
 }
 
 /**
@@ -114,9 +94,7 @@ async function collectEntries(
     const directories: string[] = relative ? [relative] : [];
 
     for (const dirent of dirents) {
-        const nextRelative = relative
-            ? join(relative, dirent.name)
-            : dirent.name;
+        const nextRelative = relative ? join(relative, dirent.name) : dirent.name;
 
         // 除外パターンをチェック
         if (isExcludedByPattern(nextRelative, excludePatterns)) {
@@ -124,11 +102,7 @@ async function collectEntries(
         }
 
         if (dirent.isDirectory()) {
-            const nested = await collectEntries(
-                root,
-                nextRelative,
-                excludePatterns
-            );
+            const nested = await collectEntries(root, nextRelative, excludePatterns);
             files.push(...nested.files);
             directories.push(...nested.directories);
         } else {
@@ -170,13 +144,9 @@ async function applyVariables(
 /**
  * テンプレートを指定ディレクトリへコピー
  */
-export async function copyTemplateDirectory(
-    options: CopyTemplateOptions
-): Promise<CopyTemplateResult> {
+export async function copyTemplateDirectory(options: CopyTemplateOptions): Promise<CopyTemplateResult> {
     const templateRoot = await resolveTemplateRoot();
-    const sourceSegments = options.variant
-        ? [options.templateName, options.variant]
-        : [options.templateName];
+    const sourceSegments = options.variant ? [options.templateName, options.variant] : [options.templateName];
     const sourceDir = resolve(templateRoot, ...sourceSegments);
 
     try {
@@ -185,10 +155,7 @@ export async function copyTemplateDirectory(
         throw new Error(`テンプレートが見つかりません: ${sourceDir}`);
     }
 
-    const excludePatterns = [
-        ...DEFAULT_EXCLUDE_PATTERNS,
-        ...(options.excludePatterns ?? []),
-    ];
+    const excludePatterns = [...DEFAULT_EXCLUDE_PATTERNS, ...(options.excludePatterns ?? [])];
 
     // ファイル一覧を取得（除外パターンを適用）
     const entries = await collectEntries(sourceDir, "", excludePatterns);
@@ -228,11 +195,7 @@ export async function copyTemplateDirectory(
     }
 
     if (options.variables && options.variableFiles?.length) {
-        await applyVariables(
-            options.targetDirectory,
-            options.variableFiles,
-            options.variables
-        );
+        await applyVariables(options.targetDirectory, options.variableFiles, options.variables);
     }
 
     // 実際にコピーしたファイル一覧を返す

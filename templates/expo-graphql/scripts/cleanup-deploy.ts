@@ -16,9 +16,7 @@ type ExecuteCleanup = (projectPath?: string) => Promise<CleanupResult>;
 
 async function loadExecuteCleanup(): Promise<ExecuteCleanup> {
     try {
-        const module = await import(
-            "fluorite-flake/dist/utils/resource-manager/index.js"
-        );
+        const module = await import("fluorite-flake/dist/utils/resource-manager/index.js");
         if (typeof module.executeCleanup === "function") {
             return module.executeCleanup as ExecuteCleanup;
         }
@@ -28,10 +26,7 @@ async function loadExecuteCleanup(): Promise<ExecuteCleanup> {
 
     try {
         const currentDir = path.dirname(fileURLToPath(import.meta.url));
-        const localModulePath = path.resolve(
-            currentDir,
-            "../../../src/utils/resource-manager/index.js"
-        );
+        const localModulePath = path.resolve(currentDir, "../../../src/utils/resource-manager/index.js");
         const module = await import(localModulePath);
         if (typeof module.executeCleanup === "function") {
             return module.executeCleanup as ExecuteCleanup;
@@ -65,9 +60,7 @@ async function main(): Promise<void> {
     } catch (error) {
         console.error("\n💥 クリーンアップ実行中にエラーが発生しました:");
         console.error(error instanceof Error ? error.message : error);
-        console.error(
-            "fluorite-flake がインストールされているか確認し、再度実行してください。"
-        );
+        console.error("fluorite-flake がインストールされているか確認し、再度実行してください。");
         process.exit(1);
     }
 }

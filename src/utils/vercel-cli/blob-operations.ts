@@ -38,16 +38,12 @@ export function normalizeBlobUrl(url: string): string {
     return `https://${cleanUrl}`;
 }
 
-const CLI_NOT_FOUND_HINT =
-    "Vercel CLI が見つかりません。`npm install -g vercel` などでインストールしてください。";
+const CLI_NOT_FOUND_HINT = "Vercel CLI が見つかりません。`npm install -g vercel` などでインストールしてください。";
 const CLI_AUTH_HINT =
     "Vercel CLI に認証されていないか、トークンが無効です。`vercel login` を実行し、正しい BLOB_READ_WRITE_TOKEN を使用してください。";
-const CLI_NETWORK_HINT =
-    "Vercel CLI と通信できませんでした。ネットワーク接続を確認してから再試行してください。";
+const CLI_NETWORK_HINT = "Vercel CLI と通信できませんでした。ネットワーク接続を確認してから再試行してください。";
 
-function interpretVercelCliError(
-    stderr: string | undefined
-): { code: BlobErrorCode; message: string } | null {
+function interpretVercelCliError(stderr: string | undefined): { code: BlobErrorCode; message: string } | null {
     if (!stderr) {
         return null;
     }
@@ -93,13 +89,9 @@ function interpretVercelCliError(
  * @param token 検証するトークン
  * @returns 検証結果
  */
-export async function validateBlobToken(
-    token: string
-): Promise<TokenValidationResult> {
+export async function validateBlobToken(token: string): Promise<TokenValidationResult> {
     // Vercel Blobトークンは `vercel_blob_rw_` または `blob_rw_` で始まる
-    if (
-        !(token.startsWith("vercel_blob_rw_") || token.startsWith("blob_rw_"))
-    ) {
+    if (!(token.startsWith("vercel_blob_rw_") || token.startsWith("blob_rw_"))) {
         return { valid: false, error: "無効なトークン形式です" };
     }
 
@@ -141,9 +133,7 @@ export async function validateBlobToken(
  * @param options 作成オプション
  * @returns 作成結果
  */
-export async function createBlobStore(
-    options: CreateBlobStoreOptions
-): Promise<BlobStoreResult> {
+export async function createBlobStore(options: CreateBlobStoreOptions): Promise<BlobStoreResult> {
     const command = "blob store add";
     const args = [options.name];
 
@@ -164,16 +154,11 @@ export async function createBlobStore(
         if (!result.success) {
             const interpreted = interpretVercelCliError(result.stderr);
             if (interpreted) {
-                throw new BlobOperationError(
-                    interpreted.message,
-                    interpreted.code
-                );
+                throw new BlobOperationError(interpreted.message, interpreted.code);
             }
 
             throw new BlobOperationError(
-                `Blobストアの作成に失敗しました: ${
-                    result.stderr?.trim() || "原因不明のエラー"
-                }`,
+                `Blobストアの作成に失敗しました: ${result.stderr?.trim() || "原因不明のエラー"}`,
                 BlobErrorCode.STORE_CREATION_FAILED
             );
         }
@@ -188,9 +173,7 @@ export async function createBlobStore(
 
         // 人間可読形式の出力からストア情報を抽出
         // 例: "Success! Blob store created: test-store (store_abc123) in iad1"
-        const storeMatch = result.stdout.match(
-            /Success! Blob store created: ([^\s]+) \(([^)]+)\) in ([^\s]+)/
-        );
+        const storeMatch = result.stdout.match(/Success! Blob store created: ([^\s]+) \(([^)]+)\) in ([^\s]+)/);
         if (!storeMatch) {
             throw new BlobOperationError(
                 "Blobストア作成結果の解析に失敗しました。出力形式が予期されたものと異なります。",
@@ -215,17 +198,12 @@ export async function createBlobStore(
 
                 if (tokenResult.success) {
                     finalToken = tokenResult.token;
-                    console.log(
-                        `✅ トークン自動生成完了: ${tokenResult.tokenId}`
-                    );
+                    console.log(`✅ トークン自動生成完了: ${tokenResult.tokenId}`);
                 } else {
                     console.warn("⚠️ トークン自動生成に失敗しました");
                 }
             } catch (tokenError) {
-                console.warn(
-                    "⚠️ トークン自動生成でエラーが発生しました:",
-                    tokenError
-                );
+                console.warn("⚠️ トークン自動生成でエラーが発生しました:", tokenError);
                 // トークン生成失敗は致命的ではないのでログに記録して続行
             }
         }
@@ -258,9 +236,7 @@ export async function createBlobStore(
  * @param options 取得オプション
  * @returns ストア一覧
  */
-export async function listBlobStores(
-    options: ListBlobStoresOptions = {}
-): Promise<BlobStore[]> {
+export async function listBlobStores(options: ListBlobStoresOptions = {}): Promise<BlobStore[]> {
     try {
         // BLOB_READ_WRITE_TOKENが明示的に提供されていない場合は認証エラーとする
         if (!options.token) {
@@ -279,10 +255,7 @@ export async function listBlobStores(
         if (!result.success) {
             const interpreted = interpretVercelCliError(result.stderr);
             if (interpreted) {
-                throw new BlobOperationError(
-                    interpreted.message,
-                    interpreted.code
-                );
+                throw new BlobOperationError(interpreted.message, interpreted.code);
             }
 
             throw new BlobOperationError(
@@ -304,23 +277,13 @@ export async function listBlobStores(
             return stores.map((store: any) => ({
                 id: store.id,
                 name: store.name,
-                createdAt:
-                    store.createdAt ||
-                    store.created_at ||
-                    new Date().toISOString(),
-                updatedAt:
-                    store.updatedAt ||
-                    store.updated_at ||
-                    new Date().toISOString(),
+                createdAt: store.createdAt || store.created_at || new Date().toISOString(),
+                updatedAt: store.updatedAt || store.updated_at || new Date().toISOString(),
                 region: store.region || "iad1",
-                url: normalizeBlobUrl(
-                    store.url || `https://${store.id}.blob.vercel.app`
-                ),
+                url: normalizeBlobUrl(store.url || `https://${store.id}.blob.vercel.app`),
             }));
         } catch (parseError) {
-            console.warn(
-                "Warning: blob store list のJSONパースに失敗、空配列を返します"
-            );
+            console.warn("Warning: blob store list のJSONパースに失敗、空配列を返します");
             return [];
         }
     } catch (error) {
@@ -339,9 +302,7 @@ export async function listBlobStores(
  * @param options トークン作成オプション
  * @returns トークン作成結果
  */
-export async function createBlobToken(
-    options: CreateBlobTokenOptions
-): Promise<BlobTokenResult> {
+export async function createBlobToken(options: CreateBlobTokenOptions): Promise<BlobTokenResult> {
     try {
         // Vercel APIを使用してトークンを発行
         const scope = options.scope || "read_write";
@@ -362,10 +323,7 @@ export async function createBlobToken(
         if (!result.success) {
             const interpreted = interpretVercelCliError(result.stderr);
             if (interpreted) {
-                throw new BlobOperationError(
-                    interpreted.message,
-                    interpreted.code
-                );
+                throw new BlobOperationError(interpreted.message, interpreted.code);
             }
 
             throw new BlobOperationError(
@@ -414,10 +372,7 @@ export async function createBlobToken(
  * @param token アクセストークン
  * @returns ストア情報
  */
-export async function getBlobStore(
-    storeId: string,
-    token?: string
-): Promise<BlobStore> {
+export async function getBlobStore(storeId: string, token?: string): Promise<BlobStore> {
     try {
         // Vercel CLI 48.2.1では --json フラグがサポートされていないため削除
         const result = VercelCLI.execute(`blob store get ${storeId}`, {
@@ -427,25 +382,17 @@ export async function getBlobStore(
         if (!result.success) {
             const interpreted = interpretVercelCliError(result.stderr);
             if (interpreted) {
-                throw new BlobOperationError(
-                    interpreted.message,
-                    interpreted.code
-                );
+                throw new BlobOperationError(interpreted.message, interpreted.code);
             }
 
             throw new BlobOperationError(
-                `Blobストア '${storeId}' を取得できませんでした: ${
-                    result.stderr?.trim() || "原因不明のエラー"
-                }`,
+                `Blobストア '${storeId}' を取得できませんでした: ${result.stderr?.trim() || "原因不明のエラー"}`,
                 BlobErrorCode.STORE_NOT_FOUND
             );
         }
 
         if (!result.stdout) {
-            throw new BlobOperationError(
-                "Blobストア情報の解析に失敗しました。",
-                BlobErrorCode.STORE_NOT_FOUND
-            );
+            throw new BlobOperationError("Blobストア情報の解析に失敗しました。", BlobErrorCode.STORE_NOT_FOUND);
         }
 
         // 人間可読形式の出力をパース
@@ -462,9 +409,7 @@ export async function getBlobStore(
         for (const line of lines) {
             const trimmed = line.trim();
             if (trimmed.startsWith("Blob Store:")) {
-                const storeMatch = trimmed.match(
-                    /Blob Store: ([^\s]+) \(([^)]+)\)/
-                );
+                const storeMatch = trimmed.match(/Blob Store: ([^\s]+) \(([^)]+)\)/);
                 if (storeMatch) {
                     storeInfo.name = storeMatch[1];
                     storeInfo.id = storeMatch[2];
@@ -510,10 +455,7 @@ export async function getBlobStore(
  * @param existingStores 既存ストア一覧
  * @returns 衝突回避された名前
  */
-export function generateUniqueStoreName(
-    baseName: string,
-    existingStores: BlobStore[]
-): string {
+export function generateUniqueStoreName(baseName: string, existingStores: BlobStore[]): string {
     const existingNames = existingStores.map((store) => store.name);
     const maxLength = 32;
 
@@ -526,9 +468,7 @@ export function generateUniqueStoreName(
     while (true) {
         const suffix = `-${counter}`;
         const baseLength = Math.max(1, maxLength - suffix.length);
-        let candidateBase = normalizedBase
-            .slice(0, baseLength)
-            .replace(/-+$/, "");
+        let candidateBase = normalizedBase.slice(0, baseLength).replace(/-+$/, "");
         if (!candidateBase) {
             candidateBase = normalizedBase.slice(0, baseLength);
         }

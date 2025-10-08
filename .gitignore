@@ -8,6 +8,10 @@ node_modules/
 dist/
 build/
 out/
+.next/
+web/.next/
+web/out/
+.vercel/
 *.tsbuildinfo
 
 # IDE

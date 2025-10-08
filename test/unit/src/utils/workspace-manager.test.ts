@@ -7,10 +7,7 @@ import path from "node:path";
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
-import {
-    syncRootScripts,
-    WorkspaceManager,
-} from "../../../../src/utils/workspace-manager/index.js";
+import { syncRootScripts, WorkspaceManager } from "../../../../src/utils/workspace-manager/index.js";
 
 const tempDirs: string[] = [];
 
@@ -57,18 +54,10 @@ describe("WorkspaceManager", () => {
             const scripts = manager.generateRootScripts(workspace);
 
             expect(scripts["web:dev"]).toBe("pnpm --filter web run dev");
-            expect(scripts["web:env:apply"]).toBe(
-                "pnpm --filter web run env:apply"
-            );
-            expect(scripts["mobile:start"]).toBe(
-                "pnpm --filter mobile run start"
-            );
-            expect(scripts.dev).toBe(
-                "pnpm --filter web run dev & pnpm --filter mobile run start"
-            );
-            expect(scripts["build:all"]).toBe(
-                "pnpm --filter web run build && pnpm --filter mobile run build"
-            );
+            expect(scripts["web:env:apply"]).toBe("pnpm --filter web run env:apply");
+            expect(scripts["mobile:start"]).toBe("pnpm --filter mobile run start");
+            expect(scripts.dev).toBe("pnpm --filter web run dev & pnpm --filter mobile run start");
+            expect(scripts["build:all"]).toBe("pnpm --filter web run build && pnpm --filter mobile run build");
             expect(scripts["lint:all"]).toBe("pnpm --filter web run lint");
         });
     });
@@ -135,38 +124,24 @@ describe("syncRootScripts", () => {
     });
 
     afterAll(async () => {
-        await Promise.all(
-            tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true }))
-        );
+        await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
     });
 
     test("生成したスクリプトをルートpackage.jsonへ同期する", async () => {
         await syncRootScripts(projectRoot);
 
-        const updatedPackageJson = JSON.parse(
-            await fs.readFile(path.join(projectRoot, "package.json"), "utf-8")
-        );
+        const updatedPackageJson = JSON.parse(await fs.readFile(path.join(projectRoot, "package.json"), "utf-8"));
 
         expect(updatedPackageJson.scripts.build).toBe("turbo run build");
         const devScript = updatedPackageJson.scripts.dev as string;
         expect(devScript.split(" & ").sort()).toEqual(
-            [
-                "pnpm --filter mobile run start",
-                "pnpm --filter web run dev",
-            ].sort()
+            ["pnpm --filter mobile run start", "pnpm --filter web run dev"].sort()
         );
-        expect(updatedPackageJson.scripts["web:dev"]).toBe(
-            "pnpm --filter web run dev"
-        );
-        expect(updatedPackageJson.scripts["mobile:start"]).toBe(
-            "pnpm --filter mobile run start"
-        );
+        expect(updatedPackageJson.scripts["web:dev"]).toBe("pnpm --filter web run dev");
+        expect(updatedPackageJson.scripts["mobile:start"]).toBe("pnpm --filter mobile run start");
         const buildAll = updatedPackageJson.scripts["build:all"] as string;
         expect(buildAll.split(" && ").sort()).toEqual(
-            [
-                "pnpm --filter mobile run build",
-                "pnpm --filter web run build",
-            ].sort()
+            ["pnpm --filter mobile run build", "pnpm --filter web run build"].sort()
         );
     });
 });

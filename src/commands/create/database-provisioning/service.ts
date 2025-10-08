@@ -26,9 +26,7 @@ export class DatabaseProvisioningService {
      * @param config プロビジョニング設定
      * @returns プロビジョニング結果
      */
-    async provision(
-        config: DatabaseProvisioningConfig
-    ): Promise<ProvisioningResult> {
+    async provision(config: DatabaseProvisioningConfig): Promise<ProvisioningResult> {
         if (config.options.skipProvisioning) {
             return {
                 success: true,
@@ -41,16 +39,12 @@ export class DatabaseProvisioningService {
 
         try {
             const credentials =
-                config.provider === "turso"
-                    ? await this.provisionTurso(config)
-                    : await this.provisionSupabase(config);
+                config.provider === "turso" ? await this.provisionTurso(config) : await this.provisionSupabase(config);
 
             s.stop("データベースプロビジョニングが完了しました");
 
             // データベース作成後にテーブル作成の準備状況を確認
-            const setupInstructions = this.generateSetupInstructions(
-                config.provider
-            );
+            const setupInstructions = this.generateSetupInstructions(config.provider);
 
             return {
                 success: true,
@@ -68,19 +62,14 @@ export class DatabaseProvisioningService {
             };
 
             // エラー回復を試行
-            const recovery = await this.handleProvisioningError(
-                provisioningError,
-                context
-            );
+            const recovery = await this.handleProvisioningError(provisioningError, context);
             if (recovery.recovered) {
                 return await this.provision(config); // リトライ
             }
 
             return {
                 success: false,
-                error:
-                    provisioningError.message ||
-                    "データベースプロビジョニングに失敗しました",
+                error: provisioningError.message || "データベースプロビジョニングに失敗しました",
             };
         }
     }
@@ -90,9 +79,7 @@ export class DatabaseProvisioningService {
      * @param credentials 認証情報
      * @returns 検証結果
      */
-    async validateCredentials(
-        credentials: DatabaseCredentials
-    ): Promise<ValidationResult> {
+    async validateCredentials(credentials: DatabaseCredentials): Promise<ValidationResult> {
         const errors: string[] = [];
         const warnings: string[] = [];
 
@@ -109,16 +96,12 @@ export class DatabaseProvisioningService {
 
             // URL形式の検証
             if (url && !this.isValidDatabaseUrl(url)) {
-                errors.push(
-                    `${env}環境のデータベースURL形式が無効です: ${url}`
-                );
+                errors.push(`${env}環境のデータベースURL形式が無効です: ${url}`);
             }
 
             // トークン長の検証
             if (token && token.length < 10) {
-                warnings.push(
-                    `${env}環境の認証トークンが短すぎる可能性があります`
-                );
+                warnings.push(`${env}環境の認証トークンが短すぎる可能性があります`);
             }
         }
 
@@ -134,23 +117,15 @@ export class DatabaseProvisioningService {
      * @param config プロビジョニング設定
      * @returns 認証情報
      */
-    private async provisionTurso(
-        config: DatabaseProvisioningConfig
-    ): Promise<DatabaseCredentials> {
-        const { provisionTursoDatabases } = await import(
-            "../../../utils/turso-cli/provisioning.js"
-        );
+    private async provisionTurso(config: DatabaseProvisioningConfig): Promise<DatabaseCredentials> {
+        const { provisionTursoDatabases } = await import("../../../utils/turso-cli/provisioning.js");
 
         const options: TursoProvisioningOptions = {
             // 既存データベース使用時は、プロジェクト名を正しく設定
-            projectName:
-                config.mode === "existing"
-                    ? extractProjectBaseName(config.naming.prod)
-                    : config.naming.prod,
+            projectName: config.mode === "existing" ? extractProjectBaseName(config.naming.prod) : config.naming.prod,
             environments: ["dev", "staging", "prod"],
             preserveExisting: config.options.preserveData,
-            existingNaming:
-                config.mode === "existing" ? config.naming : undefined,
+            existingNaming: config.mode === "existing" ? config.naming : undefined,
         };
 
         const result = await provisionTursoDatabases(options);
@@ -162,12 +137,8 @@ export class DatabaseProvisioningService {
      * @param config プロビジョニング設定
      * @returns 認証情報
      */
-    private async provisionSupabase(
-        config: DatabaseProvisioningConfig
-    ): Promise<DatabaseCredentials> {
-        const { provisionSupabaseProjects } = await import(
-            "../../../utils/supabase-cli/provisioning.js"
-        );
+    private async provisionSupabase(config: DatabaseProvisioningConfig): Promise<DatabaseCredentials> {
+        const { provisionSupabaseProjects } = await import("../../../utils/supabase-cli/provisioning.js");
 
         const options: SupabaseProvisioningOptions = {
             projectName: config.naming.prod,
@@ -184,10 +155,7 @@ export class DatabaseProvisioningService {
      * @param credentials 認証情報
      * @returns データベース一覧
      */
-    private generateDatabaseList(
-        config: DatabaseProvisioningConfig,
-        credentials: DatabaseCredentials
-    ) {
+    private generateDatabaseList(config: DatabaseProvisioningConfig, credentials: DatabaseCredentials) {
         return (["dev", "staging", "prod"] as const).map((env) => ({
             environment: env,
             name: config.naming[env],
@@ -204,15 +172,8 @@ export class DatabaseProvisioningService {
     private isValidDatabaseUrl(url: string): boolean {
         try {
             const parsedUrl = new URL(url);
-            const validProtocols = [
-                "libsql:",
-                "postgresql:",
-                "postgres:",
-                "file:",
-            ];
-            return validProtocols.some(
-                (protocol) => parsedUrl.protocol === protocol
-            );
+            const validProtocols = ["libsql:", "postgresql:", "postgres:", "file:"];
+            return validProtocols.some((protocol) => parsedUrl.protocol === protocol);
         } catch {
             return false;
         }
@@ -252,9 +213,7 @@ export class DatabaseProvisioningService {
         _error: DatabaseProvisioningError,
         context: ProvisioningContext
     ): Promise<ErrorRecoveryResult> {
-        console.error(
-            `認証エラー: ${context.config.provider} CLI に認証されていません`
-        );
+        console.error(`認証エラー: ${context.config.provider} CLI に認証されていません`);
         console.log("以下のコマンドで認証を完了してください:");
 
         if (context.config.provider === "turso") {
@@ -281,9 +240,7 @@ export class DatabaseProvisioningService {
         _context: ProvisioningContext
     ): Promise<ErrorRecoveryResult> {
         console.error("クォータ制限に達しました");
-        console.log(
-            "既存のデータベースを削除するか、プランをアップグレードしてください"
-        );
+        console.log("既存のデータベースを削除するか、プランをアップグレードしてください");
 
         return {
             recovered: false,
@@ -302,9 +259,7 @@ export class DatabaseProvisioningService {
         _error: DatabaseProvisioningError,
         context: ProvisioningContext
     ): Promise<ErrorRecoveryResult> {
-        console.warn(
-            "ネットワークエラーが発生しました。リトライを実行します..."
-        );
+        console.warn("ネットワークエラーが発生しました。リトライを実行します...");
 
         const retryOptions: RetryOptions = {
             maxAttempts: 3,
@@ -314,10 +269,7 @@ export class DatabaseProvisioningService {
         };
 
         try {
-            await this.executeWithRetry(
-                () => this.provision(context.config),
-                retryOptions
-            );
+            await this.executeWithRetry(() => this.provision(context.config), retryOptions);
 
             return {
                 recovered: true,
@@ -344,9 +296,7 @@ export class DatabaseProvisioningService {
         _context: ProvisioningContext
     ): Promise<ErrorRecoveryResult> {
         console.error("データベース名が競合しています");
-        console.log(
-            "既存利用モードを選択するか、異なるプロジェクト名を使用してください"
-        );
+        console.log("既存利用モードを選択するか、異なるプロジェクト名を使用してください");
 
         return {
             recovered: false,
@@ -380,13 +330,8 @@ export class DatabaseProvisioningService {
      * @param provider データベースプロバイダー
      * @returns セットアップ手順
      */
-    private generateSetupInstructions(
-        provider: "turso" | "supabase"
-    ): string[] {
-        const commonInstructions = [
-            "✅ データベースが作成されました",
-            "📋 次のステップでテーブルを作成してください:",
-        ];
+    private generateSetupInstructions(provider: "turso" | "supabase"): string[] {
+        const commonInstructions = ["✅ データベースが作成されました", "📋 次のステップでテーブルを作成してください:"];
 
         if (provider === "turso") {
             return [
@@ -415,16 +360,8 @@ export class DatabaseProvisioningService {
      * @param options リトライオプション
      * @returns 操作結果
      */
-    private async executeWithRetry<T>(
-        operation: () => Promise<T>,
-        options: RetryOptions = {}
-    ): Promise<T> {
-        const {
-            maxAttempts = 3,
-            initialDelay = 1000,
-            maxDelay = 5000,
-            backoffMultiplier = 2,
-        } = options;
+    private async executeWithRetry<T>(operation: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
+        const { maxAttempts = 3, initialDelay = 1000, maxDelay = 5000, backoffMultiplier = 2 } = options;
 
         let lastError: Error;
         let delay = initialDelay;
@@ -439,9 +376,7 @@ export class DatabaseProvisioningService {
                     throw lastError;
                 }
 
-                console.log(
-                    `試行 ${attempt}/${maxAttempts} が失敗しました。${delay}ms後にリトライします...`
-                );
+                console.log(`試行 ${attempt}/${maxAttempts} が失敗しました。${delay}ms後にリトライします...`);
                 await new Promise((resolve) => setTimeout(resolve, delay));
 
                 delay = Math.min(delay * backoffMultiplier, maxDelay);

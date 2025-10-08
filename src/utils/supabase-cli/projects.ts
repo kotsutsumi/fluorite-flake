@@ -3,16 +3,8 @@
  *
  * プロジェクトの作成、削除、一覧表示、API キー管理機能を提供します。
  */
-import {
-    executeSupabaseCommand,
-    parseJsonResponse,
-    throwOnError,
-} from "./executor.js";
-import type {
-    GlobalFlags,
-    ProjectCreateOptions,
-    ProjectInfo,
-} from "./types.js";
+import { executeSupabaseCommand, parseJsonResponse, throwOnError } from "./executor.js";
+import type { GlobalFlags, ProjectCreateOptions, ProjectInfo } from "./types.js";
 
 /**
  * 新しい Supabase プロジェクトを作成します
@@ -79,10 +71,7 @@ export async function createProject(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<void>
  */
-export async function deleteProject(
-    projectRef: string,
-    globalFlags: GlobalFlags = {}
-): Promise<void> {
+export async function deleteProject(projectRef: string, globalFlags: GlobalFlags = {}): Promise<void> {
     const args = ["projects", "delete", projectRef];
 
     // グローバルフラグの追加
@@ -112,9 +101,7 @@ export async function deleteProject(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<ProjectInfo[]> - プロジェクト情報の配列
  */
-export async function listProjects(
-    globalFlags: GlobalFlags = {}
-): Promise<ProjectInfo[]> {
+export async function listProjects(globalFlags: GlobalFlags = {}): Promise<ProjectInfo[]> {
     const args = ["projects", "list"];
 
     // グローバルフラグの追加
@@ -146,10 +133,7 @@ export async function listProjects(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<Record<string, string>> - API キーの辞書
  */
-export async function getApiKeys(
-    projectRef?: string,
-    globalFlags: GlobalFlags = {}
-): Promise<Record<string, string>> {
+export async function getApiKeys(projectRef?: string, globalFlags: GlobalFlags = {}): Promise<Record<string, string>> {
     const args = ["projects", "api-keys"];
 
     // プロジェクト参照IDの追加
@@ -188,15 +172,10 @@ export async function getApiKeys(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<ProjectInfo | null> - プロジェクト情報（見つからない場合は null）
  */
-export async function getProjectById(
-    projectId: string,
-    globalFlags: GlobalFlags = {}
-): Promise<ProjectInfo | null> {
+export async function getProjectById(projectId: string, globalFlags: GlobalFlags = {}): Promise<ProjectInfo | null> {
     const projects = await listProjects(globalFlags);
 
-    const project = projects.find(
-        (p) => p.id === projectId || p.name === projectId
-    );
+    const project = projects.find((p) => p.id === projectId || p.name === projectId);
 
     return project || null;
 }
@@ -208,10 +187,7 @@ export async function getProjectById(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<boolean> - プロジェクトが存在するかどうか
  */
-export async function projectExists(
-    projectId: string,
-    globalFlags: GlobalFlags = {}
-): Promise<boolean> {
+export async function projectExists(projectId: string, globalFlags: GlobalFlags = {}): Promise<boolean> {
     try {
         const project = await getProjectById(projectId, globalFlags);
         return project !== null;

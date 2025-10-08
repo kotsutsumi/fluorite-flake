@@ -68,10 +68,7 @@ export type SearchIssueOptions = {
 // Issue操作クラス
 export class IssueCommands {
     // Issue一覧の取得
-    async listIssues(
-        _repository?: string,
-        options: SearchIssueOptions = {}
-    ): Promise<GitHubCLIResponse<IssueInfo[]>> {
+    async listIssues(_repository?: string, options: SearchIssueOptions = {}): Promise<GitHubCLIResponse<IssueInfo[]>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {
@@ -117,10 +114,7 @@ export class IssueCommands {
     }
 
     // Issue詳細の取得
-    async getIssue(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<IssueInfo>> {
+    async getIssue(number: number, repository?: string): Promise<GitHubCLIResponse<IssueInfo>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {
@@ -139,9 +133,7 @@ export class IssueCommands {
     }
 
     // Issueの作成
-    async createIssue(
-        options: CreateIssueOptions = {}
-    ): Promise<GitHubCLIResponse<IssueInfo>> {
+    async createIssue(options: CreateIssueOptions = {}): Promise<GitHubCLIResponse<IssueInfo>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {};
@@ -273,10 +265,7 @@ export class IssueCommands {
     }
 
     // Issueの再オープン
-    async reopenIssue(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async reopenIssue(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {};
@@ -292,11 +281,7 @@ export class IssueCommands {
     }
 
     // Issueにコメントを追加
-    async commentOnIssue(
-        number: number,
-        comment: string,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async commentOnIssue(number: number, comment: string, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {
@@ -315,10 +300,7 @@ export class IssueCommands {
     }
 
     // Issueをブラウザで開く
-    async openIssue(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async openIssue(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         const flags: Record<string, any> = {
             web: true,
         };
@@ -335,10 +317,7 @@ export class IssueCommands {
     }
 
     // Issue番号をピン留め
-    async pinIssue(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async pinIssue(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {};
@@ -354,10 +333,7 @@ export class IssueCommands {
     }
 
     // Issue番号のピン留め解除
-    async unpinIssue(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async unpinIssue(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {};
@@ -397,10 +373,7 @@ export class IssueCommands {
     }
 
     // Issueのロック解除
-    async unlockIssue(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async unlockIssue(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {};
@@ -416,10 +389,7 @@ export class IssueCommands {
     }
 
     // Issueを自分にアサイン
-    async assignToSelf(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async assignToSelf(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         // 現在のユーザー名を取得
@@ -428,18 +398,11 @@ export class IssueCommands {
             throw new Error("現在のユーザー情報を取得できませんでした");
         }
 
-        return await this.editIssue(
-            number,
-            { addAssignee: [currentUser] },
-            repository
-        );
+        return await this.editIssue(number, { addAssignee: [currentUser] }, repository);
     }
 
     // 自分のアサインを解除
-    async unassignFromSelf(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async unassignFromSelf(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         // 現在のユーザー名を取得
@@ -448,17 +411,11 @@ export class IssueCommands {
             throw new Error("現在のユーザー情報を取得できませんでした");
         }
 
-        return await this.editIssue(
-            number,
-            { removeAssignee: [currentUser] },
-            repository
-        );
+        return await this.editIssue(number, { removeAssignee: [currentUser] }, repository);
     }
 
     // 自分がアサインされているIssue一覧
-    async getMyAssignedIssues(
-        repository?: string
-    ): Promise<GitHubCLIResponse<IssueInfo[]>> {
+    async getMyAssignedIssues(repository?: string): Promise<GitHubCLIResponse<IssueInfo[]>> {
         const currentUser = await authManager.getCurrentUser();
         if (!currentUser) {
             throw new Error("現在のユーザー情報を取得できませんでした");
@@ -471,9 +428,7 @@ export class IssueCommands {
     }
 
     // 自分が作成したIssue一覧
-    async getMyCreatedIssues(
-        repository?: string
-    ): Promise<GitHubCLIResponse<IssueInfo[]>> {
+    async getMyCreatedIssues(repository?: string): Promise<GitHubCLIResponse<IssueInfo[]>> {
         const currentUser = await authManager.getCurrentUser();
         if (!currentUser) {
             throw new Error("現在のユーザー情報を取得できませんでした");
@@ -505,9 +460,7 @@ export class IssueCommands {
     }
 
     // マイルストーン管理
-    async listMilestones(
-        repository?: string
-    ): Promise<GitHubCLIResponse<any[]>> {
+    async listMilestones(repository?: string): Promise<GitHubCLIResponse<any[]>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {
@@ -520,9 +473,7 @@ export class IssueCommands {
 
         return await githubCLI.execute<any[]>({
             command: "api",
-            args: repository
-                ? [`repos/${repository}/milestones`]
-                : ["repos/:owner/:repo/milestones"],
+            args: repository ? [`repos/${repository}/milestones`] : ["repos/:owner/:repo/milestones"],
         });
     }
 

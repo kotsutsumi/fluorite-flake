@@ -13,11 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NODE_BIN = process.execPath;
 const DIST_CLI_PATH = path.resolve(__dirname, "../../../dist/cli.js");
 const SRC_CLI_PATH = path.resolve(__dirname, "../../../src/cli.ts");
-const TSX_BIN = path.resolve(
-    __dirname,
-    "../../../node_modules/.bin",
-    process.platform === "win32" ? "tsx.cmd" : "tsx"
-);
+const TSX_BIN = path.resolve(__dirname, "../../../node_modules/.bin", process.platform === "win32" ? "tsx.cmd" : "tsx");
 
 function resolveCliEntry(): { command: string; args: string[] } {
     if (fs.existsSync(DIST_CLI_PATH)) {
@@ -28,9 +24,7 @@ function resolveCliEntry(): { command: string; args: string[] } {
         return { command: TSX_BIN, args: [SRC_CLI_PATH] };
     }
 
-    throw new Error(
-        "CLI entry pointが見つかりません。'pnpm build' を実行して dist/cli.js を生成してください。"
-    );
+    throw new Error("CLI entry pointが見つかりません。'pnpm build' を実行して dist/cli.js を生成してください。");
 }
 
 // CLI実行結果の型定義
@@ -52,10 +46,7 @@ export type CLIOptions = {
 /**
  * fluorite CLIコマンドを実行する
  */
-export async function runCLI(
-    args: string[],
-    options: CLIOptions = {}
-): Promise<CLIResult> {
+export async function runCLI(args: string[], options: CLIOptions = {}): Promise<CLIResult> {
     const startTime = Date.now();
     const env = {
         ...process.env,
@@ -105,10 +96,7 @@ export async function runCLI(
 /**
  * インタラクティブなCLIプロセスを起動する
  */
-export function spawnCLI(
-    args: string[],
-    options: CLIOptions = {}
-): ChildProcess {
+export function spawnCLI(args: string[], options: CLIOptions = {}): ChildProcess {
     const entry = resolveCliEntry();
     const env = {
         ...process.env,
@@ -128,11 +116,7 @@ export function spawnCLI(
 /**
  * プロセスの出力を待機する
  */
-export function waitForOutput(
-    child: ChildProcess,
-    pattern: string | RegExp,
-    timeout = 5000
-): Promise<string> {
+export function waitForOutput(child: ChildProcess, pattern: string | RegExp, timeout = 5000): Promise<string> {
     return new Promise((resolve, reject) => {
         let output = "";
         const timer = setTimeout(() => {
@@ -141,10 +125,7 @@ export function waitForOutput(
 
         const onData = (data: Buffer) => {
             output += data.toString();
-            const matches =
-                typeof pattern === "string"
-                    ? output.includes(pattern)
-                    : pattern.test(output);
+            const matches = typeof pattern === "string" ? output.includes(pattern) : pattern.test(output);
 
             if (matches) {
                 clearTimeout(timer);
