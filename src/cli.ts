@@ -2,6 +2,9 @@
 /**
  * Fluorite-flake CLI エントリーポイント
  */
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { type CommandContext, defineCommand, runMain } from "citty";
 
 import { createCommand, newCommand } from "./commands/create/index.js";
@@ -9,6 +12,13 @@ import { dashboardCommand } from "./commands/dashboard/index.js";
 import { debugLog, isDevelopment, printDevelopmentInfo, setupDevelopmentWorkspace } from "./debug.js";
 import { printHeader } from "./header.js";
 import { getMessages } from "./i18n.js";
+
+// package.jsonからバージョンを読み取る
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = join(__dirname, "../package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+const version = packageJson.version;
 
 // 開発環境での初期化
 if (isDevelopment()) {
@@ -22,7 +32,7 @@ if (isDevelopment()) {
 const main = defineCommand({
     meta: {
         name: "fluorite-flake",
-        version: "0.5.0",
+        version: version,
         description: getMessages().cli.metaDescription,
     },
     subCommands: {
