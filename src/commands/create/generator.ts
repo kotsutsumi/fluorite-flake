@@ -741,7 +741,7 @@ async function fixSingleBiomeConfig(configPath: string, biomeVersion: string): P
             "useConsistentArrowReturn",
             "noJsxLiterals",
             "noUselessCatchBinding",
-            "useVueMultiWordComponentNames"
+            "useVueMultiWordComponentNames",
         ];
 
         // nurseryセクションから廃止されたルールを削除
