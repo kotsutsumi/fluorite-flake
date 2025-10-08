@@ -581,6 +581,11 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
             debugLog("Root scripts synchronized successfully");
         }
 
+        // Biome設定の互換性修正
+        spinner.text = "🔧 Biome設定を最適化中...";
+        await fixBiomeConfiguration(config.directory);
+        debugLog("Biome configuration fixed successfully");
+
         // monorepoでdocsプロジェクトが生成された場合は再インストール実行
         if (shouldPostInstall(config)) {
             await executePostInstall(config.directory, spinner);
@@ -638,6 +643,121 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
         console.error(chalk.cyan("4. 開発モード（NODE_ENV=development）で詳細情報を確認してください"));
 
         throw error;
+    }
+}
+
+/**
+ * Biome設定の互換性修正
+ */
+async function fixBiomeConfiguration(projectRoot: string): Promise<void> {
+    try {
+        // 現在のBiomeバージョンを取得
+        const biomeVersion = await getCurrentBiomeVersion();
+        if (!biomeVersion) {
+            debugLog("Biome not found, skipping configuration fix");
+            return;
+        }
+
+        // プロジェクト内のすべてのbiome.jsonファイルを検索・修正
+        await fixBiomeConfigFiles(projectRoot, biomeVersion);
+    } catch (error) {
+        debugLog("Failed to fix Biome configuration", { error });
+        // Biome設定の修正に失敗しても、プロジェクト生成自体は続行
+    }
+}
+
+/**
+ * 現在のBiomeバージョンを取得
+ */
+async function getCurrentBiomeVersion(): Promise<string | null> {
+    try {
+        const output = execSync("npx biome --version", { encoding: "utf8", stdio: "pipe" });
+        const match = output.match(/Version:\s*(\d+\.\d+\.\d+)/);
+        return match ? match[1] : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * プロジェクト内のbiome.jsonファイルを修正
+ */
+async function fixBiomeConfigFiles(projectRoot: string, biomeVersion: string): Promise<void> {
+    const biomeConfigFiles = findBiomeConfigFiles(projectRoot);
+
+    for (const configFile of biomeConfigFiles) {
+        await fixSingleBiomeConfig(configFile, biomeVersion);
+    }
+}
+
+/**
+ * biome.jsonファイルを検索
+ */
+function findBiomeConfigFiles(projectRoot: string): string[] {
+    const configFiles: string[] = [];
+
+    function searchRecursively(dir: string): void {
+        try {
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+
+                if (entry.isDirectory() && entry.name !== "node_modules" && entry.name !== ".git") {
+                    searchRecursively(fullPath);
+                } else if (entry.isFile() && entry.name === "biome.json") {
+                    configFiles.push(fullPath);
+                }
+            }
+        } catch (error) {
+            debugLog("Error searching for biome.json files", { dir, error });
+        }
+    }
+
+    searchRecursively(projectRoot);
+    return configFiles;
+}
+
+/**
+ * 単一のbiome.jsonファイルを修正
+ */
+async function fixSingleBiomeConfig(configPath: string, biomeVersion: string): Promise<void> {
+    try {
+        const configContent = fs.readFileSync(configPath, "utf8");
+        const config = JSON.parse(configContent);
+
+        // スキーマバージョンを現在のBiomeバージョンに合わせて修正
+        if (config.$schema) {
+            config.$schema = `https://biomejs.dev/schemas/${biomeVersion}/schema.json`;
+        }
+
+        // 廃止されたルールを削除（Biome 2.2.0基準）
+        const removedRules = [
+            "noDeprecatedImports",
+            "noDuplicateDependencies",
+            "noReactForwardRef",
+            "noUnusedExpressions",
+            "noVueDuplicateKeys",
+            "useConsistentArrowReturn",
+            "noJsxLiterals",
+            "noUselessCatchBinding",
+            "useVueMultiWordComponentNames"
+        ];
+
+        // nurseryセクションから廃止されたルールを削除
+        if (config.linter?.rules?.nursery) {
+            for (const rule of removedRules) {
+                delete config.linter.rules.nursery[rule];
+            }
+        }
+
+        // 修正されたconfigを保存
+        const updatedContent = JSON.stringify(config, null, 2);
+        fs.writeFileSync(configPath, updatedContent);
+
+        debugLog("Fixed biome.json", { configPath, biomeVersion });
+    } catch (error) {
+        debugLog("Failed to fix biome.json file", { configPath, error });
     }
 }
 
