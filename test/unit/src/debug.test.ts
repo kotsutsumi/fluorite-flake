@@ -2,12 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-    debugLog,
-    isDevelopment,
-    printDevelopmentInfo,
-    setupDevelopmentWorkspace,
-} from "../../../src/debug.js";
+import { debugLog, isDevelopment, printDevelopmentInfo, setupDevelopmentWorkspace } from "../../../src/debug.js";
 
 // i18nモジュールをモック
 vi.mock("../../../src/i18n.js", () => ({
@@ -30,8 +25,7 @@ vi.mock("../../../src/i18n.js", () => ({
                     nodeVersionLabel: "🔗 Node.js のバージョン:",
                     argsLabel: "📦 CLI 引数:",
                     changedDirectory: "📂 作業ディレクトリを変更しました:",
-                    debugMessage: (message: string) =>
-                        `🐛 デバッグ: ${message}`,
+                    debugMessage: (message: string) => `🐛 デバッグ: ${message}`,
                 },
             },
         };
@@ -146,9 +140,7 @@ describe("debug utilities", () => {
         it("should print development information with gray styling", () => {
             printDevelopmentInfo();
 
-            expect(consoleSpy).toHaveBeenCalledWith(
-                `[GRAY]${DEBUG_MESSAGES_EN.devModeEnabled}[/GRAY]`
-            );
+            expect(consoleSpy).toHaveBeenCalledWith(`[GRAY]${DEBUG_MESSAGES_EN.devModeEnabled}[/GRAY]`);
             expect(consoleSpy).toHaveBeenCalledWith(
                 `[GRAY]${DEBUG_MESSAGES_EN.cwdLabel}[/GRAY]`,
                 "[GRAY]/test/current/dir[/GRAY]"
@@ -180,24 +172,13 @@ describe("debug utilities", () => {
 
             setupDevelopmentWorkspace();
 
-            expect(path.join).toHaveBeenCalledWith(
-                "/test/current/dir",
-                "temp",
-                "dev"
-            );
-            expect(fs.existsSync).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev"
-            );
+            expect(path.join).toHaveBeenCalledWith("/test/current/dir", "temp", "dev");
+            expect(fs.existsSync).toHaveBeenCalledWith("/test/current/dir/temp/dev");
             expect(fs.rmSync).not.toHaveBeenCalled();
-            expect(fs.mkdirSync).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev",
-                {
-                    recursive: true,
-                }
-            );
-            expect(process.chdir).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev"
-            );
+            expect(fs.mkdirSync).toHaveBeenCalledWith("/test/current/dir/temp/dev", {
+                recursive: true,
+            });
+            expect(process.chdir).toHaveBeenCalledWith("/test/current/dir/temp/dev");
         });
 
         it("should preserve existing temp/dev directory and only change working directory", () => {
@@ -205,17 +186,13 @@ describe("debug utilities", () => {
 
             setupDevelopmentWorkspace();
 
-            expect(fs.existsSync).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev"
-            );
+            expect(fs.existsSync).toHaveBeenCalledWith("/test/current/dir/temp/dev");
             // 既存ディレクトリは削除されない
             expect(fs.rmSync).not.toHaveBeenCalled();
             // 既存ディレクトリがあるので新規作成もされない
             expect(fs.mkdirSync).not.toHaveBeenCalled();
             // 作業ディレクトリのみ変更される
-            expect(process.chdir).toHaveBeenCalledWith(
-                "/test/current/dir/temp/dev"
-            );
+            expect(process.chdir).toHaveBeenCalledWith("/test/current/dir/temp/dev");
         });
 
         it("should log directory change with gray styling", () => {

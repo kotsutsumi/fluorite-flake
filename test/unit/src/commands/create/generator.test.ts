@@ -8,21 +8,11 @@ import path from "node:path";
 vi.mock("../../../../../src/i18n.js", () => ({
     getMessages: vi.fn(() => ({
         create: {
-            spinnerCreating: vi.fn(
-                (type: string, name: string) =>
-                    `Creating ${type} project: ${name}`
-            ),
-            spinnerSettingUp: vi.fn(
-                (type: string) => `Setting up ${type} project...`
-            ),
+            spinnerCreating: vi.fn((type: string, name: string) => `Creating ${type} project: ${name}`),
+            spinnerSettingUp: vi.fn((type: string) => `Setting up ${type} project...`),
             spinnerInstallingDeps: "Installing dependencies...",
-            spinnerConfiguringTemplate: vi.fn(
-                (template: string) => `Configuring ${template} template...`
-            ),
-            spinnerSuccess: vi.fn(
-                (type: string, name: string) =>
-                    `✅ Created ${type} project: ${name}`
-            ),
+            spinnerConfiguringTemplate: vi.fn((template: string) => `Configuring ${template} template...`),
+            spinnerSuccess: vi.fn((type: string, name: string) => `✅ Created ${type} project: ${name}`),
             spinnerFailure: "❌ Failed to create project",
             debugProjectConfig: "Project config:",
             debugGenerationSuccess: "Project generation completed",
@@ -154,10 +144,7 @@ describe("プロジェクト生成機能", () => {
 
             // 検証: モノレポ関連の関数が呼ばれること
             expect(createMonorepoStructure).toHaveBeenCalledWith(config);
-            expect(copyMonorepoTemplates).toHaveBeenCalledWith(
-                config,
-                undefined
-            );
+            expect(copyMonorepoTemplates).toHaveBeenCalledWith(config, undefined);
             expect(createWebAppPackageJson).toHaveBeenCalledWith(config);
 
             // 検証: README.mdが作成されること
@@ -264,9 +251,7 @@ describe("プロジェクト生成機能", () => {
             // package.jsonの内容を確認
             const nextjsCall = vi
                 .mocked(fs.writeFileSync)
-                .mock.calls.find((call) =>
-                    call[0].toString().includes("package.json")
-                );
+                .mock.calls.find((call) => call[0].toString().includes("package.json"));
             expect(nextjsCall).toBeDefined();
 
             const nextjsPackageJson = JSON.parse(nextjsCall?.[1] as string);
@@ -291,9 +276,7 @@ describe("プロジェクト生成機能", () => {
 
             const tauriCall = vi
                 .mocked(fs.writeFileSync)
-                .mock.calls.find((call) =>
-                    call[0].toString().includes("package.json")
-                );
+                .mock.calls.find((call) => call[0].toString().includes("package.json"));
             expect(tauriCall).toBeDefined();
 
             const tauriPackageJson = JSON.parse(tauriCall?.[1] as string);
@@ -320,9 +303,7 @@ describe("プロジェクト生成機能", () => {
 
             // 検証: デバッグログが出力されること
             expect(debugLog).toHaveBeenCalledWith("Project config:", config);
-            expect(debugLog).toHaveBeenCalledWith(
-                "Project generation completed"
-            );
+            expect(debugLog).toHaveBeenCalledWith("Project generation completed");
         });
 
         test("エラーが発生した場合、適切にハンドリングされること", async () => {
@@ -343,9 +324,7 @@ describe("プロジェクト生成機能", () => {
             };
 
             // テスト実行と検証
-            await expect(generateProject(config)).rejects.toThrow(
-                "File system error"
-            );
+            await expect(generateProject(config)).rejects.toThrow("File system error");
 
             // 検証: スピナーが失敗で終了すること
             expect(mockSpinner.fail).toHaveBeenCalled();
@@ -377,10 +356,7 @@ describe("プロジェクト生成機能", () => {
             }
 
             // 検証: エラーデバッグログが出力されること
-            expect(debugLog).toHaveBeenCalledWith(
-                "Project generation failed:",
-                testError
-            );
+            expect(debugLog).toHaveBeenCalledWith("Project generation failed:", testError);
         });
 
         test("プロジェクトパスが正しく表示されること", async () => {
@@ -398,13 +374,9 @@ describe("プロジェクト生成機能", () => {
             await generateProject(config);
 
             // 検証: プロジェクトパスが表示されること
+            expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("📂 プロジェクトの場所:"));
             expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining("📂 プロジェクトの場所:")
-            );
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    path.resolve(process.cwd(), config.directory)
-                )
+                expect.stringContaining(path.resolve(process.cwd(), config.directory))
             );
         });
 
@@ -436,9 +408,7 @@ describe("プロジェクト生成機能", () => {
             // 検証: 期待されるテキストが順番に設定されたことを確認
             expect(spinnerTexts).toContain("Setting up expo project...");
             expect(spinnerTexts).toContain("Installing dependencies...");
-            expect(spinnerTexts).toContain(
-                "Configuring typescript template..."
-            );
+            expect(spinnerTexts).toContain("Configuring typescript template...");
         });
 
         test("Next.jsプロジェクトで.gitignoreファイルが生成されること", async () => {
@@ -446,9 +416,7 @@ describe("プロジェクト生成機能", () => {
             const mockFs = vi.mocked(fs);
 
             // fs.readFileSyncのモック設定（テンプレートファイル読み込み用）
-            mockFs.readFileSync.mockReturnValue(
-                "# Mock gitignore content\nnode_modules/\n.next/"
-            );
+            mockFs.readFileSync.mockReturnValue("# Mock gitignore content\nnode_modules/\n.next/");
             mockFs.existsSync.mockReturnValue(true);
 
             // テストデータ準備
@@ -498,10 +466,7 @@ describe("プロジェクト生成機能", () => {
 
             // fs.readFileSyncがエラーを投げるように設定
             mockFs.readFileSync.mockImplementation((filePath) => {
-                if (
-                    typeof filePath === "string" &&
-                    filePath.includes("gitignore")
-                ) {
+                if (typeof filePath === "string" && filePath.includes("gitignore")) {
                     throw new Error("Template not found");
                 }
                 return "{}";

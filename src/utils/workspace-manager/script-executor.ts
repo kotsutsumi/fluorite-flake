@@ -3,12 +3,7 @@
  */
 
 import { spawn } from "node:child_process";
-import type {
-    AggregatedResult,
-    ExecutionFilter,
-    ExecutionResult,
-    WorkspaceConfig,
-} from "./types.js";
+import type { AggregatedResult, ExecutionFilter, ExecutionResult, WorkspaceConfig } from "./types.js";
 
 /**
  * スクリプト実行クラス
@@ -23,15 +18,10 @@ export class ScriptExecutor {
     /**
      * 条件付き実行
      */
-    async executeConditional(
-        command: string,
-        filters: ExecutionFilter[]
-    ): Promise<ExecutionResult[]> {
+    async executeConditional(command: string, filters: ExecutionFilter[]): Promise<ExecutionResult[]> {
         const targets = await this.resolveTargets(filters);
 
-        const executions = targets.map((target) =>
-            this.executeSingle(target, command)
-        );
+        const executions = targets.map((target) => this.executeSingle(target, command));
 
         const results = await Promise.allSettled(executions);
 
@@ -52,31 +42,25 @@ export class ScriptExecutor {
     /**
      * 並列実行とログ管理
      */
-    async executeParallel(
-        commands: Array<{ app: string; command: string }>
-    ): Promise<AggregatedResult> {
+    async executeParallel(commands: Array<{ app: string; command: string }>): Promise<AggregatedResult> {
         const startTime = Date.now();
 
-        const executions = commands.map(({ app, command }) =>
-            this.executeWithLogging(app, command)
-        );
+        const executions = commands.map(({ app, command }) => this.executeWithLogging(app, command));
 
         const results = await Promise.allSettled(executions);
 
-        const executionResults: ExecutionResult[] = results.map(
-            (result, index) => {
-                if (result.status === "fulfilled") {
-                    return result.value;
-                }
-                return {
-                    app: commands[index].app,
-                    command: commands[index].command,
-                    exitCode: 1,
-                    success: false,
-                    stderr: result.reason?.message || "Unknown error",
-                };
+        const executionResults: ExecutionResult[] = results.map((result, index) => {
+            if (result.status === "fulfilled") {
+                return result.value;
             }
-        );
+            return {
+                app: commands[index].app,
+                command: commands[index].command,
+                exitCode: 1,
+                success: false,
+                stderr: result.reason?.message || "Unknown error",
+            };
+        });
 
         return this.aggregateResults(executionResults, Date.now() - startTime);
     }
@@ -84,10 +68,7 @@ export class ScriptExecutor {
     /**
      * 単一アプリでの実行
      */
-    private async executeSingle(
-        appName: string,
-        command: string
-    ): Promise<ExecutionResult> {
+    private async executeSingle(appName: string, command: string): Promise<ExecutionResult> {
         const app = this.workspace.apps.find((a) => a.name === appName);
         if (!app) {
             return {
@@ -117,21 +98,14 @@ export class ScriptExecutor {
     /**
      * ログストリーミング付き実行
      */
-    private executeWithLogging(
-        app: string,
-        command: string
-    ): Promise<ExecutionResult> {
+    private executeWithLogging(app: string, command: string): Promise<ExecutionResult> {
         const startTime = Date.now();
 
         return new Promise((resolve) => {
-            const process = spawn(
-                "pnpm",
-                ["--filter", app, ...command.split(" ")],
-                {
-                    cwd: this.workspace.rootPath,
-                    stdio: "pipe",
-                }
-            );
+            const process = spawn("pnpm", ["--filter", app, ...command.split(" ")], {
+                cwd: this.workspace.rootPath,
+                stdio: "pipe",
+            });
 
             let stdout = "";
             let stderr = "";
@@ -178,49 +152,33 @@ export class ScriptExecutor {
     /**
      * フィルターによるターゲット解決
      */
-    private async resolveTargets(
-        filters: ExecutionFilter[]
-    ): Promise<string[]> {
+    private async resolveTargets(filters: ExecutionFilter[]): Promise<string[]> {
         let targets = this.workspace.apps.map((app) => app.name);
 
         for (const filter of filters) {
             switch (filter.type) {
                 case "app-name":
                     if (Array.isArray(filter.value)) {
-                        targets = targets.filter((name) =>
-                            filter.value.includes(name)
-                        );
+                        targets = targets.filter((name) => filter.value.includes(name));
                     } else {
-                        targets = targets.filter(
-                            (name) => name === filter.value
-                        );
+                        targets = targets.filter((name) => name === filter.value);
                     }
                     break;
 
                 case "app-type": {
-                    const appTypes = Array.isArray(filter.value)
-                        ? filter.value
-                        : [filter.value];
+                    const appTypes = Array.isArray(filter.value) ? filter.value : [filter.value];
                     targets = targets.filter((name) => {
-                        const app = this.workspace.apps.find(
-                            (a) => a.name === name
-                        );
+                        const app = this.workspace.apps.find((a) => a.name === name);
                         return app && appTypes.includes(app.type);
                     });
                     break;
                 }
 
                 case "script-exists": {
-                    const scriptName = Array.isArray(filter.value)
-                        ? filter.value[0]
-                        : filter.value;
+                    const scriptName = Array.isArray(filter.value) ? filter.value[0] : filter.value;
                     targets = targets.filter((name) => {
-                        const app = this.workspace.apps.find(
-                            (a) => a.name === name
-                        );
-                        return (
-                            app && Object.keys(app.scripts).includes(scriptName)
-                        );
+                        const app = this.workspace.apps.find((a) => a.name === name);
+                        return app && Object.keys(app.scripts).includes(scriptName);
                     });
                     break;
                 }
@@ -242,10 +200,7 @@ export class ScriptExecutor {
     /**
      * 結果集約
      */
-    private aggregateResults(
-        results: ExecutionResult[],
-        totalDuration: number
-    ): AggregatedResult {
+    private aggregateResults(results: ExecutionResult[], totalDuration: number): AggregatedResult {
         const successCount = results.filter((r) => r.success).length;
         const failureCount = results.length - successCount;
 

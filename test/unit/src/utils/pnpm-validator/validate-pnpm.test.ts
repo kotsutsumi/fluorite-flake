@@ -7,10 +7,7 @@
 
 import type { ExecSyncOptions } from "node:child_process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-    validatePnpm,
-    validatePnpmWithDetails,
-} from "../../../../../src/utils/pnpm-validator/validate-pnpm.js";
+import { validatePnpm, validatePnpmWithDetails } from "../../../../../src/utils/pnpm-validator/validate-pnpm.js";
 
 // child_processモジュールのモック
 vi.mock("node:child_process", () => ({
@@ -25,9 +22,7 @@ vi.mock("../../../../../src/i18n.js", () => ({
                 (version, minVersion) =>
                     `pnpm バージョン ${version} は古すぎます。バージョン ${minVersion} 以上が必要です。`
             ),
-            pnpmVersionValid: vi.fn(
-                (version) => `✅ pnpm バージョン ${version} が確認されました`
-            ),
+            pnpmVersionValid: vi.fn((version) => `✅ pnpm バージョン ${version} が確認されました`),
             pnpmNotFound: "pnpm が見つかりません。",
         },
     })),
@@ -39,12 +34,9 @@ vi.mock("../../../../../src/utils/shell-helper/index.js", () => ({
 }));
 
 // show-install-guideモジュールのモック
-vi.mock(
-    "../../../../../src/utils/pnpm-validator/show-install-guide.js",
-    () => ({
-        showPnpmInstallGuide: vi.fn(),
-    })
-);
+vi.mock("../../../../../src/utils/pnpm-validator/show-install-guide.js", () => ({
+    showPnpmInstallGuide: vi.fn(),
+}));
 
 // consoleメソッドのモック
 const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {
@@ -70,14 +62,9 @@ describe("pnpmバリデーション機能", () => {
 
             // 検証
             expect(result).toBe(true);
-            expect(execSync).toHaveBeenCalledWith(
-                "pnpm --version",
-                expect.any(Object)
-            );
+            expect(execSync).toHaveBeenCalledWith("pnpm --version", expect.any(Object));
             expect(mockConsoleLog).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "✅ pnpm バージョン 10.18.1 が確認されました"
-                )
+                expect.stringContaining("✅ pnpm バージョン 10.18.1 が確認されました")
             );
         });
 
@@ -108,9 +95,7 @@ describe("pnpmバリデーション機能", () => {
 
             // 検証
             expect(result).toBe(false);
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                expect.stringContaining("pnpm が見つかりません")
-            );
+            expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("pnpm が見つかりません"));
         });
     });
 
@@ -129,14 +114,9 @@ describe("pnpmバリデーション機能", () => {
                 version: "10.18.1",
                 majorVersion: 10,
             });
-            expect(execSync).toHaveBeenCalledWith(
-                "pnpm --version",
-                expect.any(Object)
-            );
+            expect(execSync).toHaveBeenCalledWith("pnpm --version", expect.any(Object));
             expect(mockConsoleLog).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "✅ pnpm バージョン 10.18.1 が確認されました"
-                )
+                expect.stringContaining("✅ pnpm バージョン 10.18.1 が確認されました")
             );
         });
 
@@ -175,9 +155,7 @@ describe("pnpmバリデーション機能", () => {
                 isValid: false,
                 error: "pnpm が見つかりません。",
             });
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                expect.stringContaining("pnpm が見つかりません")
-            );
+            expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("pnpm が見つかりません"));
         });
 
         it("異なるバージョン形式を正しく処理する", async () => {

@@ -15,9 +15,7 @@ export const StatusBanner: React.FC = () => {
     const snapshot = useSnapshot(dashboardStore);
 
     // 認証済みサービス数を計算
-    const authenticatedCount = Object.values(snapshot.authStatus).filter(
-        (status) => status === "authenticated"
-    ).length;
+    const authenticatedCount = Object.values(snapshot.authStatus).filter((status) => status === "authenticated").length;
     const totalServices = Object.keys(snapshot.authStatus).length;
 
     // 全体的なステータスを判定
@@ -51,13 +49,7 @@ export const StatusBanner: React.FC = () => {
     }
 
     return (
-        <Box
-            borderColor={statusColor}
-            borderStyle="round"
-            justifyContent="space-between"
-            paddingX={2}
-            paddingY={1}
-        >
+        <Box borderColor={statusColor} borderStyle="round" justifyContent="space-between" paddingX={2} paddingY={1}>
             {/* 左側：タイトルとステータス */}
             <Box>
                 <Text bold color="cyan">
@@ -65,8 +57,7 @@ export const StatusBanner: React.FC = () => {
                 </Text>
                 <Text color="gray"> | </Text>
                 <Text color={statusColor}>
-                    {statusIcon} {authenticatedCount}/{totalServices} Services
-                    Ready
+                    {statusIcon} {authenticatedCount}/{totalServices} Services Ready
                 </Text>
             </Box>
 

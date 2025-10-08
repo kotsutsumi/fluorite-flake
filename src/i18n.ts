@@ -21,17 +21,10 @@ const FALLBACK_LOCALE: SupportedLocale = "en";
 const APPLE_LANGUAGE_PATTERN = /"([^"]+)"/;
 
 // 明示的なロケール設定のみを対象とする（LANGは除外）
-const EXPLICIT_LOCALE_ENV_KEYS = [
-    "FLUORITE_LOCALE",
-    "LC_ALL",
-    "LC_MESSAGES",
-    "LANGUAGE",
-] as const;
+const EXPLICIT_LOCALE_ENV_KEYS = ["FLUORITE_LOCALE", "LC_ALL", "LC_MESSAGES", "LANGUAGE"] as const;
 const SYSTEM_LOCALE_ENV_KEYS = ["LANG"] as const;
 
-function normalizeLocale(
-    value: string | undefined
-): SupportedLocale | undefined {
+function normalizeLocale(value: string | undefined): SupportedLocale | undefined {
     if (!value) {
         return;
     }
@@ -41,19 +34,11 @@ function normalizeLocale(
         return;
     }
 
-    if (
-        normalized === "ja" ||
-        normalized.startsWith("ja_") ||
-        normalized.startsWith("ja-")
-    ) {
+    if (normalized === "ja" || normalized.startsWith("ja_") || normalized.startsWith("ja-")) {
         return "ja";
     }
 
-    if (
-        normalized === "en" ||
-        normalized.startsWith("en_") ||
-        normalized.startsWith("en-")
-    ) {
+    if (normalized === "en" || normalized.startsWith("en_") || normalized.startsWith("en-")) {
         return "en";
     }
 
@@ -86,9 +71,7 @@ function detectLocaleFromSystemEnv(): SupportedLocale | undefined {
 
 function detectLocaleFromIntl(): SupportedLocale | undefined {
     try {
-        const intlLocale = normalizeLocale(
-            Intl.DateTimeFormat().resolvedOptions().locale
-        );
+        const intlLocale = normalizeLocale(Intl.DateTimeFormat().resolvedOptions().locale);
         if (intlLocale) {
             return intlLocale;
         }
@@ -489,17 +472,12 @@ function loadMessagesFromFile(locale: SupportedLocale): RawLocaleMessages {
             return loadMessagesFromFile(FALLBACK_LOCALE);
         }
         // フォールバックロケールでも失敗した場合はエラーを投げる
-        throw new Error(
-            `Failed to load locale messages for ${locale}: ${error}`
-        );
+        throw new Error(`Failed to load locale messages for ${locale}: ${error}`);
     }
 }
 
 // 文字列テンプレートを処理する補助関数
-function formatMessage(
-    template: string,
-    params: Record<string, string>
-): string {
+function formatMessage(template: string, params: Record<string, string>): string {
     return template.replace(/\{(\w+)\}/g, (match, key) => params[key] || match);
 }
 
@@ -529,8 +507,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 monorepo: rawMessages.create.args.monorepo,
                 database: rawMessages.create.args.database,
             },
-            invalidProjectType: (type: string) =>
-                formatMessage(rawMessages.create.invalidProjectType, { type }),
+            invalidProjectType: (type: string) => formatMessage(rawMessages.create.invalidProjectType, { type }),
             availableProjectTypes: rawMessages.create.availableProjectTypes,
             invalidTemplate: (template: string, projectType: string) =>
                 formatMessage(rawMessages.create.invalidTemplate, {
@@ -551,16 +528,14 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 formatMessage(rawMessages.create.confirmMonorepoPrompt, {
                     template: templateName,
                 }),
-            invalidDatabase: (database: string) =>
-                formatMessage(rawMessages.create.invalidDatabase, { database }),
+            invalidDatabase: (database: string) => formatMessage(rawMessages.create.invalidDatabase, { database }),
             availableDatabases: rawMessages.create.availableDatabases,
             spinnerCreating: (type: string, name: string) =>
                 formatMessage(rawMessages.create.spinnerCreating, {
                     type,
                     name,
                 }),
-            spinnerSettingUp: (type: string) =>
-                formatMessage(rawMessages.create.spinnerSettingUp, { type }),
+            spinnerSettingUp: (type: string) => formatMessage(rawMessages.create.spinnerSettingUp, { type }),
             spinnerInstallingDeps: rawMessages.create.spinnerInstallingDeps,
             spinnerConfiguringTemplate: (template: string | undefined) =>
                 formatMessage(rawMessages.create.spinnerConfiguringTemplate, {
@@ -574,8 +549,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             spinnerFailure: rawMessages.create.spinnerFailure,
             errorPrefix: rawMessages.create.errorPrefix,
             nextStepsHeading: rawMessages.create.nextStepsHeading,
-            nextStepsCd: (directory: string) =>
-                formatMessage(rawMessages.create.nextStepsCd, { directory }),
+            nextStepsCd: (directory: string) => formatMessage(rawMessages.create.nextStepsCd, { directory }),
             nextStepCommand: (type: "nextjs" | "expo" | "tauri") => {
                 switch (type) {
                     case "expo":
@@ -596,8 +570,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                     version,
                     minVersion,
                 }),
-            pnpmVersionValid: (version: string) =>
-                formatMessage(rawMessages.create.pnpmVersionValid, { version }),
+            pnpmVersionValid: (version: string) => formatMessage(rawMessages.create.pnpmVersionValid, { version }),
             pnpmInstallGuide: rawMessages.create.pnpmInstallGuide,
             pnpmInstallCommands: rawMessages.create.pnpmInstallCommands,
             pnpmMoreInfo: rawMessages.create.pnpmMoreInfo,
@@ -620,8 +593,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 tokenPrompt: "BLOB_READ_WRITE_TOKEN を入力してください：",
                 tokenPlaceholder: "vercel_blob_rw_xxxxxxxxxxxxxxx",
                 tokenRequired: "トークンを入力してください",
-                tokenInvalidFormat:
-                    "無効なトークン形式です（vercel_blob_rw_またはblob_rw_で始まる必要があります）",
+                tokenInvalidFormat: "無効なトークン形式です（vercel_blob_rw_またはblob_rw_で始まる必要があります）",
                 tokenTooShort: "トークンが短すぎます",
                 tokenValidating: "トークンを検証中...",
                 tokenInvalid: "無効なトークンです",
@@ -629,14 +601,12 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 storeNameRequired: "ストア名を入力してください",
                 storeNameTooShort: "ストア名は3-32文字で入力してください",
                 storeNameTooLong: "ストア名は3-32文字で入力してください",
-                storeNameInvalidChars:
-                    "ストア名は英小文字、数字、ハイフンのみ使用可能です",
+                storeNameInvalidChars: "ストア名は英小文字、数字、ハイフンのみ使用可能です",
                 storeCreating: "Blobストアを作成中...",
                 storeCreated: "Blobストアを作成しました",
                 storeCreateFailed: "ストア作成に失敗しました",
                 storeListFetching: "Blobストア一覧を取得中...",
-                storeListEmpty:
-                    "利用可能なBlobストアが見つかりません。新規作成を選択してください。",
+                storeListEmpty: "利用可能なBlobストアが見つかりません。新規作成を選択してください。",
                 storeSelectPrompt: "利用するBlobストアを選択してください：",
                 storeSelected: "Blobストアを選択しました",
                 storeSelectFailed: "ストア選択に失敗しました",
@@ -660,8 +630,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 failed: rawMessages.create.envEncryption.failed,
                 skipped: rawMessages.create.envEncryption.skipped,
                 manualCommand: rawMessages.create.envEncryption.manualCommand,
-                shareInstruction:
-                    rawMessages.create.envEncryption.shareInstruction,
+                shareInstruction: rawMessages.create.envEncryption.shareInstruction,
             },
             confirmation: {
                 title: rawMessages.create.confirmation.title,
@@ -678,17 +647,12 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             gettingStartedCommands: rawMessages.readme.gettingStartedCommands,
             learnMoreHeading: rawMessages.readme.learnMoreHeading,
             templateDescription: rawMessages.readme.templateDescription,
-            convertToMonorepoHeading:
-                rawMessages.readme.convertToMonorepoHeading,
-            convertToMonorepoDescription:
-                rawMessages.readme.convertToMonorepoDescription,
-            convertToMonorepoCommand:
-                rawMessages.readme.convertToMonorepoCommand,
+            convertToMonorepoHeading: rawMessages.readme.convertToMonorepoHeading,
+            convertToMonorepoDescription: rawMessages.readme.convertToMonorepoDescription,
+            convertToMonorepoCommand: rawMessages.readme.convertToMonorepoCommand,
             monorepoDescription: rawMessages.readme.monorepoDescription,
-            workspaceStructureHeading:
-                rawMessages.readme.workspaceStructureHeading,
-            workspaceStructureDescription:
-                rawMessages.readme.workspaceStructureDescription,
+            workspaceStructureHeading: rawMessages.readme.workspaceStructureHeading,
+            workspaceStructureDescription: rawMessages.readme.workspaceStructureDescription,
             developmentHeading: rawMessages.readme.developmentHeading,
             developmentCommands: rawMessages.readme.developmentCommands,
             buildingHeading: rawMessages.readme.buildingHeading,
@@ -711,8 +675,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             nodeVersionLabel: rawMessages.debug.nodeVersionLabel,
             argsLabel: rawMessages.debug.argsLabel,
             changedDirectory: rawMessages.debug.changedDirectory,
-            debugMessage: (message: string) =>
-                formatMessage(rawMessages.debug.debugMessage, { message }),
+            debugMessage: (message: string) => formatMessage(rawMessages.debug.debugMessage, { message }),
         },
     };
 }

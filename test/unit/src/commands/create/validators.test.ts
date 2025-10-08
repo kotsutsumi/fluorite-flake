@@ -116,9 +116,7 @@ describe("createコマンドのバリデーション機能", () => {
 
         test("すべてのプロジェクトタイプでtypescriptとjavascriptが利用可能であること", () => {
             // テスト実行: 共通のテンプレートが全プロジェクトタイプで利用可能かを検証
-            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<
-                keyof typeof PROJECT_TEMPLATES
-            >;
+            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<keyof typeof PROJECT_TEMPLATES>;
 
             for (const projectType of projectTypes) {
                 expect(validateTemplate(projectType, "typescript")).toBe(true);
@@ -203,9 +201,7 @@ describe("createコマンドのバリデーション機能", () => {
 
         test("すべてのプロジェクトタイプがtypescriptテンプレートを含むこと", () => {
             // テスト実行: typescriptテンプレートが全プロジェクトタイプに含まれるかを検証
-            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<
-                keyof typeof PROJECT_TEMPLATES
-            >;
+            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<keyof typeof PROJECT_TEMPLATES>;
 
             for (const projectType of projectTypes) {
                 expect(PROJECT_TEMPLATES[projectType]).toContain("typescript");
@@ -214,9 +210,7 @@ describe("createコマンドのバリデーション機能", () => {
 
         test("重複するテンプレート名が存在しないこと", () => {
             // テスト実行: 各プロジェクトタイプ内でテンプレート名の重複がないかを検証
-            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<
-                keyof typeof PROJECT_TEMPLATES
-            >;
+            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<keyof typeof PROJECT_TEMPLATES>;
 
             for (const projectType of projectTypes) {
                 const templates = PROJECT_TEMPLATES[projectType];

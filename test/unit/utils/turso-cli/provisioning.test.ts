@@ -22,8 +22,7 @@ describe("Turso CLI プロビジョニング機能", () => {
 
     describe("cleanDatabaseUrl", () => {
         it("クエリパラメータ付きのlibsql URLからベースURLを正しく抽出すること", () => {
-            const input =
-                "libsql://test-db.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9";
+            const input = "libsql://test-db.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9";
             const expected = "libsql://test-db.turso.io";
 
             const result = cleanDatabaseUrl(input);
@@ -32,8 +31,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         });
 
         it("複数のクエリパラメータを持つURLからベースURLを正しく抽出すること", () => {
-            const input =
-                "libsql://test-db.turso.io?authToken=token123&timeout=5000&retries=3";
+            const input = "libsql://test-db.turso.io?authToken=token123&timeout=5000&retries=3";
             const expected = "libsql://test-db.turso.io";
 
             const result = cleanDatabaseUrl(input);
@@ -42,8 +40,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         });
 
         it("パス付きのURLからパスを保持してクエリパラメータのみを除去すること", () => {
-            const input =
-                "libsql://test-db.turso.io/path/to/db?authToken=token123";
+            const input = "libsql://test-db.turso.io/path/to/db?authToken=token123";
             const expected = "libsql://test-db.turso.io/path/to/db";
 
             const result = cleanDatabaseUrl(input);
@@ -105,8 +102,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         });
 
         it("異なるプロトコルのURLも正しく処理すること", () => {
-            const input =
-                "https://api.turso.io/database?token=abc123&format=json";
+            const input = "https://api.turso.io/database?token=abc123&format=json";
             const expected = "https://api.turso.io/database";
 
             const result = cleanDatabaseUrl(input);
@@ -117,8 +113,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         it("実際のTursoクラウドデータベースURLフォーマットを正しく処理すること", () => {
             const input =
                 "libsql://test8-dev-kotsutsumi.aws-ap-northeast-1.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDk2NzIzNjQsImlkIjoiNDFjZGI5M2UtZDEyNi00Mjk2LWJjOGMtNzQ2NDE2OWQzOTcyIn0.example";
-            const expected =
-                "libsql://test8-dev-kotsutsumi.aws-ap-northeast-1.turso.io";
+            const expected = "libsql://test8-dev-kotsutsumi.aws-ap-northeast-1.turso.io";
 
             const result = cleanDatabaseUrl(input);
 
@@ -126,8 +121,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         });
 
         it("フラグメント（#）付きのURLからフラグメントも除去すること", () => {
-            const input =
-                "libsql://test-db.turso.io?authToken=token123#fragment";
+            const input = "libsql://test-db.turso.io?authToken=token123#fragment";
             const expected = "libsql://test-db.turso.io";
 
             const result = cleanDatabaseUrl(input);
@@ -153,9 +147,7 @@ describe("Turso CLI プロビジョニング機能", () => {
             const cleanedUrl = cleanDatabaseUrl(problematicUrl);
 
             // クリーンアップされたURLは有効なlibsql URL形式であることを確認
-            expect(cleanedUrl).toBe(
-                "libsql://test8-dev-kotsutsumi.aws-ap-northeast-1.turso.io"
-            );
+            expect(cleanedUrl).toBe("libsql://test8-dev-kotsutsumi.aws-ap-northeast-1.turso.io");
             expect(cleanedUrl).not.toContain("?");
             expect(cleanedUrl).not.toContain("authToken");
             expect(cleanedUrl).toMatch(/^libsql:\/\/[^?]+$/);
@@ -203,9 +195,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         it("datasourceUrlとdatasourcesの同時指定でエラーになること", () => {
             // 旧コードパターンでの例外発生を確認
             const mockPrismaClient = vi.fn().mockImplementation(() => {
-                throw new Error(
-                    'Can not use "datasourceUrl" and "datasources" options at the same time.'
-                );
+                throw new Error('Can not use "datasourceUrl" and "datasources" options at the same time.');
             });
 
             expect(() => {
@@ -218,8 +208,7 @@ describe("Turso CLI プロビジョニング機能", () => {
         });
 
         it("Prisma設定エラー時に適切なエラーメッセージが表示されること", () => {
-            const errorMessage =
-                'Can not use "datasourceUrl" and "datasources" options at the same time.';
+            const errorMessage = 'Can not use "datasourceUrl" and "datasources" options at the same time.';
 
             // エラーメッセージの内容確認
             expect(errorMessage).toContain("datasourceUrl");
@@ -243,9 +232,7 @@ describe("Turso CLI プロビジョニング機能", () => {
             // 認証エラー
             expect(() => {
                 if (authenticationError.includes("authentication")) {
-                    throw new Error(
-                        `データベース接続エラー: ${authenticationError}`
-                    );
+                    throw new Error(`データベース接続エラー: ${authenticationError}`);
                 }
             }).toThrow("データベース接続エラー");
 
@@ -259,19 +246,15 @@ describe("Turso CLI プロビジョニング機能", () => {
             // 接続エラー
             expect(() => {
                 if (connectionError.includes("connection")) {
-                    throw new Error(
-                        `データベース接続エラー: ${connectionError}`
-                    );
+                    throw new Error(`データベース接続エラー: ${connectionError}`);
                 }
             }).toThrow("データベース接続エラー");
         });
 
         it("回復可能エラー時に警告が表示され処理が継続されること", () => {
-            const consolewarnSpy = vi
-                .spyOn(console, "warn")
-                .mockImplementation(() => {
-                    // 意図的に空のモック実装
-                });
+            const consolewarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+                // 意図的に空のモック実装
+            });
 
             // SQL実行失敗などの回復可能エラーのシミュレーション
             const recoverableError = "SQL execution failed";
@@ -279,16 +262,10 @@ describe("Turso CLI プロビジョニング機能", () => {
             // 警告メッセージの確認
             const warningMessage = `⚠️ テーブル作成で問題が発生しました: ${recoverableError}`;
             console.warn(warningMessage);
-            console.warn(
-                "   アプリケーション初回起動時にテーブル作成が実行されます。"
-            );
+            console.warn("   アプリケーション初回起動時にテーブル作成が実行されます。");
 
-            expect(consolewarnSpy).toHaveBeenCalledWith(
-                expect.stringContaining("⚠️ テーブル作成で問題が発生しました")
-            );
-            expect(consolewarnSpy).toHaveBeenCalledWith(
-                expect.stringContaining("アプリケーション初回起動時")
-            );
+            expect(consolewarnSpy).toHaveBeenCalledWith(expect.stringContaining("⚠️ テーブル作成で問題が発生しました"));
+            expect(consolewarnSpy).toHaveBeenCalledWith(expect.stringContaining("アプリケーション初回起動時"));
 
             consolewarnSpy.mockRestore();
         });
@@ -301,9 +278,7 @@ describe("Turso CLI プロビジョニング機能", () => {
             if (failedEnvironments.length === environments.length) {
                 const errorMessage = `全ての環境でテーブル作成に失敗しました:\n失敗環境: ${failedEnvironments.join(", ")}\n\n復旧方法:\n1. Turso CLI の認証状況を確認\n2. データベースの存在を確認\n3. ネットワーク接続を確認`;
 
-                expect(errorMessage).toContain(
-                    "全ての環境でテーブル作成に失敗"
-                );
+                expect(errorMessage).toContain("全ての環境でテーブル作成に失敗");
                 expect(errorMessage).toContain("dev, staging, prod");
                 expect(errorMessage).toContain("復旧方法:");
                 expect(errorMessage).toContain("Turso CLI の認証状況");
@@ -311,11 +286,9 @@ describe("Turso CLI プロビジョニング機能", () => {
         });
 
         it("一部環境失敗時に警告が表示され成功として扱われること", () => {
-            const consolewarnSpy = vi
-                .spyOn(console, "warn")
-                .mockImplementation(() => {
-                    // 意図的に空のモック実装
-                });
+            const consolewarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+                // 意図的に空のモック実装
+            });
 
             const successfulEnvironments = ["dev", "staging"];
             const failedEnvironments = ["prod"];
@@ -324,19 +297,11 @@ describe("Turso CLI プロビジョニング機能", () => {
             console.warn("\n⚠️ 一部環境でテーブル作成に失敗しました:");
             console.warn(`   成功: ${successfulEnvironments.join(", ")}`);
             console.warn(`   失敗: ${failedEnvironments.join(", ")}`);
-            console.warn(
-                "   失敗した環境は、アプリケーション初回起動時にテーブル作成が実行されます。"
-            );
+            console.warn("   失敗した環境は、アプリケーション初回起動時にテーブル作成が実行されます。");
 
-            expect(consolewarnSpy).toHaveBeenCalledWith(
-                expect.stringContaining("一部環境でテーブル作成に失敗")
-            );
-            expect(consolewarnSpy).toHaveBeenCalledWith(
-                expect.stringContaining("成功: dev, staging")
-            );
-            expect(consolewarnSpy).toHaveBeenCalledWith(
-                expect.stringContaining("失敗: prod")
-            );
+            expect(consolewarnSpy).toHaveBeenCalledWith(expect.stringContaining("一部環境でテーブル作成に失敗"));
+            expect(consolewarnSpy).toHaveBeenCalledWith(expect.stringContaining("成功: dev, staging"));
+            expect(consolewarnSpy).toHaveBeenCalledWith(expect.stringContaining("失敗: prod"));
 
             consolewarnSpy.mockRestore();
         });

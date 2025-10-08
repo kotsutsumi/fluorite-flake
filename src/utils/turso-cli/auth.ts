@@ -24,11 +24,7 @@ export async function whoami(): Promise<UserInfo> {
     }
 
     // 単純にユーザー名のみが出力される場合（新しいバージョンのTurso CLI）
-    if (
-        stdout &&
-        !stdout.includes("not logged in") &&
-        !stdout.includes("error")
-    ) {
+    if (stdout && !stdout.includes("not logged in") && !stdout.includes("error")) {
         return {
             username: stdout,
         };
@@ -95,24 +91,15 @@ export async function listApiTokens(): Promise<CommandResult> {
 /**
  * API トークンを作成
  */
-export async function createApiToken(
-    tokenName: string
-): Promise<CommandResult> {
+export async function createApiToken(tokenName: string): Promise<CommandResult> {
     return await executeTursoCommand(["auth", "api-tokens", "mint", tokenName]);
 }
 
 /**
  * API トークンを無効化
  */
-export async function revokeApiToken(
-    tokenName: string
-): Promise<CommandResult> {
-    return await executeTursoCommand([
-        "auth",
-        "api-tokens",
-        "revoke",
-        tokenName,
-    ]);
+export async function revokeApiToken(tokenName: string): Promise<CommandResult> {
+    return await executeTursoCommand(["auth", "api-tokens", "revoke", tokenName]);
 }
 
 /**

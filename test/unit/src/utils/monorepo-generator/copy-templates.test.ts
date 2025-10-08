@@ -41,9 +41,7 @@ vi.mock("node:path", async () => {
 });
 
 // テスト用のプロジェクト設定
-const createTestConfig = (
-    overrides?: Partial<ProjectConfig>
-): ProjectConfig => ({
+const createTestConfig = (overrides?: Partial<ProjectConfig>): ProjectConfig => ({
     type: "nextjs",
     name: "test-project",
     directory: "/test/project",
@@ -132,12 +130,8 @@ describe("copyMonorepoTemplates関数", () => {
             // 検証: 両方の内容が含まれることを確認
             const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
             expect(writeCall[0]).toBe("/test/project/package.json");
-            expect(writeCall[1]).toContain(
-                '"name": "my-awesome-project-workspace"'
-            );
-            expect(writeCall[1]).toContain(
-                '"dev": "turbo run dev --filter=my-awesome-project-web"'
-            );
+            expect(writeCall[1]).toContain('"name": "my-awesome-project-workspace"');
+            expect(writeCall[1]).toContain('"dev": "turbo run dev --filter=my-awesome-project-web"');
             expect(writeCall[2]).toBe("utf-8");
         });
     });
@@ -160,12 +154,8 @@ describe("copyMonorepoTemplates関数", () => {
                 // 検証: 両方の内容が含まれることを確認
                 const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
                 expect(writeCall[0]).toBe("/test/project/package.json");
-                expect(writeCall[1]).toContain(
-                    `"packageManager": "pnpm@${testCase.input}"`
-                );
-                expect(writeCall[1]).toContain(
-                    `"pnpm": ">=${testCase.expectedMajor}"`
-                );
+                expect(writeCall[1]).toContain(`"packageManager": "pnpm@${testCase.input}"`);
+                expect(writeCall[1]).toContain(`"pnpm": ">=${testCase.expectedMajor}"`);
                 expect(writeCall[2]).toBe("utf-8");
 
                 // モッククリア（次のテストケース用）
@@ -173,9 +163,7 @@ describe("copyMonorepoTemplates関数", () => {
                 const mockFs = vi.mocked(fs);
                 const mockPath = vi.mocked(path);
                 mockFs.existsSync.mockReturnValue(true);
-                mockFs.readdirSync.mockReturnValue([
-                    "package.json.template",
-                ] as any);
+                mockFs.readdirSync.mockReturnValue(["package.json.template"] as any);
                 mockFs.readFileSync.mockReturnValue(mockTemplateContent);
                 mockPath.dirname.mockReturnValue("/templates/monorepo");
                 mockPath.resolve.mockReturnValue("/templates/monorepo");
@@ -194,9 +182,7 @@ describe("copyMonorepoTemplates関数", () => {
             // 検証: 不正なバージョンの場合、元の文字列はそのまま使用されるがメジャーバージョンは10になる
             const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
             expect(writeCall[0]).toBe("/test/project/package.json");
-            expect(writeCall[1]).toContain(
-                '"packageManager": "pnpm@invalid-version"'
-            );
+            expect(writeCall[1]).toContain('"packageManager": "pnpm@invalid-version"');
             expect(writeCall[1]).toContain('"pnpm": ">=10"');
             expect(writeCall[2]).toBe("utf-8");
         });
@@ -209,10 +195,7 @@ describe("copyMonorepoTemplates関数", () => {
             const mockFs = vi.mocked(fs);
             // package.json.templateは存在するが、ターゲットディレクトリは存在しないと仮定
             mockFs.existsSync.mockImplementation((filePath) => {
-                if (
-                    typeof filePath === "string" &&
-                    filePath.includes("package.json.template")
-                ) {
+                if (typeof filePath === "string" && filePath.includes("package.json.template")) {
                     return true;
                 }
                 return false;
@@ -224,11 +207,7 @@ describe("copyMonorepoTemplates関数", () => {
             }).not.toThrow();
 
             // 検証: writeFileSyncが呼ばれる（ディレクトリは自動作成される）
-            expect(fs.writeFileSync).toHaveBeenCalledWith(
-                "/test/project/package.json",
-                expect.any(String),
-                "utf-8"
-            );
+            expect(fs.writeFileSync).toHaveBeenCalledWith("/test/project/package.json", expect.any(String), "utf-8");
         });
 
         it("複数のテンプレートファイルを処理する", () => {
@@ -256,11 +235,7 @@ describe("copyMonorepoTemplates関数", () => {
 
             // 検証: package.jsonのwriteFileSyncが1回、その他はcopyFileSyncで処理
             expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
-            expect(fs.writeFileSync).toHaveBeenCalledWith(
-                "/test/project/package.json",
-                expect.any(String),
-                "utf-8"
-            );
+            expect(fs.writeFileSync).toHaveBeenCalledWith("/test/project/package.json", expect.any(String), "utf-8");
 
             // copyFileSyncが複数回呼ばれることを確認
             expect(fs.copyFileSync).toHaveBeenCalled();
@@ -349,11 +324,7 @@ describe("copyMonorepoTemplates関数", () => {
 \t\t"pnpm": ">=11"
 \t}
 }`;
-            expect(fs.writeFileSync).toHaveBeenCalledWith(
-                "/test/project/package.json",
-                expectedContent,
-                "utf-8"
-            );
+            expect(fs.writeFileSync).toHaveBeenCalledWith("/test/project/package.json", expectedContent, "utf-8");
         });
 
         it("プレースホルダーが存在しない場合も正常に処理する", () => {
@@ -373,11 +344,7 @@ describe("copyMonorepoTemplates関数", () => {
             copyMonorepoTemplates(config, "10.18.1");
 
             // 検証
-            expect(fs.writeFileSync).toHaveBeenCalledWith(
-                "/test/project/package.json",
-                simpleTemplate,
-                "utf-8"
-            );
+            expect(fs.writeFileSync).toHaveBeenCalledWith("/test/project/package.json", simpleTemplate, "utf-8");
         });
     });
 
@@ -402,9 +369,7 @@ describe("copyMonorepoTemplates関数", () => {
 
             // 検証: shared/monorepoから.gitignoreがコピーされること
             expect(fs.copyFileSync).toHaveBeenCalledWith(
-                expect.stringMatching(
-                    /templates\/shared\/monorepo\/gitignore$/
-                ),
+                expect.stringMatching(/templates\/shared\/monorepo\/gitignore$/),
                 "/test/project/.gitignore"
             );
         });
@@ -415,17 +380,11 @@ describe("copyMonorepoTemplates関数", () => {
             const mockFs = vi.mocked(fs);
             mockFs.existsSync.mockImplementation((filePath) => {
                 // package.json.templateは存在する
-                if (
-                    typeof filePath === "string" &&
-                    filePath.includes("package.json.template")
-                ) {
+                if (typeof filePath === "string" && filePath.includes("package.json.template")) {
                     return true;
                 }
                 // shared/monorepo/gitignoreは存在しない
-                if (
-                    typeof filePath === "string" &&
-                    filePath.includes("shared/monorepo/gitignore")
-                ) {
+                if (typeof filePath === "string" && filePath.includes("shared/monorepo/gitignore")) {
                     return false;
                 }
                 return true;
@@ -438,10 +397,7 @@ describe("copyMonorepoTemplates関数", () => {
             }).not.toThrow();
 
             // 検証: copyFileSyncが呼ばれないこと
-            expect(fs.copyFileSync).not.toHaveBeenCalledWith(
-                expect.stringMatching(/gitignore$/),
-                expect.any(String)
-            );
+            expect(fs.copyFileSync).not.toHaveBeenCalledWith(expect.stringMatching(/gitignore$/), expect.any(String));
         });
     });
 });

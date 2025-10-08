@@ -104,8 +104,7 @@ describe("Turso Bootstrap 統合テスト", () => {
                 expect(() => {
                     new (vi.fn())({
                         adapter: "mockAdapter",
-                        datasourceUrl:
-                            "libsql://test.turso.io?authToken=test-token",
+                        datasourceUrl: "libsql://test.turso.io?authToken=test-token",
                     });
                 }).not.toThrow();
 
@@ -114,9 +113,7 @@ describe("Turso Bootstrap 統合テスト", () => {
                 expect(mockConnect).toHaveBeenCalled();
 
                 // SQL実行の確認
-                await mockExecute(
-                    "CREATE TABLE IF NOT EXISTS User (id TEXT PRIMARY KEY)"
-                );
+                await mockExecute("CREATE TABLE IF NOT EXISTS User (id TEXT PRIMARY KEY)");
                 expect(mockExecute).toHaveBeenCalled();
 
                 console.log("✅ 完全なアプリケーションスキーマ作成成功");
@@ -131,9 +128,7 @@ describe("Turso Bootstrap 統合テスト", () => {
 
             // 成功ログの確認
             expect(consoleLogSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "✅ 完全なアプリケーションスキーマ作成成功"
-                )
+                expect.stringContaining("✅ 完全なアプリケーションスキーマ作成成功")
             );
         });
 
@@ -143,8 +138,7 @@ describe("Turso Bootstrap 統合テスト", () => {
                 TURSO_DATABASE_URL: "libsql://test.turso.io",
                 TURSO_AUTH_TOKEN: "test-token",
                 DATABASE_URL: "libsql://test.turso.io?authToken=test-token",
-                PRISMA_DATABASE_URL:
-                    "libsql://test.turso.io?authToken=test-token",
+                PRISMA_DATABASE_URL: "libsql://test.turso.io?authToken=test-token",
             };
 
             // URL解析とクリーンアップのテスト
@@ -164,16 +158,12 @@ describe("Turso Bootstrap 統合テスト", () => {
             expect(expectedPrismaConfig).not.toHaveProperty("datasources");
 
             console.log("🔍 PrismaClient作成完了");
-            expect(consoleLogSpy).toHaveBeenCalledWith(
-                "🔍 PrismaClient作成完了"
-            );
+            expect(consoleLogSpy).toHaveBeenCalledWith("🔍 PrismaClient作成完了");
         });
 
         it("Prisma設定エラーでの例外処理が正しく動作すること", async () => {
             // Prisma初期化エラーをシミュレート
-            const prismaError = new Error(
-                'Can not use "datasourceUrl" and "datasources" options at the same time.'
-            );
+            const prismaError = new Error('Can not use "datasourceUrl" and "datasources" options at the same time.');
             mockConnect.mockRejectedValue(prismaError);
 
             const environmentVariables = {
@@ -184,25 +174,17 @@ describe("Turso Bootstrap 統合テスト", () => {
             try {
                 await mockConnect();
             } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
 
                 // Prisma 初期化失敗の判定
-                if (
-                    errorMessage.includes("datasourceUrl") &&
-                    errorMessage.includes("datasources")
-                ) {
+                if (errorMessage.includes("datasourceUrl") && errorMessage.includes("datasources")) {
                     const detailedError = new Error(
                         `Prisma 設定エラー: ${errorMessage}\n\n復旧方法:\n1. Prisma バージョンを確認してください (現在: 6.16.3)\n2. libsql アダプター使用時は datasourceUrl のみを指定してください\n3. 詳細は https://pris.ly/d/client-constructor を参照してください`
                     );
 
-                    expect(detailedError.message).toContain(
-                        "Prisma 設定エラー"
-                    );
+                    expect(detailedError.message).toContain("Prisma 設定エラー");
                     expect(detailedError.message).toContain("復旧方法:");
-                    expect(detailedError.message).toContain(
-                        "datasourceUrl のみを指定"
-                    );
+                    expect(detailedError.message).toContain("datasourceUrl のみを指定");
                 }
             }
         });
@@ -215,8 +197,7 @@ describe("Turso Bootstrap 統合テスト", () => {
             try {
                 await mockConnect();
             } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
 
                 // 認証エラーの判定
                 if (errorMessage.includes("authentication")) {
@@ -224,12 +205,8 @@ describe("Turso Bootstrap 統合テスト", () => {
                         `データベース接続エラー: ${errorMessage}\n\n復旧方法:\n1. 'turso auth whoami' で認証状態を確認\n2. ネットワーク接続を確認\n3. データベース URL と認証トークンを確認`
                     );
 
-                    expect(detailedError.message).toContain(
-                        "データベース接続エラー"
-                    );
-                    expect(detailedError.message).toContain(
-                        "turso auth whoami"
-                    );
+                    expect(detailedError.message).toContain("データベース接続エラー");
+                    expect(detailedError.message).toContain("turso auth whoami");
                     expect(detailedError.message).toContain("認証状態を確認");
                 }
             }
@@ -249,22 +226,14 @@ describe("Turso Bootstrap 統合テスト", () => {
                 // 2回目のSQL実行は成功
                 await mockExecute("CREATE INDEX idx_user ON User(id)");
 
-                console.warn(
-                    "⚠️ テーブル作成で問題が発生しました: table already exists"
-                );
-                console.warn(
-                    "   アプリケーション初回起動時にテーブル作成が実行されます。"
-                );
+                console.warn("⚠️ テーブル作成で問題が発生しました: table already exists");
+                console.warn("   アプリケーション初回起動時にテーブル作成が実行されます。");
 
                 // 警告メッセージの確認
                 expect(consoleWarnSpy).toHaveBeenCalledWith(
-                    expect.stringContaining(
-                        "⚠️ テーブル作成で問題が発生しました"
-                    )
+                    expect.stringContaining("⚠️ テーブル作成で問題が発生しました")
                 );
-                expect(consoleWarnSpy).toHaveBeenCalledWith(
-                    expect.stringContaining("アプリケーション初回起動時")
-                );
+                expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("アプリケーション初回起動時"));
             } finally {
                 await mockDisconnect();
                 await mockClose();
@@ -291,9 +260,7 @@ describe("Turso Bootstrap 統合テスト", () => {
 
             // エラーケースでもクリーンアップが実行されることを確認
             mockConnect.mockRejectedValueOnce(new Error("connection failed"));
-            mockDisconnect.mockRejectedValueOnce(
-                new Error("disconnect failed")
-            );
+            mockDisconnect.mockRejectedValueOnce(new Error("disconnect failed"));
 
             try {
                 await mockConnect();

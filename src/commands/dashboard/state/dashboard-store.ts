@@ -3,13 +3,7 @@
  */
 import { proxy } from "valtio";
 
-import type {
-    AuthStatus,
-    DashboardState,
-    FocusArea,
-    ServiceType,
-    TabType,
-} from "../types/common.js";
+import type { AuthStatus, DashboardState, FocusArea, ServiceType, TabType } from "../types/common.js";
 
 /**
  * ダッシュボードのグローバル状態

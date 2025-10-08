@@ -11,10 +11,7 @@ import type { TemplateRequirements, TemplateSelectionResult } from "./types.js";
 /**
  * テンプレート選択結果の詳細情報を表示
  */
-export function displayTemplateInfo(
-    selection: TemplateSelectionResult,
-    config?: ExtendedProjectConfig
-): void {
+export function displayTemplateInfo(selection: TemplateSelectionResult, config?: ExtendedProjectConfig): void {
     intro(chalk.bgBlue.white(" テンプレート情報 "));
 
     // 基本情報
@@ -31,19 +28,13 @@ export function displayTemplateInfo(
 
     // 機能一覧
     if (selection.features.length > 0) {
-        note(
-            selection.features.map((feature) => `✅ ${feature}`).join("\n"),
-            "含まれる機能"
-        );
+        note(selection.features.map((feature) => `✅ ${feature}`).join("\n"), "含まれる機能");
     }
 
     // 拡張設定情報（利用可能な場合）
     if (config) {
         if (config.framework) {
-            note(
-                `🛠️  フレームワーク: ${chalk.yellow(config.framework)}`,
-                "技術スタック"
-            );
+            note(`🛠️  フレームワーク: ${chalk.yellow(config.framework)}`, "技術スタック");
         }
 
         if (config.templateDescription) {
@@ -57,9 +48,7 @@ export function displayTemplateInfo(
 /**
  * テンプレート要件情報を表示
  */
-export function displayTemplateRequirements(
-    requirements: TemplateRequirements
-): void {
+export function displayTemplateRequirements(requirements: TemplateRequirements): void {
     const requirementsList: string[] = [];
 
     if (requirements.nodeVersion) {
@@ -70,27 +59,15 @@ export function displayTemplateRequirements(
         requirementsList.push("📦 pnpm: 必須");
     }
 
-    if (
-        requirements.additionalDependencies &&
-        requirements.additionalDependencies.length > 0
-    ) {
-        requirementsList.push(
-            `📦 追加依存関係: ${requirements.additionalDependencies.join(", ")}`
-        );
+    if (requirements.additionalDependencies && requirements.additionalDependencies.length > 0) {
+        requirementsList.push(`📦 追加依存関係: ${requirements.additionalDependencies.join(", ")}`);
     }
 
-    if (
-        requirements.systemRequirements &&
-        requirements.systemRequirements.length > 0
-    ) {
-        requirementsList.push(
-            ...requirements.systemRequirements.map((req) => `⚙️  ${req}`)
-        );
+    if (requirements.systemRequirements && requirements.systemRequirements.length > 0) {
+        requirementsList.push(...requirements.systemRequirements.map((req) => `⚙️  ${req}`));
     }
 
-    requirementsList.push(
-        `⏱️  セットアップ時間: ${requirements.estimatedSetupTime}`
-    );
+    requirementsList.push(`⏱️  セットアップ時間: ${requirements.estimatedSetupTime}`);
 
     note(requirementsList.join("\n"), "システム要件");
 }
@@ -98,9 +75,7 @@ export function displayTemplateRequirements(
 /**
  * 複雑度に対応する絵文字を取得
  */
-function getComplexityEmoji(
-    complexity: "simple" | "moderate" | "complex"
-): string {
+function getComplexityEmoji(complexity: "simple" | "moderate" | "complex"): string {
     switch (complexity) {
         case "simple":
             return "🟢";
@@ -113,10 +88,7 @@ function getComplexityEmoji(
     }
 }
 
-function formatMonorepoStatus(
-    requiresMonorepo: boolean,
-    useMonorepo: boolean
-): string {
+function formatMonorepoStatus(requiresMonorepo: boolean, useMonorepo: boolean): string {
     if (useMonorepo) {
         return chalk.green("有効");
     }

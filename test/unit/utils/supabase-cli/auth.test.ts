@@ -6,13 +6,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-    getLoginInfo,
-    isAuthenticated,
-    login,
-    logout,
-    whoami,
-} from "../../../../src/utils/supabase-cli/auth.js";
+import { getLoginInfo, isAuthenticated, login, logout, whoami } from "../../../../src/utils/supabase-cli/auth.js";
 
 // executor モジュールをモック化
 vi.mock("../../../../src/utils/supabase-cli/executor.js", () => ({
@@ -154,13 +148,7 @@ describe("Supabase CLI Auth", () => {
             });
 
             // グローバルフラグ付きのコマンドが実行されたかを確認
-            expect(executeSupabaseCommand).toHaveBeenCalledWith([
-                "logout",
-                "--debug",
-                "--profile",
-                "test",
-                "--yes",
-            ]);
+            expect(executeSupabaseCommand).toHaveBeenCalledWith(["logout", "--debug", "--profile", "test", "--yes"]);
         });
     });
 
@@ -182,12 +170,7 @@ describe("Supabase CLI Auth", () => {
             // ログイン済み状態の確認
             expect(loginInfo.isLoggedIn).toBe(true);
             expect(loginInfo.username).toBe("authenticated-user");
-            expect(executeSupabaseCommand).toHaveBeenCalledWith([
-                "projects",
-                "list",
-                "--output",
-                "json",
-            ]);
+            expect(executeSupabaseCommand).toHaveBeenCalledWith(["projects", "list", "--output", "json"]);
         });
 
         it("未ログイン状態を正しく検出する", async () => {
@@ -338,14 +321,10 @@ describe("Supabase CLI Auth", () => {
         });
 
         it("例外発生時にfalseを返す", async () => {
-            const { executeSupabaseCommand } = await import(
-                "../../../../src/utils/supabase-cli/executor.js"
-            );
+            const { executeSupabaseCommand } = await import("../../../../src/utils/supabase-cli/executor.js");
 
             // executeSupabaseCommand で例外発生を模擬
-            vi.mocked(executeSupabaseCommand).mockRejectedValue(
-                new Error("Network error")
-            );
+            vi.mocked(executeSupabaseCommand).mockRejectedValue(new Error("Network error"));
 
             const isAuth = await isAuthenticated();
 

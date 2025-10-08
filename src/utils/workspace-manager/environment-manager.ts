@@ -19,10 +19,7 @@ export class EnvironmentManager {
     /**
      * 階層的環境変数管理
      */
-    async loadEnvironmentHierarchy(
-        appName: string,
-        environment: string
-    ): Promise<EnvironmentVariables> {
+    async loadEnvironmentHierarchy(appName: string, environment: string): Promise<EnvironmentVariables> {
         const hierarchy = [
             // 1. ルートレベル共通設定
             path.join(this.rootPath, ".env"),
@@ -51,11 +48,7 @@ export class EnvironmentManager {
     /**
      * 環境変数注入
      */
-    async injectVariables(
-        appName: string,
-        environment: string,
-        command: string
-    ): Promise<string> {
+    async injectVariables(appName: string, environment: string, command: string): Promise<string> {
         const vars = await this.loadEnvironmentHierarchy(appName, environment);
         const envString = Object.entries(vars)
             .map(([key, value]) => `${key}=${this.escapeValue(value)}`)
@@ -67,17 +60,8 @@ export class EnvironmentManager {
     /**
      * 環境変数ファイル作成
      */
-    async createEnvFile(
-        appName: string,
-        environment: string,
-        variables: EnvironmentVariables
-    ): Promise<void> {
-        const envFilePath = path.join(
-            this.rootPath,
-            "apps",
-            appName,
-            `.env.${environment}`
-        );
+    async createEnvFile(appName: string, environment: string, variables: EnvironmentVariables): Promise<void> {
+        const envFilePath = path.join(this.rootPath, "apps", appName, `.env.${environment}`);
 
         // ディレクトリ作成
         await fs.mkdir(path.dirname(envFilePath), { recursive: true });
@@ -159,9 +143,7 @@ export class EnvironmentManager {
     /**
      * 環境変数ファイル解析
      */
-    private async parseEnvFile(
-        filePath: string
-    ): Promise<EnvironmentVariables> {
+    private async parseEnvFile(filePath: string): Promise<EnvironmentVariables> {
         const content = await fs.readFile(filePath, "utf-8");
         const variables: EnvironmentVariables = {};
 

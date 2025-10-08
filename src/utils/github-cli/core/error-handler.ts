@@ -1,10 +1,7 @@
 /**
  * GitHub CLI エラーハンドリングシステム
  */
-import {
-    GitHubCLIErrorCode,
-    type GitHubCLIError as GitHubCLIErrorType,
-} from "../types/common.js";
+import { GitHubCLIErrorCode, type GitHubCLIError as GitHubCLIErrorType } from "../types/common.js";
 
 // カスタムエラークラス
 export class GitHubCLIError extends Error {
@@ -49,31 +46,22 @@ export class GitHubCLIError extends Error {
     // ユーザーフレンドリーなエラーメッセージを生成
     getUserFriendlyMessage(): string {
         const baseMessage = this.getLocalizedMessage();
-        return this.suggestion
-            ? `${baseMessage}\n\n💡 ${this.suggestion}`
-            : baseMessage;
+        return this.suggestion ? `${baseMessage}\n\n💡 ${this.suggestion}` : baseMessage;
     }
 
     // ローカライズされたエラーメッセージを取得
     private getLocalizedMessage(): string {
         const errorMessages: Record<GitHubCLIErrorCode, string> = {
             [GitHubCLIErrorCode.AUTH_FAILED]: "GitHub CLI の認証に失敗しました",
-            [GitHubCLIErrorCode.AUTH_EXPIRED]:
-                "GitHub CLI の認証トークンが期限切れです",
-            [GitHubCLIErrorCode.AUTH_MISSING]:
-                "GitHub CLI の認証が設定されていません",
-            [GitHubCLIErrorCode.COMMAND_NOT_FOUND]:
-                "GitHub CLI コマンドが見つかりません",
+            [GitHubCLIErrorCode.AUTH_EXPIRED]: "GitHub CLI の認証トークンが期限切れです",
+            [GitHubCLIErrorCode.AUTH_MISSING]: "GitHub CLI の認証が設定されていません",
+            [GitHubCLIErrorCode.COMMAND_NOT_FOUND]: "GitHub CLI コマンドが見つかりません",
             [GitHubCLIErrorCode.INVALID_COMMAND]: "無効なコマンドです",
-            [GitHubCLIErrorCode.EXECUTION_FAILED]:
-                "コマンドの実行に失敗しました",
-            [GitHubCLIErrorCode.TIMEOUT]:
-                "コマンドの実行がタイムアウトしました",
-            [GitHubCLIErrorCode.API_RATE_LIMIT]:
-                "GitHub API のレート制限に達しました",
+            [GitHubCLIErrorCode.EXECUTION_FAILED]: "コマンドの実行に失敗しました",
+            [GitHubCLIErrorCode.TIMEOUT]: "コマンドの実行がタイムアウトしました",
+            [GitHubCLIErrorCode.API_RATE_LIMIT]: "GitHub API のレート制限に達しました",
             [GitHubCLIErrorCode.API_UNAVAILABLE]: "GitHub API が利用できません",
-            [GitHubCLIErrorCode.NETWORK_ERROR]:
-                "ネットワークエラーが発生しました",
+            [GitHubCLIErrorCode.NETWORK_ERROR]: "ネットワークエラーが発生しました",
             [GitHubCLIErrorCode.PARSE_ERROR]: "レスポンスの解析に失敗しました",
             [GitHubCLIErrorCode.VALIDATION_ERROR]: "入力値の検証に失敗しました",
             [GitHubCLIErrorCode.UNKNOWN_ERROR]: "不明なエラーが発生しました",
@@ -88,74 +76,43 @@ function classifyError(error: Error, command?: string): GitHubCLIError {
     const message = error.message.toLowerCase();
 
     // 認証エラーの判定
-    if (
-        message.includes("not logged in") ||
-        message.includes("authentication")
-    ) {
-        return new GitHubCLIError(
-            GitHubCLIErrorCode.AUTH_MISSING,
-            error.message,
-            {
-                originalError: error,
-                command,
-                suggestion: "gh auth login を実行して認証を行ってください",
-            }
-        );
+    if (message.includes("not logged in") || message.includes("authentication")) {
+        return new GitHubCLIError(GitHubCLIErrorCode.AUTH_MISSING, error.message, {
+            originalError: error,
+            command,
+            suggestion: "gh auth login を実行して認証を行ってください",
+        });
     }
 
     // コマンド未発見エラー
-    if (
-        message.includes("command not found") ||
-        message.includes("gh: not found")
-    ) {
-        return new GitHubCLIError(
-            GitHubCLIErrorCode.COMMAND_NOT_FOUND,
-            error.message,
-            {
-                originalError: error,
-                command,
-                suggestion:
-                    "GitHub CLI がインストールされているか確認してください",
-            }
-        );
+    if (message.includes("command not found") || message.includes("gh: not found")) {
+        return new GitHubCLIError(GitHubCLIErrorCode.COMMAND_NOT_FOUND, error.message, {
+            originalError: error,
+            command,
+            suggestion: "GitHub CLI がインストールされているか確認してください",
+        });
     }
 
     // ネットワークエラー
-    if (
-        message.includes("network") ||
-        message.includes("connection") ||
-        message.includes("timeout")
-    ) {
-        return new GitHubCLIError(
-            GitHubCLIErrorCode.NETWORK_ERROR,
-            error.message,
-            {
-                originalError: error,
-                command,
-                suggestion: "ネットワーク接続を確認してください",
-            }
-        );
+    if (message.includes("network") || message.includes("connection") || message.includes("timeout")) {
+        return new GitHubCLIError(GitHubCLIErrorCode.NETWORK_ERROR, error.message, {
+            originalError: error,
+            command,
+            suggestion: "ネットワーク接続を確認してください",
+        });
     }
 
     // レート制限エラー
     if (message.includes("rate limit") || message.includes("api rate limit")) {
-        return new GitHubCLIError(
-            GitHubCLIErrorCode.API_RATE_LIMIT,
-            error.message,
-            {
-                originalError: error,
-                command,
-                suggestion: "しばらく時間をおいてから再試行してください",
-            }
-        );
+        return new GitHubCLIError(GitHubCLIErrorCode.API_RATE_LIMIT, error.message, {
+            originalError: error,
+            command,
+            suggestion: "しばらく時間をおいてから再試行してください",
+        });
     }
 
     // その他の実行エラー
-    return new GitHubCLIError(
-        GitHubCLIErrorCode.EXECUTION_FAILED,
-        error.message,
-        { originalError: error, command }
-    );
+    return new GitHubCLIError(GitHubCLIErrorCode.EXECUTION_FAILED, error.message, { originalError: error, command });
 }
 
 // 汎用エラーハンドリング

@@ -48,14 +48,11 @@ vi.mock("../../../../../../src/i18n.js", () => ({
             envEncryption: {
                 confirmPrompt: "🔐 環境変数を暗号化しますか？",
                 processing: "🔐 環境変数を暗号化中...",
-                success: vi.fn(
-                    (zipPath) => `✅ env-files.zip を生成しました（${zipPath}）`
-                ),
+                success: vi.fn((zipPath) => `✅ env-files.zip を生成しました（${zipPath}）`),
                 failed: "❌ 環境変数の暗号化に失敗しました",
                 skipped: "ℹ️ 環境変数の暗号化をスキップしました",
                 manualCommand: "手動実行: pnpm env:encrypt",
-                shareInstruction:
-                    "📤 チームに渡す際はパスワードを安全に共有してください",
+                shareInstruction: "📤 チームに渡す際はパスワードを安全に共有してください",
             },
         },
     })),
@@ -86,9 +83,7 @@ describe("generateFullStackAdmin 暗号化統合", () => {
     beforeEach(async () => {
         vi.clearAllMocks();
 
-        const { copyTemplateDirectory } = await import(
-            "../../../../../../src/utils/template-manager/index.js"
-        );
+        const { copyTemplateDirectory } = await import("../../../../../../src/utils/template-manager/index.js");
         const { execa } = await import("execa");
         const { readFile } = await import("node:fs/promises");
 
@@ -125,16 +120,9 @@ describe("generateFullStackAdmin 暗号化統合", () => {
         const result = await generateFullStackAdmin(baseContext);
 
         expect(result.success).toBe(true);
-        expect(vi.mocked(runEnvEncryption)).toHaveBeenCalledWith(
-            "/test/project/target",
-            false
-        );
-        expect(result.nextSteps).toContain(
-            "✅ 環境変数を暗号化しました (/test/project/target/env-files.zip)"
-        );
-        expect(result.nextSteps).toContain(
-            "📤 チームメンバーとパスワードを安全に共有してください"
-        );
+        expect(vi.mocked(runEnvEncryption)).toHaveBeenCalledWith("/test/project/target", false);
+        expect(result.nextSteps).toContain("✅ 環境変数を暗号化しました (/test/project/target/env-files.zip)");
+        expect(result.nextSteps).toContain("📤 チームメンバーとパスワードを安全に共有してください");
     });
 
     it("暗号化実行環境が整っていない場合、マニュアル手順がnextStepsに含まれる", async () => {
@@ -154,12 +142,8 @@ describe("generateFullStackAdmin 暗号化統合", () => {
 
         expect(result.success).toBe(true);
         expect(vi.mocked(runEnvEncryption)).not.toHaveBeenCalled();
-        expect(result.nextSteps).toContain(
-            "🔐 環境変数暗号化: 手動実行: pnpm env:encrypt"
-        );
-        expect(result.nextSteps).toContain(
-            "   (非対話環境では暗号化を実行できません)"
-        );
+        expect(result.nextSteps).toContain("🔐 環境変数暗号化: 手動実行: pnpm env:encrypt");
+        expect(result.nextSteps).toContain("   (非対話環境では暗号化を実行できません)");
     });
 
     it("暗号化が失敗した場合、エラーメッセージとマニュアル手順がnextStepsに含まれる", async () => {
@@ -182,9 +166,7 @@ describe("generateFullStackAdmin 暗号化統合", () => {
         const result = await generateFullStackAdmin(baseContext);
 
         expect(result.success).toBe(true);
-        expect(result.nextSteps).toContain(
-            "❌ 暗号化に失敗しました: zip command failed"
-        );
+        expect(result.nextSteps).toContain("❌ 暗号化に失敗しました: zip command failed");
         expect(result.nextSteps).toContain("🔐 手動実行: pnpm env:encrypt");
     });
 
@@ -200,16 +182,12 @@ describe("generateFullStackAdmin 暗号化統合", () => {
             hasZip: true,
         });
 
-        vi.mocked(runEnvEncryption).mockRejectedValue(
-            new Error("Unexpected encryption failure")
-        );
+        vi.mocked(runEnvEncryption).mockRejectedValue(new Error("Unexpected encryption failure"));
 
         const result = await generateFullStackAdmin(baseContext);
 
         expect(result.success).toBe(true);
-        expect(result.nextSteps).toContain(
-            "❌ 暗号化処理でエラー: Unexpected encryption failure"
-        );
+        expect(result.nextSteps).toContain("❌ 暗号化処理でエラー: Unexpected encryption failure");
         expect(result.nextSteps).toContain("🔐 手動実行: pnpm env:encrypt");
     });
 
@@ -241,10 +219,7 @@ describe("generateFullStackAdmin 暗号化統合", () => {
         const result = await generateFullStackAdmin(monorepoContext);
 
         expect(result.success).toBe(true);
-        expect(vi.mocked(runEnvEncryption)).toHaveBeenCalledWith(
-            "/test/project/target",
-            true
-        );
+        expect(vi.mocked(runEnvEncryption)).toHaveBeenCalledWith("/test/project/target", true);
     });
 });
 
@@ -265,9 +240,7 @@ describe("generateFullStackAdmin huskyの統合", () => {
     beforeEach(async () => {
         vi.clearAllMocks();
 
-        const { copyTemplateDirectory } = await import(
-            "../../../../../../src/utils/template-manager/index.js"
-        );
+        const { copyTemplateDirectory } = await import("../../../../../../src/utils/template-manager/index.js");
         const { execa } = await import("execa");
         const { readFile, chmod } = await import("node:fs/promises");
         const { shouldEncryptEnv, runEnvEncryption } = await import(
@@ -313,10 +286,7 @@ describe("generateFullStackAdmin huskyの統合", () => {
 
         // chmod関数が正しいパスと権限で呼び出されることを確認
         const { chmod } = await import("node:fs/promises");
-        expect(vi.mocked(chmod)).toHaveBeenCalledWith(
-            "/test/project/target/.husky/pre-commit",
-            0o755
-        );
+        expect(vi.mocked(chmod)).toHaveBeenCalledWith("/test/project/target/.husky/pre-commit", 0o755);
     });
 
     it("huskyファイルが存在しない場合は権限設定をスキップする", async () => {
@@ -338,9 +308,7 @@ describe("generateFullStackAdmin huskyの統合", () => {
 
         expect(result.success).toBe(true);
         expect(result.filesCreated).toContain(".husky/pre-commit");
-        expect(result.directoriesCreated).toEqual(
-            expect.arrayContaining([expect.stringContaining("/.husky")])
-        );
+        expect(result.directoriesCreated).toEqual(expect.arrayContaining([expect.stringContaining("/.husky")]));
     });
 
     it("権限設定が失敗してもメイン処理は継続される", async () => {
@@ -354,10 +322,7 @@ describe("generateFullStackAdmin huskyの統合", () => {
         const result = await generateFullStackAdmin(baseContext);
 
         expect(result.success).toBe(true);
-        expect(vi.mocked(chmod)).toHaveBeenCalledWith(
-            "/test/project/target/.husky/pre-commit",
-            0o755
-        );
+        expect(vi.mocked(chmod)).toHaveBeenCalledWith("/test/project/target/.husky/pre-commit", 0o755);
     });
 });
 
@@ -379,13 +344,9 @@ describe("generateFullStackAdmin SQLite対応", () => {
             targetDirectory: "/test/project/target",
         };
 
-        const { copyTemplateDirectory } = await import(
-            "../../../../../../src/utils/template-manager/index.js"
-        );
+        const { copyTemplateDirectory } = await import("../../../../../../src/utils/template-manager/index.js");
         const { execa } = await import("execa");
-        const { readFile, writeFile, copyFile } = await import(
-            "node:fs/promises"
-        );
+        const { readFile, writeFile, copyFile } = await import("node:fs/promises");
 
         // 基本的なモック設定
         vi.mocked(copyTemplateDirectory).mockResolvedValue({
@@ -413,9 +374,7 @@ describe("generateFullStackAdmin SQLite対応", () => {
         const result = await generateFullStackAdmin(sqliteContext);
 
         expect(result.success).toBe(true);
-        expect(result.nextSteps).toContain(
-            "1. ローカル SQLite データベースを初期化してください (pnpm db:reset)"
-        );
+        expect(result.nextSteps).toContain("1. ローカル SQLite データベースを初期化してください (pnpm db:reset)");
     });
 });
 
@@ -444,9 +403,7 @@ describe("generateFullStackAdmin スピナー制御統合", () => {
     beforeEach(async () => {
         vi.clearAllMocks();
 
-        const { copyTemplateDirectory } = await import(
-            "../../../../../../src/utils/template-manager/index.js"
-        );
+        const { copyTemplateDirectory } = await import("../../../../../../src/utils/template-manager/index.js");
         const { execa } = await import("execa");
         const { readFile } = await import("node:fs/promises");
         const { shouldEncryptEnv, runEnvEncryption } = await import(
@@ -481,26 +438,17 @@ describe("generateFullStackAdmin スピナー制御統合", () => {
         });
 
         // スピナー制御のモック
-        vi.mocked(createSpinnerController).mockReturnValue(
-            mockSpinnerController as any
-        );
-        vi.mocked(withSpinnerControl).mockImplementation(
-            (_controller, operation) => operation()
-        );
+        vi.mocked(createSpinnerController).mockReturnValue(mockSpinnerController as any);
+        vi.mocked(withSpinnerControl).mockImplementation((_controller, operation) => operation());
     });
 
     it("スピナー制御ありでプロジェクト生成が成功する", async () => {
-        const result = await generateFullStackAdmin(
-            baseContext,
-            mockSpinnerController as any
-        );
+        const result = await generateFullStackAdmin(baseContext, mockSpinnerController as any);
 
         expect(result.success).toBe(true);
 
         // withSpinnerControlが呼び出されることを確認
-        const { withSpinnerControl } = await import(
-            "../../../../../../src/utils/spinner-control/index.js"
-        );
+        const { withSpinnerControl } = await import("../../../../../../src/utils/spinner-control/index.js");
         expect(vi.mocked(withSpinnerControl)).toHaveBeenCalled();
     });
 
@@ -522,10 +470,7 @@ describe("generateFullStackAdmin スピナー制御統合", () => {
 
         // pnpm installコマンドが--reporter append-onlyオプション付きで呼ばれることを確認
         const installCall = execaCalls.find(
-            ([command, args]) =>
-                command === "pnpm" &&
-                Array.isArray(args) &&
-                args.includes("install")
+            ([command, args]) => command === "pnpm" && Array.isArray(args) && args.includes("install")
         );
         expect(installCall).toBeDefined();
         expect(installCall?.[1]).toContain("--reporter");
@@ -534,24 +479,15 @@ describe("generateFullStackAdmin スピナー制御統合", () => {
 
     it("スピナー制御を使ったpnpmコマンド実行でエラーハンドリングが機能する", async () => {
         const { execa } = await import("execa");
-        const { withSpinnerControl } = await import(
-            "../../../../../../src/utils/spinner-control/index.js"
-        );
+        const { withSpinnerControl } = await import("../../../../../../src/utils/spinner-control/index.js");
 
         // execaがエラーを投げるように設定
-        vi.mocked(execa).mockRejectedValueOnce(
-            new Error("pnpm install failed")
-        );
+        vi.mocked(execa).mockRejectedValueOnce(new Error("pnpm install failed"));
 
         // withSpinnerControlがエラーを適切に伝播するように設定
-        vi.mocked(withSpinnerControl).mockImplementation(
-            async (_controller, operation) => operation()
-        );
+        vi.mocked(withSpinnerControl).mockImplementation(async (_controller, operation) => operation());
 
-        const result = await generateFullStackAdmin(
-            baseContext,
-            mockSpinnerController as any
-        );
+        const result = await generateFullStackAdmin(baseContext, mockSpinnerController as any);
 
         // エラーが発生した場合、resultは失敗を示す
         expect(result.success).toBe(false);
@@ -565,9 +501,7 @@ describe("generateFullStackAdmin スピナー制御統合", () => {
 
         await generateFullStackAdmin(baseContext, mockSpinnerController as any);
 
-        const { withSpinnerControl } = await import(
-            "../../../../../../src/utils/spinner-control/index.js"
-        );
+        const { withSpinnerControl } = await import("../../../../../../src/utils/spinner-control/index.js");
 
         // 複数のpnpmコマンド（install, db:generate, db:push, db:seed）でwithSpinnerControlが呼ばれる
         const callCount = vi.mocked(withSpinnerControl).mock.calls.length;
@@ -592,9 +526,7 @@ describe("generateFullStackAdmin Next.js 設定ファイル", () => {
     beforeEach(async () => {
         vi.clearAllMocks();
 
-        const { copyTemplateDirectory } = await import(
-            "../../../../../../src/utils/template-manager/index.js"
-        );
+        const { copyTemplateDirectory } = await import("../../../../../../src/utils/template-manager/index.js");
         const { execa } = await import("execa");
         const { readFile } = await import("node:fs/promises");
         const { shouldEncryptEnv, runEnvEncryption } = await import(
@@ -639,9 +571,7 @@ describe("generateFullStackAdmin Next.js 設定ファイル", () => {
     });
 
     it("copyTemplateDirectoryからnext.config.tsが除外されていることを確認", async () => {
-        const { copyTemplateDirectory } = await import(
-            "../../../../../../src/utils/template-manager/index.js"
-        );
+        const { copyTemplateDirectory } = await import("../../../../../../src/utils/template-manager/index.js");
 
         await generateFullStackAdmin(baseContext);
 

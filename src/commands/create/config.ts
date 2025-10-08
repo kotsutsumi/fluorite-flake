@@ -3,21 +3,13 @@
  */
 import { validatePnpm } from "../../utils/pnpm-validator/index.js";
 import { PROJECT_TYPE_DESCRIPTIONS } from "./constants.js";
-import type {
-    CreateOptions,
-    ExtendedProjectConfig,
-    ProjectConfig,
-    ProjectType,
-} from "./types.js";
+import type { CreateOptions, ExtendedProjectConfig, ProjectConfig, ProjectType } from "./types.js";
 import { validateProjectType, validateTemplate } from "./validators.js";
 
 /**
  * 引数からプロジェクト設定を作成
  */
-export function createProjectConfig(
-    projectType: string,
-    options: CreateOptions
-): ProjectConfig | null {
+export function createProjectConfig(projectType: string, options: CreateOptions): ProjectConfig | null {
     // 未使用警告を避けるため、後で使用する予定のメッセージを取得
     // const { create } = getMessages();
 
@@ -72,10 +64,7 @@ export function createProjectConfig(
 /**
  * 拡張プロジェクト設定を作成（詳細情報付き）
  */
-export function createExtendedProjectConfig(
-    projectType: string,
-    options: CreateOptions
-): ExtendedProjectConfig | null {
+export function createExtendedProjectConfig(projectType: string, options: CreateOptions): ExtendedProjectConfig | null {
     // 基本設定を作成
     const baseConfig = createProjectConfig(projectType, options);
     if (!baseConfig) {
@@ -87,18 +76,12 @@ export function createExtendedProjectConfig(
 
     // プロジェクトタイプの説明情報を取得
     const typeDescription = PROJECT_TYPE_DESCRIPTIONS[typedProjectType];
-    const templateDescription =
-        typeDescription.templates[
-            template as keyof typeof typeDescription.templates
-        ];
+    const templateDescription = typeDescription.templates[template as keyof typeof typeDescription.templates];
 
     // テンプレートに基づく機能の判定
-    const isFullStack =
-        template.includes("fullstack") || template.includes("admin");
-    const hasAuthentication =
-        template.includes("admin") || template.includes("fullstack");
-    const hasDatabase =
-        template.includes("admin") || template.includes("fullstack");
+    const isFullStack = template.includes("fullstack") || template.includes("admin");
+    const hasAuthentication = template.includes("admin") || template.includes("fullstack");
+    const hasDatabase = template.includes("admin") || template.includes("fullstack");
 
     // フレームワークの判定
     let framework = typeDescription.name;
@@ -118,11 +101,7 @@ export function createExtendedProjectConfig(
         features.push("Database Integration");
     }
     if (template.includes("admin")) {
-        features.push(
-            "Admin Dashboard",
-            "User Management",
-            "Organization Management"
-        );
+        features.push("Admin Dashboard", "User Management", "Organization Management");
     }
     if (template.includes("graphql")) {
         features.push("GraphQL API", "Apollo Client/Server");

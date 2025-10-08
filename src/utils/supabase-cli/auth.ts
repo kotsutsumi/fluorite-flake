@@ -13,10 +13,7 @@ import type { GlobalFlags, LoginInfo, LoginOptions } from "./types.js";
  * @param globalFlags - グローバルフラグ
  * @returns Promise<void>
  */
-export async function login(
-    options: LoginOptions = {},
-    globalFlags: GlobalFlags = {}
-): Promise<void> {
+export async function login(options: LoginOptions = {}, globalFlags: GlobalFlags = {}): Promise<void> {
     const args = ["login"];
 
     // オプションの追加
@@ -89,9 +86,7 @@ export async function logout(globalFlags: GlobalFlags = {}): Promise<void> {
  * @param globalFlags - グローバルフラグ
  * @returns Promise<LoginInfo> - ログイン情報
  */
-export async function getLoginInfo(
-    globalFlags: GlobalFlags = {}
-): Promise<LoginInfo> {
+export async function getLoginInfo(globalFlags: GlobalFlags = {}): Promise<LoginInfo> {
     const args = ["projects", "list"];
 
     // グローバルフラグの追加
@@ -151,9 +146,7 @@ export async function whoami(globalFlags: GlobalFlags = {}): Promise<string> {
  * @param globalFlags - グローバルフラグ
  * @returns Promise<boolean> - 認証されているかどうか
  */
-export async function isAuthenticated(
-    globalFlags: GlobalFlags = {}
-): Promise<boolean> {
+export async function isAuthenticated(globalFlags: GlobalFlags = {}): Promise<boolean> {
     try {
         const loginInfo = await getLoginInfo(globalFlags);
         return loginInfo.isLoggedIn;

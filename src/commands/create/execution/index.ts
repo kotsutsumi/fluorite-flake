@@ -8,10 +8,7 @@
 import type { BlobConfiguration } from "../../../utils/vercel-cli/blob-types.js";
 import type { ConfirmationInputs } from "../confirmation/index.js";
 import { DatabaseProvisioningService } from "../database-provisioning/service.js";
-import type {
-    DatabaseCredentials,
-    DatabaseProvisioningConfig,
-} from "../database-provisioning/types.js";
+import type { DatabaseCredentials, DatabaseProvisioningConfig } from "../database-provisioning/types.js";
 
 /**
  * プロビジョニング実行結果の型定義
@@ -57,17 +54,13 @@ export type BlobCredentials = {
  * @param inputs - 確認済みの入力情報
  * @returns プロビジョニング実行結果
  */
-export async function executeProvisioning(
-    inputs: ConfirmationInputs
-): Promise<ExecutionResult> {
+export async function executeProvisioning(inputs: ConfirmationInputs): Promise<ExecutionResult> {
     try {
         const result: ExecutionResult = { success: false };
 
         // データベースプロビジョニングの実行
         if (inputs.databaseConfig) {
-            const dbResult = await executeDatabaseProvisioning(
-                inputs.databaseConfig
-            );
+            const dbResult = await executeDatabaseProvisioning(inputs.databaseConfig);
             if (!dbResult.success) {
                 return {
                     success: false,
@@ -86,9 +79,7 @@ export async function executeProvisioning(
             }
             // Blobの失敗は警告レベルとし、プロジェクト作成は継続
             if (!blobResult.success) {
-                console.warn(
-                    `⚠️ Blob設定に問題がありました: ${blobResult.error}`
-                );
+                console.warn(`⚠️ Blob設定に問題がありました: ${blobResult.error}`);
             }
         }
 
@@ -105,9 +96,7 @@ export async function executeProvisioning(
 /**
  * データベースプロビジョニングを実行
  */
-async function executeDatabaseProvisioning(
-    config: DatabaseProvisioningConfig
-): Promise<{
+async function executeDatabaseProvisioning(config: DatabaseProvisioningConfig): Promise<{
     success: boolean;
     credentials?: DatabaseCredentials;
     databases?: DatabaseInfo[];
@@ -191,11 +180,7 @@ export class ProvisioningError extends Error {
     readonly code: string;
     readonly details?: Record<string, unknown>;
 
-    constructor(
-        message: string,
-        code: string,
-        details?: Record<string, unknown>
-    ) {
+    constructor(message: string, code: string, details?: Record<string, unknown>) {
         super(message);
         this.name = "ProvisioningError";
         this.code = code;

@@ -59,10 +59,7 @@ export { GitHubCLIErrorCode } from "./types/common.js";
 
 import type { CreateIssueOptions, IssueInfo } from "./commands/issue.js";
 import { issueCommands } from "./commands/issue.js";
-import type {
-    CreatePullRequestOptions,
-    PullRequestInfo,
-} from "./commands/pull-request.js";
+import type { CreatePullRequestOptions, PullRequestInfo } from "./commands/pull-request.js";
 import { pullRequestCommands } from "./commands/pull-request.js";
 import type { RepositoryInfo } from "./commands/repository.js";
 import { repositoryCommands } from "./commands/repository.js";
@@ -131,24 +128,15 @@ export class GitHubCLI {
     }> {
         try {
             const repoResult = await this.repository.getCurrentRepository();
-            const repository = repoResult.success
-                ? repoResult.data || null
-                : null;
+            const repository = repoResult.success ? repoResult.data || null : null;
 
-            const prResult = await this.pullRequest.listPullRequests(
-                undefined,
-                { state: "open" }
-            );
-            const openPullRequests = prResult.success
-                ? prResult.data || []
-                : [];
+            const prResult = await this.pullRequest.listPullRequests(undefined, { state: "open" });
+            const openPullRequests = prResult.success ? prResult.data || [] : [];
 
             const issueResult = await this.issue.listIssues(undefined, {
                 state: "open",
             });
-            const openIssues = issueResult.success
-                ? issueResult.data || []
-                : [];
+            const openIssues = issueResult.success ? issueResult.data || [] : [];
 
             return {
                 repository,
@@ -239,18 +227,10 @@ export class GitHubCLI {
             if (repoInfo.repository) {
                 console.log("\n📁 現在のリポジトリ:");
                 console.log(`  名前: ${repoInfo.repository.full_name}`);
-                console.log(
-                    `  説明: ${repoInfo.repository.description || "（説明なし）"}`
-                );
-                console.log(
-                    `  プライベート: ${repoInfo.repository.private ? "はい" : "いいえ"}`
-                );
-                console.log(
-                    `  開いているPR: ${repoInfo.openPullRequests.length}個`
-                );
-                console.log(
-                    `  開いているIssue: ${repoInfo.openIssues.length}個`
-                );
+                console.log(`  説明: ${repoInfo.repository.description || "（説明なし）"}`);
+                console.log(`  プライベート: ${repoInfo.repository.private ? "はい" : "いいえ"}`);
+                console.log(`  開いているPR: ${repoInfo.openPullRequests.length}個`);
+                console.log(`  開いているIssue: ${repoInfo.openIssues.length}個`);
             }
         } catch (error) {
             console.log("\n📁 現在のリポジトリ: Gitリポジトリではありません");

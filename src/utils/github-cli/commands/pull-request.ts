@@ -150,10 +150,7 @@ export class PullRequestCommands {
     }
 
     // プルリクエスト詳細の取得
-    async getPullRequest(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<PullRequestInfo>> {
+    async getPullRequest(number: number, repository?: string): Promise<GitHubCLIResponse<PullRequestInfo>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {
@@ -172,9 +169,7 @@ export class PullRequestCommands {
     }
 
     // プルリクエストの作成
-    async createPullRequest(
-        options: CreatePullRequestOptions = {}
-    ): Promise<GitHubCLIResponse<PullRequestInfo>> {
+    async createPullRequest(options: CreatePullRequestOptions = {}): Promise<GitHubCLIResponse<PullRequestInfo>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {
@@ -376,10 +371,7 @@ export class PullRequestCommands {
     }
 
     // プルリクエストの再オープン
-    async reopenPullRequest(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async reopenPullRequest(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {};
@@ -492,10 +484,7 @@ export class PullRequestCommands {
     }
 
     // プルリクエストをブラウザで開く
-    async openPullRequest(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async openPullRequest(number: number, repository?: string): Promise<GitHubCLIResponse<string>> {
         const flags: Record<string, any> = {
             web: true,
         };
@@ -512,10 +501,7 @@ export class PullRequestCommands {
     }
 
     // プルリクエストのステータスチェック
-    async checkPullRequestStatus(
-        number: number,
-        repository?: string
-    ): Promise<GitHubCLIResponse<any>> {
+    async checkPullRequestStatus(number: number, repository?: string): Promise<GitHubCLIResponse<any>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {

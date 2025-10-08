@@ -2,14 +2,8 @@
  * createコマンドの型定義
  */
 import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
-import type {
-    PROJECT_TEMPLATES,
-    PROJECT_TYPE_DESCRIPTIONS,
-} from "./constants.js";
-import type {
-    DatabaseCredentials,
-    DatabaseProvisioningConfig,
-} from "./database-provisioning/types.js";
+import type { PROJECT_TEMPLATES, PROJECT_TYPE_DESCRIPTIONS } from "./constants.js";
+import type { DatabaseCredentials, DatabaseProvisioningConfig } from "./database-provisioning/types.js";
 
 /**
  * データベースタイプの型
@@ -37,8 +31,7 @@ export type ProjectType = keyof typeof PROJECT_TEMPLATES;
 /**
  * テンプレートタイプの型
  */
-export type TemplateType<T extends ProjectType> =
-    (typeof PROJECT_TEMPLATES)[T][number];
+export type TemplateType<T extends ProjectType> = (typeof PROJECT_TEMPLATES)[T][number];
 
 /**
  * プロジェクト設定の型

@@ -27,12 +27,9 @@ vi.mock("../../../../src/i18n.js", () => ({
         create: {
             pnpmNotFound: "❌ pnpm が見つかりません。",
             pnpmVersionTooOld: vi.fn(
-                (version, minVersion) =>
-                    `❌ pnpm v${version} が検出されました。v${minVersion}.0.0以上が必要です。`
+                (version, minVersion) => `❌ pnpm v${version} が検出されました。v${minVersion}.0.0以上が必要です。`
             ),
-            pnpmVersionValid: vi.fn(
-                (version) => `✅ pnpm v${version} を検出しました。`
-            ),
+            pnpmVersionValid: vi.fn((version) => `✅ pnpm v${version} を検出しました。`),
             pnpmInstallGuide: "📦 pnpm インストールガイド:",
             pnpmInstallCommands: [
                 "  npm install -g pnpm@latest",
@@ -66,9 +63,7 @@ describe("pnpm-validator", () => {
             const result = validatePnpm();
 
             expect(result).toBe(true);
-            expect(mockConsoleLog).toHaveBeenCalledWith(
-                "✅ pnpm v10.1.0 を検出しました。"
-            );
+            expect(mockConsoleLog).toHaveBeenCalledWith("✅ pnpm v10.1.0 を検出しました。");
             expect(mockConsoleError).not.toHaveBeenCalled();
         });
 
@@ -79,12 +74,8 @@ describe("pnpm-validator", () => {
             const result = validatePnpm();
 
             expect(result).toBe(false);
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                "❌ pnpm v9.12.1 が検出されました。v10.0.0以上が必要です。"
-            );
-            expect(mockConsoleLog).toHaveBeenCalledWith(
-                "\n📦 pnpm インストールガイド:"
-            );
+            expect(mockConsoleError).toHaveBeenCalledWith("❌ pnpm v9.12.1 が検出されました。v10.0.0以上が必要です。");
+            expect(mockConsoleLog).toHaveBeenCalledWith("\n📦 pnpm インストールガイド:");
         });
 
         it("pnpmが存在しない場合はfalseを返す", () => {
@@ -96,12 +87,8 @@ describe("pnpm-validator", () => {
             const result = validatePnpm();
 
             expect(result).toBe(false);
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                "❌ pnpm が見つかりません。"
-            );
-            expect(mockConsoleLog).toHaveBeenCalledWith(
-                "\n📦 pnpm インストールガイド:"
-            );
+            expect(mockConsoleError).toHaveBeenCalledWith("❌ pnpm が見つかりません。");
+            expect(mockConsoleLog).toHaveBeenCalledWith("\n📦 pnpm インストールガイド:");
         });
 
         it("バージョン番号が正確にパースされる", () => {
@@ -111,9 +98,7 @@ describe("pnpm-validator", () => {
             const result = validatePnpm();
 
             expect(result).toBe(true);
-            expect(mockConsoleLog).toHaveBeenCalledWith(
-                "✅ pnpm v11 を検出しました。"
-            );
+            expect(mockConsoleLog).toHaveBeenCalledWith("✅ pnpm v11 を検出しました。");
         });
 
         it("バージョン10.0.0で境界値テスト", () => {
@@ -122,9 +107,7 @@ describe("pnpm-validator", () => {
             const result = validatePnpm();
 
             expect(result).toBe(true);
-            expect(mockConsoleLog).toHaveBeenCalledWith(
-                "✅ pnpm v10.0.0 を検出しました。"
-            );
+            expect(mockConsoleLog).toHaveBeenCalledWith("✅ pnpm v10.0.0 を検出しました。");
         });
 
         it("バージョン9.99.99で境界値テスト（false）", () => {
@@ -133,9 +116,7 @@ describe("pnpm-validator", () => {
             const result = validatePnpm();
 
             expect(result).toBe(false);
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                "❌ pnpm v9.99.99 が検出されました。v10.0.0以上が必要です。"
-            );
+            expect(mockConsoleError).toHaveBeenCalledWith("❌ pnpm v9.99.99 が検出されました。v10.0.0以上が必要です。");
         });
     });
 });

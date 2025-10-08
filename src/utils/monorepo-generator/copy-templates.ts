@@ -17,9 +17,7 @@ function findPackageRoot(startPath: string): string {
         const packageJsonPath = path.join(currentPath, "package.json");
         if (fs.existsSync(packageJsonPath)) {
             try {
-                const packageJson = JSON.parse(
-                    fs.readFileSync(packageJsonPath, "utf-8")
-                );
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
                 // fluorite-flakeパッケージかどうか確認
                 if (packageJson.name === "fluorite-flake") {
                     return currentPath;
@@ -42,10 +40,7 @@ function findPackageRoot(startPath: string): string {
  * @param config プロジェクト設定
  * @param pnpmVersion pnpmバージョン（省略時は"latest"）
  */
-export function copyMonorepoTemplates(
-    config: ProjectConfig,
-    pnpmVersion?: string
-): void {
+export function copyMonorepoTemplates(config: ProjectConfig, pnpmVersion?: string): void {
     const { directory, name } = config;
 
     // パッケージルートディレクトリを取得
@@ -62,10 +57,7 @@ export function copyMonorepoTemplates(
     const majorVersion = majorVersionMatch ? majorVersionMatch[1] : "10";
 
     // package.json.templateを処理してコピー
-    const packageJsonTemplate = fs.readFileSync(
-        path.join(templateDir, "package.json.template"),
-        "utf-8"
-    );
+    const packageJsonTemplate = fs.readFileSync(path.join(templateDir, "package.json.template"), "utf-8");
 
     // プレースホルダーを置換
     const packageJson = packageJsonTemplate
@@ -73,11 +65,7 @@ export function copyMonorepoTemplates(
         .replace(/\{\{PNPM_VERSION\}\}/g, finalPnpmVersion)
         .replace(/\{\{PNPM_MAJOR_VERSION\}\}/g, majorVersion);
 
-    fs.writeFileSync(
-        path.join(directory, "package.json"),
-        packageJson,
-        "utf-8"
-    );
+    fs.writeFileSync(path.join(directory, "package.json"), packageJson, "utf-8");
 
     // その他のファイルをそのままコピー
     const filesToCopy = [
@@ -88,16 +76,8 @@ export function copyMonorepoTemplates(
     ];
 
     // .gitignore を個別にコピー（shared/monorepo テンプレートから）
-    const sharedMonorepoTemplateDir = path.join(
-        packageRoot,
-        "templates",
-        "shared",
-        "monorepo"
-    );
-    const gitignoreSourcePath = path.join(
-        sharedMonorepoTemplateDir,
-        "gitignore"
-    );
+    const sharedMonorepoTemplateDir = path.join(packageRoot, "templates", "shared", "monorepo");
+    const gitignoreSourcePath = path.join(sharedMonorepoTemplateDir, "gitignore");
     const gitignoreDestPath = path.join(directory, ".gitignore");
 
     if (fs.existsSync(gitignoreSourcePath)) {

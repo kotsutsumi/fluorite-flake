@@ -22,10 +22,7 @@ import {
     generateFullStackAdmin,
     generateTauriCrossPlatform,
 } from "./template-generators/index.js";
-import type {
-    GenerationContext,
-    TemplateGenerationResult,
-} from "./template-generators/types.js";
+import type { GenerationContext, TemplateGenerationResult } from "./template-generators/types.js";
 import type { ProjectConfig } from "./types.js";
 
 // プロジェクト生成タイムアウト定数
@@ -70,16 +67,13 @@ function getBuildCommand(type: string): string {
  */
 function isAdvancedTemplate(config: ProjectConfig): boolean {
     // Next.js拡張テンプレート
-    const isNextJsAdvanced =
-        config.type === "nextjs" && config.template === "fullstack-admin";
+    const isNextJsAdvanced = config.type === "nextjs" && config.template === "fullstack-admin";
 
     // Expo拡張テンプレート
-    const isExpoAdvanced =
-        config.type === "expo" && config.template === "fullstack-graphql";
+    const isExpoAdvanced = config.type === "expo" && config.template === "fullstack-graphql";
 
     // Tauri拡張テンプレート
-    const isTauriAdvanced =
-        config.type === "tauri" && config.template === "cross-platform";
+    const isTauriAdvanced = config.type === "tauri" && config.template === "cross-platform";
 
     return isNextJsAdvanced || isExpoAdvanced || isTauriAdvanced;
 }
@@ -87,16 +81,11 @@ function isAdvancedTemplate(config: ProjectConfig): boolean {
 /**
  * 拡張テンプレートを生成
  */
-async function handleAdvancedTemplate(
-    config: ProjectConfig,
-    spinner: Ora
-): Promise<void> {
+async function handleAdvancedTemplate(config: ProjectConfig, spinner: Ora): Promise<void> {
     const { create } = getMessages();
     spinner.text = create.spinnerConfiguringTemplate(config.template);
 
-    const targetDirectory = config.monorepo
-        ? path.join(config.directory, "apps", "web")
-        : config.directory;
+    const targetDirectory = config.monorepo ? path.join(config.directory, "apps", "web") : config.directory;
 
     if (config.monorepo) {
         createMonorepoStructure(config);
@@ -121,24 +110,17 @@ async function handleAdvancedTemplate(
     // テンプレートタイプに応じて適切なジェネレーターを呼び出し
     let result: TemplateGenerationResult;
     if (config.type === "nextjs") {
-        result = await generateFullStackAdmin(
-            generationContext,
-            spinnerController
-        );
+        result = await generateFullStackAdmin(generationContext, spinnerController);
     } else if (config.type === "expo") {
         result = await generateExpoGraphQL(generationContext);
     } else if (config.type === "tauri") {
         result = await generateTauriCrossPlatform(generationContext);
     } else {
-        throw new Error(
-            `Unsupported advanced template: ${config.type}/${config.template}`
-        );
+        throw new Error(`Unsupported advanced template: ${config.type}/${config.template}`);
     }
 
     if (!result.success) {
-        throw new Error(
-            `Template generation failed: ${result.errors?.join(", ")}`
-        );
+        throw new Error(`Template generation failed: ${result.errors?.join(", ")}`);
     }
 
     debugLog("Advanced template generation completed", {
@@ -153,10 +135,7 @@ async function handleAdvancedTemplate(
 /**
  * 通常テンプレートを生成
  */
-async function handleStandardTemplate(
-    config: ProjectConfig,
-    spinner: Ora
-): Promise<void> {
+async function handleStandardTemplate(config: ProjectConfig, spinner: Ora): Promise<void> {
     const { create } = getMessages();
 
     if (config.monorepo) {
@@ -176,10 +155,7 @@ async function handleStandardTemplate(
             dependencies: {},
             devDependencies: {},
         };
-        fs.writeFileSync(
-            packageJsonPath,
-            JSON.stringify(packageJsonContent, null, 2)
-        );
+        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJsonContent, null, 2));
     }
 
     // README.mdを作成（多言語対応）
@@ -196,10 +172,7 @@ async function handleStandardTemplate(
         );
 
         try {
-            const gitignoreContent = fs.readFileSync(
-                gitignoreTemplatePath,
-                "utf8"
-            );
+            const gitignoreContent = fs.readFileSync(gitignoreTemplatePath, "utf8");
             fs.writeFileSync(gitignorePath, gitignoreContent);
         } catch (error) {
             debugLog("Warning: Could not copy .gitignore template", { error });
@@ -252,9 +225,7 @@ next-env.d.ts
  */
 export async function generateProject(config: ProjectConfig): Promise<void> {
     const { create } = getMessages();
-    const spinner = ora(
-        create.spinnerCreating(config.type, config.name)
-    ).start();
+    const spinner = ora(create.spinnerCreating(config.type, config.name)).start();
 
     try {
         debugLog(create.debugProjectConfig, config);
@@ -281,9 +252,7 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
         }
 
         // 成功メッセージの表示
-        spinner.succeed(
-            chalk.green(create.spinnerSuccess(config.type, config.name))
-        );
+        spinner.succeed(chalk.green(create.spinnerSuccess(config.type, config.name)));
 
         // プロジェクトの場所を表示
         const currentDir = process.cwd();

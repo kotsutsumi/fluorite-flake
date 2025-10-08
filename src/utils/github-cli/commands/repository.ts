@@ -56,10 +56,7 @@ export type CloneRepositoryOptions = {
 // リポジトリ操作クラス
 export class RepositoryCommands {
     // リポジトリ情報の取得
-    async getRepository(
-        owner: string,
-        repo: string
-    ): Promise<GitHubCLIResponse<RepositoryInfo>> {
+    async getRepository(owner: string, repo: string): Promise<GitHubCLIResponse<RepositoryInfo>> {
         await authManager.requireAuth();
 
         return await githubCLI.execute<RepositoryInfo>({
@@ -162,9 +159,7 @@ export class RepositoryCommands {
             flags.template = options.template;
         }
 
-        const args = options.org
-            ? ["create", `${options.org}/${name}`]
-            : ["create", name];
+        const args = options.org ? ["create", `${options.org}/${name}`] : ["create", name];
 
         return await githubCLI.execute<RepositoryInfo>({
             command: "repo",
@@ -193,9 +188,7 @@ export class RepositoryCommands {
             flags.recursive = true;
         }
 
-        const args = options.directory
-            ? ["clone", repository, options.directory]
-            : ["clone", repository];
+        const args = options.directory ? ["clone", repository, options.directory] : ["clone", repository];
 
         return await githubCLI.execute<string>({
             command: "repo",
@@ -238,9 +231,7 @@ export class RepositoryCommands {
     }
 
     // リポジトリの削除
-    async deleteRepository(
-        repository: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async deleteRepository(repository: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         return await githubCLI.execute<string>({
@@ -253,9 +244,7 @@ export class RepositoryCommands {
     }
 
     // リポジトリのアーカイブ
-    async archiveRepository(
-        repository: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async archiveRepository(repository: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         return await githubCLI.execute<string>({
@@ -265,9 +254,7 @@ export class RepositoryCommands {
     }
 
     // リポジトリのアーカイブ解除
-    async unarchiveRepository(
-        repository: string
-    ): Promise<GitHubCLIResponse<string>> {
+    async unarchiveRepository(repository: string): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         return await githubCLI.execute<string>({
@@ -277,10 +264,7 @@ export class RepositoryCommands {
     }
 
     // リポジトリの可視性変更（公開/非公開）
-    async setVisibility(
-        repository: string,
-        visibility: "public" | "private"
-    ): Promise<GitHubCLIResponse<string>> {
+    async setVisibility(repository: string, visibility: "public" | "private"): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         return await githubCLI.execute<string>({
@@ -323,12 +307,8 @@ export class RepositoryCommands {
     }
 
     // リポジトリのブラウザで開く
-    async openRepository(
-        repository?: string
-    ): Promise<GitHubCLIResponse<string>> {
-        const args = repository
-            ? ["view", repository, "--web"]
-            : ["view", "--web"];
+    async openRepository(repository?: string): Promise<GitHubCLIResponse<string>> {
+        const args = repository ? ["view", repository, "--web"] : ["view", "--web"];
 
         return await githubCLI.execute<string>({
             command: "repo",
@@ -347,23 +327,17 @@ export class RepositoryCommands {
     }
 
     // リポジトリのコラボレーター一覧
-    async listCollaborators(
-        repository?: string
-    ): Promise<GitHubCLIResponse<any[]>> {
+    async listCollaborators(repository?: string): Promise<GitHubCLIResponse<any[]>> {
         await authManager.requireAuth();
 
         return await githubCLI.execute<any[]>({
             command: "api",
-            args: repository
-                ? [`repos/${repository}/collaborators`]
-                : ["repos/:owner/:repo/collaborators"],
+            args: repository ? [`repos/${repository}/collaborators`] : ["repos/:owner/:repo/collaborators"],
         });
     }
 
     // デフォルトブランチの取得（テスト用）
-    async getDefaultBranch(options?: {
-        repository?: string;
-    }): Promise<GitHubCLIResponse<string>> {
+    async getDefaultBranch(options?: { repository?: string }): Promise<GitHubCLIResponse<string>> {
         await authManager.requireAuth();
 
         const flags: Record<string, any> = {

@@ -34,14 +34,11 @@ vi.mock("../../../../src/i18n.js", () => ({
             envEncryption: {
                 confirmPrompt: "🔐 環境変数を暗号化しますか？",
                 processing: "🔐 環境変数を暗号化中...",
-                success: vi.fn(
-                    (zipPath) => `✅ env-files.zip を生成しました（${zipPath}）`
-                ),
+                success: vi.fn((zipPath) => `✅ env-files.zip を生成しました（${zipPath}）`),
                 failed: "❌ 環境変数の暗号化に失敗しました",
                 skipped: "ℹ️ 環境変数の暗号化をスキップしました",
                 manualCommand: "手動実行: pnpm env:encrypt",
-                shareInstruction:
-                    "📤 チームに渡す際はパスワードを安全に共有してください",
+                shareInstruction: "📤 チームに渡す際はパスワードを安全に共有してください",
             },
         },
     })),
@@ -120,9 +117,7 @@ describe("env-encryption ユーティリティ", () => {
 
             expect(result.canExecute).toBe(false);
             expect(result.hasScript).toBe(false);
-            expect(result.reason).toBe(
-                "env-tools.tsスクリプトが見つかりません"
-            );
+            expect(result.reason).toBe("env-tools.tsスクリプトが見つかりません");
         });
 
         it("zipコマンドが利用できない場合はcanExecute: falseを返す", async () => {
@@ -130,9 +125,7 @@ describe("env-encryption ユーティリティ", () => {
             vi.mocked(existsSync).mockReturnValue(true);
 
             // zipコマンドが失敗
-            vi.mocked(execa).mockRejectedValue(
-                new Error("zip command not found")
-            );
+            vi.mocked(execa).mockRejectedValue(new Error("zip command not found"));
 
             const result = await shouldEncryptEnv("/test/app");
 
@@ -203,15 +196,11 @@ describe("env-encryption ユーティリティ", () => {
 
             expect(result.success).toBe(true);
             expect(result.zipPath).toBe("/test/app/env-files.zip");
-            expect(vi.mocked(execa)).toHaveBeenCalledWith(
-                "pnpm",
-                ["env:encrypt"],
-                {
-                    cwd: "/test/app",
-                    stdio: "inherit",
-                    timeout: 120_000,
-                }
-            );
+            expect(vi.mocked(execa)).toHaveBeenCalledWith("pnpm", ["env:encrypt"], {
+                cwd: "/test/app",
+                stdio: "inherit",
+                timeout: 120_000,
+            });
             // コンソール出力のテストは一時的にコメントアウト（vitestのモック課題のため）
             // expect(mockConsoleLog).toHaveBeenCalledWith(
             //     "🔐 環境変数を暗号化中..."
@@ -234,15 +223,11 @@ describe("env-encryption ユーティリティ", () => {
             const result = await runEnvEncryption("/test/app", true);
 
             expect(result.success).toBe(true);
-            expect(vi.mocked(execa)).toHaveBeenCalledWith(
-                "pnpm",
-                ["--filter", "/test/app", "env:encrypt"],
-                {
-                    cwd: expect.any(String), // process.cwd()の値
-                    stdio: "inherit",
-                    timeout: 120_000,
-                }
-            );
+            expect(vi.mocked(execa)).toHaveBeenCalledWith("pnpm", ["--filter", "/test/app", "env:encrypt"], {
+                cwd: expect.any(String), // process.cwd()の値
+                stdio: "inherit",
+                timeout: 120_000,
+            });
         });
 
         it("暗号化が失敗した場合はsuccess: falseを返す", async () => {

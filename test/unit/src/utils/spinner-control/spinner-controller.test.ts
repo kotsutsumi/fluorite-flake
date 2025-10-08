@@ -185,9 +185,7 @@ describe("SpinnerControllerImpl", () => {
             controller.fail("エラーが発生しました");
 
             // 検証: 失敗メッセージで終了される
-            expect(mockSpinner.fail).toHaveBeenCalledWith(
-                "エラーが発生しました"
-            );
+            expect(mockSpinner.fail).toHaveBeenCalledWith("エラーが発生しました");
             expect(controller.getState()).toBe("stopped");
         });
     });
@@ -241,16 +239,12 @@ describe("SpinnerControllerImpl", () => {
 
             // ステップ3: コマンド完了後にresume
             controller.resume();
-            expect(mockSpinner.start).toHaveBeenCalledWith(
-                "依存関係をインストール中..."
-            );
+            expect(mockSpinner.start).toHaveBeenCalledWith("依存関係をインストール中...");
             expect(controller.getState()).toBe("active");
 
             // ステップ4: 最終的に成功で終了
             controller.succeed("インストール完了");
-            expect(mockSpinner.succeed).toHaveBeenCalledWith(
-                "インストール完了"
-            );
+            expect(mockSpinner.succeed).toHaveBeenCalledWith("インストール完了");
         });
 
         it("複数のpnpmコマンド実行シナリオ", () => {
@@ -274,9 +268,7 @@ describe("SpinnerControllerImpl", () => {
             expect(mockSpinner.start).toHaveBeenCalledTimes(commands.length);
 
             // 検証: 最後のメッセージで終了
-            expect(mockSpinner.start).toHaveBeenLastCalledWith(
-                "シードデータを投入中..."
-            );
+            expect(mockSpinner.start).toHaveBeenLastCalledWith("シードデータを投入中...");
         });
     });
 });

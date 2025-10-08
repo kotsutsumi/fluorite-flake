@@ -8,31 +8,19 @@ import { defineCommand } from "citty";
 import { debugLog } from "../../debug.js";
 import { getMessages } from "../../i18n.js";
 import { validatePnpmWithDetails } from "../../utils/pnpm-validator/index.js";
-import {
-    confirmDirectoryOverwrite,
-    promptForDatabase,
-    promptForProjectName,
-} from "../../utils/user-input/index.js";
+import { confirmDirectoryOverwrite, promptForDatabase, promptForProjectName } from "../../utils/user-input/index.js";
 import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
 import { createProjectConfig } from "./config.js";
 import type { ConfirmationInputs } from "./confirmation/index.js";
 import { displayConfirmation } from "./confirmation/index.js";
 import { collectDatabaseConfig } from "./database-provisioning/prompts.js";
-import type {
-    DatabaseCredentials,
-    DatabaseProvisioningConfig,
-} from "./database-provisioning/types.js";
+import type { DatabaseCredentials, DatabaseProvisioningConfig } from "./database-provisioning/types.js";
 import { executeProvisioning } from "./execution/index.js";
 import { generateProject } from "./generator.js";
 import { collectBlobConfiguration } from "./prompts/blob-prompts.js";
 import { selectProjectTemplate } from "./template-selector/index.js";
 import type { DatabaseType, ProjectType } from "./types.js";
-import {
-    hasDatabaseFeature,
-    showInvalidDatabaseError,
-    validateDatabase,
-    validateProjectType,
-} from "./validators.js";
+import { hasDatabaseFeature, showInvalidDatabaseError, validateDatabase, validateProjectType } from "./validators.js";
 
 const ADVANCED_TEMPLATES: Partial<Record<ProjectType, readonly string[]>> = {
     nextjs: ["fullstack-admin"],
@@ -46,25 +34,17 @@ const initialMessages = getMessages();
 /**
  * Tursoクラウドデータベースにテーブルを作成する
  */
-async function createTursoTables(
-    config: any,
-    credentials: DatabaseCredentials
-): Promise<void> {
+async function createTursoTables(config: any, credentials: DatabaseCredentials): Promise<void> {
     try {
-        const { createTablesInTursoDatabases, seedTursoDatabases } =
-            await import("../../utils/turso-cli/provisioning.js");
+        const { createTablesInTursoDatabases, seedTursoDatabases } = await import(
+            "../../utils/turso-cli/provisioning.js"
+        );
 
         // アプリケーションのディレクトリを計算
-        const appDirectory = config.monorepo
-            ? join(config.directory, "apps", "web")
-            : config.directory;
+        const appDirectory = config.monorepo ? join(config.directory, "apps", "web") : config.directory;
 
         // 各環境のTursoクラウドデータベースにテーブルを作成
-        await createTablesInTursoDatabases(appDirectory, credentials, [
-            "dev",
-            "staging",
-            "prod",
-        ]);
+        await createTablesInTursoDatabases(appDirectory, credentials, ["dev", "staging", "prod"]);
 
         // dev環境とstaging環境にシードデータを投入
         await seedTursoDatabases(appDirectory, credentials, ["dev", "staging"]);
@@ -85,9 +65,8 @@ function hasExplicitMonorepoFlag(rawArgs: unknown): boolean {
     const rawArgList = Array.isArray(rawArgs) ? rawArgs : [];
     return rawArgList.some(
         (arg) =>
-            ["--monorepo", "--no-monorepo", "-m"].some(
-                (flag) => arg === flag || arg.startsWith(`${flag}=`)
-            ) || arg.startsWith("--monorepo=")
+            ["--monorepo", "--no-monorepo", "-m"].some((flag) => arg === flag || arg.startsWith(`${flag}=`)) ||
+            arg.startsWith("--monorepo=")
     );
 }
 
@@ -141,32 +120,20 @@ async function collectDatabaseAndBlobConfiguration(
     if (database) {
         // SQLite の場合はプロビジョニング不要なのでスキップ
         if (database === "sqlite") {
-            console.log(
-                "✅ ローカル SQLite を選択しました（プロビジョニング不要）"
-            );
+            console.log("✅ ローカル SQLite を選択しました（プロビジョニング不要）");
             databaseConfig = undefined;
         } else {
             try {
-                databaseConfig = await collectDatabaseConfig(
-                    projectName,
-                    database
-                );
+                databaseConfig = await collectDatabaseConfig(projectName, database);
                 console.log(`✅ データベース設定を収集しました (${database})`);
             } catch (error) {
-                if (
-                    error instanceof Error &&
-                    error.message === "DATABASE_PROVISIONING_CANCELLED"
-                ) {
-                    console.warn(
-                        "⚠️ データベース設定をキャンセルしました。処理を終了します。"
-                    );
+                if (error instanceof Error && error.message === "DATABASE_PROVISIONING_CANCELLED") {
+                    console.warn("⚠️ データベース設定をキャンセルしました。処理を終了します。");
                     process.exit(0);
                 }
 
                 console.error(
-                    `❌ データベース設定収集に失敗しました: ${
-                        error instanceof Error ? error.message : error
-                    }`
+                    `❌ データベース設定収集に失敗しました: ${error instanceof Error ? error.message : error}`
                 );
                 process.exit(1);
             }
@@ -175,24 +142,18 @@ async function collectDatabaseAndBlobConfiguration(
 
     // Blob設定の収集（Next.jsフルスタックテンプレートの場合のみ）
     let blobConfig: BlobConfiguration | undefined;
-    const shouldConfigureBlob = (
-        projectType: string,
-        templateName: string | undefined
-    ) => projectType === "nextjs" && templateName === "fullstack-admin";
+    const shouldConfigureBlob = (projectType: string, templateName: string | undefined) =>
+        projectType === "nextjs" && templateName === "fullstack-admin";
 
     if (template && shouldConfigureBlob("nextjs", template)) {
         try {
             const config = await collectBlobConfiguration(projectName);
             blobConfig = config || undefined;
             if (blobConfig) {
-                console.log(
-                    `✅ Vercel Blob設定を収集しました: ${blobConfig.storeName}`
-                );
+                console.log(`✅ Vercel Blob設定を収集しました: ${blobConfig.storeName}`);
             }
         } catch (error) {
-            console.warn(
-                `⚠️ Vercel Blob設定をスキップします: ${error instanceof Error ? error.message : error}`
-            );
+            console.warn(`⚠️ Vercel Blob設定をスキップします: ${error instanceof Error ? error.message : error}`);
         }
     }
 
@@ -222,17 +183,20 @@ async function collectUserInputs(
 
     // プロジェクトタイプとテンプレートの決定
     const hasExplicitMonorepo = hasExplicitMonorepoFlag(rawArgs);
-    const { projectType, template, monorepoPreference } =
-        await determineProjectTypeAndTemplate(args, hasExplicitMonorepo);
+    const { projectType, template, monorepoPreference } = await determineProjectTypeAndTemplate(
+        args,
+        hasExplicitMonorepo
+    );
 
     // データベースとBlob設定の収集（プロビジョニングなし）
-    const { database, databaseConfig, blobConfig } =
-        await collectDatabaseAndBlobConfiguration(args, template, projectName);
+    const { database, databaseConfig, blobConfig } = await collectDatabaseAndBlobConfiguration(
+        args,
+        template,
+        projectName
+    );
 
     // モノレポ設定の最終決定
-    const finalMonorepoPreference = args.simple
-        ? false
-        : (monorepoPreference ?? args.monorepo ?? true);
+    const finalMonorepoPreference = args.simple ? false : (monorepoPreference ?? args.monorepo ?? true);
 
     return {
         projectName,
@@ -274,10 +238,7 @@ async function determineProjectTypeAndTemplate(
 
     const shouldPromptForSelection = !(projectType && template);
     if (shouldPromptForSelection) {
-        const initialProjectType =
-            projectType && validateProjectType(projectType)
-                ? projectType
-                : undefined;
+        const initialProjectType = projectType && validateProjectType(projectType) ? projectType : undefined;
 
         const selection = await selectProjectTemplate(initialProjectType, {
             templateFilter: ({ projectType: selectedType, templateKey }) => {
@@ -296,10 +257,7 @@ async function determineProjectTypeAndTemplate(
         projectType = selection.projectType;
         template = selection.template;
 
-        if (
-            !(args.simple || hasExplicitMonorepo) &&
-            monorepoPreference === undefined
-        ) {
+        if (!(args.simple || hasExplicitMonorepo) && monorepoPreference === undefined) {
             monorepoPreference = selection.useMonorepo;
         }
     }
@@ -330,9 +288,7 @@ type CreateAndValidateConfigOptions = {
 /**
  * プロジェクト設定を作成し検証
  */
-async function createAndValidateConfig(
-    options: CreateAndValidateConfigOptions
-) {
+async function createAndValidateConfig(options: CreateAndValidateConfigOptions) {
     const {
         projectType,
         projectName,
@@ -483,9 +439,7 @@ export const createCommand = defineCommand({
             const result = await executeProvisioning(inputs);
 
             if (!result.success) {
-                console.error(
-                    `❌ プロビジョニングに失敗しました: ${result.error}`
-                );
+                console.error(`❌ プロビジョニングに失敗しました: ${result.error}`);
                 process.exit(1);
             }
 
@@ -509,9 +463,7 @@ export const createCommand = defineCommand({
 
         // 既存ディレクトリの確認（--forceフラグがない場合）
         if (!args.force) {
-            const shouldProceed = await confirmDirectoryOverwrite(
-                config.directory
-            );
+            const shouldProceed = await confirmDirectoryOverwrite(config.directory);
             if (!shouldProceed) {
                 process.exit(0); // 操作がキャンセルされた場合は正常終了
             }
@@ -590,9 +542,7 @@ export const newCommand = defineCommand({
             const result = await executeProvisioning(inputs);
 
             if (!result.success) {
-                console.error(
-                    `❌ プロビジョニングに失敗しました: ${result.error}`
-                );
+                console.error(`❌ プロビジョニングに失敗しました: ${result.error}`);
                 process.exit(1);
             }
 

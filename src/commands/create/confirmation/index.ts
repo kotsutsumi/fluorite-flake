@@ -39,9 +39,7 @@ export type ConfirmationInputs = {
  * @param inputs - 確認対象の入力情報
  * @returns ユーザーが続行を選択した場合はtrue、キャンセルの場合はfalse
  */
-export async function displayConfirmation(
-    inputs: ConfirmationInputs
-): Promise<boolean> {
+export async function displayConfirmation(inputs: ConfirmationInputs): Promise<boolean> {
     const messages: LocaleMessages = getMessages();
 
     console.log(`\n${"=".repeat(60)}`);
@@ -62,9 +60,7 @@ export async function displayConfirmation(
         `   ${messages.common.monorepo}: ${inputs.monorepoPreference ? messages.common.enabled : messages.common.disabled}`
     );
     if (inputs.outputDirectory) {
-        console.log(
-            `   ${messages.common.outputDir}: ${inputs.outputDirectory}`
-        );
+        console.log(`   ${messages.common.outputDir}: ${inputs.outputDirectory}`);
     }
 
     console.log(`\n${"=".repeat(60)}`);

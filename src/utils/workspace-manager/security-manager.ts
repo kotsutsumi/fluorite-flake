@@ -12,10 +12,7 @@ export class SecurityManager {
     /**
      * スクリプト実行前のバリデーション
      */
-    validateScriptExecution(
-        script: string,
-        context: ExecutionContext
-    ): ValidationResult {
+    validateScriptExecution(script: string, context: ExecutionContext): ValidationResult {
         // 1. 危険なコマンドのブロック
         const dangerousPatterns = [
             /rm\s+-rf/, // 危険な削除コマンド
@@ -95,18 +92,12 @@ export class SecurityManager {
     /**
      * パスエスケープ防止
      */
-    private validatePathScope(
-        script: string,
-        context: ExecutionContext
-    ): boolean {
+    private validatePathScope(script: string, context: ExecutionContext): boolean {
         const pathPatterns = script.match(/[./\\]+[\w/-]+/g) || [];
 
         for (const pathPattern of pathPatterns) {
             try {
-                const resolvedPath = path.resolve(
-                    context.rootPath,
-                    pathPattern
-                );
+                const resolvedPath = path.resolve(context.rootPath, pathPattern);
                 if (!resolvedPath.startsWith(context.rootPath)) {
                     return false; // パスエスケープ検出
                 }

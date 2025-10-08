@@ -62,9 +62,7 @@ export async function directoryExists(dirPath: string): Promise<boolean> {
 /**
  * package.json を読み取る
  */
-export async function readPackageJson(
-    projectPath: string
-): Promise<PackageJson> {
+export async function readPackageJson(projectPath: string): Promise<PackageJson> {
     const packageJsonPath = path.join(projectPath, "package.json");
     const content = await fs.readFile(packageJsonPath, "utf8");
     return JSON.parse(content) as PackageJson;
@@ -96,9 +94,7 @@ export function hasDependency(
 /**
  * TypeScript設定ファイルの存在確認
  */
-export async function hasTypeScriptConfig(
-    projectPath: string
-): Promise<boolean> {
+export async function hasTypeScriptConfig(projectPath: string): Promise<boolean> {
     const tsconfigPath = path.join(projectPath, "tsconfig.json");
     return await fileExists(tsconfigPath);
 }
@@ -133,14 +129,8 @@ export async function isExpoProject(projectPath: string): Promise<boolean> {
 export async function isTauriProject(projectPath: string): Promise<boolean> {
     try {
         const packageJson = await readPackageJson(projectPath);
-        const hasTauriDep = hasDependency(
-            packageJson,
-            "@tauri-apps/cli",
-            "devDependencies"
-        );
-        const tauriConfigExists = await fileExists(
-            path.join(projectPath, "src-tauri", "tauri.conf.json")
-        );
+        const hasTauriDep = hasDependency(packageJson, "@tauri-apps/cli", "devDependencies");
+        const tauriConfigExists = await fileExists(path.join(projectPath, "src-tauri", "tauri.conf.json"));
         return hasTauriDep && tauriConfigExists;
     } catch {
         return false;
@@ -154,12 +144,8 @@ export async function isMonorepoProject(projectPath: string): Promise<boolean> {
     try {
         const packageJson = await readPackageJson(projectPath);
         const hasWorkspaces = "workspaces" in packageJson;
-        const appsExists = await directoryExists(
-            path.join(projectPath, "apps")
-        );
-        const packagesExists = await directoryExists(
-            path.join(projectPath, "packages")
-        );
+        const appsExists = await directoryExists(path.join(projectPath, "apps"));
+        const packagesExists = await directoryExists(path.join(projectPath, "packages"));
         return hasWorkspaces && (appsExists || packagesExists);
     } catch {
         return false;
@@ -209,12 +195,8 @@ export async function validateProjectStructure(
             ...packageJson.devDependencies,
         };
 
-        validation.dependencies.production = Object.keys(
-            packageJson.dependencies || {}
-        );
-        validation.dependencies.development = Object.keys(
-            packageJson.devDependencies || {}
-        );
+        validation.dependencies.production = Object.keys(packageJson.dependencies || {});
+        validation.dependencies.development = Object.keys(packageJson.devDependencies || {});
 
         for (const dep of expectedDependencies) {
             if (dep in allDeps) {
@@ -235,10 +217,7 @@ export async function validateProjectStructure(
 /**
  * プロジェクトファイルの内容を読み取る
  */
-export async function readProjectFile(
-    projectPath: string,
-    relativePath: string
-): Promise<string> {
+export async function readProjectFile(projectPath: string, relativePath: string): Promise<string> {
     const filePath = path.join(projectPath, relativePath);
     return await fs.readFile(filePath, "utf8");
 }
@@ -324,11 +303,7 @@ function isExcludedDirectory(name: string): boolean {
 /**
  * プロジェクト内の特定パターンのファイルを検索
  */
-export async function findProjectFiles(
-    projectPath: string,
-    pattern: RegExp,
-    recursive = true
-): Promise<string[]> {
+export async function findProjectFiles(projectPath: string, pattern: RegExp, recursive = true): Promise<string[]> {
     const foundFiles: string[] = [];
 
     async function searchInDirectory(dir: string, prefix = ""): Promise<void> {

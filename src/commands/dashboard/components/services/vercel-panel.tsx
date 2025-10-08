@@ -103,9 +103,7 @@ export const VercelPanel: React.FC<VercelPanelProps> = ({ tab }) => {
                                 <Text color="cyan">{project.name}</Text>
                             </Box>
                             <Box width={10}>
-                                <Text color={getStatusColor(project.status)}>
-                                    {project.status}
-                                </Text>
+                                <Text color={getStatusColor(project.status)}>{project.status}</Text>
                             </Box>
                             <Box>
                                 <Text color="gray">{project.url}</Text>
@@ -132,9 +130,7 @@ export const VercelPanel: React.FC<VercelPanelProps> = ({ tab }) => {
                     <Text color="cyan">• Manage environment variables</Text>
                     <Text color="cyan">• List all projects</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Select an operation to execute (Coming soon...)
-                        </Text>
+                        <Text color="gray">Select an operation to execute (Coming soon...)</Text>
                     </Box>
                 </Box>
             </Box>
@@ -164,22 +160,10 @@ export const VercelPanel: React.FC<VercelPanelProps> = ({ tab }) => {
                                 <Text color="gray">{deployment.id}</Text>
                             </Box>
                             <Box width={10}>
-                                <Text
-                                    color={
-                                        deployment.status === "ready"
-                                            ? "green"
-                                            : "red"
-                                    }
-                                >
-                                    {deployment.status}
-                                </Text>
+                                <Text color={deployment.status === "ready" ? "green" : "red"}>{deployment.status}</Text>
                             </Box>
                             <Box>
-                                <Text color="gray">
-                                    {new Date(
-                                        deployment.createdAt
-                                    ).toLocaleString()}
-                                </Text>
+                                <Text color="gray">{new Date(deployment.createdAt).toLocaleString()}</Text>
                             </Box>
                         </Box>
                     ))}
@@ -203,9 +187,7 @@ export const VercelPanel: React.FC<VercelPanelProps> = ({ tab }) => {
                     <Text color="yellow">• Bandwidth Usage: 2.1GB / 100GB</Text>
                     <Text color="cyan">• Deployments Today: 5</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Detailed metrics charts coming soon...
-                        </Text>
+                        <Text color="gray">Detailed metrics charts coming soon...</Text>
                     </Box>
                 </Box>
             </Box>

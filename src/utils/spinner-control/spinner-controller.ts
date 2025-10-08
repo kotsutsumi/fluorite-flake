@@ -3,11 +3,7 @@
  */
 
 import type { Ora } from "ora";
-import type {
-    SpinnerController,
-    SpinnerControlOptions,
-    SpinnerState,
-} from "./types.js";
+import type { SpinnerController, SpinnerControlOptions, SpinnerState } from "./types.js";
 
 /**
  * スピナー制御実装クラス

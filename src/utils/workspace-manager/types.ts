@@ -168,8 +168,7 @@ export const MonorepoErrorType = {
     PERMISSION_DENIED: "permission_denied",
 } as const;
 
-export type MonorepoErrorType =
-    (typeof MonorepoErrorType)[keyof typeof MonorepoErrorType];
+export type MonorepoErrorType = (typeof MonorepoErrorType)[keyof typeof MonorepoErrorType];
 
 /**
  * モノレポエラー

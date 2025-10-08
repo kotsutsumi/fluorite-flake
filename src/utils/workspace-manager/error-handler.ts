@@ -5,11 +5,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 // import yaml from "js-yaml"; // 必要に応じて追加
-import type {
-    ExecutionContext,
-    MonorepoError,
-    RecoveryResult,
-} from "./types.js";
+import type { ExecutionContext, MonorepoError, RecoveryResult } from "./types.js";
 import { MonorepoErrorType } from "./types.js";
 
 /**
@@ -19,10 +15,7 @@ export class MonorepoErrorHandler {
     /**
      * エラー分析と自動修復
      */
-    async handleError(
-        error: MonorepoError,
-        context: ExecutionContext
-    ): Promise<RecoveryResult> {
+    async handleError(error: MonorepoError, context: ExecutionContext): Promise<RecoveryResult> {
         switch (error.type) {
             case MonorepoErrorType.WORKSPACE_NOT_FOUND:
                 return await this.recoverWorkspace(error, context);
@@ -50,14 +43,8 @@ export class MonorepoErrorHandler {
     /**
      * ワークスペース修復
      */
-    private async recoverWorkspace(
-        _error: MonorepoError,
-        context: ExecutionContext
-    ): Promise<RecoveryResult> {
-        const workspaceFile = path.join(
-            context.rootPath,
-            "pnpm-workspace.yaml"
-        );
+    private async recoverWorkspace(_error: MonorepoError, context: ExecutionContext): Promise<RecoveryResult> {
+        const workspaceFile = path.join(context.rootPath, "pnpm-workspace.yaml");
 
         if (!(await this.fileExists(workspaceFile))) {
             // ワークスペースファイルを自動生成
@@ -83,15 +70,9 @@ export class MonorepoErrorHandler {
     /**
      * スクリプト代替案提示
      */
-    private async suggestAlternativeScripts(
-        error: MonorepoError,
-        context: ExecutionContext
-    ): Promise<RecoveryResult> {
+    private async suggestAlternativeScripts(error: MonorepoError, context: ExecutionContext): Promise<RecoveryResult> {
         const availableScripts = await this.scanAvailableScripts(context);
-        const suggestions = this.findSimilarScripts(
-            error.requestedScript || "",
-            availableScripts
-        );
+        const suggestions = this.findSimilarScripts(error.requestedScript || "", availableScripts);
 
         return {
             recovered: false,
@@ -121,9 +102,7 @@ export class MonorepoErrorHandler {
                     if (code === 0) {
                         resolve(undefined);
                     } else {
-                        reject(
-                            new Error(`pnpm install failed with code ${code}`)
-                        );
+                        reject(new Error(`pnpm install failed with code ${code}`));
                     }
                 });
             });
@@ -138,11 +117,7 @@ export class MonorepoErrorHandler {
                 recovered: false,
                 action: "install_failed",
                 message: `Failed to install dependencies: ${installError instanceof Error ? installError.message : "Unknown error"}`,
-                suggestions: [
-                    "Run 'pnpm install' manually",
-                    "Check internet connection",
-                    "Verify package.json syntax",
-                ],
+                suggestions: ["Run 'pnpm install' manually", "Check internet connection", "Verify package.json syntax"],
             };
         }
     }
@@ -150,10 +125,7 @@ export class MonorepoErrorHandler {
     /**
      * パス参照修復
      */
-    private async repairPathReferences(
-        _error: MonorepoError,
-        _context: ExecutionContext
-    ): Promise<RecoveryResult> {
+    private async repairPathReferences(_error: MonorepoError, _context: ExecutionContext): Promise<RecoveryResult> {
         // 壊れたパス参照の検出と修復ロジック
         const suggestions = [
             "Verify file paths in scripts",
@@ -172,10 +144,7 @@ export class MonorepoErrorHandler {
     /**
      * 実行エラー分析
      */
-    private async analyzeExecutionFailure(
-        error: MonorepoError,
-        _context: ExecutionContext
-    ): Promise<RecoveryResult> {
+    private async analyzeExecutionFailure(error: MonorepoError, _context: ExecutionContext): Promise<RecoveryResult> {
         const errorMessage = error.message.toLowerCase();
         let suggestions: string[] = [];
 
@@ -186,11 +155,7 @@ export class MonorepoErrorHandler {
                 "Verify dependency installation",
             ];
         } else if (errorMessage.includes("permission denied")) {
-            suggestions = [
-                "Check file permissions",
-                "Run with appropriate user",
-                "Verify write access to directories",
-            ];
+            suggestions = ["Check file permissions", "Run with appropriate user", "Verify write access to directories"];
         } else if (errorMessage.includes("port already in use")) {
             suggestions = [
                 "Kill existing processes on the port",
@@ -216,10 +181,7 @@ export class MonorepoErrorHandler {
     /**
      * 権限問題解決
      */
-    private async resolvePermissionIssues(
-        _error: MonorepoError,
-        _context: ExecutionContext
-    ): Promise<RecoveryResult> {
+    private async resolvePermissionIssues(_error: MonorepoError, _context: ExecutionContext): Promise<RecoveryResult> {
         return {
             recovered: false,
             action: "permission_guidance",
@@ -259,10 +221,7 @@ export class MonorepoErrorHandler {
         };
 
         const workspaceContent = this.serializeYaml(workspaceConfig);
-        await fs.writeFile(
-            path.join(rootPath, "pnpm-workspace.yaml"),
-            workspaceContent
-        );
+        await fs.writeFile(path.join(rootPath, "pnpm-workspace.yaml"), workspaceContent);
     }
 
     /**
@@ -295,10 +254,7 @@ export class MonorepoErrorHandler {
     /**
      * ワークスペース設定更新
      */
-    private async updateWorkspaceConfig(
-        workspaceFile: string,
-        _apps: string[]
-    ): Promise<void> {
+    private async updateWorkspaceConfig(workspaceFile: string, _apps: string[]): Promise<void> {
         const workspaceConfig = {
             packages: ["apps/*", "packages/*"],
         };
@@ -310,16 +266,12 @@ export class MonorepoErrorHandler {
     /**
      * 利用可能スクリプトスキャン
      */
-    private async scanAvailableScripts(
-        context: ExecutionContext
-    ): Promise<string[]> {
+    private async scanAvailableScripts(context: ExecutionContext): Promise<string[]> {
         const scripts: string[] = [];
 
         // ルートpackage.jsonのスクリプト
         try {
-            const rootPackageJson = await this.readPackageJson(
-                context.rootPath
-            );
+            const rootPackageJson = await this.readPackageJson(context.rootPath);
             scripts.push(...Object.keys(rootPackageJson.scripts || {}));
         } catch {
             // package.jsonが存在しない場合はスキップ
@@ -333,17 +285,9 @@ export class MonorepoErrorHandler {
             for (const app of apps) {
                 if (app.isDirectory()) {
                     try {
-                        const appPackageJson = await this.readPackageJson(
-                            path.join(appsDir, app.name)
-                        );
-                        const appScripts = Object.keys(
-                            appPackageJson.scripts || {}
-                        );
-                        scripts.push(
-                            ...appScripts.map(
-                                (script) => `${app.name}:${script}`
-                            )
-                        );
+                        const appPackageJson = await this.readPackageJson(path.join(appsDir, app.name));
+                        const appScripts = Object.keys(appPackageJson.scripts || {});
+                        scripts.push(...appScripts.map((script) => `${app.name}:${script}`));
                     } catch {
                         // アプリのpackage.jsonが存在しない場合はスキップ
                     }
@@ -359,13 +303,8 @@ export class MonorepoErrorHandler {
     /**
      * 類似スクリプト検索
      */
-    private findSimilarScripts(
-        requestedScript: string,
-        availableScripts: string[]
-    ): string[] {
-        const similar = availableScripts.filter(
-            (script) => this.calculateSimilarity(requestedScript, script) > 0.6
-        );
+    private findSimilarScripts(requestedScript: string, availableScripts: string[]): string[] {
+        const similar = availableScripts.filter((script) => this.calculateSimilarity(requestedScript, script) > 0.6);
 
         return similar.slice(0, 3); // 上位3つまで
     }
@@ -389,9 +328,7 @@ export class MonorepoErrorHandler {
      * レーベンシュタイン距離計算
      */
     private levenshteinDistance(str1: string, str2: string): number {
-        const matrix = new Array(str2.length + 1)
-            .fill(null)
-            .map(() => new Array(str1.length + 1).fill(null));
+        const matrix = new Array(str2.length + 1).fill(null).map(() => new Array(str1.length + 1).fill(null));
 
         for (let i = 0; i <= str1.length; i++) {
             matrix[0][i] = i;

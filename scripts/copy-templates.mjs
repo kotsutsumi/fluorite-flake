@@ -21,9 +21,7 @@ async function copyTemplates() {
         await cp(templatesDir, targetTemplatesDir, { recursive: true });
         console.log("✅ templates ディレクトリを dist にコピーしました");
     } catch {
-        console.warn(
-            "テンプレートディレクトリが存在しないためコピーをスキップします。"
-        );
+        console.warn("テンプレートディレクトリが存在しないためコピーをスキップします。");
     }
 
     // i18nディレクトリをコピー
@@ -33,9 +31,7 @@ async function copyTemplates() {
         await cp(i18nDir, targetI18nDir, { recursive: true });
         console.log("✅ i18n ディレクトリを dist にコピーしました");
     } catch {
-        console.warn(
-            "i18nディレクトリが存在しないためコピーをスキップします。"
-        );
+        console.warn("i18nディレクトリが存在しないためコピーをスキップします。");
     }
 }
 

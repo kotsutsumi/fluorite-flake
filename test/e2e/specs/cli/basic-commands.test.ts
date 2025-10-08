@@ -3,17 +3,9 @@
  */
 import { describe, test } from "vitest";
 
-import {
-    assertCLIResult,
-    assertErrorHandling,
-    assertI18n,
-} from "../../helpers/assertions.js";
+import { assertCLIResult, assertErrorHandling, assertI18n } from "../../helpers/assertions.js";
 import { runCLI } from "../../helpers/cli-runner.js";
-import {
-    ERROR_TEST_CASES,
-    I18N_CONFIG,
-    PERFORMANCE_THRESHOLDS,
-} from "../../setup/test-config.js";
+import { ERROR_TEST_CASES, I18N_CONFIG, PERFORMANCE_THRESHOLDS } from "../../setup/test-config.js";
 
 describe("CLI基本機能 E2E テスト", () => {
     describe("ヘルプコマンド", () => {
@@ -29,11 +21,7 @@ describe("CLI基本機能 E2E テスト", () => {
             });
 
             // 日本語メッセージの確認
-            assertI18n.localeSpecificMessage(
-                result,
-                "ja",
-                I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE
-            );
+            assertI18n.localeSpecificMessage(result, "ja", I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE);
         });
 
         test("-h でヘルプが表示される", async () => {
@@ -96,15 +84,8 @@ describe("CLI基本機能 E2E テスト", () => {
             for (const invalidCommand of ERROR_TEST_CASES.INVALID_COMMANDS) {
                 const result = await runCLI([invalidCommand]);
 
-                assertErrorHandling.appropriateErrorMessage(
-                    result,
-                    `invalid command: ${invalidCommand}`
-                );
-                assertI18n.localeSpecificMessage(
-                    result,
-                    "ja",
-                    I18N_CONFIG.TEST_PATTERNS.ja.ERROR_MESSAGE
-                );
+                assertErrorHandling.appropriateErrorMessage(result, `invalid command: ${invalidCommand}`);
+                assertI18n.localeSpecificMessage(result, "ja", I18N_CONFIG.TEST_PATTERNS.ja.ERROR_MESSAGE);
             }
         });
 
@@ -112,10 +93,7 @@ describe("CLI基本機能 E2E テスト", () => {
             for (const invalidArgs of ERROR_TEST_CASES.INVALID_ARGUMENTS) {
                 const result = await runCLI(invalidArgs);
 
-                assertErrorHandling.appropriateErrorMessage(
-                    result,
-                    `invalid arguments: ${invalidArgs.join(" ")}`
-                );
+                assertErrorHandling.appropriateErrorMessage(result, `invalid arguments: ${invalidArgs.join(" ")}`);
             }
         });
 
@@ -127,12 +105,7 @@ describe("CLI基本機能 E2E テスト", () => {
         });
 
         test("グレースフルなエラーハンドリング", async () => {
-            const result = await runCLI([
-                "create",
-                "test",
-                "--type",
-                "invalid-type",
-            ]);
+            const result = await runCLI(["create", "test", "--type", "invalid-type"]);
 
             assertErrorHandling.gracefulFailure(result);
         });
@@ -145,11 +118,7 @@ describe("CLI基本機能 E2E テスト", () => {
             });
 
             assertCLIResult.success(result);
-            assertI18n.localeSpecificMessage(
-                result,
-                "ja",
-                I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE
-            );
+            assertI18n.localeSpecificMessage(result, "ja", I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE);
         });
 
         test("英語ロケールでメッセージが英語表示", async () => {
@@ -158,11 +127,7 @@ describe("CLI基本機能 E2E テスト", () => {
             });
 
             assertCLIResult.success(result);
-            assertI18n.localeSpecificMessage(
-                result,
-                "en",
-                I18N_CONFIG.TEST_PATTERNS.en.HELP_MESSAGE
-            );
+            assertI18n.localeSpecificMessage(result, "en", I18N_CONFIG.TEST_PATTERNS.en.HELP_MESSAGE);
         });
 
         test("無効なロケールでデフォルト（日本語）表示", async () => {
@@ -171,11 +136,7 @@ describe("CLI基本機能 E2E テスト", () => {
             });
 
             assertCLIResult.success(result);
-            assertI18n.localeSpecificMessage(
-                result,
-                "ja",
-                I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE
-            );
+            assertI18n.localeSpecificMessage(result, "ja", I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE);
         });
 
         test("LANG環境変数による言語自動検出", async () => {
@@ -188,11 +149,11 @@ describe("CLI基本機能 E2E テスト", () => {
 
             assertCLIResult.success(result);
             // 英語または日本語（フォールバック）が表示される
-            const hasEnglish = I18N_CONFIG.TEST_PATTERNS.en.HELP_MESSAGE.some(
-                (pattern) => result.stdout.includes(pattern)
+            const hasEnglish = I18N_CONFIG.TEST_PATTERNS.en.HELP_MESSAGE.some((pattern) =>
+                result.stdout.includes(pattern)
             );
-            const hasJapanese = I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE.some(
-                (pattern) => result.stdout.includes(pattern)
+            const hasJapanese = I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE.some((pattern) =>
+                result.stdout.includes(pattern)
             );
 
             expect(hasEnglish || hasJapanese).toBe(true);
@@ -207,9 +168,7 @@ describe("CLI基本機能 E2E テスト", () => {
 
             assertCLIResult.success(result);
             // デバッグ情報の表示を確認（開発モード時のみ）
-            expect(result.stdout + result.stderr).toMatch(
-                /DEBUG|デバッグ|Working directory/
-            );
+            expect(result.stdout + result.stderr).toMatch(/DEBUG|デバッグ|Working directory/);
         });
 
         test("本番モードでデバッグ情報が非表示", async () => {
@@ -219,9 +178,7 @@ describe("CLI基本機能 E2E テスト", () => {
 
             assertCLIResult.success(result);
             // デバッグ情報が表示されないことを確認
-            expect(result.stdout + result.stderr).not.toMatch(
-                /DEBUG|Working directory/
-            );
+            expect(result.stdout + result.stderr).not.toMatch(/DEBUG|Working directory/);
         });
     });
 
@@ -230,39 +187,25 @@ describe("CLI基本機能 E2E テスト", () => {
             const result = await runCLI(["--help"]);
 
             assertCLIResult.success(result);
-            assertCLIResult.performanceThreshold(
-                result,
-                PERFORMANCE_THRESHOLDS.CLI.HELP
-            );
+            assertCLIResult.performanceThreshold(result, PERFORMANCE_THRESHOLDS.CLI.HELP);
         });
 
         test("バージョン表示が高速", async () => {
             const result = await runCLI(["--version"]);
 
             assertCLIResult.success(result);
-            assertCLIResult.performanceThreshold(
-                result,
-                PERFORMANCE_THRESHOLDS.CLI.VERSION
-            );
+            assertCLIResult.performanceThreshold(result, PERFORMANCE_THRESHOLDS.CLI.VERSION);
         });
 
         test("エラーメッセージ表示が高速", async () => {
             const result = await runCLI(["invalid-command"]);
 
             assertCLIResult.failure(result);
-            assertCLIResult.performanceThreshold(
-                result,
-                PERFORMANCE_THRESHOLDS.CLI.ERROR_MESSAGE
-            );
+            assertCLIResult.performanceThreshold(result, PERFORMANCE_THRESHOLDS.CLI.ERROR_MESSAGE);
         });
 
         test("複数コマンドの並行実行", async () => {
-            const commands = [
-                ["--help"],
-                ["--version"],
-                ["create", "--help"],
-                ["dashboard", "--help"],
-            ];
+            const commands = [["--help"], ["--version"], ["create", "--help"], ["dashboard", "--help"]];
 
             const promises = commands.map((cmd) => runCLI(cmd));
             const results = await Promise.all(promises);
@@ -270,10 +213,7 @@ describe("CLI基本機能 E2E テスト", () => {
             // 全てのコマンドが成功することを確認
             for (const result of results) {
                 assertCLIResult.success(result);
-                assertCLIResult.performanceThreshold(
-                    result,
-                    PERFORMANCE_THRESHOLDS.CLI.HELP
-                );
+                assertCLIResult.performanceThreshold(result, PERFORMANCE_THRESHOLDS.CLI.HELP);
             }
         });
     });
@@ -312,11 +252,7 @@ describe("CLI基本機能 E2E テスト", () => {
 
             assertCLIResult.success(result);
             // デフォルトの日本語表示を確認
-            assertI18n.localeSpecificMessage(
-                result,
-                "ja",
-                I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE
-            );
+            assertI18n.localeSpecificMessage(result, "ja", I18N_CONFIG.TEST_PATTERNS.ja.HELP_MESSAGE);
         });
     });
 });

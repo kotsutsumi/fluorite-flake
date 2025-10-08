@@ -12,9 +12,7 @@ const VARIABLE_FILES = ["package.json"];
 /**
  * Tauri クロスプラットフォームプロジェクトの生成
  */
-export async function generateTauriCrossPlatform(
-    context: GenerationContext
-): Promise<TemplateGenerationResult> {
+export async function generateTauriCrossPlatform(context: GenerationContext): Promise<TemplateGenerationResult> {
     const { config, targetDirectory } = context;
     const filesCreated: string[] = [];
     const directoriesCreated: string[] = [targetDirectory];
@@ -36,11 +34,7 @@ export async function generateTauriCrossPlatform(
         });
 
         filesCreated.push(...result.files);
-        directoriesCreated.push(
-            ...result.directories.map((relativePath) =>
-                join(targetDirectory, relativePath)
-            )
-        );
+        directoriesCreated.push(...result.directories.map((relativePath) => join(targetDirectory, relativePath)));
 
         return {
             success: true,

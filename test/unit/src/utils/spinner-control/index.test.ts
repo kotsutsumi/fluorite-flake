@@ -116,9 +116,7 @@ describe("スピナー制御ユーティリティ", () => {
                 controller.resume();
 
                 // 検証: 更新されたメッセージで再開される
-                expect(mockSpinner.start).toHaveBeenCalledWith(
-                    "一時停止中の更新"
-                );
+                expect(mockSpinner.start).toHaveBeenCalledWith("一時停止中の更新");
             });
         });
 
@@ -178,9 +176,7 @@ describe("スピナー制御ユーティリティ", () => {
             mockOperation.mockRejectedValue(error);
 
             // 実行・検証: エラーがスローされる
-            await expect(
-                withSpinnerControl(controller, mockOperation)
-            ).rejects.toThrow("テストエラー");
+            await expect(withSpinnerControl(controller, mockOperation)).rejects.toThrow("テストエラー");
 
             // 検証: 操作が実行される
             expect(mockOperation).toHaveBeenCalledOnce();

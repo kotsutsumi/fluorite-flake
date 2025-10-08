@@ -92,13 +92,7 @@ export const TursoPanel: React.FC<TursoPanelProps> = ({ tab }) => {
                                 <Text color="blue">{db.replicas} replicas</Text>
                             </Box>
                             <Box>
-                                <Text
-                                    color={
-                                        db.status === "ready" ? "green" : "red"
-                                    }
-                                >
-                                    {db.status}
-                                </Text>
+                                <Text color={db.status === "ready" ? "green" : "red"}>{db.status}</Text>
                             </Box>
                         </Box>
                     ))}
@@ -123,9 +117,7 @@ export const TursoPanel: React.FC<TursoPanelProps> = ({ tab }) => {
                     <Text color="cyan">• Manage replicas</Text>
                     <Text color="cyan">• View connection strings</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Select an operation to execute (Coming soon...)
-                        </Text>
+                        <Text color="gray">Select an operation to execute (Coming soon...)</Text>
                     </Box>
                 </Box>
             </Box>
@@ -146,9 +138,7 @@ export const TursoPanel: React.FC<TursoPanelProps> = ({ tab }) => {
                     <Text color="blue">• analytics-db: 45 queries/min</Text>
                     <Text color="yellow">• Replication lag: 12ms avg</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Detailed query logs coming soon...
-                        </Text>
+                        <Text color="gray">Detailed query logs coming soon...</Text>
                     </Box>
                 </Box>
             </Box>
@@ -173,16 +163,12 @@ export const TursoPanel: React.FC<TursoPanelProps> = ({ tab }) => {
                     Usage Metrics
                 </Text>
                 <Box flexDirection="column" marginTop={1}>
-                    <Text color="cyan">
-                        • Total Rows: {usage?.rows.toLocaleString()}
-                    </Text>
+                    <Text color="cyan">• Total Rows: {usage?.rows.toLocaleString()}</Text>
                     <Text color="cyan">• Storage Used: {usage?.storage}</Text>
                     <Text color="cyan">• Bandwidth: {usage?.bandwidth}</Text>
                     <Text color="green">• Uptime: 99.9%</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Usage trend charts coming soon...
-                        </Text>
+                        <Text color="gray">Usage trend charts coming soon...</Text>
                     </Box>
                 </Box>
             </Box>

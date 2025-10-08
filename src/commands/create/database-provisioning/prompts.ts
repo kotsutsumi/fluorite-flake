@@ -43,9 +43,7 @@ export async function collectDatabaseConfig(
 
     if (authResolution === "skip") {
         const defaultNaming = generateDefaultNaming(projectName, provider);
-        console.warn(
-            `⚠️ ${getProviderLabel(provider)} CLI の認証が未完了のため、プロビジョニングをスキップします。`
-        );
+        console.warn(`⚠️ ${getProviderLabel(provider)} CLI の認証が未完了のため、プロビジョニングをスキップします。`);
         return {
             type: provider,
             provider,
@@ -90,10 +88,7 @@ export async function collectDatabaseConfig(
                     : await selectExistingDatabases(projectName, provider);
             break; // 成功した場合はループを抜ける
         } catch (error) {
-            if (
-                error instanceof Error &&
-                error.message === "DATABASE_SELECTION_CANCELLED"
-            ) {
+            if (error instanceof Error && error.message === "DATABASE_SELECTION_CANCELLED") {
                 // キャンセルされた場合は作成モード選択に戻る
                 console.log("📝 作成モードの選択に戻ります...");
                 continue;
@@ -121,26 +116,18 @@ export async function collectDatabaseConfig(
  * @param provider データベースプロバイダ
  * @returns 認証されているかどうか
  */
-async function checkAuthentication(
-    provider: "turso" | "supabase"
-): Promise<boolean> {
+async function checkAuthentication(provider: "turso" | "supabase"): Promise<boolean> {
     try {
         if (provider === "turso") {
             // Turso CLIで認証チェック
-            const { isAuthenticated: tursoIsAuthenticated } = await import(
-                "../../../utils/turso-cli/auth.js"
-            );
+            const { isAuthenticated: tursoIsAuthenticated } = await import("../../../utils/turso-cli/auth.js");
             return await tursoIsAuthenticated();
         }
         // Supabase CLIで認証チェック
-        const { isAuthenticated: supabaseIsAuthenticated } = await import(
-            "../../../utils/supabase-cli/auth.js"
-        );
+        const { isAuthenticated: supabaseIsAuthenticated } = await import("../../../utils/supabase-cli/auth.js");
         return await supabaseIsAuthenticated();
     } catch (error) {
-        console.error(
-            `認証チェックエラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`認証チェックエラー: ${error instanceof Error ? error.message : error}`);
         return false;
     }
 }
@@ -167,20 +154,14 @@ function printAuthenticationGuide(provider: "turso" | "supabase"): void {
     const command = getProviderLoginCommand(provider);
 
     console.warn(`⚠️ ${label} CLI に認証されていません。`);
-    console.log(
-        `   1. 別のターミナルで \`${command}\` を実行して認証を完了してください。`
-    );
-    console.log(
-        "   2. 認証が完了したら、このプロンプトに戻って再チェックを選択してください。"
-    );
+    console.log(`   1. 別のターミナルで \`${command}\` を実行して認証を完了してください。`);
+    console.log("   2. 認証が完了したら、このプロンプトに戻って再チェックを選択してください。");
 }
 
 /**
  * 認証状態を解決する
  */
-async function resolveAuthentication(
-    provider: "turso" | "supabase"
-): Promise<"authenticated" | "skip" | "cancel"> {
+async function resolveAuthentication(provider: "turso" | "supabase"): Promise<"authenticated" | "skip" | "cancel"> {
     while (true) {
         const authenticated = await checkAuthentication(provider);
         if (authenticated) {
@@ -277,16 +258,10 @@ async function selectExistingDatabases(
     provider: "turso" | "supabase"
 ): Promise<{ dev: string; staging: string; prod: string }> {
     try {
-        const databases =
-            provider === "turso"
-                ? await listTursoDatabases()
-                : await listSupabaseProjects();
+        const databases = provider === "turso" ? await listTursoDatabases() : await listSupabaseProjects();
 
         // プロジェクト名に関連するデータベースをフィルタリング
-        const compatibleDatabases = filterCompatibleDatabases(
-            databases,
-            projectName
-        );
+        const compatibleDatabases = filterCompatibleDatabases(databases, projectName);
 
         // 関連するデータベースが見つからない場合は、自動的にすべてのデータベースから選択
         if (compatibleDatabases.length === 0) {
@@ -296,9 +271,7 @@ async function selectExistingDatabases(
 
             // 利用可能なデータベースがない場合は新規作成モードに変更
             if (databases.length === 0) {
-                console.warn(
-                    "⚠️ 利用可能なデータベースがありません。新規作成モードに変更します。"
-                );
+                console.warn("⚠️ 利用可能なデータベースがありません。新規作成モードに変更します。");
                 return await collectNamingConfig(projectName, provider);
             }
 
@@ -309,9 +282,7 @@ async function selectExistingDatabases(
         // 環境別にデータベースを選択
         return await selectFromAllDatabases(compatibleDatabases, provider);
     } catch (error) {
-        console.error(
-            `データベース一覧取得エラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`データベース一覧取得エラー: ${error instanceof Error ? error.message : error}`);
         throw error;
     }
 }
@@ -376,10 +347,7 @@ function generateDefaultNaming(
  * @param provider データベースプロバイダ
  * @returns サニタイズされたプロジェクト名
  */
-function sanitizeProjectName(
-    projectName: string,
-    provider: "turso" | "supabase"
-): string {
+function sanitizeProjectName(projectName: string, provider: "turso" | "supabase"): string {
     if (provider === "turso") {
         // Turso: 3-32文字、英数字・ハイフンのみ
         return projectName
@@ -410,10 +378,7 @@ function sanitizeProjectName(
  * @param provider データベースプロバイダ
  * @returns 検証結果メッセージ（問題なければundefined）
  */
-function validateDatabaseName(
-    name: string,
-    provider: "turso" | "supabase"
-): string | undefined {
+function validateDatabaseName(name: string, provider: "turso" | "supabase"): string | undefined {
     if (provider === "turso") {
         if (name.length < 3 || name.length > 32) {
             return "データベース名は3-32文字である必要があります。";
@@ -448,13 +413,11 @@ async function selectFromAllDatabases(
 
     // グループ化されたプロジェクトから選択
     if (projectGroups.size > 1) {
-        const projectOptions = Array.from(projectGroups.entries()).map(
-            ([projectName, dbs]) => ({
-                value: projectName,
-                label: projectName,
-                hint: `${dbs.length}個のデータベース`,
-            })
-        );
+        const projectOptions = Array.from(projectGroups.entries()).map(([projectName, dbs]) => ({
+            value: projectName,
+            label: projectName,
+            hint: `${dbs.length}個のデータベース`,
+        }));
 
         // 戻るオプションを追加
         projectOptions.push({
@@ -473,8 +436,7 @@ async function selectFromAllDatabases(
             throw new Error("DATABASE_SELECTION_CANCELLED");
         }
 
-        const projectDatabases =
-            projectGroups.get(selectedProject as string) || [];
+        const projectDatabases = projectGroups.get(selectedProject as string) || [];
         return await selectEnvironmentDatabases(projectDatabases);
     }
 
@@ -514,15 +476,7 @@ function groupDatabasesByProject(
  */
 export function extractProjectBaseName(dbName: string): string {
     // 一般的な環境サフィックスを除去
-    const suffixes = [
-        "-dev",
-        "-development",
-        "-staging",
-        "-stg",
-        "-prod",
-        "-production",
-        "-test",
-    ];
+    const suffixes = ["-dev", "-development", "-staging", "-stg", "-prod", "-production", "-test"];
 
     for (const suffix of suffixes) {
         if (dbName.endsWith(suffix)) {
@@ -593,8 +547,7 @@ async function selectEnvironmentDatabases(
 
     return {
         dev: envMapping.dev || envMapping.prod || databases[0]?.name || "",
-        staging:
-            envMapping.staging || envMapping.prod || databases[0]?.name || "",
+        staging: envMapping.staging || envMapping.prod || databases[0]?.name || "",
         prod: envMapping.prod || databases[0]?.name || "",
     };
 }

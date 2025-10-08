@@ -21,9 +21,7 @@ export type EncryptionEnvironmentCheck = {
 /**
  * 暗号化実行環境をチェック
  */
-export async function shouldEncryptEnv(
-    appDirectory: string
-): Promise<EncryptionEnvironmentCheck> {
+export async function shouldEncryptEnv(appDirectory: string): Promise<EncryptionEnvironmentCheck> {
     const result: EncryptionEnvironmentCheck = {
         canExecute: false,
         isTTY: process.stdin.isTTY === true,

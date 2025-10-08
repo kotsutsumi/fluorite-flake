@@ -50,14 +50,7 @@ export function validatePnpm(): boolean {
         // 最小バージョン要件をチェック
         if (majorVersion < MIN_PNPM_VERSION) {
             // バージョンが古い場合：エラーメッセージを表示
-            console.error(
-                chalk.red(
-                    create.pnpmVersionTooOld(
-                        version,
-                        MIN_PNPM_VERSION.toString()
-                    )
-                )
-            );
+            console.error(chalk.red(create.pnpmVersionTooOld(version, MIN_PNPM_VERSION.toString())));
             // インストールガイドを表示して失敗を返す
             showPnpmInstallGuide();
             return false;
@@ -98,10 +91,7 @@ export function validatePnpmWithDetails(): PnpmValidationResult {
         // 最小バージョン要件をチェック
         if (majorVersion < MIN_PNPM_VERSION) {
             // バージョンが古い場合：エラーメッセージを表示
-            const errorMessage = create.pnpmVersionTooOld(
-                version,
-                MIN_PNPM_VERSION.toString()
-            );
+            const errorMessage = create.pnpmVersionTooOld(version, MIN_PNPM_VERSION.toString());
             console.error(chalk.red(errorMessage));
             // インストールガイドを表示
             showPnpmInstallGuide();

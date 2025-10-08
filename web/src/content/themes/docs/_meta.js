@@ -1,6 +1,6 @@
 export default {
-  index: '',
-  configuration: '',
-  callout: '',
-  bleed: ''
-}
+    index: "",
+    configuration: "",
+    callout: "",
+    bleed: "",
+};

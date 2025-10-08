@@ -11,8 +11,7 @@ export async function listGroups(): Promise<GroupInfo[]> {
     const result = await executeTursoCommand(["group", "list"]);
     throwOnError(result, "turso group list");
 
-    const lines =
-        result.stdout?.split("\n").filter((line) => line.trim()) || [];
+    const lines = result.stdout?.split("\n").filter((line) => line.trim()) || [];
     const groups: GroupInfo[] = [];
 
     for (const line of lines) {
@@ -36,10 +35,7 @@ export async function listGroups(): Promise<GroupInfo[]> {
 /**
  * グループを作成
  */
-export async function createGroup(
-    name: string,
-    options: GroupCreateOptions = {}
-): Promise<CommandResult> {
+export async function createGroup(name: string, options: GroupCreateOptions = {}): Promise<CommandResult> {
     const args = ["group", "create", name];
 
     if (options.location) {
@@ -58,10 +54,7 @@ export async function createGroup(
 /**
  * グループを削除
  */
-export async function destroyGroup(
-    name: string,
-    skipConfirmation = false
-): Promise<CommandResult> {
+export async function destroyGroup(name: string, skipConfirmation = false): Promise<CommandResult> {
     const args = ["group", "destroy", name];
     if (skipConfirmation) {
         args.push("--yes");
@@ -98,11 +91,7 @@ export async function updateGroup(
 /**
  * グループを他の組織に移管
  */
-export async function transferGroup(
-    name: string,
-    org: string,
-    skipConfirmation = false
-): Promise<CommandResult> {
+export async function transferGroup(name: string, org: string, skipConfirmation = false): Promise<CommandResult> {
     const args = ["group", "transfer", name, org];
     if (skipConfirmation) {
         args.push("--yes");
@@ -113,11 +102,7 @@ export async function transferGroup(
 /**
  * グループにロケーション（レプリカ）を追加
  */
-export async function addGroupLocation(
-    name: string,
-    location: string,
-    wait = false
-): Promise<CommandResult> {
+export async function addGroupLocation(name: string, location: string, wait = false): Promise<CommandResult> {
     const args = ["group", "locations", "add", name, location];
     if (wait) {
         args.push("--wait");
@@ -128,17 +113,8 @@ export async function addGroupLocation(
 /**
  * グループからロケーション（レプリカ）を削除
  */
-export async function removeGroupLocation(
-    name: string,
-    location: string
-): Promise<CommandResult> {
-    return await executeTursoCommand([
-        "group",
-        "locations",
-        "remove",
-        name,
-        location,
-    ]);
+export async function removeGroupLocation(name: string, location: string): Promise<CommandResult> {
+    return await executeTursoCommand(["group", "locations", "remove", name, location]);
 }
 
 /**
@@ -163,10 +139,7 @@ export async function createGroupToken(
 /**
  * グループトークンを無効化
  */
-export async function invalidateGroupTokens(
-    name: string,
-    skipConfirmation = false
-): Promise<CommandResult> {
+export async function invalidateGroupTokens(name: string, skipConfirmation = false): Promise<CommandResult> {
     const args = ["group", "tokens", "invalidate", name];
     if (skipConfirmation) {
         args.push("--yes");
@@ -184,9 +157,7 @@ export async function unarchiveGroup(name: string): Promise<CommandResult> {
 /**
  * AWS移行情報を取得
  */
-export async function getAwsMigrationInfo(
-    name: string
-): Promise<CommandResult> {
+export async function getAwsMigrationInfo(name: string): Promise<CommandResult> {
     return await executeTursoCommand(["group", "aws-migration", "info", name]);
 }
 

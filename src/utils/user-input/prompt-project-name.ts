@@ -51,9 +51,7 @@ export async function promptForProjectName(): Promise<string> {
         if (trimmed && PROJECT_NAME_PATTERN.test(trimmed)) {
             // プロジェクトが既に存在するかチェック
             if (checkProjectExists(trimmed)) {
-                console.log(
-                    create.projectAlreadyExists.replace("{name}", trimmed)
-                );
+                console.log(create.projectAlreadyExists.replace("{name}", trimmed));
                 // 既に存在する場合は再度入力を促す
                 continue;
             }

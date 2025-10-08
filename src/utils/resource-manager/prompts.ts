@@ -19,9 +19,7 @@ import type {
  */
 export class CleanupPrompts {
     /** メインクリーンアップフロー */
-    async executeCleanupFlow(
-        inventory: ProjectInventory
-    ): Promise<CleanupPlan | null> {
+    async executeCleanupFlow(inventory: ProjectInventory): Promise<CleanupPlan | null> {
         console.log(chalk.blue("\n🗑️  デプロイ環境クリーンアップ"));
         console.log(chalk.gray("検出されたリソースを安全に削除します\n"));
 
@@ -44,9 +42,7 @@ export class CleanupPrompts {
             return null;
         }
 
-        const finalConfirmed = await this.finalConfirmation(
-            inventory.projectName
-        );
+        const finalConfirmed = await this.finalConfirmation(inventory.projectName);
         if (!finalConfirmed) {
             return null;
         }
@@ -55,17 +51,13 @@ export class CleanupPrompts {
     }
 
     /** リソース選択プロンプト */
-    private async presentResourceSelection(
-        inventory: ProjectInventory
-    ): Promise<ResourceSelection | null> {
+    private async presentResourceSelection(inventory: ProjectInventory): Promise<ResourceSelection | null> {
         console.log(chalk.white("📋 検出されたリソース:"));
         this.displayDiscoveredResources(inventory);
 
         const availableTypes = this.getAvailableResourceTypes(inventory);
         if (availableTypes.length === 0) {
-            console.log(
-                chalk.yellow("削除対象となるリソースが見つかりませんでした")
-            );
+            console.log(chalk.yellow("削除対象となるリソースが見つかりませんでした"));
             return null;
         }
 
@@ -89,10 +81,7 @@ export class CleanupPrompts {
         }
 
         let scope: ResourceSelection["scope"] = "all";
-        const requiresScope = this.hasMultipleEnvironments(
-            inventory,
-            selectedTypes
-        );
+        const requiresScope = this.hasMultipleEnvironments(inventory, selectedTypes);
         if (requiresScope) {
             const scopeResult = await select<ResourceSelection["scope"]>({
                 message: "削除範囲を選択してください",
@@ -122,9 +111,7 @@ export class CleanupPrompts {
     /** 検出済みリソースの一覧表示 */
     private displayDiscoveredResources(inventory: ProjectInventory): void {
         if (inventory.vercel) {
-            console.log(
-                `  ${chalk.blue("🌐")} Vercel プロジェクト: ${inventory.vercel.projectId ?? "不明"}`
-            );
+            console.log(`  ${chalk.blue("🌐")} Vercel プロジェクト: ${inventory.vercel.projectId ?? "不明"}`);
         }
 
         if (inventory.databases?.resources.length) {
@@ -132,16 +119,12 @@ export class CleanupPrompts {
                 `  ${chalk.green("🗄️")} データベース (${inventory.databases.type}): ${inventory.databases.resources.length}件`
             );
             for (const resource of inventory.databases.resources) {
-                console.log(
-                    `    - ${resource.environment}: ${resource.identifier}`
-                );
+                console.log(`    - ${resource.environment}: ${resource.identifier}`);
             }
         }
 
         if (inventory.storage?.blobStores.length) {
-            console.log(
-                `  ${chalk.magenta("📦")} Blob ストア: ${inventory.storage.blobStores.length}件`
-            );
+            console.log(`  ${chalk.magenta("📦")} Blob ストア: ${inventory.storage.blobStores.length}件`);
             for (const store of inventory.storage.blobStores) {
                 console.log(`    - ${store.name} (${store.id})`);
             }
@@ -151,24 +134,16 @@ export class CleanupPrompts {
     }
 
     /** 利用可能なリソースタイプの抽出 */
-    private getAvailableResourceTypes(
-        inventory: ProjectInventory
-    ): ResourceType[] {
+    private getAvailableResourceTypes(inventory: ProjectInventory): ResourceType[] {
         const types: ResourceType[] = [];
 
         if (inventory.vercel) {
             types.push("vercel-project");
         }
-        if (
-            inventory.databases?.type === "turso" &&
-            inventory.databases.resources.length > 0
-        ) {
+        if (inventory.databases?.type === "turso" && inventory.databases.resources.length > 0) {
             types.push("turso-database");
         }
-        if (
-            inventory.databases?.type === "supabase" &&
-            inventory.databases.resources.length > 0
-        ) {
+        if (inventory.databases?.type === "supabase" && inventory.databases.resources.length > 0) {
             types.push("supabase-project");
         }
         if (inventory.storage?.blobStores.length) {
@@ -192,10 +167,7 @@ export class CleanupPrompts {
     }
 
     /** リソースタイプに応じたヒント */
-    private getResourceTypeHint(
-        type: ResourceType,
-        inventory: ProjectInventory
-    ): string {
+    private getResourceTypeHint(type: ResourceType, inventory: ProjectInventory): string {
         switch (type) {
             case "vercel-project":
                 return inventory.vercel?.projectId ?? "プロジェクト設定";
@@ -211,23 +183,15 @@ export class CleanupPrompts {
     }
 
     /** 環境が複数存在するか判定 */
-    private hasMultipleEnvironments(
-        inventory: ProjectInventory,
-        selectedTypes: ResourceType[]
-    ): boolean {
-        if (
-            selectedTypes.includes("turso-database") ||
-            selectedTypes.includes("supabase-project")
-        ) {
+    private hasMultipleEnvironments(inventory: ProjectInventory, selectedTypes: ResourceType[]): boolean {
+        if (selectedTypes.includes("turso-database") || selectedTypes.includes("supabase-project")) {
             return (inventory.databases?.resources.length ?? 0) > 1;
         }
         return false;
     }
 
     /** 選択スコープから対象環境を算出 */
-    private getEnvironmentsFromScope(
-        scope: ResourceSelection["scope"]
-    ): string[] {
+    private getEnvironmentsFromScope(scope: ResourceSelection["scope"]): string[] {
         switch (scope) {
             case "development":
                 return ["development"];
@@ -241,15 +205,10 @@ export class CleanupPrompts {
     }
 
     /** リスク情報の表示 */
-    private async displayRiskAssessment(
-        inventory: ProjectInventory,
-        selection: ResourceSelection
-    ): Promise<void> {
+    private async displayRiskAssessment(inventory: ProjectInventory, selection: ResourceSelection): Promise<void> {
         const assessment = inventory.dependencies.riskAssessment;
         console.log(chalk.yellow("\n⚠️  リスク評価"));
-        console.log(
-            `リスクレベル: ${this.getRiskColor(assessment.overall)(assessment.overall)}`
-        );
+        console.log(`リスクレベル: ${this.getRiskColor(assessment.overall)(assessment.overall)}`);
 
         for (const factor of assessment.factors) {
             const isRelevant = factor.affectedResources.some((resource) =>
@@ -260,9 +219,7 @@ export class CleanupPrompts {
             }
 
             const severityColor = this.getSeverityColor(factor.severity);
-            console.log(
-                `  • ${severityColor(factor.severity)}: ${factor.description}`
-            );
+            console.log(`  • ${severityColor(factor.severity)}: ${factor.description}`);
         }
 
         if (assessment.mitigations.length > 0) {
@@ -274,21 +231,15 @@ export class CleanupPrompts {
     }
 
     /** バックアップ確認 */
-    private async confirmBackupStatus(
-        selection: ResourceSelection
-    ): Promise<boolean> {
+    private async confirmBackupStatus(selection: ResourceSelection): Promise<boolean> {
         console.log(chalk.blue("\n💾 バックアップ確認"));
         if (
             selection.selectedTypes.includes("turso-database") ||
             selection.selectedTypes.includes("supabase-project")
         ) {
-            console.log(
-                chalk.yellow("⚠️ データベースを削除すると復旧できません。")
-            );
+            console.log(chalk.yellow("⚠️ データベースを削除すると復旧できません。"));
         }
-        console.log(
-            chalk.white("必要なバックアップが完了しているか確認してください。")
-        );
+        console.log(chalk.white("必要なバックアップが完了しているか確認してください。"));
 
         const confirmed = await confirm({
             message: "バックアップは完了していますか？",
@@ -303,19 +254,11 @@ export class CleanupPrompts {
     }
 
     /** 削除計画を生成 */
-    private createDeletionPlan(
-        inventory: ProjectInventory,
-        selection: ResourceSelection
-    ): CleanupPlan {
+    private createDeletionPlan(inventory: ProjectInventory, selection: ResourceSelection): CleanupPlan {
         const steps: DeletionStep[] = [];
 
         for (const priority of inventory.dependencies.deletionOrder) {
-            this.appendStepsForResourceType(
-                steps,
-                priority.type,
-                inventory,
-                selection
-            );
+            this.appendStepsForResourceType(steps, priority.type, inventory, selection);
         }
 
         const backupPlan = this.createBackupPlan(inventory, selection);
@@ -359,9 +302,7 @@ export class CleanupPrompts {
                     break;
                 }
                 for (const resource of inventory.databases.resources) {
-                    if (
-                        !selection.environments.includes(resource.environment)
-                    ) {
+                    if (!selection.environments.includes(resource.environment)) {
                         continue;
                     }
                     steps.push({
@@ -382,9 +323,7 @@ export class CleanupPrompts {
                     break;
                 }
                 for (const resource of inventory.databases.resources) {
-                    if (
-                        !selection.environments.includes(resource.environment)
-                    ) {
+                    if (!selection.environments.includes(resource.environment)) {
                         continue;
                     }
                     steps.push({
@@ -415,19 +354,14 @@ export class CleanupPrompts {
                 break;
             }
             default: {
-                console.warn(
-                    `未対応のリソースタイプをスキップしました: ${type}`
-                );
+                console.warn(`未対応のリソースタイプをスキップしました: ${type}`);
                 break;
             }
         }
     }
 
     /** バックアップ計画を生成 */
-    private createBackupPlan(
-        _inventory: ProjectInventory,
-        _selection: ResourceSelection
-    ): BackupPlan {
+    private createBackupPlan(_inventory: ProjectInventory, _selection: ResourceSelection): BackupPlan {
         return {
             entries: [],
             estimatedSize: 0,
@@ -445,12 +379,8 @@ export class CleanupPrompts {
     private async confirmDeletionPlan(plan: CleanupPlan): Promise<boolean> {
         console.log(chalk.blue("\n📋 削除計画"));
         console.log(`ステップ数: ${plan.steps.length}`);
-        console.log(
-            `推定時間: ${Math.max(1, Math.ceil(plan.estimatedDuration / 60))} 分程度`
-        );
-        console.log(
-            `リスクレベル: ${this.getRiskColor(plan.riskLevel)(plan.riskLevel)}`
-        );
+        console.log(`推定時間: ${Math.max(1, Math.ceil(plan.estimatedDuration / 60))} 分程度`);
+        console.log(`リスクレベル: ${this.getRiskColor(plan.riskLevel)(plan.riskLevel)}`);
 
         console.log(chalk.white("\n削除対象:"));
         for (const step of plan.steps) {

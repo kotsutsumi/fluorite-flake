@@ -37,17 +37,10 @@ export class AuthenticationManager {
             this.updateCache(authStatus);
             return authStatus;
         } catch (error) {
-            throw new GitHubCLIError(
-                GitHubCLIErrorCode.AUTH_FAILED,
-                "認証ステータスの確認に失敗しました",
-                {
-                    originalError:
-                        error instanceof Error
-                            ? error
-                            : new Error(String(error)),
-                    suggestion: "gh auth login を実行して認証を行ってください",
-                }
-            );
+            throw new GitHubCLIError(GitHubCLIErrorCode.AUTH_FAILED, "認証ステータスの確認に失敗しました", {
+                originalError: error instanceof Error ? error : new Error(String(error)),
+                suggestion: "gh auth login を実行して認証を行ってください",
+            });
         }
     }
 
@@ -117,13 +110,9 @@ export class AuthenticationManager {
         console.log("トークンでのログイン:");
         console.log("  gh auth login --with-token");
 
-        throw new GitHubCLIError(
-            GitHubCLIErrorCode.AUTH_MISSING,
-            "GitHub CLI の認証が必要です",
-            {
-                suggestion: "上記のコマンドを使用してログインしてください",
-            }
-        );
+        throw new GitHubCLIError(GitHubCLIErrorCode.AUTH_MISSING, "GitHub CLI の認証が必要です", {
+            suggestion: "上記のコマンドを使用してログインしてください",
+        });
     }
 
     // ユーザー名を抽出
@@ -136,9 +125,7 @@ export class AuthenticationManager {
     }
 
     // トークンタイプを抽出
-    private parseTokenType(
-        line: string
-    ): "oauth" | "personal_access_token" | undefined {
+    private parseTokenType(line: string): "oauth" | "personal_access_token" | undefined {
         if (line.includes("Token:")) {
             if (line.includes("oauth")) {
                 return "oauth";
@@ -217,14 +204,9 @@ export class AuthenticationManager {
         const isValid = await this.validateToken();
         if (!isValid) {
             this.clearCache();
-            throw new GitHubCLIError(
-                GitHubCLIErrorCode.AUTH_EXPIRED,
-                "認証トークンが無効または期限切れです",
-                {
-                    suggestion:
-                        "gh auth refresh または gh auth login を実行してください",
-                }
-            );
+            throw new GitHubCLIError(GitHubCLIErrorCode.AUTH_EXPIRED, "認証トークンが無効または期限切れです", {
+                suggestion: "gh auth refresh または gh auth login を実行してください",
+            });
         }
     }
 
@@ -234,24 +216,18 @@ export class AuthenticationManager {
             const authStatus = await this.checkAuthStatus();
 
             console.log("🔐 GitHub CLI 認証情報:");
-            console.log(
-                `  認証状態: ${authStatus.isAuthenticated ? "✅ ログイン済み" : "❌ 未認証"}`
-            );
+            console.log(`  認証状態: ${authStatus.isAuthenticated ? "✅ ログイン済み" : "❌ 未認証"}`);
 
             if (authStatus.isAuthenticated) {
                 console.log(`  ユーザー名: ${authStatus.username || "不明"}`);
-                console.log(
-                    `  トークンタイプ: ${authStatus.tokenType || "不明"}`
-                );
+                console.log(`  トークンタイプ: ${authStatus.tokenType || "不明"}`);
 
                 if (authStatus.scopes && authStatus.scopes.length > 0) {
                     console.log(`  スコープ: ${authStatus.scopes.join(", ")}`);
                 }
 
                 if (authStatus.expiresAt) {
-                    console.log(
-                        `  有効期限: ${authStatus.expiresAt.toLocaleString()}`
-                    );
+                    console.log(`  有効期限: ${authStatus.expiresAt.toLocaleString()}`);
                 }
             }
         } catch (error) {

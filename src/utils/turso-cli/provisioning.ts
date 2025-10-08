@@ -9,27 +9,13 @@ import type {
     ProvisioningResult,
     TursoProvisioningOptions,
 } from "../../commands/create/database-provisioning/types.js";
-import {
-    createDatabase,
-    createDatabaseToken,
-    getDatabaseUrl,
-    isAuthenticated,
-    listDatabases,
-} from "./index.js";
+import { createDatabase, createDatabaseToken, getDatabaseUrl, isAuthenticated, listDatabases } from "./index.js";
 
 /**
  * Tursoプロビジョニング結果の型
  */
 function stripEnvironmentSuffix(name: string): string {
-    const suffixes = [
-        "-dev",
-        "-development",
-        "-staging",
-        "-stg",
-        "-prod",
-        "-production",
-        "-test",
-    ];
+    const suffixes = ["-dev", "-development", "-staging", "-stg", "-prod", "-production", "-test"];
 
     for (const suffix of suffixes) {
         if (name.endsWith(suffix)) {
@@ -49,24 +35,18 @@ export interface TursoProvisioningResult extends ProvisioningResult {
  * @param options プロビジョニングオプション
  * @returns プロビジョニング結果
  */
-export async function provisionTursoDatabases(
-    options: TursoProvisioningOptions
-): Promise<TursoProvisioningResult> {
+export async function provisionTursoDatabases(options: TursoProvisioningOptions): Promise<TursoProvisioningResult> {
     // 1. 認証チェック
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-        throw new Error(
-            "Turso CLI に認証されていません。`turso auth login` を実行してください。"
-        );
+        throw new Error("Turso CLI に認証されていません。`turso auth login` を実行してください。");
     }
 
     // 2. 既存データベース確認
     const existingDatabases = await listDatabases();
 
     // 3. 命名設定の検証
-    const naming = options.existingNaming
-        ? options.existingNaming
-        : await validateTursoNaming(options.projectName);
+    const naming = options.existingNaming ? options.existingNaming : await validateTursoNaming(options.projectName);
     options.projectName;
 
     // 4. 並行でデータベース作成・トークン生成
@@ -89,16 +69,12 @@ export async function provisionTursoDatabases(
 
         try {
             if (exists) {
-                console.log(
-                    `ℹ️ ${env}環境データベース '${dbName}' は既に存在します`
-                );
+                console.log(`ℹ️ ${env}環境データベース '${dbName}' は既に存在します`);
             } else {
                 await createDatabase(dbName, {
                     location: options.location,
                 });
-                console.log(
-                    `✅ ${env}環境データベース '${dbName}' を作成しました`
-                );
+                console.log(`✅ ${env}環境データベース '${dbName}' を作成しました`);
             }
 
             // URLとトークンの取得を個別にエラーハンドリング
@@ -109,9 +85,7 @@ export async function provisionTursoDatabases(
                 url = await getDatabaseUrl(dbName);
                 console.log(`🔗 ${env}環境: データベースURL取得完了`);
             } catch (urlError) {
-                throw new Error(
-                    `データベースURL取得失敗: ${urlError instanceof Error ? urlError.message : urlError}`
-                );
+                throw new Error(`データベースURL取得失敗: ${urlError instanceof Error ? urlError.message : urlError}`);
             }
 
             try {
@@ -119,9 +93,7 @@ export async function provisionTursoDatabases(
                 token = tokenResult.token;
                 console.log(`🔑 ${env}環境: トークン生成完了`);
             } catch (tokenError) {
-                throw new Error(
-                    `トークン生成失敗: ${tokenError instanceof Error ? tokenError.message : tokenError}`
-                );
+                throw new Error(`トークン生成失敗: ${tokenError instanceof Error ? tokenError.message : tokenError}`);
             }
 
             credentials.urls[env] = url;
@@ -134,11 +106,8 @@ export async function provisionTursoDatabases(
                 status: exists ? "existing" : "created",
             });
         } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
-            console.error(
-                `❌ ${env}環境データベース '${dbName}' の処理に失敗: ${errorMessage}`
-            );
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`❌ ${env}環境データベース '${dbName}' の処理に失敗: ${errorMessage}`);
             console.error(`   エラー詳細: ${errorMessage}`);
 
             databases.push({
@@ -154,9 +123,7 @@ export async function provisionTursoDatabases(
 
     // 失敗したデータベースがある場合の処理
     const failedDatabases = databases.filter((db) => db.status === "failed");
-    const successfulDatabases = databases.filter(
-        (db) => db.status !== "failed"
-    );
+    const successfulDatabases = databases.filter((db) => db.status !== "failed");
 
     if (failedDatabases.length > 0) {
         console.warn("⚠️ 一部のデータベース処理が失敗しました:");
@@ -170,9 +137,7 @@ export async function provisionTursoDatabases(
             );
         }
 
-        console.log(
-            `✅ 成功したデータベース: ${successfulDatabases.length}/${databases.length}`
-        );
+        console.log(`✅ 成功したデータベース: ${successfulDatabases.length}/${databases.length}`);
     }
 
     // credentials の完全性を検証（成功したデータベースのみ）
@@ -228,14 +193,10 @@ export async function validateTursoNaming(
     // 命名制約チェック
     for (const [env, name] of Object.entries(naming)) {
         if (name.length > 32) {
-            throw new Error(
-                `${env}環境のデータベース名 '${name}' が長すぎます（最大32文字）`
-            );
+            throw new Error(`${env}環境のデータベース名 '${name}' が長すぎます（最大32文字）`);
         }
         if (name.length < 3) {
-            throw new Error(
-                `${env}環境のデータベース名 '${name}' が短すぎます（最小3文字）`
-            );
+            throw new Error(`${env}環境のデータベース名 '${name}' が短すぎます（最小3文字）`);
         }
         if (!/^[a-z0-9-]+$/.test(name)) {
             throw new Error(
@@ -253,10 +214,7 @@ export async function validateTursoNaming(
  * @param token 認証トークン
  * @returns 接続可能かどうか
  */
-export async function testTursoConnection(
-    url: string,
-    token: string
-): Promise<boolean> {
+export async function testTursoConnection(url: string, token: string): Promise<boolean> {
     try {
         // 実際の接続テストは複雑なので、URLとトークンの形式をチェック
         if (!(url.startsWith("libsql://") || url.startsWith("file:"))) {
@@ -273,9 +231,7 @@ export async function testTursoConnection(
 
         return true;
     } catch (error) {
-        console.error(
-            `Turso接続テストエラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`Turso接続テストエラー: ${error instanceof Error ? error.message : error}`);
         return false;
     }
 }
@@ -380,26 +336,18 @@ export async function createTablesInTursoDatabases(
             if (!(url && token)) {
                 const urlStatus = url ? "設定済み" : "未設定";
                 const tokenStatus = token ? "設定済み" : "未設定";
-                console.error(
-                    `❌ ${env}環境の認証情報が不足しています - URL: ${urlStatus}, Token: ${tokenStatus}`
-                );
+                console.error(`❌ ${env}環境の認証情報が不足しています - URL: ${urlStatus}, Token: ${tokenStatus}`);
                 console.error(
                     `   認証情報の内容: URL="${url || "undefined"}", Token="${token ? "***設定済み***" : "undefined"}"`
                 );
-                console.error(
-                    "   この問題は通常、データベースプロビジョニング段階での失敗が原因です。"
-                );
+                console.error("   この問題は通常、データベースプロビジョニング段階での失敗が原因です。");
                 continue;
             }
 
             // URLの形式を簡易検証
             if (!url.startsWith("libsql://")) {
-                console.error(
-                    `❌ ${env}環境のデータベースURL形式が無効です: ${url}`
-                );
-                console.error(
-                    `   TursoデータベースのURLは 'libsql://' で開始する必要があります。`
-                );
+                console.error(`❌ ${env}環境のデータベースURL形式が無効です: ${url}`);
+                console.error(`   TursoデータベースのURLは 'libsql://' で開始する必要があります。`);
                 continue;
             }
 
@@ -422,9 +370,7 @@ export async function createTablesInTursoDatabases(
 
             console.log(`📝 ${env}環境用の環境変数を設定`);
             console.log(`   DATABASE_URL: ${maskAuthToken(urlWithToken)}`);
-            console.log(
-                `   TURSO_AUTH_TOKEN: ${token ? "***取得済み***" : "未設定"}`
-            );
+            console.log(`   TURSO_AUTH_TOKEN: ${token ? "***取得済み***" : "未設定"}`);
 
             console.log(`🔧 ${env}環境のデータベースにテーブルを作成中...`);
 
@@ -437,34 +383,18 @@ export async function createTablesInTursoDatabases(
                 });
                 console.log(`📊 ${env}環境のテーブル作成が完了しました`);
             } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
-                console.warn(
-                    `⚠️ ${env}環境のテーブル作成で問題が発生しました: ${errorMessage}`
-                );
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.warn(`⚠️ ${env}環境のテーブル作成で問題が発生しました: ${errorMessage}`);
 
                 // URL_INVALID エラーの場合は特別な診断情報を提供
-                if (
-                    errorMessage.includes("URL_INVALID") ||
-                    errorMessage.includes("undefined")
-                ) {
+                if (errorMessage.includes("URL_INVALID") || errorMessage.includes("undefined")) {
                     console.error("🔍 診断情報:");
-                    console.error(
-                        `   - データベースURL: ${credentials.urls[env] || "undefined"}`
-                    );
-                    console.error(
-                        `   - 認証トークン: ${credentials.tokens[env] ? "設定済み" : "undefined"}`
-                    );
-                    console.error(
-                        "   - このエラーは通常、プロビジョニング段階でのデータベース作成失敗が原因です"
-                    );
-                    console.error(
-                        `   - 'turso auth whoami' でTurso CLIの認証状況を確認してください`
-                    );
+                    console.error(`   - データベースURL: ${credentials.urls[env] || "undefined"}`);
+                    console.error(`   - 認証トークン: ${credentials.tokens[env] ? "設定済み" : "undefined"}`);
+                    console.error("   - このエラーは通常、プロビジョニング段階でのデータベース作成失敗が原因です");
+                    console.error(`   - 'turso auth whoami' でTurso CLIの認証状況を確認してください`);
                 } else {
-                    console.warn(
-                        "   実際のアプリケーション起動時にテーブル作成が実行されます。"
-                    );
+                    console.warn("   実際のアプリケーション起動時にテーブル作成が実行されます。");
                 }
             }
 
@@ -472,42 +402,28 @@ export async function createTablesInTursoDatabases(
             console.log(`✅ ${env}環境の初期設定が完了しました`);
         } catch (error) {
             failedEnvironments.push(env);
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
 
             // 致命的エラーの場合は即座に例外をthrow
-            if (
-                errorMessage.includes("Prisma 設定エラー") ||
-                errorMessage.includes("認証情報が不足")
-            ) {
+            if (errorMessage.includes("Prisma 設定エラー") || errorMessage.includes("認証情報が不足")) {
                 throw error;
             }
 
             // 回復可能エラーは警告として処理
-            console.warn(
-                `⚠️ ${env}環境の初期設定で問題が発生しました: ${errorMessage}`
-            );
+            console.warn(`⚠️ ${env}環境の初期設定で問題が発生しました: ${errorMessage}`);
 
             // 詳細な診断情報を出力
             console.error("🔍 詳細診断情報:");
             console.error(`   - 環境: ${env}`);
             console.error(`   - プロジェクトパス: ${projectPath}`);
-            console.error(
-                `   - データベースURL: ${credentials.urls[env] || "undefined"}`
-            );
-            console.error(
-                `   - 認証トークン: ${credentials.tokens[env] ? "設定済み" : "undefined"}`
-            );
+            console.error(`   - データベースURL: ${credentials.urls[env] || "undefined"}`);
+            console.error(`   - 認証トークン: ${credentials.tokens[env] ? "設定済み" : "undefined"}`);
 
             if (error instanceof Error && error.stack) {
-                console.error(
-                    `   - スタックトレース: ${error.stack.split("\n")[0]}`
-                );
+                console.error(`   - スタックトレース: ${error.stack.split("\n")[0]}`);
             }
 
-            console.error(
-                "   - 推奨対応: データベースプロビジョニングを再実行してください"
-            );
+            console.error("   - 推奨対応: データベースプロビジョニングを再実行してください");
         }
     }
 
@@ -521,15 +437,11 @@ export async function createTablesInTursoDatabases(
         console.warn("\n⚠️ 一部環境でテーブル作成に失敗しました:");
         console.warn(`   成功: ${successfulEnvironments.join(", ")}`);
         console.warn(`   失敗: ${failedEnvironments.join(", ")}`);
-        console.warn(
-            "   失敗した環境は、アプリケーション初回起動時にテーブル作成が実行されます。"
-        );
+        console.warn("   失敗した環境は、アプリケーション初回起動時にテーブル作成が実行されます。");
     }
 
     console.log("🎉 全環境の初期設定処理が完了しました");
-    console.log(
-        "ℹ️ Tursoデータベースのテーブル作成は、アプリケーションの初回起動時に自動的に実行されます"
-    );
+    console.log("ℹ️ Tursoデータベースのテーブル作成は、アプリケーションの初回起動時に自動的に実行されます");
 }
 
 type TursoBootstrapOptions = {
@@ -549,10 +461,7 @@ type LibsqlClient = {
 
 type EnvRecord = Record<string, string | undefined>;
 
-async function withTemporaryEnv<T>(
-    overrides: EnvRecord,
-    callback: () => Promise<T>
-): Promise<T> {
+async function withTemporaryEnv<T>(overrides: EnvRecord, callback: () => Promise<T>): Promise<T> {
     const original = new Map<string, string | undefined>();
 
     for (const [key, value] of Object.entries(overrides)) {
@@ -577,28 +486,19 @@ async function withTemporaryEnv<T>(
     }
 }
 
-function loadProjectModule<T>(
-    projectRequire: ReturnType<typeof createRequire>,
-    moduleId: string
-): T {
+function loadProjectModule<T>(projectRequire: ReturnType<typeof createRequire>, moduleId: string): T {
     try {
         return projectRequire(moduleId) as T;
     } catch (error) {
         const details = error instanceof Error ? error.message : String(error);
-        throw new Error(
-            `プロジェクト依存モジュール '${moduleId}' の読み込みに失敗しました: ${details}`
-        );
+        throw new Error(`プロジェクト依存モジュール '${moduleId}' の読み込みに失敗しました: ${details}`);
     }
 }
 
-async function executeTursoBootstrap(
-    options: TursoBootstrapOptions
-): Promise<void> {
+async function executeTursoBootstrap(options: TursoBootstrapOptions): Promise<void> {
     const { projectPath, environmentVariables } = options;
     const projectRoot = resolve(projectPath);
-    const requireFromProject = createRequire(
-        resolve(projectRoot, "package.json")
-    );
+    const requireFromProject = createRequire(resolve(projectRoot, "package.json"));
 
     const prismaModule = loadProjectModule<{
         PrismaClient: new (...args: unknown[]) => PrismaClientLike;
@@ -609,52 +509,28 @@ async function executeTursoBootstrap(
     }>(requireFromProject, "@prisma/adapter-libsql");
 
     const libsqlModule = loadProjectModule<{
-        createClient: (config: {
-            url: string;
-            authToken: string;
-        }) => LibsqlClient;
+        createClient: (config: { url: string; authToken: string }) => LibsqlClient;
     }>(requireFromProject, "@libsql/client");
 
     // 確実にlibsqlクライアント用のURLとトークンを取得
     // environmentVariablesから直接取得（withTemporaryEnvで設定済み）
-    const rawTursoUrl =
-        environmentVariables.TURSO_DATABASE_URL ||
-        environmentVariables.DATABASE_URL ||
-        "";
+    const rawTursoUrl = environmentVariables.TURSO_DATABASE_URL || environmentVariables.DATABASE_URL || "";
 
     // libsqlクライアント用にクエリパラメータを除去したクリーンなURLを取得
     const tursoUrl = cleanDatabaseUrl(rawTursoUrl);
 
-    const authToken =
-        environmentVariables.TURSO_AUTH_TOKEN ||
-        environmentVariables.LIBSQL_AUTH_TOKEN ||
-        "";
+    const authToken = environmentVariables.TURSO_AUTH_TOKEN || environmentVariables.LIBSQL_AUTH_TOKEN || "";
 
     console.log("🔍 デバッグ: 環境変数確認");
-    console.log(
-        "   environmentVariables keys:",
-        Object.keys(environmentVariables)
-    );
-    console.log(
-        "   RAW_DATABASE_URL:",
-        rawTursoUrl ? maskAuthToken(rawTursoUrl) : "undefined"
-    );
-    console.log(
-        "   CLEAN_DATABASE_URL:",
-        tursoUrl ? maskAuthToken(tursoUrl) : "undefined"
-    );
-    console.log(
-        "   TURSO_AUTH_TOKEN:",
-        authToken ? "***設定済み***" : "undefined"
-    );
+    console.log("   environmentVariables keys:", Object.keys(environmentVariables));
+    console.log("   RAW_DATABASE_URL:", rawTursoUrl ? maskAuthToken(rawTursoUrl) : "undefined");
+    console.log("   CLEAN_DATABASE_URL:", tursoUrl ? maskAuthToken(tursoUrl) : "undefined");
+    console.log("   TURSO_AUTH_TOKEN:", authToken ? "***設定済み***" : "undefined");
     console.log(
         "   environmentVariables.TURSO_DATABASE_URL:",
         environmentVariables.TURSO_DATABASE_URL ? "SET" : "undefined"
     );
-    console.log(
-        "   environmentVariables.DATABASE_URL:",
-        environmentVariables.DATABASE_URL ? "SET" : "undefined"
-    );
+    console.log("   environmentVariables.DATABASE_URL:", environmentVariables.DATABASE_URL ? "SET" : "undefined");
     console.log(
         "   environmentVariables.TURSO_AUTH_TOKEN:",
         environmentVariables.TURSO_AUTH_TOKEN ? "SET" : "undefined"
@@ -665,9 +541,7 @@ async function executeTursoBootstrap(
         console.error("❌ TURSO認証情報不足の詳細:");
         console.error(`   rawTursoUrl: "${rawTursoUrl}"`);
         console.error(`   tursoUrl: "${tursoUrl}"`);
-        console.error(
-            `   authToken: "${authToken ? `${authToken.substring(0, 20)}...` : "undefined"}"`
-        );
+        console.error(`   authToken: "${authToken ? `${authToken.substring(0, 20)}...` : "undefined"}"`);
         console.error(
             `   environmentVariables.TURSO_DATABASE_URL: "${environmentVariables.TURSO_DATABASE_URL || "undefined"}"`
         );
@@ -686,20 +560,14 @@ async function executeTursoBootstrap(
     // Prisma用データソースURL（参考表示用）
     // Driver Adapter使用時はPrismaClientに直接渡さないが、ログ出力で確認用
     const prismaDatasourceUrl = appendAuthToken(tursoUrl, authToken);
-    console.log(
-        "   Prisma用データソースURL（参考）:",
-        maskAuthToken(prismaDatasourceUrl)
-    );
+    console.log("   Prisma用データソースURL（参考）:", maskAuthToken(prismaDatasourceUrl));
 
     const PrismaClient = prismaModule.PrismaClient;
     const PrismaLibSQL = adapterModule.PrismaLibSQL;
 
     console.log("🔍 libsqlクライアント作成前の値確認:");
     console.log("   - tursoUrl:", tursoUrl);
-    console.log(
-        "   - authToken length:",
-        authToken ? authToken.length : "undefined"
-    );
+    console.log("   - authToken length:", authToken ? authToken.length : "undefined");
     console.log("   - tursoUrl type:", typeof tursoUrl);
     console.log("   - authToken type:", typeof authToken);
 
@@ -740,17 +608,13 @@ async function executeTursoBootstrap(
             await prisma.$connect();
             console.log("✅ Prisma Driver Adapter接続成功");
         } catch (prismaError) {
-            console.warn(
-                "⚠️ Prisma接続は失敗しましたが、libsqlクライアント経由でテーブル作成を続行します"
-            );
+            console.warn("⚠️ Prisma接続は失敗しましたが、libsqlクライアント経由でテーブル作成を続行します");
             console.warn(
                 `   Prismaエラー: ${prismaError instanceof Error ? prismaError.message : String(prismaError)}`
             );
         }
 
-        console.log(
-            "📊 libsqlクライアント経由で完全なアプリケーションスキーマを作成中..."
-        );
+        console.log("📊 libsqlクライアント経由で完全なアプリケーションスキーマを作成中...");
 
         // Prismaスキーマに基づく完全なテーブル定義
         const tableStatements: Array<{ label: string; statement: string }> = [
@@ -892,10 +756,7 @@ async function executeTursoBootstrap(
                 await libsqlClient.execute(cleanStatement);
                 console.log(`✅ ${label.trim()} 成功`);
             } catch (error) {
-                console.error(
-                    `❌ ${label.trim()} 失敗:`,
-                    error instanceof Error ? error.message : String(error)
-                );
+                console.error(`❌ ${label.trim()} 失敗:`, error instanceof Error ? error.message : String(error));
             }
         }
 
@@ -926,25 +787,17 @@ async function executeTursoBootstrap(
         const tableCountResult = await libsqlClient.execute(
             'SELECT COUNT(*) as count FROM sqlite_master WHERE type="table"'
         );
-        const tableCount =
-            (tableCountResult as { rows: Array<{ count: number }> }).rows[0]
-                ?.count || 0;
-        console.log(
-            `✅ 完全なアプリケーションスキーマ作成成功 (${tableCount}テーブル)`
-        );
+        const tableCount = (tableCountResult as { rows: Array<{ count: number }> }).rows[0]?.count || 0;
+        console.log(`✅ 完全なアプリケーションスキーマ作成成功 (${tableCount}テーブル)`);
 
         // ローカルと同じシーダーデータを投入
         console.log("🌱 ローカルと同じシーダーデータを投入中...");
         await insertSeedData(libsqlClient);
     } catch (error) {
-        const errorMessage =
-            error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
         // Prisma 初期化失敗は致命的エラーとして扱う
-        if (
-            errorMessage.includes("datasourceUrl") &&
-            errorMessage.includes("datasources")
-        ) {
+        if (errorMessage.includes("datasourceUrl") && errorMessage.includes("datasources")) {
             throw new Error(
                 `Prisma 設定エラー: ${errorMessage}\n\n復旧方法:\n1. Prisma バージョンを確認してください (現在: 6.16.3)\n2. libsql アダプター使用時は datasourceUrl のみを指定してください\n3. 詳細は https://pris.ly/d/client-constructor を参照してください`
             );
@@ -963,9 +816,7 @@ async function executeTursoBootstrap(
 
         // 回復可能エラーは警告として処理
         console.warn(`⚠️ テーブル作成で問題が発生しました: ${errorMessage}`);
-        console.warn(
-            "   アプリケーション初回起動時にテーブル作成が実行されます。"
-        );
+        console.warn("   アプリケーション初回起動時にテーブル作成が実行されます。");
     } finally {
         await prisma.$disconnect().catch(() => {
             // プリズマ接続の切断に失敗した場合は無視する
@@ -989,9 +840,7 @@ export async function seedTursoDatabases(
     credentials: DatabaseCredentials,
     environments: ("dev" | "staging" | "prod")[] = ["dev", "staging"]
 ): Promise<void> {
-    console.log(
-        "🌱 Tursoクラウドデータベース環境変数の設定ファイルを生成中..."
-    );
+    console.log("🌱 Tursoクラウドデータベース環境変数の設定ファイルを生成中...");
 
     for (const env of environments) {
         try {
@@ -1007,25 +856,19 @@ export async function seedTursoDatabases(
 
             // 本番環境にはシードデータを投入しない
             if (env === "prod") {
-                console.log(
-                    `ℹ️ ${env}環境は環境変数設定のみを行います（シードデータはスキップ）`
-                );
+                console.log(`ℹ️ ${env}環境は環境変数設定のみを行います（シードデータはスキップ）`);
             } else {
                 console.log(`🔄 ${env}環境の環境変数設定を生成中...`);
             }
 
             console.log(`📝 ${env}環境用の環境変数:`);
             console.log(`   DATABASE_URL: ${maskAuthToken(urlWithToken)}`);
-            console.log(
-                `   TURSO_AUTH_TOKEN: ${token ? "***取得済み***" : "未設定"}`
-            );
+            console.log(`   TURSO_AUTH_TOKEN: ${token ? "***取得済み***" : "未設定"}`);
 
             // 環境変数の設定が正常に取得できたことを確認
             console.log(`✅ ${env}環境の環境変数設定が確認できました`);
         } catch (error) {
-            console.error(
-                `❌ ${env}環境の環境変数設定に失敗: ${error instanceof Error ? error.message : error}`
-            );
+            console.error(`❌ ${env}環境の環境変数設定に失敗: ${error instanceof Error ? error.message : error}`);
 
             // デバッグ情報を出力
             if (error instanceof Error && error.message) {
@@ -1037,12 +880,8 @@ export async function seedTursoDatabases(
     }
 
     console.log("🎉 全環境の環境変数設定処理が完了しました");
-    console.log(
-        "ℹ️ 実際のテーブル作成とシードデータ投入は、アプリケーションの初回起動時に自動的に実行されます"
-    );
-    console.log(
-        "💡 プロジェクトのREADME.mdに各環境での起動手順が記載されています"
-    );
+    console.log("ℹ️ 実際のテーブル作成とシードデータ投入は、アプリケーションの初回起動時に自動的に実行されます");
+    console.log("💡 プロジェクトのREADME.mdに各環境での起動手順が記載されています");
 }
 
 /**
@@ -1067,9 +906,7 @@ export async function getTursoUsageInfo(databaseName: string): Promise<{
             storage: 0,
         };
     } catch (error) {
-        console.error(
-            `使用量情報取得エラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`使用量情報取得エラー: ${error instanceof Error ? error.message : error}`);
         throw error;
     }
 }
@@ -1085,19 +922,12 @@ async function insertSeedData(libsqlClient: LibsqlClient): Promise<void> {
         const hashPassword = async (password: string): Promise<string> => {
             // 実際のBetter Authでハッシュ化された値を使用
             const passwordHashes: Record<string, string> = {
-                "Admin123!":
-                    "$argon2id$v=19$m=65536,t=3,p=4$random_salt_1$hash_value_1",
-                "OrgAdmin123!":
-                    "$argon2id$v=19$m=65536,t=3,p=4$random_salt_2$hash_value_2",
-                "User123!":
-                    "$argon2id$v=19$m=65536,t=3,p=4$random_salt_3$hash_value_3",
-                "Demo123!":
-                    "$argon2id$v=19$m=65536,t=3,p=4$random_salt_4$hash_value_4",
+                "Admin123!": "$argon2id$v=19$m=65536,t=3,p=4$random_salt_1$hash_value_1",
+                "OrgAdmin123!": "$argon2id$v=19$m=65536,t=3,p=4$random_salt_2$hash_value_2",
+                "User123!": "$argon2id$v=19$m=65536,t=3,p=4$random_salt_3$hash_value_3",
+                "Demo123!": "$argon2id$v=19$m=65536,t=3,p=4$random_salt_4$hash_value_4",
             };
-            return (
-                passwordHashes[password] ||
-                "$argon2id$v=19$m=65536,t=3,p=4$default_salt$default_hash"
-            );
+            return passwordHashes[password] || "$argon2id$v=19$m=65536,t=3,p=4$default_salt$default_hash";
         };
 
         // アプリケーションロール定義（seed.tsと同じ）
@@ -1128,9 +958,7 @@ async function insertSeedData(libsqlClient: LibsqlClient): Promise<void> {
                 await libsqlClient.execute(statement);
             } catch (error) {
                 // テーブルが存在しない場合は無視
-                console.log(
-                    `   - ${statement}: スキップ (テーブルが存在しない可能性)`
-                );
+                console.log(`   - ${statement}: スキップ (テーブルが存在しない可能性)`);
             }
         }
 
@@ -1242,15 +1070,13 @@ async function insertSeedData(libsqlClient: LibsqlClient): Promise<void> {
             },
             {
                 title: "Organization Management Best Practices",
-                content:
-                    "Learn how to effectively manage multiple organizations with role-based permissions.",
+                content: "Learn how to effectively manage multiple organizations with role-based permissions.",
                 published: 1,
                 authorEmail: "orgadmin@example.com",
             },
             {
                 title: "User Onboarding Guide",
-                content:
-                    "A step-by-step guide to onboarding new users to your platform.",
+                content: "A step-by-step guide to onboarding new users to your platform.",
                 published: 1,
                 authorEmail: "user@example.com",
             },
@@ -1262,15 +1088,13 @@ async function insertSeedData(libsqlClient: LibsqlClient): Promise<void> {
             },
             {
                 title: "Team Collaboration Features",
-                content:
-                    "Explore the collaboration features available within organizations.",
+                content: "Explore the collaboration features available within organizations.",
                 published: 1,
                 authorEmail: "bob@example.com",
             },
             {
                 title: "Testing Authentication Features",
-                content:
-                    "This post demonstrates the authentication and authorization features.",
+                content: "This post demonstrates the authentication and authorization features.",
                 published: 1,
                 authorEmail: "charlie@example.com",
             },
@@ -1305,14 +1129,10 @@ async function insertSeedData(libsqlClient: LibsqlClient): Promise<void> {
 
         for (let i = 0; i < invitations.length; i++) {
             const invitation = invitations[i];
-            const inviterUser = users.find(
-                (u) => u.email === invitation.invitedByEmail
-            );
+            const inviterUser = users.find((u) => u.email === invitation.invitedByEmail);
             if (inviterUser) {
                 const invitationId = `invitation_${Date.now()}_${i}`;
-                const expiresAt = new Date(
-                    Date.now() + 7 * 24 * 60 * 60 * 1000
-                ); // 7日後
+                const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7日後
                 await libsqlClient.execute(`
                     INSERT INTO Invitation (id, email, role, status, organizationId, invitedBy, expiresAt, createdAt)
                     VALUES ('${invitationId}', '${invitation.email}', '${invitation.role}', 'pending', '${orgId}', '${inviterUser.id}', '${expiresAt.toISOString()}', datetime('now'))
@@ -1332,9 +1152,7 @@ async function insertSeedData(libsqlClient: LibsqlClient): Promise<void> {
         console.log("   管理者:       admin@example.com / Admin123!");
         console.log("   組織管理者:   orgadmin@example.com / OrgAdmin123!");
         console.log("   ユーザー:     user@example.com / User123!");
-        console.log(
-            "   デモユーザー: alice@example.com, bob@example.com / Demo123!"
-        );
+        console.log("   デモユーザー: alice@example.com, bob@example.com / Demo123!");
     } catch (error) {
         console.error("❌ シーダーデータ投入失敗:", error);
         throw error;
