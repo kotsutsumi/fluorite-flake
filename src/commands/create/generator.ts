@@ -73,7 +73,8 @@ function isAdvancedTemplate(config: ProjectConfig): boolean {
     const isNextJsAdvanced = config.type === "nextjs" && config.template === "fullstack-admin";
 
     // Expo拡張テンプレート
-    const isExpoAdvanced = config.type === "expo" && (config.template === "fullstack-graphql" || config.template === "fullstack-admin");
+    const isExpoAdvanced =
+        config.type === "expo" && (config.template === "fullstack-graphql" || config.template === "fullstack-admin");
 
     // Tauri拡張テンプレート
     const isTauriAdvanced = config.type === "tauri" && config.template === "cross-platform";
