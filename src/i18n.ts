@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 
 export type SupportedLocale = "en" | "ja";
 
-const FALLBACK_LOCALE: SupportedLocale = "en";
+const FALLBACK_LOCALE: SupportedLocale = "ja";
 
 // 正規表現パターンを定数として定義
 const APPLE_LANGUAGE_PATTERN = /"([^"]+)"/;

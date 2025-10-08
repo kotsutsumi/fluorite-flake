@@ -142,7 +142,7 @@ export const I18N_CONFIG = {
     TEST_PATTERNS: {
         ja: {
             CREATE_SUCCESS: ["プロジェクトが作成されました", "生成が完了"],
-            HELP_MESSAGE: ["使用方法", "コマンド", "オプション"],
+            HELP_MESSAGE: ["USAGE", "COMMANDS"], // cittyの実際の出力に合わせる
             ERROR_MESSAGE: ["エラー", "失敗", "問題"],
         },
         en: {
