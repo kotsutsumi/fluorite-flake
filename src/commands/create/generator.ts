@@ -21,6 +21,7 @@ import { createSpinnerController } from "../../utils/spinner-control/index.js";
 import { syncRootScripts } from "../../utils/workspace-manager/index.js";
 import {
     generateExpoGraphQL,
+    generateExpoFullstackAdmin,
     generateFullStackAdmin,
     generateTauriCrossPlatform,
 } from "./template-generators/index.js";
@@ -72,7 +73,7 @@ function isAdvancedTemplate(config: ProjectConfig): boolean {
     const isNextJsAdvanced = config.type === "nextjs" && config.template === "fullstack-admin";
 
     // Expo拡張テンプレート
-    const isExpoAdvanced = config.type === "expo" && config.template === "fullstack-graphql";
+    const isExpoAdvanced = config.type === "expo" && (config.template === "fullstack-graphql" || config.template === "fullstack-admin");
 
     // Tauri拡張テンプレート
     const isTauriAdvanced = config.type === "tauri" && config.template === "cross-platform";
@@ -230,7 +231,13 @@ async function handleAdvancedTemplate(config: ProjectConfig, spinner: Ora): Prom
     if (config.type === "nextjs") {
         result = await generateFullStackAdmin(generationContext, spinnerController);
     } else if (config.type === "expo") {
-        result = await generateExpoGraphQL(generationContext);
+        if (config.template === "fullstack-graphql") {
+            result = await generateExpoGraphQL(generationContext);
+        } else if (config.template === "fullstack-admin") {
+            result = await generateExpoFullstackAdmin(generationContext);
+        } else {
+            throw new Error(`Unsupported expo template: ${config.template}`);
+        }
     } else if (config.type === "tauri") {
         result = await generateTauriCrossPlatform(generationContext);
     } else {
