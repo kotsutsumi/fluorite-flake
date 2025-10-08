@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import chalk from "chalk";
 import ora, { type Ora } from "ora";
 
@@ -80,6 +81,122 @@ function isAdvancedTemplate(config: ProjectConfig): boolean {
 }
 
 /**
+ * monorepoかつdocsプロジェクトが生成された場合の判定
+ */
+function shouldPostInstall(config: ProjectConfig): boolean {
+    // monorepoでない場合は不要
+    if (!config.monorepo) {
+        return false;
+    }
+
+    // docsプロジェクトが生成されていない場合は不要
+    if (!config.shouldGenerateDocs) {
+        return false;
+    }
+
+    // docsディレクトリが実際に存在するかチェック
+    const docsPath = path.join(config.directory, "apps", "docs");
+    return fs.existsSync(docsPath);
+}
+
+/**
+ * プロジェクト構造の検証
+ */
+function validateProjectStructure(projectPath: string): { valid: boolean; reason?: string } {
+    try {
+        // プロジェクトディレクトリの存在確認
+        if (!fs.existsSync(projectPath)) {
+            return { valid: false, reason: "プロジェクトディレクトリが存在しません" };
+        }
+
+        // package.jsonの存在確認
+        const packageJsonPath = path.join(projectPath, "package.json");
+        if (!fs.existsSync(packageJsonPath)) {
+            return { valid: false, reason: "ルートpackage.jsonが存在しません" };
+        }
+
+        // pnpm-workspace.yamlの存在確認
+        const workspaceFilePath = path.join(projectPath, "pnpm-workspace.yaml");
+        if (!fs.existsSync(workspaceFilePath)) {
+            return { valid: false, reason: "pnpm-workspace.yamlが存在しません" };
+        }
+
+        return { valid: true };
+    } catch (error) {
+        return { valid: false, reason: `構造検証中にエラーが発生: ${error}` };
+    }
+}
+
+/**
+ * monorepo用の再インストール処理（リトライロジック付き）
+ */
+async function executePostInstall(projectPath: string, spinner: Ora): Promise<void> {
+    const { create } = getMessages();
+    const maxRetries = 2;
+    let attempt = 0;
+
+    // 事前検証
+    const validation = validateProjectStructure(projectPath);
+    if (!validation.valid) {
+        debugLog("Project structure validation failed", { reason: validation.reason });
+        console.warn(chalk.yellow(`⚠️ プロジェクト構造の検証失敗: ${validation.reason}`));
+        console.warn(chalk.yellow(create.postInstallFailed));
+        return;
+    }
+
+    while (attempt <= maxRetries) {
+        try {
+            // スピナーメッセージを更新
+            const retryMessage = attempt > 0 ? ` (${attempt + 1}/${maxRetries + 1}回目)` : "";
+            spinner.text = `${create.spinnerPostInstalling}${retryMessage}`;
+
+            debugLog("Starting post-install for monorepo", {
+                projectPath,
+                attempt: attempt + 1,
+                maxRetries: maxRetries + 1,
+            });
+
+            // pnpm install を実行
+            execSync("pnpm install", {
+                cwd: projectPath,
+                stdio: isDevelopment() ? "inherit" : "pipe",
+                timeout: 120000, // 2分でタイムアウト
+            });
+
+            debugLog("Post-install completed successfully", { attempt: attempt + 1 });
+            return; // 成功時は即座にreturn
+        } catch (error) {
+            attempt++;
+            debugLog("Post-install failed", {
+                error,
+                attempt,
+                willRetry: attempt <= maxRetries,
+            });
+
+            // 最後の試行でも失敗した場合
+            if (attempt > maxRetries) {
+                // エラーが発生しても処理を継続（警告として表示）
+                if (isDevelopment()) {
+                    console.warn(chalk.yellow(create.postInstallFailed));
+                    console.warn(chalk.gray(`詳細 (${maxRetries + 1}回試行後): ${error}`));
+                } else {
+                    console.warn(chalk.yellow(create.postInstallFailed));
+                }
+
+                // 手動実行のヒントを表示
+                console.warn(chalk.cyan("💡 手動で依存関係をインストールする場合:"));
+                console.warn(chalk.cyan(`   cd ${path.relative(process.cwd(), projectPath)}`));
+                console.warn(chalk.cyan("   pnpm install"));
+                break;
+            }
+
+            // リトライの場合は少し待機
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    }
+}
+
+/**
  * 拡張テンプレートを生成
  */
 async function handleAdvancedTemplate(config: ProjectConfig, spinner: Ora): Promise<void> {
@@ -134,17 +251,64 @@ async function handleAdvancedTemplate(config: ProjectConfig, spinner: Ora): Prom
 }
 
 /**
- * ドキュメントサイトを生成
+ * ドキュメント生成用ディレクトリ検証
+ */
+function validateDocsDirectory(config: ProjectConfig): { valid: boolean; reason?: string } {
+    try {
+        const docsPath = config.monorepo
+            ? path.join(config.directory, "apps", "docs")
+            : path.join(config.directory, "docs");
+
+        // 親ディレクトリの存在確認
+        const parentDir = path.dirname(docsPath);
+        if (!fs.existsSync(parentDir)) {
+            return { valid: false, reason: `親ディレクトリが存在しません: ${parentDir}` };
+        }
+
+        // 書き込み権限の確認
+        try {
+            fs.accessSync(parentDir, fs.constants.W_OK);
+        } catch {
+            return { valid: false, reason: `ディレクトリへの書き込み権限がありません: ${parentDir}` };
+        }
+
+        return { valid: true };
+    } catch (error) {
+        return { valid: false, reason: `ディレクトリ検証中にエラーが発生: ${error}` };
+    }
+}
+
+/**
+ * ドキュメントサイトを生成（エラーリカバリ付き）
  */
 async function handleDocsGeneration(config: ProjectConfig, spinner: Ora): Promise<void> {
     if (!config.shouldGenerateDocs) {
         return;
     }
 
+    debugLog("Starting documentation generation", {
+        projectName: config.name,
+        isMonorepo: config.monorepo,
+        outputPath: config.directory,
+    });
+
+    // 事前検証
+    const validation = validateDocsDirectory(config);
+    if (!validation.valid) {
+        const errorMessage = `ドキュメント生成の事前検証失敗: ${validation.reason}`;
+        debugLog("Documentation validation failed", { reason: validation.reason });
+        console.warn(chalk.yellow(`⚠️ ${errorMessage}`));
+        console.warn(chalk.yellow("ドキュメント生成をスキップします"));
+        return;
+    }
+
     spinner.text = "📚 Nextraドキュメントサイトを生成中...";
+    let templateCopySuccess = false;
+    let packageJsonSuccess = false;
 
     try {
         // Nextraテンプレートをコピー
+        spinner.text = "📚 ドキュメントテンプレートをコピー中...";
         const docsTemplateOptions = {
             projectName: config.name,
             outputPath: config.directory,
@@ -153,12 +317,15 @@ async function handleDocsGeneration(config: ProjectConfig, spinner: Ora): Promis
             description: `Documentation for ${config.name}`,
         };
 
-        const templateCopySuccess = await copyDocsTemplate(docsTemplateOptions);
+        templateCopySuccess = await copyDocsTemplate(docsTemplateOptions);
         if (!templateCopySuccess) {
             throw new Error("ドキュメントテンプレートのコピーに失敗しました");
         }
 
+        debugLog("Documentation template copied successfully");
+
         // package.jsonを生成
+        spinner.text = "📦 ドキュメント用package.jsonを生成中...";
         const packageJsonOptions = {
             projectName: config.name,
             outputPath: config.directory,
@@ -168,18 +335,51 @@ async function handleDocsGeneration(config: ProjectConfig, spinner: Ora): Promis
             nextraVersion: "^4.6.0",
         };
 
-        const packageJsonSuccess = await createDocsPackageJson(packageJsonOptions);
+        packageJsonSuccess = await createDocsPackageJson(packageJsonOptions);
         if (!packageJsonSuccess) {
             throw new Error("ドキュメント用package.jsonの生成に失敗しました");
         }
 
-        debugLog("Documentation generation completed", {
+        debugLog("Documentation generation completed successfully", {
             projectName: config.name,
             isMonorepo: config.monorepo,
         });
     } catch (error) {
-        console.error("❌ ドキュメント生成中にエラーが発生しました:", error);
-        throw error;
+        debugLog("Documentation generation failed", {
+            error,
+            templateCopySuccess,
+            packageJsonSuccess,
+        });
+
+        // 部分的な成功状態のクリーンアップ
+        const docsPath = config.monorepo
+            ? path.join(config.directory, "apps", "docs")
+            : path.join(config.directory, "docs");
+
+        if (fs.existsSync(docsPath)) {
+            try {
+                fs.rmSync(docsPath, { recursive: true, force: true });
+                debugLog("Cleaned up partial documentation directory", { docsPath });
+            } catch (cleanupError) {
+                debugLog("Failed to cleanup documentation directory", { cleanupError, docsPath });
+            }
+        }
+
+        // エラーを警告として処理し、プロジェクト生成を継続
+        console.warn(chalk.yellow("⚠️ ドキュメント生成中にエラーが発生しました"));
+        console.warn(chalk.yellow("プロジェクト生成は継続されますが、ドキュメントは生成されませんでした"));
+
+        if (isDevelopment()) {
+            console.warn(chalk.gray(`詳細: ${error}`));
+        }
+
+        // 手動でドキュメントを追加する方法を案内
+        console.warn(chalk.cyan("💡 後でドキュメントを追加する場合:"));
+        if (config.monorepo) {
+            console.warn(chalk.cyan("   pnpm create next-app@latest apps/docs --example blog-starter"));
+        } else {
+            console.warn(chalk.cyan("   pnpm create next-app@latest docs --example blog-starter"));
+        }
     }
 }
 
@@ -272,14 +472,75 @@ next-env.d.ts
 }
 
 /**
- * 設定に基づいてプロジェクトを生成
+ * プロジェクト生成の事前検証
+ */
+function validateProjectGeneration(config: ProjectConfig): { valid: boolean; reason?: string } {
+    try {
+        // ディレクトリ名の検証
+        if (!config.directory || config.directory.trim() === "") {
+            return { valid: false, reason: "プロジェクトディレクトリが指定されていません" };
+        }
+
+        // 特殊文字のチェック
+        const invalidChars = /[<>:"|?*]/;
+        if (invalidChars.test(config.directory)) {
+            return { valid: false, reason: "プロジェクトディレクトリ名に無効な文字が含まれています" };
+        }
+
+        // 親ディレクトリの書き込み権限確認
+        const parentDir = path.dirname(path.resolve(config.directory));
+        try {
+            fs.accessSync(parentDir, fs.constants.W_OK);
+        } catch {
+            return { valid: false, reason: `親ディレクトリへの書き込み権限がありません: ${parentDir}` };
+        }
+
+        // プロジェクト名の検証
+        if (!config.name || config.name.trim() === "") {
+            return { valid: false, reason: "プロジェクト名が指定されていません" };
+        }
+
+        return { valid: true };
+    } catch (error) {
+        return { valid: false, reason: `事前検証中にエラーが発生: ${error}` };
+    }
+}
+
+/**
+ * プロジェクト生成失敗時のクリーンアップ
+ */
+async function cleanupFailedProject(config: ProjectConfig): Promise<void> {
+    try {
+        if (fs.existsSync(config.directory)) {
+            debugLog("Cleaning up failed project directory", { directory: config.directory });
+            fs.rmSync(config.directory, { recursive: true, force: true });
+            debugLog("Cleanup completed successfully");
+        }
+    } catch (cleanupError) {
+        debugLog("Failed to cleanup project directory", { cleanupError, directory: config.directory });
+        console.warn(chalk.yellow(`⚠️ プロジェクトディレクトリのクリーンアップに失敗: ${config.directory}`));
+        console.warn(chalk.yellow("手動でディレクトリを削除してください"));
+    }
+}
+
+/**
+ * 設定に基づいてプロジェクトを生成（包括的エラーハンドリング付き）
  */
 export async function generateProject(config: ProjectConfig): Promise<void> {
     const { create } = getMessages();
     const spinner = ora(create.spinnerCreating(config.type, config.name)).start();
+    let projectCreated = false;
+    let templatesCompleted = false;
+    let docsCompleted = false;
 
     try {
         debugLog(create.debugProjectConfig, config);
+
+        // 事前検証
+        const validation = validateProjectGeneration(config);
+        if (!validation.valid) {
+            throw new Error(`プロジェクト生成の事前検証失敗: ${validation.reason}`);
+        }
 
         // プロジェクトセットアップ
         spinner.text = create.spinnerSettingUp(config.type);
@@ -288,6 +549,8 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
         // プロジェクトディレクトリを作成
         if (!fs.existsSync(config.directory)) {
             fs.mkdirSync(config.directory, { recursive: true });
+            projectCreated = true;
+            debugLog("Project directory created successfully", { directory: config.directory });
         }
 
         // テンプレート別の処理
@@ -297,12 +560,22 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
         } else {
             await handleStandardTemplate(config, spinner);
         }
+        templatesCompleted = true;
+        debugLog("Template generation completed successfully");
 
         // ドキュメント生成処理
         await handleDocsGeneration(config, spinner);
+        docsCompleted = true;
 
         if (config.monorepo) {
+            spinner.text = "🔧 ワークスペーススクリプトを同期中...";
             await syncRootScripts(config.directory);
+            debugLog("Root scripts synchronized successfully");
+        }
+
+        // monorepoでdocsプロジェクトが生成された場合は再インストール実行
+        if (shouldPostInstall(config)) {
+            await executePostInstall(config.directory, spinner);
         }
 
         // 成功メッセージの表示
@@ -321,10 +594,40 @@ export async function generateProject(config: ProjectConfig): Promise<void> {
         // エラー処理
         spinner.fail(chalk.red(create.spinnerFailure));
 
+        debugLog("Project generation failed", {
+            error,
+            projectCreated,
+            templatesCompleted,
+            docsCompleted,
+            config,
+        });
+
+        // エラーの詳細情報を表示
+        if (error instanceof Error) {
+            console.error(chalk.red(`❌ ${error.message}`));
+        } else {
+            console.error(chalk.red(`❌ 予期しないエラーが発生しました: ${error}`));
+        }
+
         // 開発モードでのエラーデバッグ
         if (isDevelopment()) {
             debugLog(create.debugGenerationFailure, error);
+            console.error(chalk.gray("スタックトレース:"));
+            console.error(chalk.gray(error instanceof Error ? error.stack : String(error)));
         }
+
+        // 部分的に作成されたプロジェクトのクリーンアップ
+        if (projectCreated && !templatesCompleted) {
+            console.warn(chalk.yellow("部分的に作成されたプロジェクトをクリーンアップしています..."));
+            await cleanupFailedProject(config);
+        }
+
+        // エラー解決のヒントを提供
+        console.error(chalk.cyan("\n💡 トラブルシューティング:"));
+        console.error(chalk.cyan("1. ディスクの空き容量を確認してください"));
+        console.error(chalk.cyan("2. プロジェクト名と場所に特殊文字が含まれていないか確認してください"));
+        console.error(chalk.cyan("3. 必要な権限があることを確認してください"));
+        console.error(chalk.cyan("4. 開発モード（NODE_ENV=development）で詳細情報を確認してください"));
 
         throw error;
     }

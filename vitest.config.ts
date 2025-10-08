@@ -50,6 +50,23 @@ export default defineConfig({
                     environment: "node",
                 },
             },
+            {
+                test: {
+                    name: "e2e", // E2Eテストプロジェクト
+                    include: ["test/e2e/**/*.test.ts"],
+                    testTimeout: 120_000, // E2Eテスト用：2分タイムアウト
+                    hookTimeout: 30_000,
+                    globals: true,
+                    environment: "node",
+                    // E2Eテストは並行実行を避ける（ファイルシステム競合を防ぐため）
+                    pool: "forks",
+                    poolOptions: {
+                        forks: {
+                            singleFork: true,
+                        },
+                    },
+                },
+            },
         ],
     },
 });

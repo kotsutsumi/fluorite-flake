@@ -181,8 +181,11 @@ type RawLocaleMessages = {
         spinnerSettingUp: string;
         spinnerInstallingDeps: string;
         spinnerConfiguringTemplate: string;
+        spinnerPostInstalling: string;
         spinnerSuccess: string;
         spinnerFailure: string;
+        postInstallFailed: string;
+        postInstallSkipped: string;
         errorPrefix: string;
         nextStepsHeading: string;
         nextStepsCd: string;
@@ -342,8 +345,11 @@ export type LocaleMessages = {
         spinnerSettingUp: (type: string) => string;
         spinnerInstallingDeps: string;
         spinnerConfiguringTemplate: (template: string | undefined) => string;
+        spinnerPostInstalling: string;
         spinnerSuccess: (type: string, name: string) => string;
         spinnerFailure: string;
+        postInstallFailed: string;
+        postInstallSkipped: string;
         errorPrefix: string;
         nextStepsHeading: string;
         nextStepsCd: (directory: string) => string;
@@ -541,12 +547,15 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 formatMessage(rawMessages.create.spinnerConfiguringTemplate, {
                     template: template ?? "template",
                 }),
+            spinnerPostInstalling: rawMessages.create.spinnerPostInstalling,
             spinnerSuccess: (type: string, name: string) =>
                 formatMessage(rawMessages.create.spinnerSuccess, {
                     type,
                     name,
                 }),
             spinnerFailure: rawMessages.create.spinnerFailure,
+            postInstallFailed: rawMessages.create.postInstallFailed,
+            postInstallSkipped: rawMessages.create.postInstallSkipped,
             errorPrefix: rawMessages.create.errorPrefix,
             nextStepsHeading: rawMessages.create.nextStepsHeading,
             nextStepsCd: (directory: string) => formatMessage(rawMessages.create.nextStepsCd, { directory }),
