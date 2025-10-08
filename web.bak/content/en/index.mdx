@@ -89,12 +89,15 @@ pnpm dlx fluorite-flake create my-app
       title="Shape the stack"
       description="Pick frameworks, package managers, database providers, and optional integrations with guardrails for incompatible combos."
     >
-      <p>
-        Every prompt is localized and mirrored in these docs so you can prepare answers ahead of time or script the run with flags like
-        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--template nextjs</code>
-        and
-        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--no-install</code>.
-      </p>
+      <div className="space-y-3">
+        <p>
+          Every prompt is localized and mirrored in these docs so you can prepare answers ahead of time or script the run with automation-friendly flags.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <code className="mx-1 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--template nextjs</code>
+          <code className="mx-1 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--no-install</code>
+        </div>
+      </div>
     </StepItem>
     <StepItem
       title="Verify and commit"

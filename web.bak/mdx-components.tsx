@@ -78,7 +78,7 @@ type HeroButtonProps = {
 function HeroPrimary({ href, children }: HeroButtonProps) {
     return (
         <a className={BUTTON_PRIMARY_CLASSES} href={href}>
-            <span className="text-sm font-semibold tracking-wide text-white">
+            <span className="font-semibold text-sm text-white tracking-wide">
                 {children}
             </span>
         </a>
@@ -88,7 +88,7 @@ function HeroPrimary({ href, children }: HeroButtonProps) {
 function HeroSecondary({ href, children }: HeroButtonProps) {
     return (
         <a className={BUTTON_SECONDARY_CLASSES} href={href}>
-            <span className="text-sm font-semibold">{children}</span>
+            <span className="font-semibold text-sm">{children}</span>
         </a>
     );
 }

@@ -13,15 +13,9 @@ theme:
   description="本番運用を前提にしたテンプレート、国際化済みの CLI メッセージ、品質ゲートをワンコマンドで導入できます。"
 >
   <HeroActions>
-    <HeroPrimary href="/ja/getting-started/">
-      クイックスタートを見る
-    </HeroPrimary>
-    <HeroSecondary href="/ja/cli/">
-      CLI リファレンスを確認
-    </HeroSecondary>
-    <HeroSecondary href="https://github.com/kotsutsumi/fluorite-flake/tree/main/templates">
-      テンプレートを開く
-    </HeroSecondary>
+    <HeroPrimary href="/ja/getting-started/">クイックスタートを見る</HeroPrimary>
+    <HeroSecondary href="/ja/cli/">CLI リファレンスを確認</HeroSecondary>
+    <HeroSecondary href="https://github.com/kotsutsumi/fluorite-flake/tree/main/templates">テンプレートを開く</HeroSecondary>
   </HeroActions>
   <HeroStats>
     <HeroStat value="5 分" label="初回スキャフォールド" />
@@ -95,13 +89,15 @@ pnpm dlx fluorite-flake create my-app
       title="スタックを形にする"
       description="フレームワーク、パッケージマネージャー、データベース、統合オプションを整合性チェック付きで選択できます。"
     >
-      <p>
-        すべてのプロンプトは本ドキュメントに掲載されているため、回答を事前共有したり
-        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--template nextjs</code>
-        や
-        <code className="mx-1 rounded bg-slate-100 px-1 py-px text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--no-install</code>
-        などのフラグで自動化することもできます。
-      </p>
+      <div className="space-y-3">
+        <p>
+          すべてのプロンプトは本ドキュメントに掲載されているため、回答を事前共有したり自動化スクリプトに組み込むこともできます。
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <code className="mx-1 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--template nextjs</code>
+          <code className="mx-1 rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">--no-install</code>
+        </div>
+      </div>
     </StepItem>
     <StepItem
       title="検証して共有"

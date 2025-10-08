@@ -9,6 +9,7 @@ import { getMessages, type LocaleMessages } from "../../../i18n.js";
 import { confirm } from "../../../utils/user-input/index.js";
 import type { BlobConfiguration } from "../../../utils/vercel-cli/blob-types.js";
 import type { DatabaseProvisioningConfig } from "../database-provisioning/types.js";
+import type { DatabaseType } from "../types.js";
 
 /**
  * 確認フェーズで使用する入力情報の型定義
@@ -20,6 +21,8 @@ export type ConfirmationInputs = {
     projectType: string;
     /** 選択されたテンプレート（fullstack-admin等） */
     template?: string;
+    /** 選択されたデータベース種別（sqlite, turso, supabaseなど） */
+    database?: DatabaseType;
     /** データベース設定（プロビジョニング情報を含む） */
     databaseConfig?: DatabaseProvisioningConfig;
     /** Blob設定（Vercel Blob設定情報） */
@@ -51,6 +54,9 @@ export async function displayConfirmation(
     console.log(`   ${messages.common.projectType}: ${inputs.projectType}`);
     if (inputs.template) {
         console.log(`   ${messages.common.template}: ${inputs.template}`);
+    }
+    if (inputs.database) {
+        console.log(`   データベース: ${inputs.database}`);
     }
     console.log(
         `   ${messages.common.monorepo}: ${inputs.monorepoPreference ? messages.common.enabled : messages.common.disabled}`

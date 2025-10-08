@@ -226,7 +226,7 @@ async function collectUserInputs(
         await determineProjectTypeAndTemplate(args, hasExplicitMonorepo);
 
     // データベースとBlob設定の収集（プロビジョニングなし）
-    const { databaseConfig, blobConfig } =
+    const { database, databaseConfig, blobConfig } =
         await collectDatabaseAndBlobConfiguration(args, template, projectName);
 
     // モノレポ設定の最終決定
@@ -238,6 +238,7 @@ async function collectUserInputs(
         projectName,
         projectType,
         template,
+        database,
         databaseConfig,
         blobConfig,
         monorepoPreference: finalMonorepoPreference,
@@ -499,7 +500,7 @@ export const createCommand = defineCommand({
             template: inputs.template,
             args,
             isMonorepoMode: inputs.monorepoPreference,
-            database,
+            database: database ?? inputs.database, // SQLite経路でもdatabaseが設定されるよう修正
             databaseConfig: inputs.databaseConfig,
             databaseCredentials,
             blobConfig: inputs.blobConfig,
@@ -528,8 +529,16 @@ export const createCommand = defineCommand({
 
             // 開発モードでのデバッグ - コマンド完了を明示
             debugLog("Create command completed successfully");
-        } catch (_error) {
+        } catch (error) {
             // 生成エラーの場合はエラー終了
+            console.error("❌ プロジェクトの作成に失敗しました");
+            if (error instanceof Error) {
+                console.error(`🐛 デバッグ: ${error.message}`);
+                debugLog("Detailed error:", error);
+            } else {
+                console.error(`🐛 デバッグ: ${String(error)}`);
+                debugLog("Detailed error:", error);
+            }
             process.exit(1);
         }
 
@@ -598,7 +607,7 @@ export const newCommand = defineCommand({
             template: inputs.template,
             args,
             isMonorepoMode: inputs.monorepoPreference,
-            database,
+            database: database ?? inputs.database, // SQLite経路でもdatabaseが設定されるよう修正
             databaseConfig: inputs.databaseConfig,
             databaseCredentials,
             blobConfig: inputs.blobConfig,
@@ -616,7 +625,15 @@ export const newCommand = defineCommand({
             }
 
             debugLog("New command completed successfully");
-        } catch (_error) {
+        } catch (error) {
+            console.error("❌ プロジェクトの作成に失敗しました");
+            if (error instanceof Error) {
+                console.error(`🐛 デバッグ: ${error.message}`);
+                debugLog("Detailed error:", error);
+            } else {
+                console.error(`🐛 デバッグ: ${String(error)}`);
+                debugLog("Detailed error:", error);
+            }
             process.exit(1);
         }
 
