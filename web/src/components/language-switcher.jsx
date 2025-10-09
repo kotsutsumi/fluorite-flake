@@ -36,9 +36,7 @@ export function LanguageSwitcher() {
         const currentPath = window.location.pathname;
 
         // 既存のロケールを削除してパスを正規化
-        const cleanPath = currentPath
-            .replace(/^\/ja-JP/, "")
-            .replace(/^\/en-US/, "") || "/";
+        const cleanPath = currentPath.replace(/^\/ja-JP/, "").replace(/^\/en-US/, "") || "/";
 
         // 新しいロケールでパスを構築
         const newLocale = newLang === "en" ? "/en-US" : "/ja-JP";
@@ -49,18 +47,11 @@ export function LanguageSwitcher() {
     };
 
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <div className="flex items-center gap-2">
             <select
                 value={currentLang}
                 onChange={(e) => switchLanguage(e.target.value)}
-                style={{
-                    padding: "4px 8px",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                }}
+                className="px-2 py-1 border border-gray-300 rounded text-sm bg-transparent cursor-pointer hover:border-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors"
             >
                 <option value="ja">日本語</option>
                 <option value="en">English</option>

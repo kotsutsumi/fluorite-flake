@@ -1,43 +1,25 @@
 import { Bleed } from 'nextra/components'
 
-<div style={{textAlign: 'center', padding: '4rem 0 2rem 0'}}>
+<div className="text-center py-16 pb-8">
 
 # Fluorite-Flake 🚀
 
 <Bleed>
-  <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '2rem 0'}}>
-    <img src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" style={{width: '256px', height: '256px', display: 'block'}} />
+  <div className="flex justify-center items-center my-8">
+    <img src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" className="w-64 h-64 block" />
   </div>
 </Bleed>
 
-<div style={{fontSize: '1.25rem', color: '#666', margin: '1rem 0 3rem 0', lineHeight: '1.6'}}>
+<div className="text-xl text-gray-700 dark:text-gray-200 my-4 mb-12 leading-relaxed">
 Next-generation full-stack development tool<br />
 TypeScript-first project scaffolding utility
 </div>
 
-<div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', margin: '2rem 0'}}>
-  <a href="/en-US/get-started" style={{
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    backgroundColor: '#0070f3',
-    color: 'white',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap'
-  }}>
+<div className="flex gap-4 justify-center flex-wrap my-8">
+  <a href="/en-US/get-started" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg no-underline font-bold whitespace-nowrap hover:bg-blue-700 transition-colors">
     Get Started
   </a>
-  <a href="https://github.com/kotsutsumi/fluorite-flake" style={{
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    border: '1px solid #0070f3',
-    color: '#0070f3',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap'
-  }}>
+  <a href="https://github.com/kotsutsumi/fluorite-flake" className="inline-block px-6 py-3 border border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg no-underline font-bold whitespace-nowrap hover:bg-blue-50 transition-colors">
     GitHub
   </a>
 </div>
@@ -48,46 +30,46 @@ TypeScript-first project scaffolding utility
 
 ## ✨ Key Features
 
-<div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', margin: '2rem 0'}}>
+<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 my-8">
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🎯 Multi-Framework Support</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🎯 Multi-Framework Support</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Create modern applications with Next.js, Expo, or Tauri
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>📱 Built-in Mobile Testing</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">📱 Built-in Mobile Testing</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Maestro E2E testing comes standard with Expo projects
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🗄️ Flexible Database Options</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🗄️ Flexible Database Options</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Choose the perfect solution: Turso, Supabase, or SQLite
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🔐 Authentication Ready</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🔐 Authentication Ready</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Framework-specific auth solutions auto-configured
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>☁️ Storage Integration</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">☁️ Storage Integration</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Support for multiple cloud storage providers
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🧪 Comprehensive Testing</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🧪 Comprehensive Testing</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     32 test files covering unit, integration, and E2E testing
   </span>
 </div>
@@ -109,25 +91,25 @@ fluorite-flake dashboard
 
 ## 🌟 Why Choose Fluorite-Flake?
 
-<div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', margin: '2rem 0'}}>
+<div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 my-8">
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>⚡ Rapid Development</h3>
-  <span style={{margin: 0, color: '#666', display: 'block'}}>
+<div className="p-6 border border-gray-200 rounded-lg">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">⚡ Rapid Development</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 block">
     Generate production-ready project structure with a single command. Focus on building, not configuring.
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🎯 Best Practices</h3>
-  <span style={{margin: 0, color: '#666', display: 'block'}}>
+<div className="p-6 border border-gray-200 rounded-lg">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🎯 Best Practices</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 block">
     Industry-standard practices and tools integrated. TypeScript, ESLint, Prettier configured by default.
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🌍 Global Ready</h3>
-  <span style={{margin: 0, color: '#666', display: 'block'}}>
+<div className="p-6 border border-gray-200 rounded-lg">
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🌍 Global Ready</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 block">
     Native support for English and Japanese. Perfect for international application development.
   </span>
 </div>
@@ -136,21 +118,11 @@ fluorite-flake dashboard
 
 ---
 
-<div style={{textAlign: 'center', padding: '2rem 0'}}>
-  <span style={{color: '#666', margin: '0 0 1rem 0', display: 'block'}}>
+<div className="text-center py-8">
+  <span className="text-gray-700 dark:text-gray-200 mb-4 block">
     Ready to start building?
   </span>
-  <a href="/en-US/get-started" style={{
-    display: 'inline-block',
-    padding: '1rem 2rem',
-    backgroundColor: '#0070f3',
-    color: 'white',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    fontSize: '1.1rem',
-    whiteSpace: 'nowrap'
-  }}>
+  <a href="/en-US/get-started" className="inline-block px-8 py-4 bg-blue-600 text-white rounded-lg no-underline font-bold text-lg whitespace-nowrap hover:bg-blue-700 transition-colors">
     Get Started Now
   </a>
 </div>

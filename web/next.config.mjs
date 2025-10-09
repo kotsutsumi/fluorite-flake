@@ -44,13 +44,13 @@ export default withNextra({
         return [
             // パターン1: /get-started.ja-JP, /get-started.en-US
             {
-                source: '/get-started.:locale(ja-JP|en-US)',
-                destination: '/docs/get-started.:locale',
+                source: "/get-started.:locale(ja-JP|en-US)",
+                destination: "/docs/get-started.:locale",
             },
             // パターン2: /ja-JP/get-started, /en-US/get-started
             {
-                source: '/:locale(ja-JP|en-US)/get-started',
-                destination: '/docs/get-started.:locale',
+                source: "/:locale(ja-JP|en-US)/get-started",
+                destination: "/docs/get-started.:locale",
             },
         ];
     },

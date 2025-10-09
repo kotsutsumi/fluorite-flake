@@ -1,9 +1,10 @@
 /* eslint-env node */
-
+import { Footer, Layout, Navbar } from "nextra-theme-docs";
+import "./globals.css";
+import "nextra-theme-docs/style.css";
 import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
-import { Footer, Layout, Navbar } from "nextra-theme-docs";
-import "nextra-theme-docs/style.css";
+
 import { LocalizedNavbar } from "../components/localized-navbar.jsx";
 
 export const metadata = {
@@ -12,7 +13,8 @@ export const metadata = {
         template: "%s - Fluorite-Flake",
         default: "Fluorite-Flake - 次世代のフルスタック開発ツール",
     },
-    description: "Fluorite-Flake: 次世代のフルスタック開発ツール - TypeScript優先のプロジェクトスキャフォールディングツール",
+    description:
+        "Fluorite-Flake: 次世代のフルスタック開発ツール - TypeScript優先のプロジェクトスキャフォールディングツール",
     applicationName: "Fluorite-Flake",
     generator: "Next.js",
     keywords: [
@@ -89,7 +91,20 @@ export default async function RootLayout({ children }) {
     return (
         <html lang="ja" dir="ltr" suppressHydrationWarning>
             <Head faviconGlyph="✦" />
-            <body>
+            <body className="bg-background text-foreground">
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            try {
+                                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                                    document.documentElement.classList.add('dark')
+                                } else {
+                                    document.documentElement.classList.remove('dark')
+                                }
+                            } catch (_) {}
+                        `,
+                    }}
+                />
                 <Layout
                     banner={<Banner storageKey="fluorite-flake-docs">Fluorite-Flake Documentation</Banner>}
                     navbar={<LocalizedNavbar />}
@@ -98,7 +113,7 @@ export default async function RootLayout({ children }) {
                     docsRepositoryBase="https://github.com/kotsutsumi/fluorite-flake/blob/main/web/src/content"
                     sidebar={{
                         defaultMenuCollapseLevel: 1,
-                        toggleButton: true
+                        toggleButton: true,
                     }}
                     pageMap={pageMap}
                 >

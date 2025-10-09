@@ -1,44 +1,26 @@
 import { Bleed } from 'nextra/components'
 
-<div style={{textAlign: 'center', padding: '4rem 0 2rem 0'}}>
+<div className="text-center py-16 pb-8">
 
 # Fluorite-Flake 🚀
 
 <Bleed>
-  <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '2rem 0'}}>
-    <img src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" style={{width: '256px', height: '256px', display: 'block'}} />
+  <div className="flex justify-center items-center my-8">
+    <img src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" className="w-64 h-64 block" />
   </div>
 </Bleed>
 
 
-<div style={{fontSize: '1.25rem', color: '#666', margin: '1rem 0 3rem 0', lineHeight: '1.6'}}>
+<div className="text-xl text-gray-700 dark:text-gray-200 my-4 mb-12 leading-relaxed">
 次世代のフルスタック開発ツール<br />
 TypeScript優先のプロジェクトスキャフォールディングツール
 </div>
 
-<div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', margin: '2rem 0'}}>
-  <a href="/ja-JP/get-started" style={{
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    backgroundColor: '#0070f3',
-    color: 'white',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap'
-  }}>
+<div className="flex gap-4 justify-center flex-wrap my-8">
+  <a href="/ja-JP/get-started" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg no-underline font-bold whitespace-nowrap hover:bg-blue-700 transition-colors">
     はじめる
   </a>
-  <a href="https://github.com/kotsutsumi/fluorite-flake" style={{
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    border: '1px solid #0070f3',
-    color: '#0070f3',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap'
-  }}>
+  <a href="https://github.com/kotsutsumi/fluorite-flake" className="inline-block px-6 py-3 border border-blue-600 text-blue-600 rounded-lg no-underline font-bold whitespace-nowrap hover:bg-blue-50 transition-colors">
     GitHub
   </a>
 </div>
@@ -47,46 +29,46 @@ TypeScript優先のプロジェクトスキャフォールディングツール
 
 ## ✨ 主な機能
 
-<div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', margin: '2rem 0'}}>
+<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 my-8">
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🎯 マルチフレームワーク対応</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🎯 マルチフレームワーク対応</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Next.js、Expo、Tauriで現代的なアプリケーションを作成
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>📱 モバイルテスト内蔵</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">📱 モバイルテスト内蔵</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     ExpoプロジェクトにMaestro E2Eテストを標準搭載
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🗄️ 柔軟なデータベース</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🗄️ 柔軟なデータベース</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     Turso、Supabase、SQLiteから最適なソリューションを選択
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🔐 認証機能対応</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🔐 認証機能対応</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     フレームワーク固有の認証ソリューションを自動設定
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>☁️ ストレージ統合</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">☁️ ストレージ統合</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     複数のクラウドストレージプロバイダーをサポート
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem', backgroundColor: '#fafafa'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🧪 包括的テスト</h3>
-  <span style={{margin: 0, color: '#666', fontSize: '0.9rem', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🧪 包括的テスト</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
     32のテストファイルでユニット・統合・E2Eテストを完全カバー
   </span>
 </div>
@@ -108,25 +90,25 @@ fluorite-flake dashboard
 
 ## 🌟 なぜFluorite-Flakeを選ぶのか？
 
-<div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', margin: '2rem 0'}}>
+<div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 my-8">
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>⚡ 高速スタート</h3>
-  <span style={{margin: 0, color: '#666', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">⚡ 高速スタート</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 block">
     1つのコマンドで本格的なプロジェクト構造を生成。設定に時間をかけずに開発に集中できます。
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🎯 ベストプラクティス</h3>
-  <span style={{margin: 0, color: '#666', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🎯 ベストプラクティス</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 block">
     業界標準のプラクティスとツールを統合。TypeScript、ESLint、Prettierが標準設定。
   </span>
 </div>
 
-<div style={{padding: '1.5rem', border: '1px solid #e1e5e9', borderRadius: '0.5rem'}}>
-  <h3 style={{margin: '0 0 1rem 0', color: '#0070f3'}}>🌍 国際化対応</h3>
-  <span style={{margin: 0, color: '#666', display: 'block'}}>
+<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🌍 国際化対応</h3>
+  <span className="m-0 text-gray-700 dark:text-gray-200 block">
     英語と日本語でのネイティブサポート。グローバルなアプリケーション開発に最適。
   </span>
 </div>
@@ -135,21 +117,11 @@ fluorite-flake dashboard
 
 ---
 
-<div style={{textAlign: 'center', padding: '2rem 0'}}>
-  <span style={{color: '#666', margin: '0 0 1rem 0', display: 'block'}}>
+<div className="text-center py-8">
+  <span className="text-gray-700 dark:text-gray-200 mb-4 block">
     開発を始める準備はできましたか？
   </span>
-  <a href="/ja-JP/docs/get-started" style={{
-    display: 'inline-block',
-    padding: '1rem 2rem',
-    backgroundColor: '#0070f3',
-    color: 'white',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    fontSize: '1.1rem',
-    whiteSpace: 'nowrap'
-  }}>
+  <a href="/ja-JP/get-started" className="inline-block px-8 py-4 bg-blue-600 text-white rounded-lg no-underline font-bold text-lg whitespace-nowrap hover:bg-blue-700 transition-colors">
     今すぐ始める
   </a>
 </div>
