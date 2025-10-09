@@ -13,12 +13,19 @@ export default defineConfig({
         environment: "node", // Node.js環境での実行
         exclude: ["node_modules", "dist", ".temp-*"], // テスト対象外ディレクトリ
 
-        // メモリ効率化設定
+        // メモリ効率化設定（最大制限）
         pool: "forks", // ワーカープールをフォークに制限
         poolOptions: {
             forks: {
                 singleFork: true, // 単一フォークで全テストを実行
+                isolate: false, // 分離無効（メモリ節約）
             },
+        },
+
+        // 実行制限でメモリ使用量を削減
+        maxConcurrency: 1, // 同時実行を1つに制限
+        sequence: {
+            concurrent: false, // 並行実行を完全に無効
         },
         coverage: {
             reporter: ["text", "json", "html"], // カバレッジレポート形式
