@@ -299,6 +299,12 @@ function buildEnvReplacements({
 }
 
 async function replacePlaceholders(filePath: string, replacements: Record<string, string>): Promise<void> {
+    // ファイル存在確認を追加
+    if (!existsSync(filePath)) {
+        console.warn(`⚠️ 環境変数ファイルが見つかりません: ${filePath}`);
+        return;
+    }
+
     let content = await readFile(filePath, "utf-8");
 
     for (const [key, value] of Object.entries(replacements)) {
