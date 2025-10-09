@@ -1,49 +1,58 @@
 import nextra from "nextra";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const withNextra = nextra({
-    latex: true,
-    search: {
-        codeblocks: false,
-    },
-    contentDirBasePath: "/docs",
+	latex: true,
+	search: {
+		codeblocks: false,
+	},
+	contentDirBasePath: "/docs",
 });
 
 export default withNextra({
-    reactStrictMode: true,
+	reactStrictMode: true,
 
-    // GitHub Pages用の静的出力設定
-    output: "export",
-    trailingSlash: true,
-    distDir: "out",
-    assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || "",
-    basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
+	// 開発時は静的出力設定を無効化（Turbopack対応）
+	...(process.env.CI && {
+		output: "export",
+		trailingSlash: true,
+		distDir: "out",
+		assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || "",
+		basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
+	}),
 
-    // ワークスペースルート設定（警告解消）
-    outputFileTracingRoot: process.cwd(),
-    // App Router用のi18n設定は別の方法で実装する必要がある
-    // i18n: {
-    //     locales: ["en-US", "ja-JP"],
-    //     defaultLocale: "en-US",
-    //     localeDetection: true,
-    // },
+	// モノレポでの警告解消（開発時のみ）
+	...(!process.env.CI && {
+		outputFileTracingRoot: __dirname,
+	}),
+	// App Router用のi18n設定は別の方法で実装する必要がある
+	// i18n: {
+	//     locales: ["en-US", "ja-JP"],
+	//     defaultLocale: "en-US",
+	//     localeDetection: true,
+	// },
 
-    // パフォーマンス最適化設定
-    compress: true,
-    poweredByHeader: false,
+	// パフォーマンス最適化設定
+	compress: true,
+	poweredByHeader: false,
 
-    // 画像最適化設定（静的出力用）
-    images: {
-        unoptimized: true, // 静的出力では画像最適化を無効
-    },
+	// 画像最適化設定（静的出力用）
+	images: {
+		unoptimized: true, // 静的出力では画像最適化を無効
+	},
 
-    // 実験的機能（安定性のため一時的に無効化）
-    // experimental: {
-    //     optimizeCss: true,
-    //     optimizePackageImports: ["nextra", "nextra-theme-docs"],
-    //     // gzipSize: true,
-    //     webVitalsAttribution: ["CLS", "LCP"],
-    // },
+	// 実験的機能（安定性のため一時的に無効化）
+	// experimental: {
+	//     optimizeCss: true,
+	//     optimizePackageImports: ["nextra", "nextra-theme-docs"],
+	//     // gzipSize: true,
+	//     webVitalsAttribution: ["CLS", "LCP"],
+	// },
 
-    // 静的出力モードではrewrites/headersは無効
-    // リライト設定とヘッダー設定は実行時環境で処理
+	// 静的出力モードではrewrites/headersは無効
+	// リライト設定とヘッダー設定は実行時環境で処理
 });

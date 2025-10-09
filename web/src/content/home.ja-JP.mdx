@@ -1,4 +1,5 @@
 import { Bleed } from 'nextra/components'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 <div className="text-center py-16 pb-8">
 
@@ -30,49 +31,59 @@ TypeScript優先のプロジェクトスキャフォールディングツール
 ## ✨ 主な機能
 
 <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 my-8">
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🎯 マルチフレームワーク対応</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        Next.js、Expo、Tauriで現代的なアプリケーションを作成
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🎯 マルチフレームワーク対応</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
-    Next.js、Expo、Tauriで現代的なアプリケーションを作成
-  </span>
-</div>
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">📱 モバイルテスト内蔵</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        ExpoプロジェクトにMaestro E2Eテストを標準搭載
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">📱 モバイルテスト内蔵</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
-    ExpoプロジェクトにMaestro E2Eテストを標準搭載
-  </span>
-</div>
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🗄️ 柔軟なデータベース</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        Turso、Supabase、SQLiteから最適なソリューションを選択
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🗄️ 柔軟なデータベース</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
-    Turso、Supabase、SQLiteから最適なソリューションを選択
-  </span>
-</div>
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🔐 認証機能対応</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        フレームワーク固有の認証ソリューションを自動設定
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🔐 認証機能対応</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
-    フレームワーク固有の認証ソリューションを自動設定
-  </span>
-</div>
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">☁️ ストレージ統合</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        複数のクラウドストレージプロバイダーをサポート
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">☁️ ストレージ統合</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
-    複数のクラウドストレージプロバイダーをサポート
-  </span>
-</div>
-
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🧪 包括的テスト</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 text-sm block">
-    32のテストファイルでユニット・統合・E2Eテストを完全カバー
-  </span>
-</div>
-
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🧪 包括的テスト</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        32のテストファイルでユニット・統合・E2Eテストを完全カバー
+      </CardDescription>
+    </CardHeader>
+  </Card>
 </div>
 
 ## 🚀 クイックスタート
@@ -91,28 +102,32 @@ fluorite-flake dashboard
 ## 🌟 なぜFluorite-Flakeを選ぶのか？
 
 <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 my-8">
+  <Card className="border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">⚡ 高速スタート</CardTitle>
+      <CardDescription className="text-gray-700 dark:text-gray-200">
+        1つのコマンドで本格的なプロジェクト構造を生成。設定に時間をかけずに開発に集中できます。
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">⚡ 高速スタート</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 block">
-    1つのコマンドで本格的なプロジェクト構造を生成。設定に時間をかけずに開発に集中できます。
-  </span>
-</div>
+  <Card className="border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🎯 ベストプラクティス</CardTitle>
+      <CardDescription className="text-gray-700 dark:text-gray-200">
+        業界標準のプラクティスとツールを統合。TypeScript、ESLint、Prettierが標準設定。
+      </CardDescription>
+    </CardHeader>
+  </Card>
 
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🎯 ベストプラクティス</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 block">
-    業界標準のプラクティスとツールを統合。TypeScript、ESLint、Prettierが標準設定。
-  </span>
-</div>
-
-<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-  <h3 className="m-0 mb-4 text-blue-600 dark:text-blue-400">🌍 国際化対応</h3>
-  <span className="m-0 text-gray-700 dark:text-gray-200 block">
-    英語と日本語でのネイティブサポート。グローバルなアプリケーション開発に最適。
-  </span>
-</div>
-
+  <Card className="border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🌍 国際化対応</CardTitle>
+      <CardDescription className="text-gray-700 dark:text-gray-200">
+        英語と日本語でのネイティブサポート。グローバルなアプリケーション開発に最適。
+      </CardDescription>
+    </CardHeader>
+  </Card>
 </div>
 
 ---
