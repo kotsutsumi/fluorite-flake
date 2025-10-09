@@ -5,8 +5,9 @@
     "scripts": {
         "dev": "next dev --turbopack",
         "build": "next build --turbopack",
+        "build:static": "next build",
         "start": "next start",
-        "clean:build": "rimraf .next",
+        "clean:build": "rimraf .next out",
         "lint": "pnpm run clean:build && biome check",
         "format": "biome format --write"
     },
