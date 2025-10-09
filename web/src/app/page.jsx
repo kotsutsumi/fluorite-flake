@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 function getLocaleFromBrowser() {
     // ブラウザの言語設定を取得
@@ -29,13 +29,15 @@ export default function HomePage() {
 
     // ローディング中の表示
     return (
-        <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            fontFamily: "system-ui, sans-serif"
-        }}>
+        <div
+            style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100vh",
+                fontFamily: "system-ui, sans-serif",
+            }}
+        >
             <div>
                 <div>Loading...</div>
                 <div style={{ marginTop: "8px", fontSize: "14px", color: "#666" }}>
