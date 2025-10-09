@@ -20,9 +20,16 @@ export function LanguageSwitcher() {
 
         updateLanguage();
 
+        // URLの変更を定期的に監視（Next.js SPAのナビゲーション対応）
+        const interval = setInterval(updateLanguage, 100);
+
         // popstateイベントでブラウザの戻る/進むボタン対応
         window.addEventListener("popstate", updateLanguage);
-        return () => window.removeEventListener("popstate", updateLanguage);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("popstate", updateLanguage);
+        };
     }, []);
 
     const switchLanguage = (newLang) => {
