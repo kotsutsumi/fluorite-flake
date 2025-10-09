@@ -1,12 +1,14 @@
 export default {
-    index: {
+    home: {
         display: "hidden",
     },
-    docs: {
-        type: "page",
-        title: "Documentation",
+    "get-started": "Get Started",
+    "get-started.ja-JP": {
+        display: "hidden",
     },
     showcase: {
         display: "hidden",
     },
 };
+
+// EOF

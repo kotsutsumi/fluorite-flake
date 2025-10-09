@@ -4,51 +4,102 @@ import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import { Footer, Layout, Navbar } from "nextra-theme-docs";
 import "nextra-theme-docs/style.css";
+import { LocalizedNavbar } from "../components/localized-navbar.jsx";
 
 export const metadata = {
-    metadataBase: new URL("https://nextra.site"),
+    metadataBase: new URL("https://github.com/kotsutsumi/fluorite-flake"),
     title: {
-        template: "%s - Nextra",
+        template: "%s - Fluorite-flake",
+        default: "Fluorite-flake - 次世代のフルスタック開発ツール",
     },
-    description: "Nextra: the Next.js site builder",
-    applicationName: "Nextra",
+    description: "Fluorite-flake: 次世代のフルスタック開発ツール - TypeScript優先のプロジェクトスキャフォールディングツール",
+    applicationName: "Fluorite-flake",
     generator: "Next.js",
-    appleWebApp: {
-        title: "Nextra",
+    keywords: [
+        "Fluorite-flake",
+        "CLI",
+        "プロジェクトジェネレータ",
+        "TypeScript",
+        "Next.js",
+        "Expo",
+        "Tauri",
+        "フルスタック",
+        "開発ツール",
+        "スキャフォールディング",
+    ],
+    authors: [
+        {
+            name: "Fluorite-flake Team",
+            url: "https://github.com/kotsutsumi/fluorite-flake",
+        },
+    ],
+    creator: "Fluorite-flake Team",
+    publisher: "Fluorite-flake",
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            "max-video-preview": -1,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+        },
     },
-    other: {
-        "msapplication-TileImage": "/ms-icon-144x144.png",
-        "msapplication-TileColor": "#fff",
+    openGraph: {
+        type: "website",
+        locale: "ja_JP",
+        alternateLocale: ["en_US"],
+        url: "https://github.com/kotsutsumi/fluorite-flake",
+        siteName: "Fluorite-flake",
+        title: "Fluorite-flake - 次世代のフルスタック開発ツール",
+        description: "TypeScript優先のプロジェクトスキャフォールディングツール。Next.js、Expo、Tauriに対応。",
+        images: [
+            {
+                url: "/fluorite-flake-logo.png",
+                width: 1200,
+                height: 630,
+                alt: "Fluorite-flake Logo",
+            },
+        ],
     },
     twitter: {
-        site: "https://nextra.site",
+        card: "summary_large_image",
+        site: "https://github.com/kotsutsumi/fluorite-flake",
+        creator: "@fluorite_flake",
+        title: "Fluorite-flake - 次世代のフルスタック開発ツール",
+        description: "TypeScript優先のプロジェクトスキャフォールディングツール",
+        images: ["/fluorite-flake-logo.png"],
+    },
+    appleWebApp: {
+        title: "Fluorite-flake",
+        statusBarStyle: "default",
+        capable: true,
+    },
+    manifest: "/manifest.json",
+    other: {
+        "msapplication-TileImage": "/fluorite-flake-logo.png",
+        "msapplication-TileColor": "#fff",
+        "theme-color": "#000000",
     },
 };
 
 export default async function RootLayout({ children }) {
-    const navbar = (
-        <Navbar
-            logo={
-                <div>
-                    <b>Nextra</b> <span style={{ opacity: "60%" }}>The Next Docs Builder</span>
-                </div>
-            }
-            // Next.js discord server
-            chatLink="https://discord.gg/hEM84NMkRv"
-        />
-    );
     const pageMap = await getPageMap();
     return (
-        <html lang="en" dir="ltr" suppressHydrationWarning>
+        <html lang="ja" dir="ltr" suppressHydrationWarning>
             <Head faviconGlyph="✦" />
             <body>
                 <Layout
-                    banner={<Banner storageKey="Nextra 2">Nextra 2 Alpha</Banner>}
-                    navbar={navbar}
-                    footer={<Footer>MIT {new Date().getFullYear()} © Nextra.</Footer>}
-                    editLink="Edit this page on GitHub"
-                    docsRepositoryBase="https://github.com/shuding/nextra/blob/main/examples/docs"
-                    sidebar={{ defaultMenuCollapseLevel: 1 }}
+                    banner={<Banner storageKey="fluorite-flake-docs">Fluorite-flake Documentation</Banner>}
+                    navbar={<LocalizedNavbar />}
+                    footer={<Footer>MIT {new Date().getFullYear()} © Fluorite-flake.</Footer>}
+                    editLink="GitHubでこのページを編集"
+                    docsRepositoryBase="https://github.com/kotsutsumi/fluorite-flake/blob/main/web/src/content"
+                    sidebar={{
+                        defaultMenuCollapseLevel: 1,
+                        toggleButton: true
+                    }}
                     pageMap={pageMap}
                 >
                     {children}

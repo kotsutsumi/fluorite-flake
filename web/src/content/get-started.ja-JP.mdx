@@ -1,0 +1,103 @@
+import { Steps } from 'nextra/components'
+
+# はじめに
+
+## インストール
+
+### グローバルインストール
+
+どこからでも使用できるように、Fluorite-flakeをグローバルにインストールします：
+
+```bash
+npm install -g fluorite-flake
+```
+
+### ローカルインストール
+
+プロジェクト内にローカルインストールすることも可能です：
+
+```bash
+npm install fluorite-flake --save-dev
+```
+
+## 最初のプロジェクト作成
+
+<Steps>
+
+### create コマンドを実行
+
+```bash
+fluorite-flake create
+```
+
+### フレームワークを選択
+
+利用可能なオプションから選択してください：
+- **Next.js**: TypeScript対応のモダンなReactフレームワーク
+- **Expo**: モバイル開発用のReact Native
+- **Tauri**: Rustによるクロスプラットフォームデスクトップアプリ
+
+### プロジェクトを設定
+
+追加機能を選択してください：
+- **データベース**: Turso、Supabase、またはSQLite
+- **認証**: フレームワーク固有の認証ソリューション
+- **ストレージ**: クラウドストレージプロバイダー
+- **テスト**: 包括的なテスト環境
+
+### 開発を開始
+
+プロジェクトに移動して開発を始めましょう：
+
+```bash
+cd your-project-name
+npm run dev
+```
+
+</Steps>
+
+## ダッシュボードインターフェース
+
+プロジェクト管理用のインタラクティブなTUIダッシュボードを起動：
+
+```bash
+fluorite-flake dashboard
+```
+
+ダッシュボードで提供される機能：
+- **プロジェクト概要**: 現在のプロジェクト状況
+- **クイックアクション**: よく使用する開発タスク
+- **設定**: 簡単な設定管理
+- **モニタリング**: リアルタイムプロジェクトメトリクス
+
+## 利用可能なコマンド
+
+| コマンド | 説明 |
+|---------|------|
+| `create` | 新しいプロジェクトを作成 |
+| `dashboard` | TUIダッシュボードを起動 |
+| `--help` | ヘルプ情報を表示 |
+| `--version` | バージョン情報を表示 |
+
+## 次のステップ
+
+- [機能](/docs/features) セクションを探索
+- 利用可能な [テーマ](/docs/themes) を確認
+- [設定](/docs/advanced/configuration) について学習
+
+## サポートを受ける
+
+問題が発生した場合：
+
+1. [トラブルシューティングガイド](/docs/troubleshooting) を確認
+2. [GitHubリポジトリ](https://github.com/kotsutsumi/fluorite-flake) を訪問
+3. コミュニティディスカッションに参加
+
+## コミュニティ
+
+他のFluorite-flakeユーザーとの交流：
+- GitHub Discussions
+- Discordコミュニティ（近日公開）
+- Stack Overflow（タグ: fluorite-flake）
+
+// EOF
