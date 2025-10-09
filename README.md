@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="web/public/fluorite-flake-logo.png" alt="Fluorite-flake" width="200" height="200" />
+  <img src="web/public/fluorite-flake-logo.png" alt="Fluorite-Flake" width="200" height="200" />
 
-# Fluorite-flake 🚀
+# Fluorite-Flake 🚀
 
 [![CI](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml/badge.svg)](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/fluorite-flake.svg)](https://badge.fury.io/js/fluorite-flake)
@@ -124,7 +124,6 @@ Generated test files:
 - `navigation-test.yaml` - Tab navigation testing
 - `auth-test.yaml` - Authentication flow (if auth enabled)
 - `ci-test-suite.yaml` - CI/CD automation suite
-
 
 ## 🏗️ Generated Project Structures
 
@@ -293,7 +292,7 @@ cd web && pnpm build  # Build documentation for deployment
 
 ## 🌐 Documentation Site
 
-Fluorite-flake includes an integrated documentation site built with Next.js and Nextra:
+Fluorite-Flake includes an integrated documentation site built with Next.js and Nextra:
 
 ```bash
 # Run documentation site locally
@@ -331,7 +330,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 📄 License
 
-MIT © Fluorite-flake Contributors
+MIT © Fluorite-Flake Contributors
 
 ## 🙏 Acknowledgments
 
@@ -350,6 +349,6 @@ MIT © Fluorite-flake Contributors
 
 ---
 
-Made with ❤️ by the Fluorite-flake team
+Made with ❤️ by the Fluorite-Flake team
 
 <!-- EOF -->

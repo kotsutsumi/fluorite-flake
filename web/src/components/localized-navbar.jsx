@@ -63,11 +63,11 @@ export function LocalizedNavbar() {
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <img
                         src="/fluorite-flake-logo.png"
-                        alt="Fluorite-flake Logo"
+                        alt="Fluorite-Flake Logo"
                         style={{ width: "24px", height: "24px" }}
                     />
                     <span>
-                        <b>Fluorite-flake</b> <span style={{ opacity: "60%" }}>{currentMessages.subtitle}</span>
+                        <b>Fluorite-Flake</b> <span style={{ opacity: "60%" }}>{currentMessages.subtitle}</span>
                     </span>
                 </div>
             }

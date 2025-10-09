@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Fluorite-flake CLI エントリーポイント
+ * Fluorite-Flake CLI エントリーポイント
  */
+import { type CommandContext, defineCommand, runMain } from "citty";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type CommandContext, defineCommand, runMain } from "citty";
 
 import { createCommand, newCommand } from "./commands/create/index.js";
 import { dashboardCommand } from "./commands/dashboard/index.js";

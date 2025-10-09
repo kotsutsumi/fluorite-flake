@@ -9,14 +9,14 @@ import { LocalizedNavbar } from "../components/localized-navbar.jsx";
 export const metadata = {
     metadataBase: new URL("https://github.com/kotsutsumi/fluorite-flake"),
     title: {
-        template: "%s - Fluorite-flake",
-        default: "Fluorite-flake - 次世代のフルスタック開発ツール",
+        template: "%s - Fluorite-Flake",
+        default: "Fluorite-Flake - 次世代のフルスタック開発ツール",
     },
-    description: "Fluorite-flake: 次世代のフルスタック開発ツール - TypeScript優先のプロジェクトスキャフォールディングツール",
-    applicationName: "Fluorite-flake",
+    description: "Fluorite-Flake: 次世代のフルスタック開発ツール - TypeScript優先のプロジェクトスキャフォールディングツール",
+    applicationName: "Fluorite-Flake",
     generator: "Next.js",
     keywords: [
-        "Fluorite-flake",
+        "Fluorite-Flake",
         "CLI",
         "プロジェクトジェネレータ",
         "TypeScript",
@@ -29,12 +29,12 @@ export const metadata = {
     ],
     authors: [
         {
-            name: "Fluorite-flake Team",
+            name: "Fluorite-Flake Team",
             url: "https://github.com/kotsutsumi/fluorite-flake",
         },
     ],
-    creator: "Fluorite-flake Team",
-    publisher: "Fluorite-flake",
+    creator: "Fluorite-Flake Team",
+    publisher: "Fluorite-Flake",
     robots: {
         index: true,
         follow: true,
@@ -51,15 +51,15 @@ export const metadata = {
         locale: "ja_JP",
         alternateLocale: ["en_US"],
         url: "https://github.com/kotsutsumi/fluorite-flake",
-        siteName: "Fluorite-flake",
-        title: "Fluorite-flake - 次世代のフルスタック開発ツール",
+        siteName: "Fluorite-Flake",
+        title: "Fluorite-Flake - 次世代のフルスタック開発ツール",
         description: "TypeScript優先のプロジェクトスキャフォールディングツール。Next.js、Expo、Tauriに対応。",
         images: [
             {
                 url: "/fluorite-flake-logo.png",
                 width: 1200,
                 height: 630,
-                alt: "Fluorite-flake Logo",
+                alt: "Fluorite-Flake Logo",
             },
         ],
     },
@@ -67,12 +67,12 @@ export const metadata = {
         card: "summary_large_image",
         site: "https://github.com/kotsutsumi/fluorite-flake",
         creator: "@fluorite_flake",
-        title: "Fluorite-flake - 次世代のフルスタック開発ツール",
+        title: "Fluorite-Flake - 次世代のフルスタック開発ツール",
         description: "TypeScript優先のプロジェクトスキャフォールディングツール",
         images: ["/fluorite-flake-logo.png"],
     },
     appleWebApp: {
-        title: "Fluorite-flake",
+        title: "Fluorite-Flake",
         statusBarStyle: "default",
         capable: true,
     },
@@ -91,9 +91,9 @@ export default async function RootLayout({ children }) {
             <Head faviconGlyph="✦" />
             <body>
                 <Layout
-                    banner={<Banner storageKey="fluorite-flake-docs">Fluorite-flake Documentation</Banner>}
+                    banner={<Banner storageKey="fluorite-flake-docs">Fluorite-Flake Documentation</Banner>}
                     navbar={<LocalizedNavbar />}
-                    footer={<Footer>MIT {new Date().getFullYear()} © Fluorite-flake.</Footer>}
+                    footer={<Footer>MIT {new Date().getFullYear()} © Fluorite-Flake.</Footer>}
                     editLink="GitHubでこのページを編集"
                     docsRepositoryBase="https://github.com/kotsutsumi/fluorite-flake/blob/main/web/src/content"
                     sidebar={{
