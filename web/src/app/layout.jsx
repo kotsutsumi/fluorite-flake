@@ -1,11 +1,13 @@
 /* eslint-env node */
-import { Footer, Layout, Navbar } from "nextra-theme-docs";
-import "./globals.css";
+import Script from "next/script";
+import { Footer, Layout } from "nextra-theme-docs";
 import "nextra-theme-docs/style.css";
 import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 
 import { LocalizedNavbar } from "../components/localized-navbar.jsx";
+
+import "./globals.css";
 
 export const metadata = {
     metadataBase: new URL("https://github.com/kotsutsumi/fluorite-flake"),
@@ -92,19 +94,18 @@ export default async function RootLayout({ children }) {
         <html lang="ja" dir="ltr" suppressHydrationWarning>
             <Head faviconGlyph="✦" />
             <body className="bg-background text-foreground">
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `
-                            try {
-                                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                                    document.documentElement.classList.add('dark')
-                                } else {
-                                    document.documentElement.classList.remove('dark')
-                                }
-                            } catch (_) {}
-                        `,
-                    }}
-                />
+                {/* biome-ignore lint/correctness/useUniqueElementIds: レイアウト内で一度のみ使用する初期化スクリプト */}
+                <Script id="theme-init" strategy="beforeInteractive">
+                    {`
+                        try {
+                            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                                document.documentElement.classList.add('dark');
+                            } else {
+                                document.documentElement.classList.remove('dark');
+                            }
+                        } catch (_) {}
+                    `}
+                </Script>
                 <Layout
                     banner={<Banner storageKey="fluorite-flake-docs">Fluorite-Flake Documentation</Banner>}
                     navbar={<LocalizedNavbar />}
@@ -117,7 +118,7 @@ export default async function RootLayout({ children }) {
                     }}
                     pageMap={pageMap}
                 >
-                    {children}
+                    <div className="min-h-screen">{children}</div>
                 </Layout>
             </body>
         </html>

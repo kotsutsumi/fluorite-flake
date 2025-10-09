@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Navbar } from "nextra-theme-docs";
+import { useCallback, useEffect, useState } from "react";
 
 import { LanguageSwitcher } from "./language-switcher.jsx";
 import { ThemeSwitcher } from "./theme-switcher.jsx";
@@ -19,21 +20,30 @@ const messages = {
 
 export function LocalizedNavbar() {
     const [currentLang, setCurrentLang] = useState("ja");
-    const [mounted, setMounted] = useState(false);
+
+    const updateLanguageFromPath = useCallback(() => {
+        if (typeof window === "undefined" || typeof MutationObserver === "undefined") {
+            return;
+        }
+
+        const path = window.location.pathname;
+        const newLang = path.startsWith("/en-US") ? "en" : "ja";
+        setCurrentLang(newLang);
+    }, []);
 
     useEffect(() => {
-        setMounted(true);
+        if (typeof window === "undefined") {
+            return;
+        }
+
         updateLanguageFromPath();
 
-        // パスの変更を監視
         const handleRouteChange = () => {
             updateLanguageFromPath();
         };
 
-        // popstateイベントでブラウザの戻る/進むボタン対応
         window.addEventListener("popstate", handleRouteChange);
 
-        // MutationObserverでURLの変更を監視（SPAのナビゲーション対応）
         const observer = new MutationObserver(handleRouteChange);
         observer.observe(document, { subtree: true, childList: true });
 
@@ -41,22 +51,19 @@ export function LocalizedNavbar() {
             window.removeEventListener("popstate", handleRouteChange);
             observer.disconnect();
         };
-    }, []);
+    }, [updateLanguageFromPath]);
 
-    // URL更新時に再チェック
     useEffect(() => {
+        if (typeof window === "undefined") {
+            return undefined;
+        }
+
         const interval = setInterval(() => {
             updateLanguageFromPath();
         }, 100);
 
         return () => clearInterval(interval);
-    }, []);
-
-    const updateLanguageFromPath = () => {
-        const path = window.location.pathname;
-        const newLang = path.startsWith("/en-US") ? "en" : "ja";
-        setCurrentLang(newLang);
-    };
+    }, [updateLanguageFromPath]);
 
     const currentMessages = messages[currentLang];
 
@@ -64,7 +71,7 @@ export function LocalizedNavbar() {
         <Navbar
             logo={
                 <div className="flex items-center gap-2">
-                    <img src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" className="w-6 h-6" />
+                    <Image src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" width={24} height={24} priority />
                     <span>
                         <b>Fluorite-Flake</b> <span className="opacity-60">{currentMessages.subtitle}</span>
                     </span>

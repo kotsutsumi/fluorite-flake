@@ -6,7 +6,8 @@
         "dev": "next dev --turbopack",
         "build": "next build --turbopack",
         "start": "next start",
-        "lint": "biome check",
+        "clean:build": "rimraf .next",
+        "lint": "pnpm run clean:build && biome check",
         "format": "biome format --write"
     },
     "dependencies": {
@@ -28,6 +29,7 @@
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
+        "rimraf": "^6.0.1",
         "tailwindcss": "^4",
         "typescript": "^5"
     }

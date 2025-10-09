@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
-
-// 言語コンテキストを作成
-const LanguageContext = createContext({ language: "ja", setLanguage: () => {} });
+import { useEffect, useState } from "react";
 
 export function LanguageSwitcher() {
     const [currentLang, setCurrentLang] = useState("ja");
     const router = useRouter();
 
     useEffect(() => {
-        // 初期言語設定
+        if (typeof window === "undefined") {
+            return;
+        }
+
         const updateLanguage = () => {
             const path = window.location.pathname;
             const newLang = path.startsWith("/en-US") ? "en" : "ja";
@@ -20,29 +20,25 @@ export function LanguageSwitcher() {
 
         updateLanguage();
 
-        // URLの変更を定期的に監視（Next.js SPAのナビゲーション対応）
-        const interval = setInterval(updateLanguage, 100);
-
-        // popstateイベントでブラウザの戻る/進むボタン対応
+        const interval = window.setInterval(updateLanguage, 100);
         window.addEventListener("popstate", updateLanguage);
 
         return () => {
-            clearInterval(interval);
+            window.clearInterval(interval);
             window.removeEventListener("popstate", updateLanguage);
         };
     }, []);
 
     const switchLanguage = (newLang) => {
+        if (typeof window === "undefined") {
+            return;
+        }
+
         const currentPath = window.location.pathname;
-
-        // 既存のロケールを削除してパスを正規化
         const cleanPath = currentPath.replace(/^\/ja-JP/, "").replace(/^\/en-US/, "") || "/";
-
-        // 新しいロケールでパスを構築
         const newLocale = newLang === "en" ? "/en-US" : "/ja-JP";
         const newPath = cleanPath === "/" ? newLocale : newLocale + cleanPath;
 
-        // Next.js routerを使用してナビゲーション
         router.push(newPath);
     };
 
