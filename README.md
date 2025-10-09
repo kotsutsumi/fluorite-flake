@@ -3,7 +3,6 @@
 
 # Fluorite-Flake 🚀
 
-[![CI](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml/badge.svg)](https://github.com/kotsutsumi/fluorite-flake/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/fluorite-flake.svg)](https://badge.fury.io/js/fluorite-flake)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
