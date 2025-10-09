@@ -3,8 +3,7 @@ export default {
         display: "hidden",
     },
     docs: {
-        type: "page",
-        title: "Documentation",
+        display: "hidden",
     },
     showcase: {
         display: "hidden",

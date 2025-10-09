@@ -8,9 +8,11 @@ import { LanguageSwitcher } from "./language-switcher.jsx";
 const messages = {
     "ja": {
         subtitle: "フルスタック開発ツール",
+        documentation: "ドキュメンテーション",
     },
     "en": {
         subtitle: "Full-stack Development Tool",
+        documentation: "Documentation",
     }
 };
 
@@ -73,6 +75,20 @@ export function LocalizedNavbar() {
             }
             projectLink="https://github.com/kotsutsumi/fluorite-flake"
         >
+            <a
+                href={`/${currentLang === 'en' ? 'en-US' : 'ja-JP'}/get-started`}
+                style={{
+                    color: 'inherit',
+                    textDecoration: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.375rem',
+                    transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+                {currentMessages.documentation}
+            </a>
             <LanguageSwitcher />
         </Navbar>
     );

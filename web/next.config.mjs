@@ -39,6 +39,22 @@ export default withNextra({
     //     webVitalsAttribution: ["CLS", "LCP"],
     // },
 
+    // リライト設定：複数のパスパターンを /docs/get-started.* にリライト
+    async rewrites() {
+        return [
+            // パターン1: /get-started.ja-JP, /get-started.en-US
+            {
+                source: '/get-started.:locale(ja-JP|en-US)',
+                destination: '/docs/get-started.:locale',
+            },
+            // パターン2: /ja-JP/get-started, /en-US/get-started
+            {
+                source: '/:locale(ja-JP|en-US)/get-started',
+                destination: '/docs/get-started.:locale',
+            },
+        ];
+    },
+
     // ヘッダー設定（セキュリティ強化）
     async headers() {
         return [
