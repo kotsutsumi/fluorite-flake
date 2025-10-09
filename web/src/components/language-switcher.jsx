@@ -13,8 +13,12 @@ export function LanguageSwitcher() {
         }
 
         const updateLanguage = () => {
+            const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
             const path = window.location.pathname;
-            const newLang = path.startsWith("/en-US") ? "en" : "ja";
+
+            // basePathを除去してから言語判定を行う
+            const pathWithoutBase = path.replace(new RegExp(`^${basePath}`), "");
+            const newLang = pathWithoutBase.startsWith("/en-US") ? "en" : "ja";
             setCurrentLang(newLang);
         };
 
@@ -34,8 +38,12 @@ export function LanguageSwitcher() {
             return;
         }
 
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
         const currentPath = window.location.pathname;
-        const cleanPath = currentPath.replace(/^\/ja-JP/, "").replace(/^\/en-US/, "") || "/";
+
+        // basePathを除去してから言語切り替えを行う
+        const pathWithoutBase = currentPath.replace(new RegExp(`^${basePath}`), "");
+        const cleanPath = pathWithoutBase.replace(/^\/ja-JP/, "").replace(/^\/en-US/, "") || "/";
         const newLocale = newLang === "en" ? "/en-US" : "/ja-JP";
         const newPath = cleanPath === "/" ? newLocale : newLocale + cleanPath;
 
