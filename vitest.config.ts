@@ -12,6 +12,14 @@ export default defineConfig({
         globals: true, // グローバル変数の有効化（describe, it, expect等）
         environment: "node", // Node.js環境での実行
         exclude: ["node_modules", "dist", ".temp-*"], // テスト対象外ディレクトリ
+
+        // メモリ効率化設定
+        pool: "forks", // ワーカープールをフォークに制限
+        poolOptions: {
+            forks: {
+                singleFork: true, // 単一フォークで全テストを実行
+            },
+        },
         coverage: {
             reporter: ["text", "json", "html"], // カバレッジレポート形式
             include: ["src/**/*.ts"], // カバレッジ対象ファイル
