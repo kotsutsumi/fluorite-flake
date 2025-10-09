@@ -53,10 +53,7 @@ describe("Supabase CLI Executor", () => {
 
             // 標準出力にデータを送信（JSON形式のプロジェクト一覧を模擬）
             mockProcess.stdout.emit("data", Buffer.from('{"projects": ['));
-            mockProcess.stdout.emit(
-                "data",
-                Buffer.from('{"id": "test-project"}]}')
-            );
+            mockProcess.stdout.emit("data", Buffer.from('{"id": "test-project"}]}'));
 
             // プロセス終了イベントを発火（終了コード0で正常終了）
             mockProcess.emit("close", 0);
@@ -66,22 +63,16 @@ describe("Supabase CLI Executor", () => {
 
             // 期待される結果の検証
             expect(result.exitCode).toBe(0);
-            expect(result.stdout).toBe(
-                '{"projects": [{"id": "test-project"}]}'
-            );
+            expect(result.stdout).toBe('{"projects": [{"id": "test-project"}]}');
             expect(result.stderr).toBe("");
             expect(result.error).toBeUndefined();
 
             // spawn が正しい引数で呼び出されたかを確認
-            expect(spawn).toHaveBeenCalledWith(
-                "supabase",
-                ["projects", "list"],
-                {
-                    cwd: process.cwd(),
-                    env: process.env,
-                    stdio: ["ignore", "pipe", "pipe"],
-                }
-            );
+            expect(spawn).toHaveBeenCalledWith("supabase", ["projects", "list"], {
+                cwd: process.cwd(),
+                env: process.env,
+                stdio: ["ignore", "pipe", "pipe"],
+            });
         });
 
         it("エラー時に適切なエラー情報を返す", async () => {
@@ -94,10 +85,7 @@ describe("Supabase CLI Executor", () => {
             const { spawn } = await import("node:child_process");
             vi.mocked(spawn).mockReturnValue(mockProcess);
 
-            const resultPromise = executeSupabaseCommand([
-                "invalid",
-                "command",
-            ]);
+            const resultPromise = executeSupabaseCommand(["invalid", "command"]);
 
             // 標準エラー出力にエラーメッセージを送信
             mockProcess.stderr.emit("data", Buffer.from("Command not found"));
@@ -213,9 +201,7 @@ describe("Supabase CLI Executor", () => {
                 exitCode: 0,
             };
 
-            expect(() => parseJsonResponse(result)).toThrow(
-                "No output to parse"
-            );
+            expect(() => parseJsonResponse(result)).toThrow("No output to parse");
         });
 
         it("無効なJSON時にエラーをスローする", () => {
@@ -226,9 +212,7 @@ describe("Supabase CLI Executor", () => {
                 exitCode: 0,
             };
 
-            expect(() => parseJsonResponse(result)).toThrow(
-                "Failed to parse JSON response"
-            );
+            expect(() => parseJsonResponse(result)).toThrow("Failed to parse JSON response");
         });
 
         it("型付きレスポンスを正しく処理する", () => {
@@ -271,9 +255,7 @@ describe("Supabase CLI Executor", () => {
                 exitCode: 1,
             };
 
-            expect(() => throwOnError(result, "test command")).toThrow(
-                "Supabase command failed: test command"
-            );
+            expect(() => throwOnError(result, "test command")).toThrow("Supabase command failed: test command");
         });
 
         it("プロセスエラー時に例外をスローする", () => {
@@ -285,9 +267,7 @@ describe("Supabase CLI Executor", () => {
                 error: new Error("Process error"),
             };
 
-            expect(() => throwOnError(result, "test command")).toThrow(
-                "Supabase command failed: test command"
-            );
+            expect(() => throwOnError(result, "test command")).toThrow("Supabase command failed: test command");
         });
 
         it("エラー詳細情報を含む例外をスローする", () => {

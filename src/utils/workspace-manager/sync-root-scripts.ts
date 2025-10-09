@@ -33,13 +33,9 @@ export async function syncRootScripts(projectRoot: string): Promise<void> {
         return;
     }
 
-    const originalScripts = isRecord(packageJson.scripts)
-        ? (packageJson.scripts as ScriptMap)
-        : {};
+    const originalScripts = isRecord(packageJson.scripts) ? (packageJson.scripts as ScriptMap) : {};
 
-    const shouldUpdate = Object.entries(generatedScripts).some(
-        ([key, value]) => originalScripts[key] !== value
-    );
+    const shouldUpdate = Object.entries(generatedScripts).some(([key, value]) => originalScripts[key] !== value);
 
     if (!shouldUpdate) {
         return;
@@ -50,10 +46,7 @@ export async function syncRootScripts(projectRoot: string): Promise<void> {
         ...generatedScripts,
     } satisfies ScriptMap;
 
-    await fs.writeFile(
-        packageJsonPath,
-        `${JSON.stringify(packageJson, null, 2)}\n`
-    );
+    await fs.writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 }
 
 /**

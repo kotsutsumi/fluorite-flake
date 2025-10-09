@@ -67,11 +67,7 @@ export const DetailPanel: React.FC = () => {
             case "github":
                 return <GitHubPanel tab={snapshot.activeTab} />;
             default:
-                return (
-                    <Text color="red">
-                        Unknown service: {snapshot.activeService}
-                    </Text>
-                );
+                return <Text color="red">Unknown service: {snapshot.activeService}</Text>;
         }
     }
 
@@ -90,11 +86,7 @@ export const DetailPanel: React.FC = () => {
                     const isActive = snapshot.activeTab === tab.key;
                     return (
                         <Box key={tab.key} marginRight={2}>
-                            <Text
-                                bold={isActive}
-                                color={isActive ? "yellow" : "gray"}
-                                underline={isActive}
-                            >
+                            <Text bold={isActive} color={isActive ? "yellow" : "gray"} underline={isActive}>
                                 [{tab.shortcut}] {tab.name}
                             </Text>
                         </Box>
@@ -103,12 +95,7 @@ export const DetailPanel: React.FC = () => {
             </Box>
 
             {/* サービス別パネル */}
-            <Box
-                borderColor={panelBorderColor}
-                borderStyle="round"
-                flexGrow={1}
-                padding={1}
-            >
+            <Box borderColor={panelBorderColor} borderStyle="round" flexGrow={1} padding={1}>
                 {getServicePanel()}
             </Box>
         </Box>

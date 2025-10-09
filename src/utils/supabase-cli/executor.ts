@@ -6,11 +6,7 @@
  */
 import { spawn } from "node:child_process";
 
-import type {
-    CommandResult,
-    ExecOptions,
-    SupabaseCommandError,
-} from "./types.js";
+import type { CommandResult, ExecOptions, SupabaseCommandError } from "./types.js";
 
 /**
  * Supabase CLI コマンドを実行します
@@ -19,10 +15,7 @@ import type {
  * @param options - 実行オプション
  * @returns Promise<CommandResult> - コマンド実行結果
  */
-export function executeSupabaseCommand(
-    args: string[],
-    options: ExecOptions = {}
-): Promise<CommandResult> {
+export function executeSupabaseCommand(args: string[], options: ExecOptions = {}): Promise<CommandResult> {
     const { timeout = 30_000, env = {}, cwd = process.cwd() } = options;
 
     return new Promise((resolve) => {
@@ -47,9 +40,7 @@ export function executeSupabaseCommand(
                 stdout,
                 stderr,
                 exitCode: -1,
-                error: new Error(
-                    `Command timed out after ${timeout}ms: supabase ${args.join(" ")}`
-                ),
+                error: new Error(`Command timed out after ${timeout}ms: supabase ${args.join(" ")}`),
             });
         }, timeout);
 
@@ -101,9 +92,7 @@ export function parseJsonResponse<T = unknown>(result: CommandResult): T {
     try {
         return JSON.parse(result.stdout) as T;
     } catch (error) {
-        throw new Error(
-            `Failed to parse JSON response: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
+        throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 }
 
@@ -116,9 +105,7 @@ export function parseJsonResponse<T = unknown>(result: CommandResult): T {
  */
 export function throwOnError(result: CommandResult, command: string): void {
     if (result.exitCode !== 0 || result.error) {
-        const error = new Error(
-            `Supabase command failed: ${command}`
-        ) as unknown as SupabaseCommandError;
+        const error = new Error(`Supabase command failed: ${command}`) as unknown as SupabaseCommandError;
         error.command = command;
         error.exitCode = result.exitCode;
         error.stderr = result.stderr;

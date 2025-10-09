@@ -74,8 +74,7 @@ export const TEST_CONFIG = {
     CI: {
         IS_CI: process.env.CI === "true",
         REDUCE_PARALLELISM: process.env.CI === "true",
-        SKIP_SLOW_TESTS:
-            process.env.CI === "true" && process.env.E2E_FULL !== "true",
+        SKIP_SLOW_TESTS: process.env.CI === "true" && process.env.E2E_FULL !== "true",
     },
 } as const;
 
@@ -83,27 +82,14 @@ export const TEST_CONFIG = {
 export const PROJECT_TYPES = {
     NEXTJS: {
         name: "nextjs",
-        expectedFiles: [
-            "package.json",
-            "next.config.js",
-            "app/layout.tsx",
-            "app/page.tsx",
-            ".gitignore",
-            "README.md",
-        ],
+        expectedFiles: ["package.json", "next.config.js", "app/layout.tsx", "app/page.tsx", ".gitignore", "README.md"],
         expectedDependencies: ["next", "react", "react-dom"],
         minFileCount: 10,
         maxFileCount: 50,
     },
     EXPO: {
         name: "expo",
-        expectedFiles: [
-            "package.json",
-            "app.json",
-            "App.tsx",
-            ".gitignore",
-            "README.md",
-        ],
+        expectedFiles: ["package.json", "app.json", "App.tsx", ".gitignore", "README.md"],
         expectedDependencies: ["expo", "react", "react-native"],
         minFileCount: 8,
         maxFileCount: 40,
@@ -156,7 +142,7 @@ export const I18N_CONFIG = {
     TEST_PATTERNS: {
         ja: {
             CREATE_SUCCESS: ["プロジェクトが作成されました", "生成が完了"],
-            HELP_MESSAGE: ["使用方法", "コマンド", "オプション"],
+            HELP_MESSAGE: ["USAGE", "COMMANDS"], // cittyの実際の出力に合わせる
             ERROR_MESSAGE: ["エラー", "失敗", "問題"],
         },
         en: {
@@ -191,18 +177,14 @@ export function getTestEnvironment() {
         isCI: TEST_CONFIG.CI.IS_CI,
         isVerbose: TEST_CONFIG.LOGGING.VERBOSE,
         shouldSkipSlowTests: TEST_CONFIG.CI.SKIP_SLOW_TESTS,
-        maxParallelism: TEST_CONFIG.CI.REDUCE_PARALLELISM
-            ? 2
-            : TEST_CONFIG.CONCURRENCY.MAX_PARALLEL_TESTS,
+        maxParallelism: TEST_CONFIG.CI.REDUCE_PARALLELISM ? 2 : TEST_CONFIG.CONCURRENCY.MAX_PARALLEL_TESTS,
         platform: process.platform,
         nodeVersion: process.version,
     };
 }
 
 // テスト用ユーティリティ関数
-export function shouldSkipTest(
-    reason: "slow" | "ci-only" | "local-only"
-): boolean {
+export function shouldSkipTest(reason: "slow" | "ci-only" | "local-only"): boolean {
     const env = getTestEnvironment();
 
     switch (reason) {
@@ -217,9 +199,7 @@ export function shouldSkipTest(
     }
 }
 
-export function getTimeoutForOperation(
-    operation: keyof typeof PERFORMANCE_THRESHOLDS
-): number {
+export function getTimeoutForOperation(operation: keyof typeof PERFORMANCE_THRESHOLDS): number {
     switch (operation) {
         case "PROJECT_CREATION":
             return TIMEOUTS.PROJECT_CREATION;

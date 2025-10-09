@@ -14,10 +14,7 @@ import { GitHubCLIErrorCode } from "../../../../../src/utils/github-cli/types/co
 describe("GitHubCLIError", () => {
     describe("基本機能", () => {
         it("エラーコードとメッセージを正しく設定する", () => {
-            const error = new GitHubCLIError(
-                GitHubCLIErrorCode.AUTH_FAILED,
-                "テスト認証エラー"
-            );
+            const error = new GitHubCLIError(GitHubCLIErrorCode.AUTH_FAILED, "テスト認証エラー");
 
             expect(error.code).toBe(GitHubCLIErrorCode.AUTH_FAILED);
             expect(error.message).toBe("テスト認証エラー");
@@ -27,15 +24,11 @@ describe("GitHubCLIError", () => {
         it("オプション情報を正しく設定する", () => {
             const originalError = new Error("元のエラー");
 
-            const error = new GitHubCLIError(
-                GitHubCLIErrorCode.NETWORK_ERROR,
-                "ネットワークエラー",
-                {
-                    originalError,
-                    command: "gh repo list",
-                    suggestion: "ネットワーク接続を確認してください",
-                }
-            );
+            const error = new GitHubCLIError(GitHubCLIErrorCode.NETWORK_ERROR, "ネットワークエラー", {
+                originalError,
+                command: "gh repo list",
+                suggestion: "ネットワーク接続を確認してください",
+            });
 
             expect(error.originalError).toBe(originalError);
             expect(error.command).toBe("gh repo list");
@@ -45,14 +38,10 @@ describe("GitHubCLIError", () => {
 
     describe("toJSON", () => {
         it("エラー情報をJSON形式で正しく返す", () => {
-            const error = new GitHubCLIError(
-                GitHubCLIErrorCode.VALIDATION_ERROR,
-                "バリデーションエラー",
-                {
-                    command: "test command",
-                    suggestion: "テストの提案",
-                }
-            );
+            const error = new GitHubCLIError(GitHubCLIErrorCode.VALIDATION_ERROR, "バリデーションエラー", {
+                command: "test command",
+                suggestion: "テストの提案",
+            });
 
             const json = error.toJSON();
 
@@ -65,10 +54,7 @@ describe("GitHubCLIError", () => {
 
     describe("getUserFriendlyMessage", () => {
         it("提案なしの場合、基本メッセージのみを返す", () => {
-            const error = new GitHubCLIError(
-                GitHubCLIErrorCode.TIMEOUT,
-                "タイムアウトしました"
-            );
+            const error = new GitHubCLIError(GitHubCLIErrorCode.TIMEOUT, "タイムアウトしました");
 
             const message = error.getUserFriendlyMessage();
 
@@ -77,13 +63,9 @@ describe("GitHubCLIError", () => {
         });
 
         it("提案ありの場合、提案を含むメッセージを返す", () => {
-            const error = new GitHubCLIError(
-                GitHubCLIErrorCode.AUTH_MISSING,
-                "認証情報が見つかりません",
-                {
-                    suggestion: "gh auth login を実行してください",
-                }
-            );
+            const error = new GitHubCLIError(GitHubCLIErrorCode.AUTH_MISSING, "認証情報が見つかりません", {
+                suggestion: "gh auth login を実行してください",
+            });
 
             const message = error.getUserFriendlyMessage();
 
@@ -95,10 +77,7 @@ describe("GitHubCLIError", () => {
 
 describe("handleError", () => {
     it("既存のGitHubCLIErrorをそのまま返す", () => {
-        const originalError = new GitHubCLIError(
-            GitHubCLIErrorCode.AUTH_FAILED,
-            "認証に失敗しました"
-        );
+        const originalError = new GitHubCLIError(GitHubCLIErrorCode.AUTH_FAILED, "認証に失敗しました");
 
         const result = handleError(originalError);
         expect(result).toBe(originalError);
@@ -161,20 +140,14 @@ describe("isRecoverable", () => {
     });
 
     it("復旧不可能なエラーに対してfalseを返す", () => {
-        const error = new GitHubCLIError(
-            GitHubCLIErrorCode.AUTH_FAILED,
-            "test"
-        );
+        const error = new GitHubCLIError(GitHubCLIErrorCode.AUTH_FAILED, "test");
         expect(isRecoverable(error)).toBe(false);
     });
 });
 
 describe("requiresUserAction", () => {
     it("ユーザーアクションが必要なエラーに対してtrueを返す", () => {
-        const error = new GitHubCLIError(
-            GitHubCLIErrorCode.AUTH_MISSING,
-            "test"
-        );
+        const error = new GitHubCLIError(GitHubCLIErrorCode.AUTH_MISSING, "test");
         expect(requiresUserAction(error)).toBe(true);
     });
 

@@ -7,10 +7,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useSnapshot } from "valtio";
 
-import {
-    dashboardStore,
-    setActiveService,
-} from "../../state/dashboard-store.js";
+import { dashboardStore, setActiveService } from "../../state/dashboard-store.js";
 import type { ServiceType } from "../../types/common.js";
 import { ErrorModal } from "../common/error-modal.js";
 import { LoadingSpinner } from "../common/loading-spinner.js";
@@ -25,9 +22,7 @@ type DashboardAppProps = {
 /**
  * ダッシュボードアプリケーションのメインレイアウト
  */
-export const DashboardApp: React.FC<DashboardAppProps> = ({
-    initialService,
-}) => {
+export const DashboardApp: React.FC<DashboardAppProps> = ({ initialService }) => {
     const snapshot = useSnapshot(dashboardStore);
     const [isExiting, setIsExiting] = useState(false);
 
@@ -70,36 +65,27 @@ export const DashboardApp: React.FC<DashboardAppProps> = ({
     // 終了中の場合
     if (isExiting) {
         return (
-            <Box
-                alignItems="center"
-                flexDirection="column"
-                justifyContent="center"
-            >
+            <Box alignItems="center" flexDirection="column" justifyContent="center">
                 <Text color="yellow">ダッシュボードを終了しています...</Text>
             </Box>
         );
     }
 
-    const sidebarBorderColor =
-        snapshot.activeFocus === "services" ? "cyan" : "gray";
+    const sidebarBorderColor = snapshot.activeFocus === "services" ? "cyan" : "gray";
     const detailBorderColor = snapshot.activeFocus === "tabs" ? "cyan" : "gray";
-    const shortcutBorderColor =
-        snapshot.activeFocus === "shortcuts" ? "cyan" : "gray";
+    const shortcutBorderColor = snapshot.activeFocus === "shortcuts" ? "cyan" : "gray";
     const shortcutTextColor = shortcutBorderColor === "cyan" ? "cyan" : "gray";
 
     return (
-        <Box
-            flexDirection="column"
-            height={process.stdout.rows || 24}
-            padding={1}
-        >
+        <Box key="dashboard-root" flexDirection="column" height={process.stdout.rows || 24} padding={1}>
             {/* ステータスバナー */}
-            <StatusBanner />
+            <StatusBanner key="status-banner" />
 
             {/* メインコンテンツエリア */}
-            <Box flexDirection="row" flexGrow={1} marginTop={1}>
+            <Box key="main-content" flexDirection="row" flexGrow={1} marginTop={1}>
                 {/* 左サイドバー（サービス一覧） */}
                 <Box
+                    key="sidebar-container"
                     borderColor={sidebarBorderColor}
                     borderStyle="round"
                     paddingX={1}
@@ -111,6 +97,7 @@ export const DashboardApp: React.FC<DashboardAppProps> = ({
 
                 {/* 右詳細パネル */}
                 <Box
+                    key="detail-container"
                     borderColor={detailBorderColor}
                     borderStyle="round"
                     flexGrow={1}
@@ -123,24 +110,21 @@ export const DashboardApp: React.FC<DashboardAppProps> = ({
 
             {/* キーボードショートカットヘルプ */}
             <Box
+                key="shortcuts-help"
                 borderColor={shortcutBorderColor}
                 borderStyle="round"
                 marginTop={1}
                 paddingX={2}
                 paddingY={1}
             >
-                <Text color={shortcutTextColor}>
-                    [v] Vercel [t] Turso [s] Supabase [g] GitHub [q] Quit
-                </Text>
+                <Text color={shortcutTextColor}>[v] Vercel [t] Turso [s] Supabase [g] GitHub [q] Quit</Text>
             </Box>
 
             {/* ローディングオーバーレイ */}
-            {snapshot.isLoading && <LoadingSpinner />}
+            {snapshot.isLoading && <LoadingSpinner key="loading-spinner" />}
 
             {/* エラーモーダル */}
-            {snapshot.errorMessage && (
-                <ErrorModal message={snapshot.errorMessage} />
-            )}
+            {snapshot.errorMessage && <ErrorModal key="error-modal" message={snapshot.errorMessage} />}
         </Box>
     );
 };

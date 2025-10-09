@@ -17,9 +17,7 @@ function findPackageRoot(startPath: string): string {
         const packageJsonPath = path.join(currentPath, "package.json");
         if (fs.existsSync(packageJsonPath)) {
             try {
-                const packageJson = JSON.parse(
-                    fs.readFileSync(packageJsonPath, "utf-8")
-                );
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
                 // fluorite-flakeパッケージかどうか確認
                 if (packageJson.name === "fluorite-flake") {
                     return currentPath;
@@ -39,8 +37,10 @@ function findPackageRoot(startPath: string): string {
 
 /**
  * monorepoテンプレートファイルをコピー
+ * @param config プロジェクト設定
+ * @param pnpmVersion pnpmバージョン（省略時は"latest"）
  */
-export function copyMonorepoTemplates(config: ProjectConfig): void {
+export function copyMonorepoTemplates(config: ProjectConfig, pnpmVersion?: string): void {
     const { directory, name } = config;
 
     // パッケージルートディレクトリを取得
@@ -51,20 +51,21 @@ export function copyMonorepoTemplates(config: ProjectConfig): void {
     // templatesディレクトリのパスを決定
     const templateDir = path.join(packageRoot, "templates", "monorepo");
 
+    // pnpmバージョンを処理（フォールバック: "latest"）
+    const finalPnpmVersion = pnpmVersion || "latest";
+    const majorVersionMatch = finalPnpmVersion.match(/^(\d+)/);
+    const majorVersion = majorVersionMatch ? majorVersionMatch[1] : "10";
+
     // package.json.templateを処理してコピー
-    const packageJsonTemplate = fs.readFileSync(
-        path.join(templateDir, "package.json.template"),
-        "utf-8"
-    );
-    const packageJson = packageJsonTemplate.replace(
-        /\{\{PROJECT_NAME\}\}/g,
-        name
-    );
-    fs.writeFileSync(
-        path.join(directory, "package.json"),
-        packageJson,
-        "utf-8"
-    );
+    const packageJsonTemplate = fs.readFileSync(path.join(templateDir, "package.json.template"), "utf-8");
+
+    // プレースホルダーを置換
+    const packageJson = packageJsonTemplate
+        .replace(/\{\{PROJECT_NAME\}\}/g, name)
+        .replace(/\{\{PNPM_VERSION\}\}/g, finalPnpmVersion)
+        .replace(/\{\{PNPM_MAJOR_VERSION\}\}/g, majorVersion);
+
+    fs.writeFileSync(path.join(directory, "package.json"), packageJson, "utf-8");
 
     // その他のファイルをそのままコピー
     const filesToCopy = [
@@ -73,6 +74,15 @@ export function copyMonorepoTemplates(config: ProjectConfig): void {
         { src: "biome.json.template", dest: "biome.json" },
         { src: "tsconfig.base.json", dest: "tsconfig.base.json" },
     ];
+
+    // .gitignore を個別にコピー（shared/monorepo テンプレートから）
+    const sharedMonorepoTemplateDir = path.join(packageRoot, "templates", "shared", "monorepo");
+    const gitignoreSourcePath = path.join(sharedMonorepoTemplateDir, "gitignore");
+    const gitignoreDestPath = path.join(directory, ".gitignore");
+
+    if (fs.existsSync(gitignoreSourcePath)) {
+        fs.copyFileSync(gitignoreSourcePath, gitignoreDestPath);
+    }
 
     for (const file of filesToCopy) {
         const sourcePath = path.join(templateDir, file.src);

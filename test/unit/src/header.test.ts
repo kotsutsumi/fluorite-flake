@@ -57,15 +57,11 @@ describe("ヘッダーユーティリティ", () => {
 
             // 2回目の呼び出し: アプリ名とバージョンを含むタイトル行
             expect(calls[1][0]).toContain("[CYAN]>[/CYAN]");
-            expect(calls[1][0]).toContain(
-                "[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]"
-            );
+            expect(calls[1][0]).toContain("[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]");
             expect(calls[1][0]).toContain("[GRAY]v0.5.0[/GRAY]");
 
             // 3回目の呼び出し: 適切なインデントでタグライン
-            expect(calls[2][0]).toContain(
-                "  [GRAY]Boilerplate generator CLI for Fluorite[/GRAY]"
-            );
+            expect(calls[2][0]).toContain("  [GRAY]Boilerplate generator CLI for Fluorite[/GRAY]");
 
             // 4回目の呼び出し: アンダーライン（白色のダッシュ）
             expect(calls[3][0]).toContain("[WHITE]");
@@ -89,9 +85,7 @@ describe("ヘッダーユーティリティ", () => {
 
             // タイトル行は色付き要素を含むべき
             expect(titleLine).toContain("[CYAN]>[/CYAN]"); // 矢印
-            expect(titleLine).toContain(
-                "[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]"
-            ); // アプリ名
+            expect(titleLine).toContain("[BOLD_CYAN]Fluorite Flake[/BOLD_CYAN]"); // アプリ名
             expect(titleLine).toContain("[GRAY]v0.5.0[/GRAY]"); // バージョン
 
             // アンダーラインは白色であるべき
@@ -99,9 +93,7 @@ describe("ヘッダーユーティリティ", () => {
             expect(underline).toContain("─");
 
             // タグラインは灰色であるべき
-            expect(tagline).toContain(
-                "[GRAY]Boilerplate generator CLI for Fluorite[/GRAY]"
-            );
+            expect(tagline).toContain("[GRAY]Boilerplate generator CLI for Fluorite[/GRAY]");
         });
 
         it("バージョンを正しくフォーマットするべき", () => {

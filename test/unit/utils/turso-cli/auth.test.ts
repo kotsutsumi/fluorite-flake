@@ -31,9 +31,7 @@ describe("Turso CLI Auth", () => {
     describe("whoami", () => {
         it("ユーザー情報を正しく取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Logged in as: testuser",
@@ -44,17 +42,12 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.username).toBe("testuser");
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "whoami",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "whoami"]);
         });
 
         it("シンプルなユーザー名形式でも正しく取得する", async () => {
             // executeTursoCommandのモックを設定（シンプルなユーザー名のみ）
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "kotsutsumi",
@@ -65,35 +58,26 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.username).toBe("kotsutsumi");
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "whoami",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "whoami"]);
         });
 
         it("パース不可能な出力の場合エラーを投げる", async () => {
             // executeTursoCommandのモックを設定（パース不可能な出力）
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "not logged in",
             });
 
             // エラーが投げられることを検証
-            await expect(whoami()).rejects.toThrow(
-                "Unable to parse whoami output"
-            );
+            await expect(whoami()).rejects.toThrow("Unable to parse whoami output");
         });
     });
 
     describe("getToken", () => {
         it("認証トークンを正しく取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "abc123def456",
@@ -109,9 +93,7 @@ describe("Turso CLI Auth", () => {
 
         it("空の出力の場合、空のトークンを返す", async () => {
             // executeTursoCommandのモックを設定（空の出力）
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "",
@@ -128,9 +110,7 @@ describe("Turso CLI Auth", () => {
     describe("loginHeadless", () => {
         it("ヘッドレスログインコマンドを正しく実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Login successful",
@@ -141,20 +121,14 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "login",
-                "--headless",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "login", "--headless"]);
         });
     });
 
     describe("login", () => {
         it("通常のログインコマンドを正しく実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Login successful",
@@ -172,9 +146,7 @@ describe("Turso CLI Auth", () => {
     describe("logout", () => {
         it("通常のログアウトコマンドを正しく実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Logout successful",
@@ -185,17 +157,12 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "logout",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "logout"]);
         });
 
         it("全セッションログアウトフラグが指定された場合、--allオプションを追加する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "All sessions logged out",
@@ -206,20 +173,14 @@ describe("Turso CLI Auth", () => {
 
             // --allオプションが追加されることを検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "logout",
-                "--all",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "logout", "--all"]);
         });
     });
 
     describe("signup", () => {
         it("通常のサインアップコマンドを正しく実行する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Signup successful",
@@ -230,17 +191,12 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "signup",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "signup"]);
         });
 
         it("ヘッドレスフラグが指定された場合、--headlessオプションを追加する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Headless signup successful",
@@ -251,20 +207,14 @@ describe("Turso CLI Auth", () => {
 
             // --headlessオプションが追加されることを検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "signup",
-                "--headless",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "signup", "--headless"]);
         });
     });
 
     describe("API Token管理", () => {
         it("listApiTokens - APIトークン一覧を取得する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "token1\ntoken2\ntoken3",
@@ -275,18 +225,12 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "api-tokens",
-                "list",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "api-tokens", "list"]);
         });
 
         it("createApiToken - APIトークンを作成する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Token created: my-token",
@@ -297,19 +241,12 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "api-tokens",
-                "mint",
-                "my-token",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "api-tokens", "mint", "my-token"]);
         });
 
         it("revokeApiToken - APIトークンを無効化する", async () => {
             // executeTursoCommandのモックを設定
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Token revoked: my-token",
@@ -320,21 +257,14 @@ describe("Turso CLI Auth", () => {
 
             // 結果を検証
             expect(result.success).toBe(true);
-            expect(executeTursoCommand).toHaveBeenCalledWith([
-                "auth",
-                "api-tokens",
-                "revoke",
-                "my-token",
-            ]);
+            expect(executeTursoCommand).toHaveBeenCalledWith(["auth", "api-tokens", "revoke", "my-token"]);
         });
     });
 
     describe("isAuthenticated", () => {
         it("whoamiが成功した場合、trueを返す", async () => {
             // executeTursoCommandのモックを設定（成功）
-            const { executeTursoCommand } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { executeTursoCommand } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(executeTursoCommand).mockResolvedValue({
                 success: true,
                 stdout: "Logged in as: testuser",
@@ -349,9 +279,7 @@ describe("Turso CLI Auth", () => {
 
         it("whoamiが失敗した場合、falseを返す", async () => {
             // throwOnErrorがエラーを投げるようにモック設定
-            const { throwOnError } = await import(
-                "../../../../src/utils/turso-cli/executor.js"
-            );
+            const { throwOnError } = await import("../../../../src/utils/turso-cli/executor.js");
             vi.mocked(throwOnError).mockImplementation(() => {
                 throw new Error("Not authenticated");
             });

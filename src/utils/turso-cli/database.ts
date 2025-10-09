@@ -2,12 +2,7 @@
  * Turso CLI データベース関連ユーティリティ
  */
 import { executeTursoCommand, throwOnError } from "./executor.js";
-import type {
-    CommandResult,
-    DatabaseCreateOptions,
-    DatabaseInfo,
-    DatabaseToken,
-} from "./types.js";
+import type { CommandResult, DatabaseCreateOptions, DatabaseInfo, DatabaseToken } from "./types.js";
 
 /**
  * データベース一覧を取得
@@ -22,17 +17,12 @@ export async function listDatabases(group?: string): Promise<DatabaseInfo[]> {
     throwOnError(result, "turso db list");
 
     // 出力をパースしてデータベース一覧を作成
-    const lines =
-        result.stdout?.split("\n").filter((line) => line.trim()) || [];
+    const lines = result.stdout?.split("\n").filter((line) => line.trim()) || [];
     const databases: DatabaseInfo[] = [];
 
     for (const line of lines) {
         // ヘッダー行をスキップ (NAME, GROUP, URLを含む行)
-        if (
-            line.includes("NAME") &&
-            line.includes("GROUP") &&
-            line.includes("URL")
-        ) {
+        if (line.includes("NAME") && line.includes("GROUP") && line.includes("URL")) {
             continue;
         }
 
@@ -67,10 +57,7 @@ export async function listDatabases(group?: string): Promise<DatabaseInfo[]> {
 /**
  * データベースを作成
  */
-export async function createDatabase(
-    name: string,
-    options: DatabaseCreateOptions = {}
-): Promise<CommandResult> {
+export async function createDatabase(name: string, options: DatabaseCreateOptions = {}): Promise<CommandResult> {
     const args = ["db", "create", name];
 
     // オプションの追加
@@ -108,10 +95,7 @@ export async function createDatabase(
 /**
  * データベースを削除
  */
-export async function destroyDatabase(
-    name: string,
-    skipConfirmation = false
-): Promise<CommandResult> {
+export async function destroyDatabase(name: string, skipConfirmation = false): Promise<CommandResult> {
     const args = ["db", "destroy", name];
     if (skipConfirmation) {
         args.push("--yes");
@@ -148,10 +132,7 @@ export async function showDatabase(name: string): Promise<DatabaseInfo> {
 /**
  * データベースのURL情報を取得
  */
-export async function getDatabaseUrl(
-    name: string,
-    httpUrl = false
-): Promise<string> {
+export async function getDatabaseUrl(name: string, httpUrl = false): Promise<string> {
     const args = ["db", "show", name];
     if (httpUrl) {
         args.push("--http-url");
@@ -168,9 +149,7 @@ export async function getDatabaseUrl(
 /**
  * 利用可能なロケーション一覧を取得
  */
-export async function getLocations(
-    showLatencies = false
-): Promise<CommandResult> {
+export async function getLocations(showLatencies = false): Promise<CommandResult> {
     const args = ["db", "locations"];
     if (showLatencies) {
         args.push("--show-latencies");
@@ -227,10 +206,7 @@ export async function inspectDatabase(
 /**
  * データベースをインポート
  */
-export async function importDatabase(
-    file: string,
-    group?: string
-): Promise<CommandResult> {
+export async function importDatabase(file: string, group?: string): Promise<CommandResult> {
     const args = ["db", "import", file];
     if (group) {
         args.push("--group", group);
@@ -292,10 +268,7 @@ export async function createDatabaseToken(
 /**
  * データベーストークンを無効化
  */
-export async function invalidateDatabaseTokens(
-    name: string,
-    skipConfirmation = false
-): Promise<CommandResult> {
+export async function invalidateDatabaseTokens(name: string, skipConfirmation = false): Promise<CommandResult> {
     const args = ["db", "tokens", "invalidate", name];
     if (skipConfirmation) {
         args.push("--yes");

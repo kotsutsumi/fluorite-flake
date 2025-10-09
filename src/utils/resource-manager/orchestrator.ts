@@ -7,12 +7,7 @@ import chalk from "chalk";
 import { executeSupabaseCommand } from "../supabase-cli/index.js";
 import { executeTursoCommand } from "../turso-cli/index.js";
 import { VercelCLI } from "../vercel-cli/index.js";
-import type {
-    CleanupPlan,
-    CleanupResult,
-    DeletionStep,
-    DeletionStepResult,
-} from "./types.js";
+import type { CleanupPlan, CleanupResult, DeletionStep, DeletionStepResult } from "./types.js";
 
 /**
  * 削除処理を調整するクラス
@@ -35,31 +30,21 @@ export class CleanupOrchestrator {
             };
         }
 
-        console.log(
-            chalk.blue(`\n🚀 ${plan.steps.length} 件の削除を開始します`)
-        );
+        console.log(chalk.blue(`\n🚀 ${plan.steps.length} 件の削除を開始します`));
 
         let rollbackPerformed = false;
         for (const step of plan.steps) {
-            console.log(
-                `\n${this.getStepIcon(step.type)} ${step.description}を削除中...`
-            );
+            console.log(`\n${this.getStepIcon(step.type)} ${step.description}を削除中...`);
             const result = await this.executeStep(step);
             results.push(result);
 
             if (result.success) {
-                console.log(
-                    chalk.green(`✅ ${step.description}の削除が完了しました`)
-                );
+                console.log(chalk.green(`✅ ${step.description}の削除が完了しました`));
                 this.displayProgress(results.length, plan.steps.length);
                 continue;
             }
 
-            console.error(
-                chalk.red(
-                    `❌ ${step.description}の削除に失敗しました: ${result.error ?? "不明なエラー"}`
-                )
-            );
+            console.error(chalk.red(`❌ ${step.description}の削除に失敗しました: ${result.error ?? "不明なエラー"}`));
             rollbackPerformed = await this.executeRollback(results);
             break;
         }
@@ -96,10 +81,7 @@ export class CleanupOrchestrator {
     }
 
     /** Vercel プロジェクト削除 */
-    private async deleteVercelProject(
-        step: DeletionStep,
-        startedAt: number
-    ): Promise<DeletionStepResult> {
+    private async deleteVercelProject(step: DeletionStep, startedAt: number): Promise<DeletionStepResult> {
         const projectId = step.parameters.projectId as string | undefined;
         if (!projectId) {
             throw new Error("Vercel プロジェクト ID が取得できませんでした");
@@ -119,28 +101,16 @@ export class CleanupOrchestrator {
     }
 
     /** Turso データベース削除 */
-    private async deleteTursoDatabase(
-        step: DeletionStep,
-        startedAt: number
-    ): Promise<DeletionStepResult> {
+    private async deleteTursoDatabase(step: DeletionStep, startedAt: number): Promise<DeletionStepResult> {
         const databaseName = step.parameters.databaseName as string | undefined;
         if (!databaseName) {
             throw new Error("Turso データベース名が取得できませんでした");
         }
 
-        const result = await executeTursoCommand([
-            "db",
-            "destroy",
-            databaseName,
-            "--yes",
-        ]);
+        const result = await executeTursoCommand(["db", "destroy", databaseName, "--yes"]);
 
         if (!result.success) {
-            throw new Error(
-                result.stderr ||
-                    result.error ||
-                    "Turso CLI がエラーを返しました"
-            );
+            throw new Error(result.stderr || result.error || "Turso CLI がエラーを返しました");
         }
 
         return {
@@ -152,31 +122,16 @@ export class CleanupOrchestrator {
     }
 
     /** Supabase プロジェクト削除 */
-    private async deleteSupabaseProject(
-        step: DeletionStep,
-        startedAt: number
-    ): Promise<DeletionStepResult> {
+    private async deleteSupabaseProject(step: DeletionStep, startedAt: number): Promise<DeletionStepResult> {
         const projectRef = step.parameters.projectRef as string | undefined;
         if (!projectRef) {
-            throw new Error(
-                "Supabase プロジェクト参照 ID が取得できませんでした"
-            );
+            throw new Error("Supabase プロジェクト参照 ID が取得できませんでした");
         }
 
-        const result = await executeSupabaseCommand([
-            "projects",
-            "delete",
-            projectRef,
-            "--yes",
-            "--non-interactive",
-        ]);
+        const result = await executeSupabaseCommand(["projects", "delete", projectRef, "--yes", "--non-interactive"]);
 
         if (result.exitCode !== 0 || result.error) {
-            throw new Error(
-                result.stderr ||
-                    result.error?.message ||
-                    "Supabase CLI がエラーを返しました"
-            );
+            throw new Error(result.stderr || result.error?.message || "Supabase CLI がエラーを返しました");
         }
 
         return {
@@ -188,10 +143,7 @@ export class CleanupOrchestrator {
     }
 
     /** Vercel Blob ストア削除 */
-    private async deleteBlobStore(
-        step: DeletionStep,
-        startedAt: number
-    ): Promise<DeletionStepResult> {
+    private async deleteBlobStore(step: DeletionStep, startedAt: number): Promise<DeletionStepResult> {
         const storeId = step.parameters.storeId as string | undefined;
         if (!storeId) {
             throw new Error("Blob ストア ID が取得できませんでした");
@@ -215,9 +167,7 @@ export class CleanupOrchestrator {
     }
 
     /** 失敗時のロールバックメッセージ表示 */
-    private async executeRollback(
-        results: DeletionStepResult[]
-    ): Promise<boolean> {
+    private async executeRollback(results: DeletionStepResult[]): Promise<boolean> {
         const successful = results.filter((result) => result.success);
         if (successful.length === 0) {
             return false;
@@ -226,16 +176,10 @@ export class CleanupOrchestrator {
         console.log(chalk.yellow("\n🔄 ロールバック手順の確認が必要です"));
         for (const result of successful.reverse()) {
             console.log(
-                chalk.yellow(
-                    `  • ${result.step.description} を再作成する必要があります (ID: ${result.step.id})`
-                )
+                chalk.yellow(`  • ${result.step.description} を再作成する必要があります (ID: ${result.step.id})`)
             );
         }
-        console.log(
-            chalk.gray(
-                "自動ロールバックは実装されていません。各サービスで手動復旧を行ってください。"
-            )
-        );
+        console.log(chalk.gray("自動ロールバックは実装されていません。各サービスで手動復旧を行ってください。"));
         return false;
     }
 
@@ -243,9 +187,7 @@ export class CleanupOrchestrator {
     private displayProgress(completed: number, total: number): void {
         const percentage = Math.floor((completed / total) * 100);
         const bar = this.createProgressBar(percentage);
-        console.log(
-            chalk.gray(`進捗: ${bar} ${completed}/${total} (${percentage}%)`)
-        );
+        console.log(chalk.gray(`進捗: ${bar} ${completed}/${total} (${percentage}%)`));
     }
 
     /** プログレスバーを生成 */
@@ -261,18 +203,14 @@ export class CleanupOrchestrator {
         rollbackPerformed: boolean,
         totalDuration: number
     ): CleanupResult {
-        const completedSteps = results.filter(
-            (result) => result.success
-        ).length;
+        const completedSteps = results.filter((result) => result.success).length;
         const failedSteps = results.filter((result) => !result.success).length;
         const success = failedSteps === 0;
 
         console.log(chalk.blue("\n📊 削除サマリー"));
         console.log(`実行時間: ${Math.round(totalDuration / 1000)} 秒`);
         console.log(`成功: ${chalk.green(completedSteps)} 件`);
-        console.log(
-            `失敗: ${failedSteps > 0 ? chalk.red(failedSteps) : chalk.gray(failedSteps)} 件`
-        );
+        console.log(`失敗: ${failedSteps > 0 ? chalk.red(failedSteps) : chalk.gray(failedSteps)} 件`);
 
         if (success) {
             console.log(chalk.green("\n✅ 全てのリソースが削除されました"));
@@ -291,9 +229,7 @@ export class CleanupOrchestrator {
             stepResults: results,
             rollbackPerformed,
             totalDuration,
-            error: success
-                ? undefined
-                : results.find((result) => !result.success)?.error,
+            error: success ? undefined : results.find((result) => !result.success)?.error,
         };
     }
 

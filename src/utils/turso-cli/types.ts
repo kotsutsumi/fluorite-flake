@@ -94,12 +94,7 @@ export class TursoCliError extends Error {
     exitCode?: number;
     stderr?: string;
 
-    constructor(
-        message: string,
-        command: string,
-        exitCode?: number,
-        stderr?: string
-    ) {
+    constructor(message: string, command: string, exitCode?: number, stderr?: string) {
         super(message);
         this.name = "TursoCliError";
         this.command = command;

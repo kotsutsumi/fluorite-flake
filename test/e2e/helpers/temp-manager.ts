@@ -28,9 +28,7 @@ const globalCleanupList: Set<string> = new Set();
 /**
  * 一時ディレクトリを作成する
  */
-export async function createTempDirectory(
-    options: TempDirectoryOptions = {}
-): Promise<TempDirectory> {
+export async function createTempDirectory(options: TempDirectoryOptions = {}): Promise<TempDirectory> {
     const { prefix = "fluorite-e2e-", suffix = "", cleanup = true } = options;
 
     // ランダムな識別子を生成
@@ -54,10 +52,7 @@ export async function createTempDirectory(
                 await fs.rm(tempPath, { recursive: true, force: true });
                 globalCleanupList.delete(tempPath);
             } catch (error) {
-                console.warn(
-                    `Failed to cleanup temp directory: ${tempPath}`,
-                    error
-                );
+                console.warn(`Failed to cleanup temp directory: ${tempPath}`, error);
             }
         },
 
@@ -86,11 +81,7 @@ export async function createTempDirectory(
 /**
  * 一時ディレクトリ内にファイルを作成する
  */
-export async function createTempFile(
-    tempDir: string,
-    fileName: string,
-    content: string
-): Promise<string> {
+export async function createTempFile(tempDir: string, fileName: string, content: string): Promise<string> {
     const filePath = path.join(tempDir, fileName);
     const dir = path.dirname(filePath);
 
@@ -106,10 +97,7 @@ export async function createTempFile(
 /**
  * 一時ディレクトリ内のファイルを読み取る
  */
-export async function readTempFile(
-    tempDir: string,
-    fileName: string
-): Promise<string> {
+export async function readTempFile(tempDir: string, fileName: string): Promise<string> {
     const filePath = path.join(tempDir, fileName);
     return await fs.readFile(filePath, "utf8");
 }
@@ -117,10 +105,7 @@ export async function readTempFile(
 /**
  * 一時ディレクトリ内のファイル存在確認
  */
-export async function tempFileExists(
-    tempDir: string,
-    fileName: string
-): Promise<boolean> {
+export async function tempFileExists(tempDir: string, fileName: string): Promise<boolean> {
     try {
         const filePath = path.join(tempDir, fileName);
         await fs.access(filePath);
@@ -133,10 +118,7 @@ export async function tempFileExists(
 /**
  * 一時ディレクトリ内のディレクトリ作成
  */
-export async function createTempSubdir(
-    tempDir: string,
-    subdirName: string
-): Promise<string> {
+export async function createTempSubdir(tempDir: string, subdirName: string): Promise<string> {
     const subdirPath = path.join(tempDir, subdirName);
     await fs.mkdir(subdirPath, { recursive: true });
     return subdirPath;
@@ -145,10 +127,7 @@ export async function createTempSubdir(
 /**
  * 一時ディレクトリの内容をリスト表示
  */
-export async function listTempContents(
-    tempDir: string,
-    recursive = false
-): Promise<string[]> {
+export async function listTempContents(tempDir: string, recursive = false): Promise<string[]> {
     try {
         if (!recursive) {
             return await fs.readdir(tempDir);
@@ -209,19 +188,14 @@ export async function getTempDirectorySize(tempDir: string): Promise<number> {
  * 全ての一時ディレクトリをクリーンアップ
  */
 export async function cleanupAllTempDirectories(): Promise<void> {
-    const cleanupPromises = Array.from(globalCleanupList).map(
-        async (tempPath) => {
-            try {
-                await fs.rm(tempPath, { recursive: true, force: true });
-                globalCleanupList.delete(tempPath);
-            } catch (error) {
-                console.warn(
-                    `Failed to cleanup temp directory: ${tempPath}`,
-                    error
-                );
-            }
+    const cleanupPromises = Array.from(globalCleanupList).map(async (tempPath) => {
+        try {
+            await fs.rm(tempPath, { recursive: true, force: true });
+            globalCleanupList.delete(tempPath);
+        } catch (error) {
+            console.warn(`Failed to cleanup temp directory: ${tempPath}`, error);
         }
-    );
+    });
 
     await Promise.all(cleanupPromises);
 }
@@ -232,10 +206,7 @@ export async function cleanupAllTempDirectories(): Promise<void> {
 export class TempDirectoryManager {
     private readonly directories: Map<string, TempDirectory> = new Map();
 
-    async create(
-        name: string,
-        options: TempDirectoryOptions = {}
-    ): Promise<TempDirectory> {
+    async create(name: string, options: TempDirectoryOptions = {}): Promise<TempDirectory> {
         const tempDir = await createTempDirectory(options);
         this.directories.set(name, tempDir);
         return tempDir;
@@ -254,9 +225,7 @@ export class TempDirectoryManager {
             }
         } else {
             // 全てクリーンアップ
-            const cleanupPromises = Array.from(this.directories.values()).map(
-                (tempDir) => tempDir.cleanup()
-            );
+            const cleanupPromises = Array.from(this.directories.values()).map((tempDir) => tempDir.cleanup());
             await Promise.all(cleanupPromises);
             this.directories.clear();
         }

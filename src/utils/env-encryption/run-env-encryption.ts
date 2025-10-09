@@ -20,19 +20,14 @@ export type EncryptionResult = {
 /**
  * 環境変数暗号化を実行
  */
-export async function runEnvEncryption(
-    appDirectory: string,
-    isMonorepo = false
-): Promise<EncryptionResult> {
+export async function runEnvEncryption(appDirectory: string, isMonorepo = false): Promise<EncryptionResult> {
     const messages = getMessages();
 
     try {
         console.log(messages.create.envEncryption.processing);
 
         // モノレポかどうかでコマンドを分岐
-        const args = isMonorepo
-            ? ["--filter", appDirectory, "env:encrypt"]
-            : ["env:encrypt"];
+        const args = isMonorepo ? ["--filter", appDirectory, "env:encrypt"] : ["env:encrypt"];
 
         await execa("pnpm", args, {
             cwd: isMonorepo ? process.cwd() : appDirectory,

@@ -4,6 +4,7 @@
 
 // Phase 3で実装完了したジェネレーター
 export { generateExpoGraphQL } from "./expo-graphql.js";
+export { generateExpoFullstackAdmin } from "./expo-fullstack-admin.js";
 // Phase 2で実装完了したジェネレーター
 export { generateFullStackAdmin } from "./nextjs-fullstack-admin.js";
 

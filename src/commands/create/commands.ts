@@ -7,30 +7,25 @@ import { defineCommand } from "citty";
 
 import { debugLog } from "../../debug.js";
 import { getMessages } from "../../i18n.js";
-import { validatePnpm } from "../../utils/pnpm-validator/index.js";
+import { validatePnpmWithDetails } from "../../utils/pnpm-validator/index.js";
 import {
     confirmDirectoryOverwrite,
     promptForDatabase,
+    promptForDocsGeneration,
     promptForProjectName,
 } from "../../utils/user-input/index.js";
 import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
 import { createProjectConfig } from "./config.js";
+import type { ConfirmationInputs } from "./confirmation/index.js";
+import { displayConfirmation } from "./confirmation/index.js";
 import { collectDatabaseConfig } from "./database-provisioning/prompts.js";
-import { DatabaseProvisioningService } from "./database-provisioning/service.js";
-import type {
-    DatabaseCredentials,
-    DatabaseProvisioningConfig,
-} from "./database-provisioning/types.js";
+import type { DatabaseCredentials, DatabaseProvisioningConfig } from "./database-provisioning/types.js";
+import { executeProvisioning } from "./execution/index.js";
 import { generateProject } from "./generator.js";
 import { collectBlobConfiguration } from "./prompts/blob-prompts.js";
 import { selectProjectTemplate } from "./template-selector/index.js";
 import type { DatabaseType, ProjectType } from "./types.js";
-import {
-    hasDatabaseFeature,
-    showInvalidDatabaseError,
-    validateDatabase,
-    validateProjectType,
-} from "./validators.js";
+import { hasDatabaseFeature, showInvalidDatabaseError, validateDatabase, validateProjectType } from "./validators.js";
 
 const ADVANCED_TEMPLATES: Partial<Record<ProjectType, readonly string[]>> = {
     nextjs: ["fullstack-admin"],
@@ -44,25 +39,17 @@ const initialMessages = getMessages();
 /**
  * Tursoクラウドデータベースにテーブルを作成する
  */
-async function createTursoTables(
-    config: any,
-    credentials: DatabaseCredentials
-): Promise<void> {
+async function createTursoTables(config: any, credentials: DatabaseCredentials): Promise<void> {
     try {
-        const { createTablesInTursoDatabases, seedTursoDatabases } =
-            await import("../../utils/turso-cli/provisioning.js");
+        const { createTablesInTursoDatabases, seedTursoDatabases } = await import(
+            "../../utils/turso-cli/provisioning.js"
+        );
 
         // アプリケーションのディレクトリを計算
-        const appDirectory = config.monorepo
-            ? join(config.directory, "apps", "web")
-            : config.directory;
+        const appDirectory = config.monorepo ? join(config.directory, "apps", "web") : config.directory;
 
         // 各環境のTursoクラウドデータベースにテーブルを作成
-        await createTablesInTursoDatabases(appDirectory, credentials, [
-            "dev",
-            "staging",
-            "prod",
-        ]);
+        await createTablesInTursoDatabases(appDirectory, credentials, ["dev", "staging", "prod"]);
 
         // dev環境とstaging環境にシードデータを投入
         await seedTursoDatabases(appDirectory, credentials, ["dev", "staging"]);
@@ -83,9 +70,8 @@ function hasExplicitMonorepoFlag(rawArgs: unknown): boolean {
     const rawArgList = Array.isArray(rawArgs) ? rawArgs : [];
     return rawArgList.some(
         (arg) =>
-            ["--monorepo", "--no-monorepo", "-m"].some(
-                (flag) => arg === flag || arg.startsWith(`${flag}=`)
-            ) || arg.startsWith("--monorepo=")
+            ["--monorepo", "--no-monorepo", "-m"].some((flag) => arg === flag || arg.startsWith(`${flag}=`)) ||
+            arg.startsWith("--monorepo=")
     );
 }
 
@@ -116,104 +102,121 @@ async function determineDatabaseSelection(
 }
 
 /**
- * データベース選択とプロビジョニング設定を処理
+ * 🔄 新しい3段階フロー: 入力収集のみ（副作用なし）
+ * データベースとBlob設定を収集するが、実際のプロビジョニングは行わない
  */
-async function handleDatabaseAndBlobSetup(
+async function collectDatabaseAndBlobConfiguration(
     args: { database?: string },
     template: string | undefined,
     projectName: string
 ): Promise<{
     database: DatabaseType | undefined;
     databaseConfig: DatabaseProvisioningConfig | undefined;
-    databaseCredentials: DatabaseCredentials | undefined;
     blobConfig: BlobConfiguration | undefined;
 }> {
-    console.log("🚀 handleDatabaseAndBlobSetup が呼び出されました");
-    console.log(`  template: "${template}"`);
+    console.log("📋 設定を収集中... (プロビジョニングは確認後に実行されます)");
+
     // データベース選択の決定
     const database = await determineDatabaseSelection(args, template);
 
     let databaseConfig: DatabaseProvisioningConfig | undefined;
-    let databaseCredentials: DatabaseCredentials | undefined;
 
-    // データベースが選択された場合、プロビジョニング設定を収集
+    // データベースが選択された場合、設定のみを収集（プロビジョニングは後で実行）
     if (database) {
-        try {
-            databaseConfig = await collectDatabaseConfig(projectName, database);
-
-            // プロビジョニングをスキップする場合以外は、実際にプロビジョニングを実行
-            if (!databaseConfig.options.skipProvisioning) {
-                const provisioningService = new DatabaseProvisioningService();
-                const result =
-                    await provisioningService.provision(databaseConfig);
-
-                if (!result.success) {
-                    console.error(
-                        `❌ データベースプロビジョニングに失敗しました: ${result.error}`
-                    );
-                    process.exit(1);
+        // SQLite の場合はプロビジョニング不要なのでスキップ
+        if (database === "sqlite") {
+            console.log("✅ ローカル SQLite を選択しました（プロビジョニング不要）");
+            databaseConfig = undefined;
+        } else {
+            try {
+                databaseConfig = await collectDatabaseConfig(projectName, database);
+                console.log(`✅ データベース設定を収集しました (${database})`);
+            } catch (error) {
+                if (error instanceof Error && error.message === "DATABASE_PROVISIONING_CANCELLED") {
+                    console.warn("⚠️ データベース設定をキャンセルしました。処理を終了します。");
+                    process.exit(0);
                 }
 
-                databaseCredentials = result.credentials;
-
-                console.log("✅ データベースプロビジョニングが完了しました");
-                if (result.databases) {
-                    for (const db of result.databases) {
-                        console.log(
-                            `  - ${db.environment}: ${db.name} (${db.status})`
-                        );
-                    }
-                }
-            }
-        } catch (error) {
-            if (
-                error instanceof Error &&
-                error.message === "DATABASE_PROVISIONING_CANCELLED"
-            ) {
-                console.warn(
-                    "⚠️ データベース設定をキャンセルしました。処理を終了します。"
+                console.error(
+                    `❌ データベース設定収集に失敗しました: ${error instanceof Error ? error.message : error}`
                 );
-                process.exit(0);
+                process.exit(1);
             }
-
-            console.error(
-                `❌ データベース設定収集に失敗しました: ${
-                    error instanceof Error ? error.message : error
-                }`
-            );
-            process.exit(1);
         }
     }
 
     // Blob設定の収集（Next.jsフルスタックテンプレートの場合のみ）
     let blobConfig: BlobConfiguration | undefined;
-    const shouldConfigureBlob = (
-        projectType: string,
-        templateName: string | undefined
-    ) => projectType === "nextjs" && templateName === "fullstack-admin";
-
-    // デバッグ情報を出力
-    console.log("🔍 Blob設定デバッグ情報:");
-    console.log(`  template: "${template}"`);
-    console.log(
-        `  shouldConfigureBlob: ${shouldConfigureBlob("nextjs", template)}`
-    );
+    const shouldConfigureBlob = (projectType: string, templateName: string | undefined) =>
+        projectType === "nextjs" && templateName === "fullstack-admin";
 
     if (template && shouldConfigureBlob("nextjs", template)) {
         try {
             const config = await collectBlobConfiguration(projectName);
             blobConfig = config || undefined;
             if (blobConfig) {
-                console.log(`✅ Vercel Blob設定完了: ${blobConfig.storeName}`);
+                console.log(`✅ Vercel Blob設定を収集しました: ${blobConfig.storeName}`);
             }
         } catch (error) {
-            console.warn(
-                `⚠️ Vercel Blob設定をスキップします: ${error instanceof Error ? error.message : error}`
-            );
+            console.warn(`⚠️ Vercel Blob設定をスキップします: ${error instanceof Error ? error.message : error}`);
         }
     }
 
-    return { database, databaseConfig, databaseCredentials, blobConfig };
+    return { database, databaseConfig, blobConfig };
+}
+
+/**
+ * ユーザー入力の収集（副作用なし）
+ */
+async function collectUserInputs(
+    args: {
+        name?: string;
+        type?: string;
+        template?: string;
+        database?: string;
+        dir?: string;
+        simple?: boolean;
+        monorepo?: boolean;
+    },
+    rawArgs: unknown
+): Promise<ConfirmationInputs> {
+    // プロジェクト名の取得
+    let projectName = args.name;
+    if (!projectName) {
+        projectName = await promptForProjectName();
+    }
+
+    // プロジェクトタイプとテンプレートの決定
+    const hasExplicitMonorepo = hasExplicitMonorepoFlag(rawArgs);
+    const { projectType, template, monorepoPreference } = await determineProjectTypeAndTemplate(
+        args,
+        hasExplicitMonorepo
+    );
+
+    // データベースとBlob設定の収集（プロビジョニングなし）
+    const { database, databaseConfig, blobConfig } = await collectDatabaseAndBlobConfiguration(
+        args,
+        template,
+        projectName
+    );
+
+    // ドキュメント生成の選択
+    const shouldGenerateDocs = await promptForDocsGeneration();
+
+    // モノレポ設定の最終決定
+    const finalMonorepoPreference = args.simple ? false : (monorepoPreference ?? args.monorepo ?? true);
+
+    return {
+        projectName,
+        projectType,
+        template,
+        database,
+        databaseConfig,
+        blobConfig,
+        monorepoPreference: finalMonorepoPreference,
+        outputDirectory: args.dir,
+        shouldGenerateDocs,
+    };
 }
 
 /**
@@ -244,10 +247,7 @@ async function determineProjectTypeAndTemplate(
 
     const shouldPromptForSelection = !(projectType && template);
     if (shouldPromptForSelection) {
-        const initialProjectType =
-            projectType && validateProjectType(projectType)
-                ? projectType
-                : undefined;
+        const initialProjectType = projectType && validateProjectType(projectType) ? projectType : undefined;
 
         const selection = await selectProjectTemplate(initialProjectType, {
             templateFilter: ({ projectType: selectedType, templateKey }) => {
@@ -266,10 +266,7 @@ async function determineProjectTypeAndTemplate(
         projectType = selection.projectType;
         template = selection.template;
 
-        if (
-            !(args.simple || hasExplicitMonorepo) &&
-            monorepoPreference === undefined
-        ) {
+        if (!(args.simple || hasExplicitMonorepo) && monorepoPreference === undefined) {
             monorepoPreference = selection.useMonorepo;
         }
     }
@@ -294,14 +291,14 @@ type CreateAndValidateConfigOptions = {
     databaseConfig?: DatabaseProvisioningConfig;
     databaseCredentials?: DatabaseCredentials;
     blobConfig?: BlobConfiguration;
+    pnpmVersion?: string;
+    shouldGenerateDocs?: boolean;
 };
 
 /**
  * プロジェクト設定を作成し検証
  */
-async function createAndValidateConfig(
-    options: CreateAndValidateConfigOptions
-) {
+async function createAndValidateConfig(options: CreateAndValidateConfigOptions) {
     const {
         projectType,
         projectName,
@@ -312,6 +309,8 @@ async function createAndValidateConfig(
         databaseConfig,
         databaseCredentials,
         blobConfig,
+        pnpmVersion,
+        shouldGenerateDocs,
     } = options;
     const config = createProjectConfig(projectType, {
         name: projectName,
@@ -334,6 +333,12 @@ async function createAndValidateConfig(
     }
     if (blobConfig) {
         config.blobConfig = blobConfig;
+    }
+    if (pnpmVersion) {
+        config.pnpmVersion = pnpmVersion;
+    }
+    if (shouldGenerateDocs !== undefined) {
+        config.shouldGenerateDocs = shouldGenerateDocs;
     }
 
     if (!config.force) {
@@ -404,53 +409,76 @@ export const createCommand = defineCommand({
         // monorepoモードの場合はpnpmバリデーションを実行
         const resolvedProjectType = args.type ?? "nextjs";
         const isMonorepoMode = args.simple ? false : (args.monorepo ?? true);
+        let pnpmVersion: string | undefined;
         if (isMonorepoMode) {
-            const isPnpmValid = validatePnpm();
-            if (!isPnpmValid) {
+            const pnpmValidation = validatePnpmWithDetails();
+            if (!pnpmValidation.isValid) {
                 process.exit(1);
             }
+            pnpmVersion = pnpmValidation.version;
         }
 
-        // プロジェクト名が指定されていない場合は入力を促進
-        let projectName = args.name;
-        if (!projectName) {
-            projectName = await promptForProjectName();
+        // 🔄 新しい3段階フロー: 1. 入力収集（副作用なし）
+        const inputs = await collectUserInputs(
+            {
+                ...args,
+                type: resolvedProjectType,
+                monorepo: isMonorepoMode,
+            },
+            []
+        );
+
+        // pnpmバリデーション（モノレポモードの場合）
+        if (inputs.monorepoPreference && !pnpmVersion) {
+            const pnpmValidation = validatePnpmWithDetails();
+            if (!pnpmValidation.isValid) {
+                process.exit(1);
+            }
+            pnpmVersion = pnpmValidation.version;
         }
 
-        // データベース選択とプロビジョニング設定の処理
-        const { database, databaseConfig, databaseCredentials, blobConfig } =
-            await handleDatabaseAndBlobSetup(args, args.template, projectName);
+        // 🔄 新しい3段階フロー: 2. 確認フェーズ
+        const confirmed = await displayConfirmation(inputs);
+        if (!confirmed) {
+            process.exit(0); // ユーザーがキャンセル
+        }
 
-        // プロジェクト設定を作成
-        const config = createProjectConfig(resolvedProjectType, {
-            name: projectName,
-            template: args.template,
-            dir: args.dir,
-            force: args.force,
-            monorepo: isMonorepoMode,
-            database,
+        // 🔄 新しい3段階フロー: 3. 実行フェーズ（副作用あり）
+        let databaseCredentials: DatabaseCredentials | undefined;
+        let database: DatabaseType | undefined;
+
+        // プロビジョニング実行
+        if (inputs.databaseConfig) {
+            console.log("🚀 プロビジョニングを実行しています...");
+            const result = await executeProvisioning(inputs);
+
+            if (!result.success) {
+                console.error(`❌ プロビジョニングに失敗しました: ${result.error}`);
+                process.exit(1);
+            }
+
+            databaseCredentials = result.databaseCredentials;
+            database = inputs.databaseConfig.type;
+        }
+
+        // プロジェクト設定の作成と検証
+        const config = await createAndValidateConfig({
+            projectType: inputs.projectType,
+            projectName: inputs.projectName,
+            template: inputs.template,
+            args,
+            isMonorepoMode: inputs.monorepoPreference,
+            database: database ?? inputs.database, // SQLite経路でもdatabaseが設定されるよう修正
+            databaseConfig: inputs.databaseConfig,
+            databaseCredentials,
+            blobConfig: inputs.blobConfig,
+            pnpmVersion,
+            shouldGenerateDocs: inputs.shouldGenerateDocs,
         });
 
-        // 設定が無効な場合はエラー終了
-        if (!config) {
-            process.exit(1);
-        }
-
-        if (databaseConfig) {
-            config.databaseConfig = databaseConfig;
-        }
-        if (databaseCredentials) {
-            config.databaseCredentials = databaseCredentials;
-        }
-        if (blobConfig) {
-            config.blobConfig = blobConfig;
-        }
-
         // 既存ディレクトリの確認（--forceフラグがない場合）
-        if (!config.force) {
-            const shouldProceed = await confirmDirectoryOverwrite(
-                config.directory
-            );
+        if (!args.force) {
+            const shouldProceed = await confirmDirectoryOverwrite(config.directory);
             if (!shouldProceed) {
                 process.exit(0); // 操作がキャンセルされた場合は正常終了
             }
@@ -468,8 +496,16 @@ export const createCommand = defineCommand({
 
             // 開発モードでのデバッグ - コマンド完了を明示
             debugLog("Create command completed successfully");
-        } catch (_error) {
+        } catch (error) {
             // 生成エラーの場合はエラー終了
+            console.error("❌ プロジェクトの作成に失敗しました");
+            if (error instanceof Error) {
+                console.error(`🐛 デバッグ: ${error.message}`);
+                debugLog("Detailed error:", error);
+            } else {
+                console.error(`🐛 デバッグ: ${String(error)}`);
+                debugLog("Detailed error:", error);
+            }
             process.exit(1);
         }
 
@@ -492,45 +528,56 @@ export const newCommand = defineCommand({
         const { create } = getMessages();
         debugLog(create.debugCommandCalled, args);
 
-        // プロジェクト名の取得
-        let projectName = args.name;
-        if (!projectName) {
-            projectName = await promptForProjectName();
-        }
+        // 🔄 新しい3段階フロー: 1. 入力収集（副作用なし）
+        const inputs = await collectUserInputs(args, rawArgs);
 
-        // プロジェクトタイプとテンプレートの決定
-        const hasExplicitMonorepo = hasExplicitMonorepoFlag(rawArgs);
-        const { projectType, template, monorepoPreference } =
-            await determineProjectTypeAndTemplate(args, hasExplicitMonorepo);
-
-        // データベース選択とプロビジョニング設定の処理
-        const { database, databaseConfig, databaseCredentials, blobConfig } =
-            await handleDatabaseAndBlobSetup(args, template, projectName);
-
-        // モノレポ設定の最終決定（明示指定 > 選択結果 > 既定 true）
-        const isMonorepoMode = args.simple
-            ? false
-            : (monorepoPreference ?? args.monorepo ?? true);
-
-        // pnpmバリデーション
-        if (isMonorepoMode) {
-            const isPnpmValid = validatePnpm();
-            if (!isPnpmValid) {
+        // pnpmバリデーション（モノレポモードの場合）
+        let pnpmVersion: string | undefined;
+        if (inputs.monorepoPreference) {
+            const pnpmValidation = validatePnpmWithDetails();
+            if (!pnpmValidation.isValid) {
                 process.exit(1);
             }
+            pnpmVersion = pnpmValidation.version;
+        }
+
+        // 🔄 新しい3段階フロー: 2. 確認フェーズ
+        const confirmed = await displayConfirmation(inputs);
+        if (!confirmed) {
+            process.exit(0); // ユーザーがキャンセル
+        }
+
+        // 🔄 新しい3段階フロー: 3. 実行フェーズ（副作用あり）
+        let databaseCredentials: DatabaseCredentials | undefined;
+        let database: DatabaseType | undefined;
+
+        // プロビジョニング実行
+        if (inputs.databaseConfig) {
+            console.log("🚀 プロビジョニングを実行しています...");
+            const result = await executeProvisioning(inputs);
+
+            if (!result.success) {
+                console.error(`❌ プロビジョニングに失敗しました: ${result.error}`);
+                process.exit(1);
+            }
+
+            databaseCredentials = result.databaseCredentials;
+            database = inputs.databaseConfig.type;
         }
 
         // プロジェクト設定の作成と検証
         const config = await createAndValidateConfig({
-            projectType,
-            projectName,
-            template,
+            projectType: inputs.projectType,
+            projectName: inputs.projectName,
+            template: inputs.template,
             args,
-            isMonorepoMode,
-            database,
-            databaseConfig,
+            isMonorepoMode: inputs.monorepoPreference,
+            database: database ?? inputs.database, // SQLite経路でもdatabaseが設定されるよう修正
+            databaseConfig: inputs.databaseConfig,
             databaseCredentials,
-            blobConfig,
+            blobConfig: inputs.blobConfig,
+            pnpmVersion,
+            shouldGenerateDocs: inputs.shouldGenerateDocs,
         });
 
         // プロジェクトの生成
@@ -544,7 +591,15 @@ export const newCommand = defineCommand({
             }
 
             debugLog("New command completed successfully");
-        } catch (_error) {
+        } catch (error) {
+            console.error("❌ プロジェクトの作成に失敗しました");
+            if (error instanceof Error) {
+                console.error(`🐛 デバッグ: ${error.message}`);
+                debugLog("Detailed error:", error);
+            } else {
+                console.error(`🐛 デバッグ: ${String(error)}`);
+                debugLog("Detailed error:", error);
+            }
             process.exit(1);
         }
 

@@ -9,9 +9,7 @@ import { getMessages } from "../../i18n.js";
 /**
  * 既存ディレクトリが存在する場合の削除確認
  */
-export async function confirmDirectoryOverwrite(
-    directoryPath: string
-): Promise<boolean> {
+export async function confirmDirectoryOverwrite(directoryPath: string): Promise<boolean> {
     const { create } = getMessages();
 
     // ディレクトリが存在しない場合は確認不要
@@ -39,14 +37,10 @@ export async function confirmDirectoryOverwrite(
             // 既存ディレクトリを削除
             try {
                 fs.rmSync(directoryPath, { recursive: true, force: true });
-                console.log(
-                    create.directoryRemoved.replace("{0}", directoryPath)
-                );
+                console.log(create.directoryRemoved.replace("{0}", directoryPath));
                 return true;
             } catch (error) {
-                console.error(
-                    create.failedToRemoveDirectory.replace("{0}", directoryPath)
-                );
+                console.error(create.failedToRemoveDirectory.replace("{0}", directoryPath));
                 console.error(error);
                 return false;
             }

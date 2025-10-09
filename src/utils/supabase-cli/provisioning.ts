@@ -7,26 +7,13 @@ import type {
     ProvisioningResult,
     SupabaseProvisioningOptions,
 } from "../../commands/create/database-provisioning/types.js";
-import {
-    createProject,
-    getApiKeys,
-    isAuthenticated,
-    listProjects,
-} from "./index.js";
+import { createProject, getApiKeys, isAuthenticated, listProjects } from "./index.js";
 
 /**
  * Supabaseプロビジョニング結果の型
  */
 function stripEnvironmentSuffix(name: string): string {
-    const suffixes = [
-        "-dev",
-        "-development",
-        "-staging",
-        "-stg",
-        "-prod",
-        "-production",
-        "-test",
-    ];
+    const suffixes = ["-dev", "-development", "-staging", "-stg", "-prod", "-production", "-test"];
 
     for (const suffix of suffixes) {
         if (name.endsWith(suffix)) {
@@ -52,9 +39,7 @@ export async function provisionSupabaseProjects(
     // 1. 認証チェック
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-        throw new Error(
-            "Supabase CLI に認証されていません。`supabase login` を実行してください。"
-        );
+        throw new Error("Supabase CLI に認証されていません。`supabase login` を実行してください。");
     }
 
     // 2. 既存プロジェクト確認
@@ -79,22 +64,16 @@ export async function provisionSupabaseProjects(
     // 並行処理でプロジェクトとAPIキーを作成
     const createPromises = options.environments.map(async (env) => {
         const projectName = naming[env];
-        const exists = existingProjects.some(
-            (project) => project.name === projectName
-        );
+        const exists = existingProjects.some((project) => project.name === projectName);
 
         try {
             let projectRef: string;
 
             if (exists) {
                 // 既存プロジェクトの参照を取得
-                const existingProject = existingProjects.find(
-                    (p) => p.name === projectName
-                );
+                const existingProject = existingProjects.find((p) => p.name === projectName);
                 projectRef = existingProject!.ref;
-                console.log(
-                    `ℹ️ ${env}環境プロジェクト '${projectName}' は既に存在します`
-                );
+                console.log(`ℹ️ ${env}環境プロジェクト '${projectName}' は既に存在します`);
             } else {
                 // プロジェクト作成
                 const newProject = await createProject(projectName, {
@@ -102,9 +81,7 @@ export async function provisionSupabaseProjects(
                     region: options.region,
                 });
                 projectRef = newProject.ref;
-                console.log(
-                    `✅ ${env}環境プロジェクト '${projectName}' を作成しました`
-                );
+                console.log(`✅ ${env}環境プロジェクト '${projectName}' を作成しました`);
             }
 
             // APIキー取得
@@ -141,9 +118,7 @@ export async function provisionSupabaseProjects(
     // 失敗したプロジェクトがある場合はエラー
     const failedProjects = databases.filter((db) => db.status === "failed");
     if (failedProjects.length > 0) {
-        throw new Error(
-            `以下のプロジェクトの作成に失敗しました: ${failedProjects.map((db) => db.name).join(", ")}`
-        );
+        throw new Error(`以下のプロジェクトの作成に失敗しました: ${failedProjects.map((db) => db.name).join(", ")}`);
     }
 
     return {
@@ -190,9 +165,7 @@ export async function validateSupabaseNaming(
     // 命名制約チェック
     for (const [env, name] of Object.entries(naming)) {
         if (name.length > 63) {
-            throw new Error(
-                `${env}環境のプロジェクト名 '${name}' が長すぎます（最大63文字）`
-            );
+            throw new Error(`${env}環境のプロジェクト名 '${name}' が長すぎます（最大63文字）`);
         }
         if (name.length < 1) {
             throw new Error(`${env}環境のプロジェクト名 '${name}' が空です`);
@@ -213,10 +186,7 @@ export async function validateSupabaseNaming(
  * @param apiKey APIキー
  * @returns 接続可能かどうか
  */
-export async function testSupabaseConnection(
-    url: string,
-    apiKey: string
-): Promise<boolean> {
+export async function testSupabaseConnection(url: string, apiKey: string): Promise<boolean> {
     try {
         // 実際の接続テストは複雑なので、URLとAPIキーの形式をチェック
         if (!(url.startsWith("postgresql://") || url.startsWith("https://"))) {
@@ -233,9 +203,7 @@ export async function testSupabaseConnection(
 
         return true;
     } catch (error) {
-        console.error(
-            `Supabase接続テストエラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`Supabase接続テストエラー: ${error instanceof Error ? error.message : error}`);
         return false;
     }
 }
@@ -303,9 +271,7 @@ export async function getSupabaseUsageInfo(projectRef: string): Promise<{
             requests: 0,
         };
     } catch (error) {
-        console.error(
-            `使用量情報取得エラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`使用量情報取得エラー: ${error instanceof Error ? error.message : error}`);
         throw error;
     }
 }
@@ -323,9 +289,7 @@ export async function getSupabaseSetupInfo(projectRef: string): Promise<{
 }> {
     try {
         // Supabaseプロジェクトの機能有効状況を確認
-        console.log(
-            `プロジェクト '${projectRef}' のセットアップ情報を取得中...`
-        );
+        console.log(`プロジェクト '${projectRef}' のセットアップ情報を取得中...`);
 
         // モック実装
         return {
@@ -335,9 +299,7 @@ export async function getSupabaseSetupInfo(projectRef: string): Promise<{
             hasEdgeFunctions: false,
         };
     } catch (error) {
-        console.error(
-            `セットアップ情報取得エラー: ${error instanceof Error ? error.message : error}`
-        );
+        console.error(`セットアップ情報取得エラー: ${error instanceof Error ? error.message : error}`);
         throw error;
     }
 }

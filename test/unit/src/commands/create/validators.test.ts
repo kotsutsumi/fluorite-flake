@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 
 import { PROJECT_TEMPLATES } from "../../../../../src/commands/create/constants.js";
 import {
+    validateDatabase,
     validateProjectType,
     validateTemplate,
 } from "../../../../../src/commands/create/validators.js";
@@ -115,9 +116,7 @@ describe("createコマンドのバリデーション機能", () => {
 
         test("すべてのプロジェクトタイプでtypescriptとjavascriptが利用可能であること", () => {
             // テスト実行: 共通のテンプレートが全プロジェクトタイプで利用可能かを検証
-            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<
-                keyof typeof PROJECT_TEMPLATES
-            >;
+            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<keyof typeof PROJECT_TEMPLATES>;
 
             for (const projectType of projectTypes) {
                 expect(validateTemplate(projectType, "typescript")).toBe(true);
@@ -142,6 +141,46 @@ describe("createコマンドのバリデーション機能", () => {
         });
     });
 
+    describe("validateDatabase", () => {
+        test("有効なデータベースタイプの場合、trueを返すこと", () => {
+            // テスト実行: 有効なデータベースタイプを検証
+            expect(validateDatabase("turso")).toBe(true);
+            expect(validateDatabase("supabase")).toBe(true);
+            expect(validateDatabase("sqlite")).toBe(true);
+        });
+
+        test("無効なデータベースタイプの場合、falseを返すこと", () => {
+            // テスト実行: 無効なデータベースタイプを検証
+            expect(validateDatabase("mysql")).toBe(false);
+            expect(validateDatabase("postgresql")).toBe(false);
+            expect(validateDatabase("mongodb")).toBe(false);
+            expect(validateDatabase("")).toBe(false);
+            expect(validateDatabase("invalid")).toBe(false);
+        });
+
+        test("大文字小文字を区別すること", () => {
+            // テスト実行: 大文字小文字の違いを検証
+            expect(validateDatabase("Turso")).toBe(false);
+            expect(validateDatabase("SUPABASE")).toBe(false);
+            expect(validateDatabase("SQLite")).toBe(false);
+            expect(validateDatabase("Sqlite")).toBe(false);
+        });
+
+        test("特殊文字や数字を含む文字列は無効とすること", () => {
+            // テスト実行: 特殊文字や数字を含む文字列を検証
+            expect(validateDatabase("turso-db")).toBe(false);
+            expect(validateDatabase("supabase_db")).toBe(false);
+            expect(validateDatabase("sqlite3")).toBe(false);
+            expect(validateDatabase("@turso")).toBe(false);
+        });
+
+        test("nullやundefinedの場合、falseを返すこと", () => {
+            // テスト実行: nullやundefined値を検証
+            expect(validateDatabase(null as any)).toBe(false);
+            expect(validateDatabase(undefined as any)).toBe(false);
+        });
+    });
+
     describe("定数の整合性テスト", () => {
         test("PROJECT_TEMPLATESが期待された構造を持つこと", () => {
             // テスト実行: PROJECT_TEMPLATESの構造を検証
@@ -162,9 +201,7 @@ describe("createコマンドのバリデーション機能", () => {
 
         test("すべてのプロジェクトタイプがtypescriptテンプレートを含むこと", () => {
             // テスト実行: typescriptテンプレートが全プロジェクトタイプに含まれるかを検証
-            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<
-                keyof typeof PROJECT_TEMPLATES
-            >;
+            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<keyof typeof PROJECT_TEMPLATES>;
 
             for (const projectType of projectTypes) {
                 expect(PROJECT_TEMPLATES[projectType]).toContain("typescript");
@@ -173,9 +210,7 @@ describe("createコマンドのバリデーション機能", () => {
 
         test("重複するテンプレート名が存在しないこと", () => {
             // テスト実行: 各プロジェクトタイプ内でテンプレート名の重複がないかを検証
-            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<
-                keyof typeof PROJECT_TEMPLATES
-            >;
+            const projectTypes = Object.keys(PROJECT_TEMPLATES) as Array<keyof typeof PROJECT_TEMPLATES>;
 
             for (const projectType of projectTypes) {
                 const templates = PROJECT_TEMPLATES[projectType];

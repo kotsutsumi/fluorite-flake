@@ -15,10 +15,7 @@ type ErrorModalProps = {
 /**
  * エラーモーダルコンポーネント
  */
-export const ErrorModal: React.FC<ErrorModalProps> = ({
-    message,
-    title = "Error",
-}) => {
+export const ErrorModal: React.FC<ErrorModalProps> = ({ message, title = "Error" }) => {
     // ESCキーまたはEnterキーでモーダルを閉じる
     useInput((_input, key) => {
         if (key.escape || key.return) {
@@ -27,20 +24,8 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
     });
 
     return (
-        <Box
-            alignItems="center"
-            height="100%"
-            justifyContent="center"
-            position="absolute"
-            width="100%"
-        >
-            <Box
-                borderColor="red"
-                borderStyle="round"
-                flexDirection="column"
-                padding={2}
-                width={60}
-            >
+        <Box alignItems="center" height="100%" justifyContent="center" position="absolute" width="100%">
+            <Box borderColor="red" borderStyle="round" flexDirection="column" padding={2} width={60}>
                 {/* エラータイトル */}
                 <Box marginBottom={1}>
                     <Text bold color="red">

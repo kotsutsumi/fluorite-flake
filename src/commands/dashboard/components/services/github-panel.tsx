@@ -107,15 +107,7 @@ export const GitHubPanel: React.FC<GitHubPanelProps> = ({ tab }) => {
                                 <Text color="cyan">{repo.name}</Text>
                             </Box>
                             <Box width={8}>
-                                <Text
-                                    color={
-                                        repo.visibility === "public"
-                                            ? "green"
-                                            : "yellow"
-                                    }
-                                >
-                                    {repo.visibility}
-                                </Text>
+                                <Text color={repo.visibility === "public" ? "green" : "yellow"}>{repo.visibility}</Text>
                             </Box>
                             <Box width={8}>
                                 <Text color="gray">★ {repo.stars}</Text>
@@ -148,15 +140,7 @@ export const GitHubPanel: React.FC<GitHubPanelProps> = ({ tab }) => {
                                     <Text color="white">{pr.title}</Text>
                                 </Box>
                                 <Box width={8}>
-                                    <Text
-                                        color={
-                                            pr.state === "open"
-                                                ? "green"
-                                                : "gray"
-                                        }
-                                    >
-                                        {pr.state}
-                                    </Text>
+                                    <Text color={pr.state === "open" ? "green" : "gray"}>{pr.state}</Text>
                                 </Box>
                                 <Box>
                                     <Text color="gray">@{pr.author}</Text>
@@ -185,9 +169,7 @@ export const GitHubPanel: React.FC<GitHubPanelProps> = ({ tab }) => {
                     <Text color="cyan">• Trigger workflow</Text>
                     <Text color="cyan">• Open in browser</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Select an operation to execute (Coming soon...)
-                        </Text>
+                        <Text color="gray">Select an operation to execute (Coming soon...)</Text>
                     </Box>
                 </Box>
             </Box>
@@ -217,30 +199,16 @@ export const GitHubPanel: React.FC<GitHubPanelProps> = ({ tab }) => {
                                 <Text color="magenta">{workflow.name}</Text>
                             </Box>
                             <Box width={10}>
-                                <Text
-                                    color={
-                                        workflow.status === "success"
-                                            ? "green"
-                                            : "red"
-                                    }
-                                >
-                                    {workflow.status}
-                                </Text>
+                                <Text color={workflow.status === "success" ? "green" : "red"}>{workflow.status}</Text>
                             </Box>
                             <Box>
-                                <Text color="gray">
-                                    {new Date(
-                                        workflow.lastRun
-                                    ).toLocaleString()}
-                                </Text>
+                                <Text color="gray">{new Date(workflow.lastRun).toLocaleString()}</Text>
                             </Box>
                         </Box>
                     ))}
                 </Box>
                 <Box marginTop={1}>
-                    <Text color="gray">
-                        Detailed workflow logs coming soon...
-                    </Text>
+                    <Text color="gray">Detailed workflow logs coming soon...</Text>
                 </Box>
             </Box>
         );

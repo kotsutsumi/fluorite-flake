@@ -40,9 +40,7 @@ const ENV_FILES: Record<EnvironmentKey | "shared", string[]> = {
  */
 export class ResourceDiscovery {
     /** プロジェクト設定からリソースを自動検出 */
-    async discoverProjectResources(
-        projectPath: string
-    ): Promise<ProjectInventory> {
+    async discoverProjectResources(projectPath: string): Promise<ProjectInventory> {
         const projectName = path.basename(projectPath);
         if (!projectName) {
             throw new Error("プロジェクト名が特定できませんでした");
@@ -52,10 +50,7 @@ export class ResourceDiscovery {
         const vercel = await this.discoverVercelResources(projectPath, envMap);
         const databases = await this.discoverDatabaseResources(envMap);
         const storage = this.discoverStorageResources(envMap);
-        const dependencies = await this.buildDependencyGraph(
-            projectPath,
-            envMap
-        );
+        const dependencies = await this.buildDependencyGraph(projectPath, envMap);
 
         return {
             projectName,
@@ -75,10 +70,7 @@ export class ResourceDiscovery {
         const envVars = envMap.combined;
         const vercelConfig = await this.readVercelConfig(projectPath);
 
-        const projectId =
-            vercelConfig?.projectId ||
-            envVars.VERCEL_PROJECT_ID ||
-            envVars.VERCEL_PROJECT_NAME;
+        const projectId = vercelConfig?.projectId || envVars.VERCEL_PROJECT_ID || envVars.VERCEL_PROJECT_NAME;
         const orgId = vercelConfig?.orgId || envVars.VERCEL_ORG_ID;
         const hasIdentifier = Boolean(projectId || orgId);
         const hasEnvHints = this.hasVercelEnvVars(envVars);
@@ -90,44 +82,28 @@ export class ResourceDiscovery {
         return {
             projectId,
             orgId,
-            domains: await this.discoverLinkedDomains(
-                projectPath,
-                vercelConfig
-            ),
+            domains: await this.discoverLinkedDomains(projectPath, vercelConfig),
             environmentVariables: this.extractVercelEnvVars(envVars),
         };
     }
 
     /** データベース種別に応じてリソースを検出 */
-    private async discoverDatabaseResources(
-        envMap: EnvironmentMap
-    ): Promise<DatabaseResources | undefined> {
+    private async discoverDatabaseResources(envMap: EnvironmentMap): Promise<DatabaseResources | undefined> {
         const dbType = this.detectDatabaseType(envMap.combined);
         if (dbType === "none") {
             return;
         }
 
         if (dbType === "turso") {
-            return this.discoverTursoResources(
-                envMap.byEnvironment,
-                envMap.shared
-            );
+            return this.discoverTursoResources(envMap.byEnvironment, envMap.shared);
         }
 
-        return this.discoverSupabaseResources(
-            envMap.byEnvironment,
-            envMap.shared
-        );
+        return this.discoverSupabaseResources(envMap.byEnvironment, envMap.shared);
     }
 
     /** Blob ストアなどのストレージリソースを検出 */
-    private discoverStorageResources(
-        envMap: EnvironmentMap
-    ): StorageResources | undefined {
-        const blobStores = this.extractBlobStores(
-            envMap.byEnvironment,
-            envMap.shared
-        );
+    private discoverStorageResources(envMap: EnvironmentMap): StorageResources | undefined {
+        const blobStores = this.extractBlobStores(envMap.byEnvironment, envMap.shared);
         if (blobStores.length === 0) {
             return;
         }
@@ -136,10 +112,7 @@ export class ResourceDiscovery {
     }
 
     /** 依存関係グラフを構築 */
-    private async buildDependencyGraph(
-        projectPath: string,
-        _envMap: EnvironmentMap
-    ): Promise<DependencyGraph> {
+    private async buildDependencyGraph(projectPath: string, _envMap: EnvironmentMap): Promise<DependencyGraph> {
         return {
             deletionOrder: this.calculateDeletionOrder(),
             riskAssessment: await this.assessDeletionRisks(projectPath),
@@ -177,14 +150,9 @@ export class ResourceDiscovery {
     }
 
     /** ドメイン設定を抽出 */
-    private async discoverLinkedDomains(
-        projectPath: string,
-        vercelConfig: any | null
-    ): Promise<string[]> {
+    private async discoverLinkedDomains(projectPath: string, vercelConfig: any | null): Promise<string[]> {
         if (vercelConfig?.alias) {
-            return Array.isArray(vercelConfig.alias)
-                ? vercelConfig.alias
-                : [vercelConfig.alias];
+            return Array.isArray(vercelConfig.alias) ? vercelConfig.alias : [vercelConfig.alias];
         }
 
         const domainsFile = path.join(projectPath, "domains.json");
@@ -196,9 +164,7 @@ export class ResourceDiscovery {
             }
         } catch (error: any) {
             if (error?.code !== "ENOENT") {
-                console.warn(
-                    `ドメイン情報の読み込みに失敗しました: ${error.message ?? error}`
-                );
+                console.warn(`ドメイン情報の読み込みに失敗しました: ${error.message ?? error}`);
             }
         }
 
@@ -206,9 +172,7 @@ export class ResourceDiscovery {
     }
 
     /** データベース種別を判定 */
-    private detectDatabaseType(
-        envVars: Record<string, string>
-    ): "turso" | "supabase" | "none" {
+    private detectDatabaseType(envVars: Record<string, string>): "turso" | "supabase" | "none" {
         const provider = envVars.DATABASE_PROVIDER?.toLowerCase();
         if (provider === "turso" || provider === "libsql") {
             return "turso";
@@ -224,11 +188,7 @@ export class ResourceDiscovery {
             return "turso";
         }
 
-        if (
-            Object.keys(envVars).some((key) =>
-                key.toLowerCase().includes("supabase")
-            )
-        ) {
+        if (Object.keys(envVars).some((key) => key.toLowerCase().includes("supabase"))) {
             return "supabase";
         }
 
@@ -242,9 +202,10 @@ export class ResourceDiscovery {
     ): DatabaseResources {
         const resources: DatabaseResource[] = [];
 
-        for (const [environment, envVars] of Object.entries(
-            envVarsByEnvironment
-        ) as [EnvironmentKey, Record<string, string>][]) {
+        for (const [environment, envVars] of Object.entries(envVarsByEnvironment) as [
+            EnvironmentKey,
+            Record<string, string>,
+        ][]) {
             const url = this.getEnvValueForEnvironment(
                 envVars,
                 ["TURSO_DATABASE_URL", "LIBSQL_DATABASE_URL"],
@@ -283,9 +244,10 @@ export class ResourceDiscovery {
     ): DatabaseResources {
         const resources: DatabaseResource[] = [];
 
-        for (const [environment, envVars] of Object.entries(
-            envVarsByEnvironment
-        ) as [EnvironmentKey, Record<string, string>][]) {
+        for (const [environment, envVars] of Object.entries(envVarsByEnvironment) as [
+            EnvironmentKey,
+            Record<string, string>,
+        ][]) {
             const url = this.getEnvValueForEnvironment(
                 envVars,
                 ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"],
@@ -325,15 +287,11 @@ export class ResourceDiscovery {
         const stores: BlobStoreResource[] = [];
         const usedIds = new Set<string>();
 
-        for (const [environment, envVars] of Object.entries(
-            envVarsByEnvironment
-        ) as [EnvironmentKey, Record<string, string>][]) {
-            const storeId = this.getEnvValueForEnvironment(
-                envVars,
-                ["BLOB_STORE_ID"],
-                environment,
-                sharedVars
-            );
+        for (const [environment, envVars] of Object.entries(envVarsByEnvironment) as [
+            EnvironmentKey,
+            Record<string, string>,
+        ][]) {
+            const storeId = this.getEnvValueForEnvironment(envVars, ["BLOB_STORE_ID"], environment, sharedVars);
             const token = this.getEnvValueForEnvironment(
                 envVars,
                 ["BLOB_READ_WRITE_TOKEN", "BLOB_RW_TOKEN"],
@@ -425,24 +383,20 @@ export class ResourceDiscovery {
     }
 
     /** リスク評価を組み立て */
-    private async assessDeletionRisks(
-        _projectPath: string
-    ): Promise<RiskAssessment> {
+    private async assessDeletionRisks(_projectPath: string): Promise<RiskAssessment> {
         return {
             overall: "medium",
             factors: [
                 {
                     type: "data_loss",
                     severity: "high",
-                    description:
-                        "データベースの削除により復旧不能となる可能性があります",
+                    description: "データベースの削除により復旧不能となる可能性があります",
                     affectedResources: ["turso-database", "supabase-project"],
                 },
                 {
                     type: "service_disruption",
                     severity: "high",
-                    description:
-                        "Vercel プロジェクト削除で公開サイトが停止します",
+                    description: "Vercel プロジェクト削除で公開サイトが停止します",
                     affectedResources: ["vercel-project"],
                 },
             ],
@@ -480,22 +434,11 @@ export class ResourceDiscovery {
     }
 
     /** 環境変数ファイルを読み込んで統合 */
-    private async readEnvironmentMap(
-        projectPath: string
-    ): Promise<EnvironmentMap> {
+    private async readEnvironmentMap(projectPath: string): Promise<EnvironmentMap> {
         const shared = await this.mergeEnvFiles(projectPath, ENV_FILES.shared);
-        const development = await this.mergeEnvFiles(
-            projectPath,
-            ENV_FILES.development
-        );
-        const staging = await this.mergeEnvFiles(
-            projectPath,
-            ENV_FILES.staging
-        );
-        const production = await this.mergeEnvFiles(
-            projectPath,
-            ENV_FILES.production
-        );
+        const development = await this.mergeEnvFiles(projectPath, ENV_FILES.development);
+        const staging = await this.mergeEnvFiles(projectPath, ENV_FILES.staging);
+        const production = await this.mergeEnvFiles(projectPath, ENV_FILES.production);
 
         const byEnvironment: Record<EnvironmentKey, Record<string, string>> = {
             development: { ...shared, ...development },
@@ -518,10 +461,7 @@ export class ResourceDiscovery {
     }
 
     /** 複数の .env ファイルをマージ */
-    private async mergeEnvFiles(
-        projectPath: string,
-        fileNames: string[]
-    ): Promise<Record<string, string>> {
+    private async mergeEnvFiles(projectPath: string, fileNames: string[]): Promise<Record<string, string>> {
         const result: Record<string, string> = {};
         for (const fileName of fileNames) {
             const absolute = path.join(projectPath, fileName);
@@ -531,17 +471,13 @@ export class ResourceDiscovery {
     }
 
     /** 単一の .env ファイルを読み込む */
-    private async readEnvFile(
-        filePath: string
-    ): Promise<Record<string, string>> {
+    private async readEnvFile(filePath: string): Promise<Record<string, string>> {
         try {
             const content = await fs.readFile(filePath, "utf-8");
             return this.parseEnvContent(content);
         } catch (error: any) {
             if (error?.code !== "ENOENT") {
-                console.warn(
-                    `環境変数ファイル読み込みエラー (${filePath}): ${error.message ?? error}`
-                );
+                console.warn(`環境変数ファイル読み込みエラー (${filePath}): ${error.message ?? error}`);
             }
             return {};
         }

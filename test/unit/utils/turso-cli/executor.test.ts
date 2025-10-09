@@ -5,11 +5,7 @@ import type { ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-    executeTursoCommand,
-    parseJsonResponse,
-    throwOnError,
-} from "../../../../src/utils/turso-cli/executor.js";
+import { executeTursoCommand, parseJsonResponse, throwOnError } from "../../../../src/utils/turso-cli/executor.js";
 import type { CommandResult } from "../../../../src/utils/turso-cli/types.js";
 
 // child_processモジュールをモック化
@@ -117,9 +113,7 @@ describe("executeTursoCommand", () => {
         // 結果を検証
         const result = await resultPromise;
         expect(result.success).toBe(false);
-        expect(result.error).toBe(
-            "Failed to execute command: ENOENT: turso command not found"
-        );
+        expect(result.error).toBe("Failed to execute command: ENOENT: turso command not found");
     });
 });
 
@@ -132,9 +126,7 @@ describe("parseJsonResponse", () => {
         };
 
         // JSONパースを実行
-        const parsed = parseJsonResponse<{ name: string; url: string }>(
-            mockResult
-        );
+        const parsed = parseJsonResponse<{ name: string; url: string }>(mockResult);
 
         // 結果を検証
         expect(parsed.success).toBe(true);

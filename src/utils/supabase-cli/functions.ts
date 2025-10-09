@@ -3,16 +3,8 @@
  *
  * Edge Functions の作成、デプロイ、削除、一覧表示機能を提供します。
  */
-import {
-    executeSupabaseCommand,
-    parseJsonResponse,
-    throwOnError,
-} from "./executor.js";
-import type {
-    FunctionDeployOptions,
-    FunctionInfo,
-    GlobalFlags,
-} from "./types.js";
+import { executeSupabaseCommand, parseJsonResponse, throwOnError } from "./executor.js";
+import type { FunctionDeployOptions, FunctionInfo, GlobalFlags } from "./types.js";
 
 /**
  * 新しい Edge Function をローカルに作成します
@@ -21,10 +13,7 @@ import type {
  * @param globalFlags - グローバルフラグ
  * @returns Promise<void>
  */
-export async function createFunction(
-    functionName: string,
-    globalFlags: GlobalFlags = {}
-): Promise<void> {
+export async function createFunction(functionName: string, globalFlags: GlobalFlags = {}): Promise<void> {
     const args = ["functions", "new", functionName];
 
     // グローバルフラグの追加
@@ -126,10 +115,7 @@ export async function deployFunction(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<void>
  */
-export async function deleteFunction(
-    functionName: string,
-    globalFlags: GlobalFlags = {}
-): Promise<void> {
+export async function deleteFunction(functionName: string, globalFlags: GlobalFlags = {}): Promise<void> {
     const args = ["functions", "delete", functionName];
 
     // プロジェクト参照IDの追加
@@ -164,9 +150,7 @@ export async function deleteFunction(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<FunctionInfo[]> - Function 情報の配列
  */
-export async function listFunctions(
-    globalFlags: GlobalFlags = {}
-): Promise<FunctionInfo[]> {
+export async function listFunctions(globalFlags: GlobalFlags = {}): Promise<FunctionInfo[]> {
     const args = ["functions", "list"];
 
     // プロジェクト参照IDの追加
@@ -315,10 +299,7 @@ export async function serveFunctions(
  * @param globalFlags - グローバルフラグ
  * @returns Promise<boolean> - Function が存在するかどうか
  */
-export async function functionExists(
-    functionName: string,
-    globalFlags: GlobalFlags = {}
-): Promise<boolean> {
+export async function functionExists(functionName: string, globalFlags: GlobalFlags = {}): Promise<boolean> {
     try {
         const functions = await listFunctions(globalFlags);
         return functions.some((func) => func.name === functionName);

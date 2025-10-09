@@ -54,11 +54,7 @@ async function organizeTestArtifacts(): Promise<void> {
     }
 
     try {
-        const outputDir = path.resolve(
-            __dirname,
-            "../../../",
-            TEST_CONFIG.LOGGING.OUTPUT_DIR
-        );
+        const outputDir = path.resolve(__dirname, "../../../", TEST_CONFIG.LOGGING.OUTPUT_DIR);
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
         // タイムスタンプ付きディレクトリの作成
@@ -202,9 +198,7 @@ async function displayCleanupStats(): Promise<void> {
         console.log(`   出力ファイル: ${formatFileSize(outputSize)}`);
         console.log(`   レポート: ${formatFileSize(reportsSize)}`);
         console.log(`   ログ: ${formatFileSize(logsSize)}`);
-        console.log(
-            `   合計: ${formatFileSize(outputSize + reportsSize + logsSize)}`
-        );
+        console.log(`   合計: ${formatFileSize(outputSize + reportsSize + logsSize)}`);
     } catch (error) {
         console.warn("⚠️  統計の計算に失敗:", error);
     }

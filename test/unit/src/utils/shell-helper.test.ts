@@ -71,10 +71,7 @@ describe("シェルヘルパーユーティリティ", () => {
 
             const result = getShellForPlatform();
 
-            expect(accessMock).toHaveBeenCalledWith(
-                "/custom/bin/fish",
-                constants.X_OK
-            );
+            expect(accessMock).toHaveBeenCalledWith("/custom/bin/fish", constants.X_OK);
             expect(result).toBe("/custom/bin/fish");
         });
 

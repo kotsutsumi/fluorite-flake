@@ -97,11 +97,7 @@ export function createWebAppPackageJson(config: ProjectConfig): void {
             throw new Error(`Unsupported project type: ${type}`);
     }
 
-    fs.writeFileSync(
-        path.join(webAppDir, "package.json"),
-        JSON.stringify(appPackageJson, null, 2),
-        "utf-8"
-    );
+    fs.writeFileSync(path.join(webAppDir, "package.json"), JSON.stringify(appPackageJson, null, 2), "utf-8");
 }
 
 // EOF

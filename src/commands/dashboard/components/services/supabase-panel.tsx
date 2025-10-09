@@ -91,15 +91,7 @@ export const SupabasePanel: React.FC<SupabasePanelProps> = ({ tab }) => {
                                 <Text color="cyan">{project.name}</Text>
                             </Box>
                             <Box width={12}>
-                                <Text
-                                    color={
-                                        project.status === "active"
-                                            ? "green"
-                                            : "red"
-                                    }
-                                >
-                                    {project.status}
-                                </Text>
+                                <Text color={project.status === "active" ? "green" : "red"}>{project.status}</Text>
                             </Box>
                             <Box>
                                 <Text color="gray">{project.region}</Text>
@@ -125,22 +117,10 @@ export const SupabasePanel: React.FC<SupabasePanelProps> = ({ tab }) => {
                                     <Text color="magenta">{func.name}</Text>
                                 </Box>
                                 <Box width={12}>
-                                    <Text
-                                        color={
-                                            func.status === "deployed"
-                                                ? "green"
-                                                : "red"
-                                        }
-                                    >
-                                        {func.status}
-                                    </Text>
+                                    <Text color={func.status === "deployed" ? "green" : "red"}>{func.status}</Text>
                                 </Box>
                                 <Box>
-                                    <Text color="gray">
-                                        {new Date(
-                                            func.lastUpdate
-                                        ).toLocaleString()}
-                                    </Text>
+                                    <Text color="gray">{new Date(func.lastUpdate).toLocaleString()}</Text>
                                 </Box>
                             </Box>
                         ))}
@@ -166,9 +146,7 @@ export const SupabasePanel: React.FC<SupabasePanelProps> = ({ tab }) => {
                     <Text color="cyan">• Run migrations</Text>
                     <Text color="cyan">• Manage secrets</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Select an operation to execute (Coming soon...)
-                        </Text>
+                        <Text color="gray">Select an operation to execute (Coming soon...)</Text>
                     </Box>
                 </Box>
             </Box>
@@ -190,9 +168,7 @@ export const SupabasePanel: React.FC<SupabasePanelProps> = ({ tab }) => {
                     <Text color="yellow">• Auth rate limit warning</Text>
                     <Text color="cyan">• New user registration: +5</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Detailed function logs coming soon...
-                        </Text>
+                        <Text color="gray">Detailed function logs coming soon...</Text>
                     </Box>
                 </Box>
             </Box>
@@ -222,9 +198,7 @@ export const SupabasePanel: React.FC<SupabasePanelProps> = ({ tab }) => {
                     <Text color="cyan">• Storage: {usage?.storage}</Text>
                     <Text color="green">• API Health: 99.8%</Text>
                     <Box marginTop={1}>
-                        <Text color="gray">
-                            Usage trend charts coming soon...
-                        </Text>
+                        <Text color="gray">Usage trend charts coming soon...</Text>
                     </Box>
                 </Box>
             </Box>

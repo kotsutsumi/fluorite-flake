@@ -10,9 +10,7 @@ import type { CleanupResult } from "./types.js";
 /**
  * デプロイ環境クリーンアップメイン関数
  */
-export async function executeCleanup(
-    projectPath: string = process.cwd()
-): Promise<CleanupResult> {
+export async function executeCleanup(projectPath: string = process.cwd()): Promise<CleanupResult> {
     const discovery = new ResourceDiscovery();
     const prompts = new CleanupPrompts();
     const orchestrator = new CleanupOrchestrator();
@@ -25,9 +23,7 @@ export async function executeCleanup(
         // リソースが見つからない場合
         if (!(inventory.vercel || inventory.databases || inventory.storage)) {
             console.log("❌ 削除対象のリソースが見つかりませんでした。");
-            console.log(
-                "このプロジェクトにはVercel、データベース、またはBlobストアの設定がありません。"
-            );
+            console.log("このプロジェクトにはVercel、データベース、またはBlobストアの設定がありません。");
             return {
                 success: false,
                 completedSteps: 0,

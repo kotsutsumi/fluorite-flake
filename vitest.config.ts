@@ -1,32 +1,38 @@
+/**
+ * Vitestテストランナーの設定ファイル
+ *
+ * ユニットテストと統合テストを分離したプロジェクトベースの設定を提供。
+ * カバレッジレポートの生成とタイムアウト設定を含む。
+ */
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
     test: {
-        // Root configuration
-        globals: true,
-        environment: "node",
-        exclude: ["node_modules", "dist", ".temp-*"],
+        // ルート設定
+        globals: true, // グローバル変数の有効化（describe, it, expect等）
+        environment: "node", // Node.js環境での実行
+        exclude: ["node_modules", "dist", ".temp-*"], // テスト対象外ディレクトリ
         coverage: {
-            reporter: ["text", "json", "html"],
-            include: ["src/**/*.ts"],
+            reporter: ["text", "json", "html"], // カバレッジレポート形式
+            include: ["src/**/*.ts"], // カバレッジ対象ファイル
             exclude: [
                 "node_modules/",
                 "dist/",
                 "test/",
                 "*.config.ts",
                 "**/*.d.ts",
-                "src/cli.ts", // CLI entry point
-                "src/index.ts", // Library entry point
+                "src/cli.ts", // CLIエントリーポイント
+                "src/index.ts", // ライブラリエントリーポイント
             ],
         },
 
-        // Projects configuration (replaces deprecated workspace)
+        // プロジェクト設定（非推奨のworkspaceに代わる設定）
         projects: [
             {
                 test: {
-                    name: "unit",
+                    name: "unit", // ユニットテストプロジェクト
                     include: ["test/unit/**/*.test.ts"],
-                    testTimeout: 10_000, // 10 seconds for unit tests
+                    testTimeout: 10_000, // ユニットテスト用：10秒タイムアウト
                     hookTimeout: 10_000,
                     globalSetup: "./test/helpers/global-setup.ts",
                     globals: true,
@@ -35,9 +41,9 @@ export default defineConfig({
             },
             {
                 test: {
-                    name: "functional",
-                    include: ["test/functional/**/*.test.ts"],
-                    testTimeout: 30_000, // 30 seconds for functional tests
+                    name: "integration", // 統合テストプロジェクト
+                    include: ["test/integration/**/*.test.ts"],
+                    testTimeout: 30_000, // 統合テスト用：30秒タイムアウト
                     hookTimeout: 30_000,
                     globalSetup: "./test/helpers/global-setup.ts",
                     globals: true,
@@ -46,32 +52,23 @@ export default defineConfig({
             },
             {
                 test: {
-                    name: "scenario",
-                    include: ["test/scenario/**/*.test.ts"],
-                    // Flutter/Tauri のシナリオテストは一時停止する
-                    exclude: [
-                        "test/scenario/flutter/**/*.test.ts",
-                        "test/scenario/tauri/**/*.test.ts",
-                    ],
-                    testTimeout: 300_000, // 5 minutes for scenario tests
-                    hookTimeout: 300_000,
-                    maxConcurrency: 1, // Run scenario tests sequentially
-                    pool: "threads", // Use single threaded execution
-                    poolOptions: {
-                        threads: {
-                            maxThreads: 1, // Force single thread
-                            minThreads: 1,
-                        },
-                    },
-                    globalSetup: "./test/helpers/global-setup.ts",
+                    name: "e2e", // E2Eテストプロジェクト
+                    include: ["test/e2e/**/*.test.ts"],
+                    testTimeout: 120_000, // E2Eテスト用：2分タイムアウト
+                    hookTimeout: 30_000,
                     globals: true,
                     environment: "node",
-                    sequence: {
-                        concurrent: false, // Disable concurrent execution
-                        shuffle: false, // Run tests in order
+                    // E2Eテストは並行実行を避ける（ファイルシステム競合を防ぐため）
+                    pool: "forks",
+                    poolOptions: {
+                        forks: {
+                            singleFork: true,
+                        },
                     },
                 },
             },
         ],
     },
 });
+
+// EOF

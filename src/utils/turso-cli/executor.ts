@@ -8,10 +8,7 @@ import type { CommandResult, ExecOptions } from "./types.js";
 /**
  * Turso CLI コマンドを実行する基本関数
  */
-export function executeTursoCommand(
-    args: string[],
-    options: ExecOptions = {}
-): Promise<CommandResult> {
+export function executeTursoCommand(args: string[], options: ExecOptions = {}): Promise<CommandResult> {
     const { timeout = 30_000, env = {}, cwd = process.cwd() } = options;
 
     return new Promise((resolve) => {
@@ -112,23 +109,13 @@ export function throwOnError(result: CommandResult, commandName: string): void {
             exitCode?: number;
             stderr?: string;
 
-            constructor(
-                message: string,
-                command: string,
-                exitCode?: number,
-                stderr?: string
-            ) {
+            constructor(message: string, command: string, exitCode?: number, stderr?: string) {
                 super(message);
                 this.command = command;
                 this.exitCode = exitCode;
                 this.stderr = stderr;
             }
-        })(
-            result.error || "Command failed",
-            commandName,
-            undefined,
-            result.stderr
-        );
+        })(result.error || "Command failed", commandName, undefined, result.stderr);
         throw error;
     }
 }
