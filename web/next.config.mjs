@@ -23,7 +23,8 @@ export default withNextra({
         output: "export",
         trailingSlash: true,
         distDir: "out",
-        assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || "",
+        // GitHub PagesではassetPrefixは不要（既にプロジェクトパス内にある）
+        assetPrefix: "",
         basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
     }),
 
