@@ -10,6 +10,9 @@ const withNextra = nextra({
     search: {
         codeblocks: false,
     },
+    // ロケール固有のサイドバー表示設定
+    // ロケールグループ化を防ぐため false に設定
+    unstable_shouldAddLocaleToLinks: false,
 });
 
 export default withNextra({

@@ -1,11 +1,7 @@
 /* eslint-env node */
 import Script from "next/script";
-import { Footer, Layout } from "nextra-theme-docs";
+import { Head } from "nextra/components";
 import "nextra-theme-docs/style.css";
-import { Banner, Head } from "nextra/components";
-import { getPageMap } from "nextra/page-map";
-
-import { LocalizedNavbar } from "../components/localized-navbar.jsx";
 
 import "./globals.css";
 
@@ -88,13 +84,11 @@ export const metadata = {
     },
 };
 
-export default async function RootLayout({ children }) {
-    const pageMap = await getPageMap();
+export default function RootLayout({ children }) {
     return (
         <html lang="ja" dir="ltr" suppressHydrationWarning>
             <Head faviconGlyph="✦" />
             <body className="bg-background text-foreground">
-                {/* biome-ignore lint/correctness/useUniqueElementIds: レイアウト内で一度のみ使用する初期化スクリプト */}
                 <Script id="theme-init" strategy="beforeInteractive">
                     {`
                         try {
@@ -106,20 +100,7 @@ export default async function RootLayout({ children }) {
                         } catch (_) {}
                     `}
                 </Script>
-                <Layout
-                    banner={<Banner storageKey="fluorite-flake-docs">Fluorite-Flake Documentation</Banner>}
-                    navbar={<LocalizedNavbar />}
-                    footer={<Footer>MIT {new Date().getFullYear()} © Fluorite-Flake.</Footer>}
-                    editLink="GitHubでこのページを編集"
-                    docsRepositoryBase="https://github.com/kotsutsumi/fluorite-flake/blob/main/web/src/content"
-                    sidebar={{
-                        defaultMenuCollapseLevel: 1,
-                        toggleButton: true,
-                    }}
-                    pageMap={pageMap}
-                >
-                    <div className="min-h-screen">{children}</div>
-                </Layout>
+                {children}
             </body>
         </html>
     );

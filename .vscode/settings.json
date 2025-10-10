@@ -1,5 +1,6 @@
 {
     "markdown.styles": [".vscode/markdown.css"],
     "markdown-mermaid.lightModeTheme": "neutral",
-    "markdown-mermaid.darkModeTheme": "dark"
+    "markdown-mermaid.darkModeTheme": "dark",
+    "postman.settings.dotenv-detection-notification-visibility": false
 }

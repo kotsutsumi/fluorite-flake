@@ -29,13 +29,24 @@ export async function generateMetadata({ params }) {
     const { locale, mdxPath } = await params;
 
     try {
+        console.log(`生成されたメタデータのパス: ${mdxPath}, ロケール: ${locale}`);
+
+        // ロケール固有のパスを構築（例: ['get-started'] → ['ja-JP', 'get-started']）
+        const localizedPath = [locale, ...mdxPath];
+
         // ロケール固有のメタデータを取得
-        const { metadata } = await importPage(mdxPath);
-        return metadata;
+        const { metadata } = await importPage(localizedPath);
+        return (
+            metadata || {
+                title: locale === "ja-JP" ? "はじめに" : "Get Started",
+            }
+        );
     } catch (error) {
-        console.warn(`Could not load metadata for ${mdxPath.join("/")}, locale: ${locale}`);
+        console.warn(`Could not load metadata for ${locale}/${mdxPath.join("/")}:`, error.message);
+        // フォールバック用のメタデータを返す
         return {
             title: locale === "ja-JP" ? "はじめに" : "Get Started",
+            description: locale === "ja-JP" ? "Fluorite Flakeの使い方を学ぶ" : "Learn how to use Fluorite Flake",
         };
     }
 }
@@ -46,8 +57,8 @@ export default async function LocalizedPage({ params }) {
     const { locale, mdxPath } = await params;
 
     try {
-        // ロケール固有のファイル名を構築（例: get-started.ja-JP）
-        const localizedPath = mdxPath.map((path) => `${path}.${locale}`);
+        // ロケール固有のファイルパスを構築（例: ['ja-JP', 'get-started']）
+        const localizedPath = [locale, ...mdxPath];
 
         // 指定されたパスのコンテンツを読み込み
         const { default: MDXContent, toc, metadata, sourceCode } = await importPage(localizedPath);
@@ -58,11 +69,11 @@ export default async function LocalizedPage({ params }) {
             </Wrapper>
         );
     } catch (error) {
-        console.error(`Failed to load content for path: ${mdxPath.join("/")}.${locale}`, error);
+        console.error(`Failed to load content for path: ${locale}/${mdxPath.join("/")}`, error);
 
         // フォールバック: デフォルトロケール（日本語）のコンテンツを試行
         try {
-            const fallbackPath = mdxPath.map((path) => `${path}.ja-JP`);
+            const fallbackPath = ["ja-JP", ...mdxPath];
             const { default: MDXContent, toc, metadata, sourceCode } = await importPage(fallbackPath);
 
             return (
