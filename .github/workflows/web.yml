@@ -46,9 +46,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build documentation
-        run: pnpm --filter web build:static
+        run: pnpm --filter web build
         env:
-          NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
+          NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}/"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
