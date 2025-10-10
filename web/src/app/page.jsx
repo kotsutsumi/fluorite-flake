@@ -23,8 +23,9 @@ export default function HomePage() {
 
     useEffect(() => {
         const locale = getLocaleFromBrowser();
-        // クライアントサイドリダイレクト
-        router.push(`/${locale}`);
+        // basePathを考慮したクライアントサイドリダイレクト
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+        router.push(`${basePath}/${locale}`);
     }, [router]);
 
     // ローディング中の表示
