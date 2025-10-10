@@ -13,6 +13,6 @@ export default {
     "get-started": {
         title: "Get Started",
         display: "normal",
-        href: "/fluorite-flake/en-US/get-started",
+        href: "/en-US/get-started",
     },
 };

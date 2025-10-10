@@ -13,7 +13,7 @@ export default {
     "get-started": {
         title: "はじめに",
         display: "normal",
-        href: "/fluorite-flake/ja-JP/get-started",
+        href: "/ja-JP/get-started",
     },
 };
 
