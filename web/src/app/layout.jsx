@@ -5,6 +5,11 @@ import "nextra-theme-docs/style.css";
 
 import "./globals.css";
 
+// GitHub Pages用のbasePathを取得するヘルパー関数
+function getBasePath() {
+    return process.env.NEXT_PUBLIC_BASE_PATH || "";
+}
+
 export const metadata = {
     metadataBase: new URL("https://github.com/kotsutsumi/fluorite-flake"),
     title: {
@@ -56,7 +61,7 @@ export const metadata = {
         description: "TypeScript優先のプロジェクトスキャフォールディングツール。Next.js、Expo、Tauriに対応。",
         images: [
             {
-                url: "/fluorite-flake-logo.png",
+                url: `${getBasePath()}/fluorite-flake-logo.png`,
                 width: 1200,
                 height: 630,
                 alt: "Fluorite-Flake Logo",
@@ -69,16 +74,16 @@ export const metadata = {
         creator: "@fluorite_flake",
         title: "Fluorite-Flake - 次世代のフルスタック開発ツール",
         description: "TypeScript優先のプロジェクトスキャフォールディングツール",
-        images: ["/fluorite-flake-logo.png"],
+        images: [`${getBasePath()}/fluorite-flake-logo.png`],
     },
     appleWebApp: {
         title: "Fluorite-Flake",
         statusBarStyle: "default",
         capable: true,
     },
-    manifest: "/manifest.json",
+    manifest: `${getBasePath()}/manifest.json`,
     other: {
-        "msapplication-TileImage": "/fluorite-flake-logo.png",
+        "msapplication-TileImage": `${getBasePath()}/fluorite-flake-logo.png`,
         "msapplication-TileColor": "#fff",
         "theme-color": "#000000",
     },

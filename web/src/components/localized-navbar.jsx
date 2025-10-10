@@ -6,6 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import { LanguageSwitcher } from "./language-switcher.jsx";
 import { ThemeSwitcher } from "./theme-switcher.jsx";
 
+// GitHub Pages用のbasePathを取得するヘルパー関数
+function getBasePath() {
+    return process.env.NEXT_PUBLIC_BASE_PATH || "";
+}
+
 // 多言語対応メッセージ
 const messages = {
     ja: {
@@ -75,7 +80,7 @@ export function LocalizedNavbar() {
         <Navbar
             logo={
                 <div className="flex items-center gap-2">
-                    <Image src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" width={24} height={24} priority />
+                    <Image src={`${getBasePath()}/fluorite-flake-logo.png`} alt="Fluorite-Flake Logo" width={24} height={24} priority />
                     <span>
                         <b>Fluorite-Flake</b> <span className="opacity-60">{currentMessages.subtitle}</span>
                     </span>

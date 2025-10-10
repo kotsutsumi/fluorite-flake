@@ -76,17 +76,9 @@ export function middleware(request) {
     const acceptLanguage = request.headers.get("accept-language");
     const detectedLocale = getLocaleFromHeader(acceptLanguage);
 
-    // basePathを考慮したリダイレクトURLを生成
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-    let redirectPath;
-
-    if (pathname === "/" || pathname === basePath + "/") {
-        // ルートパスの場合
-        redirectPath = `${basePath}/${detectedLocale}`;
-    } else {
-        // その他のパスの場合
-        redirectPath = `${basePath}/${detectedLocale}${pathname}`;
-    }
+    // GitHub Pagesでは現在のURLが既にbasePathを含んでいるため、
+    // 相対パスでリダイレクトして重複を回避
+    const redirectPath = pathname === "/" ? `/${detectedLocale}` : `/${detectedLocale}${pathname}`;
 
     const redirectUrl = new URL(redirectPath, request.url);
     return NextResponse.redirect(redirectUrl);
