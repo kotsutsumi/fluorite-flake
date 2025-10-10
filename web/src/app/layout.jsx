@@ -1,13 +1,14 @@
 /* eslint-env node */
 import Script from "next/script";
-import { Footer, Layout } from "nextra-theme-docs";
+import { Head } from "nextra/components";
 import "nextra-theme-docs/style.css";
-import { Banner, Head } from "nextra/components";
-import { getPageMap } from "nextra/page-map";
-
-import { LocalizedNavbar } from "../components/localized-navbar.jsx";
 
 import "./globals.css";
+
+// GitHub Pages用のbasePathを取得するヘルパー関数
+function getBasePath() {
+    return process.env.NEXT_PUBLIC_BASE_PATH || "";
+}
 
 export const metadata = {
     metadataBase: new URL("https://github.com/kotsutsumi/fluorite-flake"),
@@ -60,7 +61,7 @@ export const metadata = {
         description: "TypeScript優先のプロジェクトスキャフォールディングツール。Next.js、Expo、Tauriに対応。",
         images: [
             {
-                url: "/fluorite-flake-logo.png",
+                url: `${getBasePath()}/fluorite-flake-logo.png`,
                 width: 1200,
                 height: 630,
                 alt: "Fluorite-Flake Logo",
@@ -73,28 +74,26 @@ export const metadata = {
         creator: "@fluorite_flake",
         title: "Fluorite-Flake - 次世代のフルスタック開発ツール",
         description: "TypeScript優先のプロジェクトスキャフォールディングツール",
-        images: ["/fluorite-flake-logo.png"],
+        images: [`${getBasePath()}/fluorite-flake-logo.png`],
     },
     appleWebApp: {
         title: "Fluorite-Flake",
         statusBarStyle: "default",
         capable: true,
     },
-    manifest: "/manifest.json",
+    manifest: `${getBasePath()}/manifest.json`,
     other: {
-        "msapplication-TileImage": "/fluorite-flake-logo.png",
+        "msapplication-TileImage": `${getBasePath()}/fluorite-flake-logo.png`,
         "msapplication-TileColor": "#fff",
         "theme-color": "#000000",
     },
 };
 
-export default async function RootLayout({ children }) {
-    const pageMap = await getPageMap();
+export default function RootLayout({ children }) {
     return (
         <html lang="ja" dir="ltr" suppressHydrationWarning>
             <Head faviconGlyph="✦" />
             <body className="bg-background text-foreground">
-                {/* biome-ignore lint/correctness/useUniqueElementIds: レイアウト内で一度のみ使用する初期化スクリプト */}
                 <Script id="theme-init" strategy="beforeInteractive">
                     {`
                         try {
@@ -106,20 +105,7 @@ export default async function RootLayout({ children }) {
                         } catch (_) {}
                     `}
                 </Script>
-                <Layout
-                    banner={<Banner storageKey="fluorite-flake-docs">Fluorite-Flake Documentation</Banner>}
-                    navbar={<LocalizedNavbar />}
-                    footer={<Footer>MIT {new Date().getFullYear()} © Fluorite-Flake.</Footer>}
-                    editLink="GitHubでこのページを編集"
-                    docsRepositoryBase="https://github.com/kotsutsumi/fluorite-flake/blob/main/web/src/content"
-                    sidebar={{
-                        defaultMenuCollapseLevel: 1,
-                        toggleButton: true,
-                    }}
-                    pageMap={pageMap}
-                >
-                    <div className="min-h-screen">{children}</div>
-                </Layout>
+                {children}
             </body>
         </html>
     );

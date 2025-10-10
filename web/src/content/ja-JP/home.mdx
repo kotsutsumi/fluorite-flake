@@ -1,0 +1,143 @@
+import { Bleed } from 'nextra/components'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LogoImage } from '@/components/BasePath.jsx'
+
+<div className="text-center py-16 pb-8">
+
+# Fluorite-Flake 🚀
+
+<Bleed>
+  <div className="flex justify-center items-center my-8">
+    <LogoImage />
+  </div>
+</Bleed>
+
+
+<div className="text-xl text-gray-700 dark:text-gray-200 my-4 mb-12 leading-relaxed">
+次世代のフルスタック開発ツール<br />
+TypeScript優先のプロジェクトスキャフォールディングツール
+</div>
+
+<div className="flex gap-4 justify-center flex-wrap my-8">
+  <a href="/fluorite-flake/ja-JP/get-started" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg no-underline font-bold whitespace-nowrap hover:bg-blue-700 transition-colors">
+    はじめる
+  </a>
+  <a href="https://github.com/kotsutsumi/fluorite-flake" className="inline-block px-6 py-3 border border-blue-600 text-blue-600 rounded-lg no-underline font-bold whitespace-nowrap hover:bg-blue-50 transition-colors">
+    GitHub
+  </a>
+</div>
+
+</div>
+
+## ✨ 主な機能
+
+<div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 my-8">
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🎯 マルチフレームワーク対応</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        Next.js、Expo、Tauriで現代的なアプリケーションを作成
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">📱 モバイルテスト内蔵</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        ExpoプロジェクトにMaestro E2Eテストを標準搭載
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🗄️ 柔軟なデータベース</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        Turso、Supabase、SQLiteから最適なソリューションを選択
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🔐 認証機能対応</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        フレームワーク固有の認証ソリューションを自動設定
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">☁️ ストレージ統合</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        複数のクラウドストレージプロバイダーをサポート
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🧪 包括的テスト</CardTitle>
+      <CardDescription className="text-sm text-gray-700 dark:text-gray-200">
+        32のテストファイルでユニット・統合・E2Eテストを完全カバー
+      </CardDescription>
+    </CardHeader>
+  </Card>
+</div>
+
+## 🚀 クイックスタート
+
+```bash
+# グローバルインストール
+npm install -g fluorite-flake
+
+# 新しいプロジェクトを作成
+fluorite-flake create
+
+# TUIダッシュボードを起動
+fluorite-flake dashboard
+```
+
+## 🌟 なぜFluorite-Flakeを選ぶのか？
+
+<div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 my-8">
+  <Card className="border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">⚡ 高速スタート</CardTitle>
+      <CardDescription className="text-gray-700 dark:text-gray-200">
+        1つのコマンドで本格的なプロジェクト構造を生成。設定に時間をかけずに開発に集中できます。
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🎯 ベストプラクティス</CardTitle>
+      <CardDescription className="text-gray-700 dark:text-gray-200">
+        業界標準のプラクティスとツールを統合。TypeScript、ESLint、Prettierが標準設定。
+      </CardDescription>
+    </CardHeader>
+  </Card>
+
+  <Card className="border-gray-200 dark:border-gray-700">
+    <CardHeader className="space-y-4">
+      <CardTitle className="text-blue-600 dark:text-blue-400">🌍 国際化対応</CardTitle>
+      <CardDescription className="text-gray-700 dark:text-gray-200">
+        英語と日本語でのネイティブサポート。グローバルなアプリケーション開発に最適。
+      </CardDescription>
+    </CardHeader>
+  </Card>
+</div>
+
+---
+
+<div className="text-center py-8">
+  <span className="text-gray-700 dark:text-gray-200 mb-4 block">
+    開発を始める準備はできましたか？
+  </span>
+  <a href="/fluorite-flake/ja-JP/get-started" className="inline-block px-8 py-4 bg-blue-600 text-white rounded-lg no-underline font-bold text-lg whitespace-nowrap hover:bg-blue-700 transition-colors">
+    今すぐ始める
+  </a>
+</div>

@@ -6,6 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import { LanguageSwitcher } from "./language-switcher.jsx";
 import { ThemeSwitcher } from "./theme-switcher.jsx";
 
+// GitHub Pages用のbasePathを取得するヘルパー関数
+function getBasePath() {
+    return process.env.NEXT_PUBLIC_BASE_PATH || "";
+}
+
 // 多言語対応メッセージ
 const messages = {
     ja: {
@@ -26,8 +31,12 @@ export function LocalizedNavbar() {
             return;
         }
 
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
         const path = window.location.pathname;
-        const newLang = path.startsWith("/en-US") ? "en" : "ja";
+
+        // basePathを除去してから言語判定を行う
+        const pathWithoutBase = path.replace(new RegExp(`^${basePath}`), "");
+        const newLang = pathWithoutBase.startsWith("/en-US") ? "en" : "ja";
         setCurrentLang(newLang);
     }, []);
 
@@ -71,7 +80,7 @@ export function LocalizedNavbar() {
         <Navbar
             logo={
                 <div className="flex items-center gap-2">
-                    <Image src="/fluorite-flake-logo.png" alt="Fluorite-Flake Logo" width={24} height={24} priority />
+                    <Image src={`${getBasePath()}/fluorite-flake-logo.png`} alt="Fluorite-Flake Logo" width={24} height={24} priority />
                     <span>
                         <b>Fluorite-Flake</b> <span className="opacity-60">{currentMessages.subtitle}</span>
                     </span>
@@ -80,7 +89,7 @@ export function LocalizedNavbar() {
             projectLink="https://github.com/kotsutsumi/fluorite-flake"
         >
             <a
-                href={`/${currentLang === "en" ? "en-US" : "ja-JP"}/get-started`}
+                href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/${currentLang === "en" ? "en-US" : "ja-JP"}/get-started`}
                 className="text-inherit no-underline px-4 py-2 rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/5"
             >
                 {currentMessages.documentation}

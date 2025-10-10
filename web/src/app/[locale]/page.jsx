@@ -14,8 +14,18 @@ export async function generateStaticParams() {
 // メタデータ生成
 export async function generateMetadata({ params }) {
     const { locale } = await params;
-    const { metadata } = await importPage([`home.${locale}`]);
-    return metadata;
+    try {
+        const { metadata } = await importPage([locale, "home"]);
+        return metadata || {
+            title: locale === "ja-JP" ? "ホーム" : "Home",
+        };
+    } catch (error) {
+        console.warn(`Could not load metadata for ${locale}/home:`, error.message);
+        return {
+            title: locale === "ja-JP" ? "ホーム" : "Home",
+            description: locale === "ja-JP" ? "Fluorite Flake ホームページ" : "Fluorite Flake Home",
+        };
+    }
 }
 
 const Wrapper = getMDXComponents().wrapper;
@@ -23,11 +33,10 @@ const Wrapper = getMDXComponents().wrapper;
 export default async function LocalePage({ params }) {
     const { locale } = await params;
 
-    // ロケールファイルパスを生成
-    const mdxPath = [`home.${locale}`];
-
     try {
-        const { default: MDXContent, toc, metadata, sourceCode } = await importPage(mdxPath);
+        // ロケール固有のディレクトリからhome.mdxを読み込み
+        const localizedPath = [locale, "home"];
+        const { default: MDXContent, toc, metadata, sourceCode } = await importPage(localizedPath);
 
         return (
             <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
@@ -35,16 +44,33 @@ export default async function LocalePage({ params }) {
             </Wrapper>
         );
     } catch (error) {
-        console.error(`Failed to load content for locale: ${locale}`, error);
-        // フォールバック: 日本語版を表示
-        const fallbackPath = [`home.ja-JP`];
-        const { default: MDXContent, toc, metadata, sourceCode } = await importPage(fallbackPath);
+        console.error(`Failed to load content for ${locale}/home`, error);
 
-        return (
-            <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
-                <MDXContent params={params} />
-            </Wrapper>
-        );
+        // フォールバック: 日本語版を表示
+        try {
+            const fallbackPath = ["ja-JP", "home"];
+            const { default: MDXContent, toc, metadata, sourceCode } = await importPage(fallbackPath);
+
+            return (
+                <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
+                    <MDXContent params={params} />
+                </Wrapper>
+            );
+        } catch (fallbackError) {
+            console.error("Fallback also failed:", fallbackError);
+            return (
+                <div className="p-8">
+                    <h1 className="text-2xl font-bold mb-4">
+                        {locale === "ja-JP" ? "ページが見つかりません" : "Page Not Found"}
+                    </h1>
+                    <p>
+                        {locale === "ja-JP"
+                            ? "お探しのページは現在利用できません。"
+                            : "The requested page is currently not available."}
+                    </p>
+                </div>
+            );
+        }
     }
 }
 

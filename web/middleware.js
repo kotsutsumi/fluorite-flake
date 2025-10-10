@@ -10,8 +10,17 @@ const defaultLocale = "ja-JP";
  * @returns {string|null} - 見つかったロケール、またはnull
  */
 function getLocaleFromPathname(pathname) {
-    const segments = pathname.split("/");
-    const locale = segments[1];
+    const segments = pathname.split("/").filter(Boolean);
+
+    // basePathがある場合は考慮（GitHub Pagesなど）
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH;
+    let startIndex = 0;
+
+    if (basePath && segments[0] === basePath.replace("/", "")) {
+        startIndex = 1;
+    }
+
+    const locale = segments[startIndex];
     return locales.includes(locale) ? locale : null;
 }
 
@@ -67,8 +76,11 @@ export function middleware(request) {
     const acceptLanguage = request.headers.get("accept-language");
     const detectedLocale = getLocaleFromHeader(acceptLanguage);
 
-    // 検出された言語でリダイレクト
-    const redirectUrl = new URL(`/${detectedLocale}${pathname}`, request.url);
+    // GitHub Pagesでは現在のURLが既にbasePathを含んでいるため、
+    // 相対パスでリダイレクトして重複を回避
+    const redirectPath = pathname === "/" ? `/${detectedLocale}` : `/${detectedLocale}${pathname}`;
+
+    const redirectUrl = new URL(redirectPath, request.url);
     return NextResponse.redirect(redirectUrl);
 }
 

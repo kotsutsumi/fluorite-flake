@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 export function LanguageSwitcher() {
     const [currentLang, setCurrentLang] = useState("ja");
     const router = useRouter();
@@ -13,8 +15,12 @@ export function LanguageSwitcher() {
         }
 
         const updateLanguage = () => {
+            const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
             const path = window.location.pathname;
-            const newLang = path.startsWith("/en-US") ? "en" : "ja";
+
+            // basePathを除去してから言語判定を行う
+            const pathWithoutBase = path.replace(new RegExp(`^${basePath}`), "");
+            const newLang = pathWithoutBase.startsWith("/en-US") ? "en" : "ja";
             setCurrentLang(newLang);
         };
 
@@ -34,8 +40,14 @@ export function LanguageSwitcher() {
             return;
         }
 
+        setCurrentLang(newLang);
+
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
         const currentPath = window.location.pathname;
-        const cleanPath = currentPath.replace(/^\/ja-JP/, "").replace(/^\/en-US/, "") || "/";
+
+        // basePathを除去してから言語切り替えを行う
+        const pathWithoutBase = currentPath.replace(new RegExp(`^${basePath}`), "");
+        const cleanPath = pathWithoutBase.replace(/^\/ja-JP/, "").replace(/^\/en-US/, "") || "/";
         const newLocale = newLang === "en" ? "/en-US" : "/ja-JP";
         const newPath = cleanPath === "/" ? newLocale : newLocale + cleanPath;
 
@@ -43,16 +55,19 @@ export function LanguageSwitcher() {
     };
 
     return (
-        <div className="flex items-center gap-2">
-            <select
-                value={currentLang}
-                onChange={(e) => switchLanguage(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded text-sm bg-transparent cursor-pointer hover:border-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors"
-            >
-                <option value="ja">日本語</option>
-                <option value="en">English</option>
-            </select>
-        </div>
+        <Select value={currentLang} onValueChange={switchLanguage}>
+            <SelectTrigger className="w-28">
+                <SelectValue placeholder="言語" aria-label={currentLang === "ja" ? "日本語" : "English"} />
+            </SelectTrigger>
+            <SelectContent className="bg-background/95 backdrop-blur border-border">
+                <SelectItem className="focus:bg-accent focus:text-accent-foreground hover:bg-accent/80" value="ja">
+                    日本語
+                </SelectItem>
+                <SelectItem className="focus:bg-accent focus:text-accent-foreground hover:bg-accent/80" value="en">
+                    English
+                </SelectItem>
+            </SelectContent>
+        </Select>
     );
 }
 
