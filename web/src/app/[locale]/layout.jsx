@@ -52,8 +52,9 @@ function filterPageMapByLocale(pageMap, currentLocale) {
                         return; // 非表示ページはスキップ
                     }
 
-                    // ロケールプレフィックスを除去して相対パスに変更
-                    const newRoute = child.route.replace(`/${currentLocale}`, "") || "/";
+                    // メタデータからhrefが指定されている場合はそれを使用、なければロケールプレフィックスを除去
+                    const hrefFromMeta = localeMetaData && localeMetaData[child.name] && localeMetaData[child.name].href;
+                    const newRoute = hrefFromMeta || (child.route.replace(`/${currentLocale}`, "") || "/");
 
                     // titleをメタデータから取得するか元の値を使用
                     const title = (localeMetaData && localeMetaData[child.name] && localeMetaData[child.name].title)
