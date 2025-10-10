@@ -48,7 +48,7 @@ jobs:
       - name: Build documentation
         run: pnpm --filter web build
         env:
-          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_BASE_PATH: "/fluorite-flake"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

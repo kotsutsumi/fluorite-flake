@@ -1,7 +1,6 @@
 "use client";
-
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 function getLocaleFromBrowser() {
     // ブラウザの言語設定を取得
@@ -24,8 +23,9 @@ export default function HomePage() {
     useEffect(() => {
         const locale = getLocaleFromBrowser();
         // basePathを考慮したクライアントサイドリダイレクト
-        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-        router.push(`${basePath}/${locale}`);
+        // const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+        // router.push(`${basePath}/${locale}`);
+        router.push(`/${locale}`);
     }, [router]);
 
     // ローディング中の表示
