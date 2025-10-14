@@ -7,9 +7,8 @@ import prisma from './db';
 
 // Use Better Auth's built-in session management
 export async function getSession() {
-    const session = await auth.api.getSession({
-        headers: await headers(), // Pass the headers to Better Auth
-    });
+    const headersList = await headers();
+    const session = await auth.api.getSession({ headers: headersList });
 
     if (!session) {
         return null;

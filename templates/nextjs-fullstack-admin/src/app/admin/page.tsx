@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { auth } from '@/lib/auth';
@@ -11,10 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-    const headersList = headers();
-    const session = await auth.api.getSession({
-        headers: headersList,
-    });
+    const headersList = await headers();
+    const session = await auth.api.getSession({ headers: headersList });
 
     // Check if user is authenticated and has admin permissions
     if (!session?.user || !['admin', 'org_admin'].includes(session.user.role)) {

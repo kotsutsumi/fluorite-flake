@@ -1,4 +1,4 @@
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, HeaderMap } from '@apollo/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { typeDefs } from '@/lib/graphql/schema';
 import { resolvers } from '@/lib/graphql/resolvers';
@@ -39,6 +39,17 @@ const server = new ApolloServer<Context>({
         return error;
     },
 });
+
+/**
+ * Next.js の Headers を Apollo Server 用の HeaderMap に変換
+ */
+function toHeaderMap(source: Headers): HeaderMap {
+    const headerMap = new HeaderMap();
+    source.forEach((value, key) => {
+        headerMap.set(key, value);
+    });
+    return headerMap;
+}
 
 async function createContext(req: NextRequest): Promise<Context> {
     const context: Context = { req };
@@ -91,8 +102,8 @@ async function handleGraphQLRequest(req: NextRequest) {
     const response = await server.executeHTTPGraphQLRequest({
         httpGraphQLRequest: {
             method: req.method,
-            // Apollo GraphQL expects HeaderMap - convert Next.js Headers to plain object
-            headers: Object.fromEntries(req.headers.entries()),
+            // Apollo Server が要求する HeaderMap を引き渡す
+            headers: toHeaderMap(req.headers),
             body,
             search: req.nextUrl.search,
         },
