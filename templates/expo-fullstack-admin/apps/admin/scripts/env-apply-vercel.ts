@@ -6,6 +6,7 @@
  * Turso / Supabase両方のデータベースタイプに対応しています。
  */
 import { resolve } from 'node:path';
+
 import {
     readProjectConfig,
     readEnvFile,
@@ -13,7 +14,7 @@ import {
     detectDatabaseType,
     checkVercelCli,
     checkVercelAuth,
-    resolvePreviewKeys,
+    resolveEnvironmentKeys,
     detectProjectRoot,
     type EnvMap,
 } from './env-tools.js';
@@ -22,11 +23,15 @@ import {
  * 環境変数を開発環境とプレビュー環境に適用する
  */
 async function applyVariable(key: string, value: string, env: NodeJS.ProcessEnv): Promise<void> {
-    // Development環境に適用
-    await applyToEnvironment(key, value, 'development', env);
+    const keysToApply = resolveEnvironmentKeys(key, 'development');
 
-    // Preview環境にも同じ値を適用（DEVサフィックス付き）
-    for (const previewKey of resolvePreviewKeys(key, 'development')) {
+    // Development環境に適用（サフィックス付きの複製も含める）
+    for (const targetKey of keysToApply) {
+        await applyToEnvironment(targetKey, value, 'development', env);
+    }
+
+    // Preview環境にも同じ値を適用（DEVサフィックス付きも含める）
+    for (const previewKey of keysToApply) {
         await applyToEnvironment(previewKey, value, 'preview', env);
     }
 }

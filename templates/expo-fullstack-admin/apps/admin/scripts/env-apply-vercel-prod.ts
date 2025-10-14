@@ -9,6 +9,7 @@
  */
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+
 import {
     readProjectConfig,
     readEnvFile,
@@ -16,6 +17,7 @@ import {
     detectDatabaseType,
     checkVercelCli,
     checkVercelAuth,
+    resolveEnvironmentKeys,
     detectProjectRoot,
     type EnvMap,
 } from './env-tools.js';
@@ -46,8 +48,10 @@ async function confirmProduction(): Promise<boolean> {
  * 環境変数を本番環境に適用する
  */
 async function applyVariable(key: string, value: string, env: NodeJS.ProcessEnv): Promise<void> {
-    // Production環境に適用
-    await applyToEnvironment(key, value, 'production', env);
+    // Production環境に適用（サフィックス付きの複製も含める）
+    for (const targetKey of resolveEnvironmentKeys(key, 'production')) {
+        await applyToEnvironment(targetKey, value, 'production', env);
+    }
 }
 
 /**

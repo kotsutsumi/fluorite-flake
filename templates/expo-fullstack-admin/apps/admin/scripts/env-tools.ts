@@ -4,10 +4,10 @@
  * 環境変数の管理、暗号化・復号化機能を提供
  */
 import { spawn } from 'node:child_process';
-import { readFile, access } from 'node:fs/promises';
-import { createInterface } from 'node:readline/promises';
-import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { readFile, access } from 'node:fs/promises';
+import { resolve, join } from 'node:path';
+import { createInterface } from 'node:readline/promises';
 
 /**
  * プロジェクト設定の型定義
@@ -68,6 +68,44 @@ export type EnvironmentType = 'development' | 'staging' | 'production';
  * Vercel環境タイプの型定義
  */
 export type VercelEnvironmentType = 'development' | 'preview' | 'production';
+
+/**
+ * 環境ごとのサフィックス定義
+ */
+const ENVIRONMENT_SUFFIX_MAP: Record<EnvironmentType, string> = {
+    development: 'DEV',
+    staging: 'STG',
+    production: 'PROD',
+};
+
+/**
+ * 環境に応じたサフィックスを取得する
+ */
+export function getEnvironmentSuffix(environment: EnvironmentType): string {
+    return ENVIRONMENT_SUFFIX_MAP[environment];
+}
+
+/**
+ * 環境ごとの複製キー一覧を取得する
+ */
+export function resolveEnvironmentKeys(key: string, environment: EnvironmentType): string[] {
+    const suffix = getEnvironmentSuffix(environment);
+    const suffixToken = `_${suffix}`;
+    const keys = new Set<string>();
+
+    keys.add(key);
+
+    if (key.endsWith(suffixToken)) {
+        const baseKey = key.slice(0, -suffixToken.length);
+        if (baseKey.length > 0) {
+            keys.add(baseKey);
+        }
+    } else {
+        keys.add(`${key}${suffixToken}`);
+    }
+
+    return Array.from(keys);
+}
 
 /**
  * プロジェクト設定を読み込む
@@ -265,13 +303,7 @@ export async function clearEnvironmentVariables(
  * 環境変数のプレビューキーを解決する
  */
 export function resolvePreviewKeys(key: string, environment: EnvironmentType): string[] {
-    const suffix = environment.toUpperCase().slice(0, 3); // DEV, STA, PRO
-
-    if (key.endsWith(`_${suffix}`)) {
-        return [key];
-    }
-
-    return [`${key}_${suffix}`];
+    return resolveEnvironmentKeys(key, environment);
 }
 
 /**
