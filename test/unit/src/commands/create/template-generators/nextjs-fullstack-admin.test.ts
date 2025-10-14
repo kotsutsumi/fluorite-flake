@@ -20,9 +20,13 @@ vi.mock("node:fs", () => ({
     existsSync: vi.fn(),
 }));
 
-vi.mock("node:path", () => ({
-    join: vi.fn((...args) => args.join("/")),
-}));
+vi.mock("node:path", async () => {
+    const actual = await vi.importActual<typeof import("node:path")>("node:path");
+    return {
+        ...actual,
+        join: vi.fn((...args: string[]) => args.join("/")),
+    };
+});
 
 vi.mock("execa", () => ({
     execa: vi.fn(),
@@ -93,6 +97,8 @@ describe("generateFullStackAdmin 暗号化統合", () => {
         });
 
         vi.mocked(readFile).mockResolvedValue("DATABASE_URL=test");
+        const { existsSync } = await import("node:fs");
+        vi.mocked(existsSync).mockImplementation(() => true);
         vi.mocked(execa).mockResolvedValue({
             stdout: "",
             stderr: "",
@@ -292,7 +298,12 @@ describe("generateFullStackAdmin huskyの統合", () => {
     it("huskyファイルが存在しない場合は権限設定をスキップする", async () => {
         // ファイルが存在しない場合をシミュレート
         const { existsSync } = await import("node:fs");
-        vi.mocked(existsSync).mockReturnValue(false);
+        vi.mocked(existsSync).mockImplementation((path) => {
+            if (typeof path === "string" && path.endsWith(".husky/pre-commit")) {
+                return false;
+            }
+            return true;
+        });
 
         const result = await generateFullStackAdmin(baseContext);
 
@@ -323,6 +334,91 @@ describe("generateFullStackAdmin huskyの統合", () => {
 
         expect(result.success).toBe(true);
         expect(vi.mocked(chmod)).toHaveBeenCalledWith("/test/project/target/.husky/pre-commit", 0o755);
+    });
+
+    it("環境変数ファイルが存在しない場合はテンプレートから生成される", async () => {
+        const { existsSync } = await import("node:fs");
+        const { readFile, writeFile } = await import("node:fs/promises");
+
+        const templateMap: Record<string, string> = {
+            ".env": "DATABASE_URL={{LOCAL_DATABASE_URL}}",
+            ".env.development": "DATABASE_URL={{DEV_DATABASE_URL}}",
+            ".env.staging": "DATABASE_URL={{STAGING_DATABASE_URL}}",
+            ".env.prod": "DATABASE_URL={{PROD_DATABASE_URL}}",
+        };
+
+        const createdFiles = new Set<string>();
+
+        vi.mocked(writeFile).mockImplementation(async (path: unknown, content: unknown) => {
+            if (typeof path === "string") {
+                createdFiles.add(path);
+            }
+            return undefined;
+        });
+
+        vi.mocked(existsSync).mockImplementation((path) => {
+            if (typeof path === "string" && path.endsWith(".husky/pre-commit")) {
+                return true;
+            }
+
+            if (typeof path === "string") {
+                return createdFiles.has(path);
+            }
+
+            return false;
+        });
+
+        vi.mocked(readFile).mockImplementation(async (path: unknown) => {
+            if (typeof path === "string") {
+                for (const [filename, content] of Object.entries(templateMap)) {
+                    if (path.endsWith(filename)) {
+                        return content;
+                    }
+                }
+
+                if (path.includes("templates/nextjs-fullstack-admin/")) {
+                    return "DATABASE_URL={{FALLBACK_DATABASE_URL}}";
+                }
+            }
+
+            return "DATABASE_URL=test";
+        });
+
+        const result = await generateFullStackAdmin(baseContext);
+
+        expect(result.success).toBe(true);
+        expect(result.filesCreated).toEqual(
+            expect.arrayContaining([".env", ".env.development", ".env.staging", ".env.prod"])
+        );
+
+        expect(vi.mocked(writeFile)).toHaveBeenCalledWith(
+            "/test/project/target/.env",
+            expect.any(String),
+            "utf-8"
+        );
+        expect(vi.mocked(writeFile)).toHaveBeenCalledWith(
+            "/test/project/target/.env.development",
+            expect.any(String),
+            "utf-8"
+        );
+        expect(vi.mocked(writeFile)).toHaveBeenCalledWith(
+            "/test/project/target/.env.staging",
+            expect.any(String),
+            "utf-8"
+        );
+        expect(vi.mocked(writeFile)).toHaveBeenCalledWith(
+            "/test/project/target/.env.prod",
+            expect.any(String),
+            "utf-8"
+        );
+        expect(vi.mocked(readFile)).toHaveBeenCalledWith(
+            expect.stringContaining("templates/nextjs-fullstack-admin/.env"),
+            "utf-8"
+        );
+        expect(vi.mocked(readFile)).toHaveBeenCalledWith(
+            expect.stringContaining("templates/nextjs-fullstack-admin/.env.development"),
+            "utf-8"
+        );
     });
 });
 

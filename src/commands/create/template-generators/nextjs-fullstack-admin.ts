@@ -5,8 +5,8 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { chmod, copyFile, readFile, stat, writeFile } from "node:fs/promises";
-import { isAbsolute, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, isAbsolute, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { execa } from "execa";
 import { getMessages } from "../../../i18n.js";
 import { runEnvEncryption, shouldEncryptEnv } from "../../../utils/env-encryption/index.js";
@@ -37,6 +37,280 @@ const SHARED_NEXT_STEPS = [
     "3. 開発サーバーを起動してください (pnpm dev)",
     "4. 管理者アカウントでログインし、各管理画面の動作を確認してください",
 ];
+
+const ENV_FILE_FALLBACKS: Record<string, string> = {
+    ".env": [
+        "# ============================================================",
+        "# ローカル開発環境の基本設定",
+        "# - CLI やアプリが使用する実行モードを定義します",
+        "# - ブラウザからアクセスする URL を自身のマシン向けに調整してください",
+        "# ============================================================",
+        "NODE_ENV=development",
+        "NEXT_PUBLIC_ENV=local",
+        "NEXT_PUBLIC_APP_URL=http://localhost:3000",
+        "",
+        "# ============================================================",
+        "# 認証・セッション関連の設定",
+        "# - Better Auth のコールバック URL とシークレットを管理します",
+        "# - 実際の値で上書きし、公開リポジトリにコミットしないでください",
+        "# ============================================================",
+        "BETTER_AUTH_URL=http://localhost:3000",
+        "BETTER_AUTH_SECRET=dev-secret-change-me",
+        "",
+        "# ============================================================",
+        "# データベース接続設定（ローカル）",
+        "# - DATABASE_PROVIDER で使用するドライバーを指定します（例: libsql, postgresql）",
+        "# - それぞれの URL をローカル環境向けに差し替えてください",
+        "# ============================================================",
+        "DATABASE_PROVIDER=turso",
+        "DATABASE_URL=file:./prisma/dev.db",
+        "DIRECT_DATABASE_URL=file:./prisma/dev.db",
+        "PRISMA_DATABASE_URL=file:./prisma/dev.db",
+        "TURSO_AUTH_TOKEN=",
+        "",
+        "# ============================================================",
+        "# Supabase を利用する場合の設定",
+        "# - Supabase を使用しない場合は空のままで問題ありません",
+        "# ============================================================",
+        "SUPABASE_URL=",
+        "SUPABASE_SERVICE_ROLE_KEY=",
+        "",
+        "# ============================================================",
+        "# ファイルストレージ / 外部ストレージ設定",
+        "# - Vercel Blob などのストレージを利用する場合に入力します",
+        "# ============================================================",
+        "BLOB_READ_WRITE_TOKEN={{LOCAL_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID={{LOCAL_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL={{LOCAL_BLOB_BASE_URL}}",
+        "STORAGE_ENDPOINT=",
+        "STORAGE_API_KEY=",
+        "",
+        "# EOF",
+        "",
+    ].join("\n"),
+    ".env.development": [
+        "# ============================================================",
+        "# リモート開発／プレビュー環境の基本設定",
+        "# - Vercel Preview などの URL に合わせて調整してください",
+        "# ============================================================",
+        "NODE_ENV=development",
+        "NEXT_PUBLIC_ENV=development",
+        "NEXT_PUBLIC_APP_URL=https://dev.example.com",
+        "",
+        "# ============================================================",
+        "# 認証・セッション関連の設定",
+        "# - 認証コールバック先とシークレットは環境ごとに固有の値を設定します",
+        "# ============================================================",
+        "BETTER_AUTH_URL=https://dev.example.com",
+        "BETTER_AUTH_SECRET=change-me-development",
+        "",
+        "# ============================================================",
+        "# データベース接続設定（開発環境）",
+        "# - DATABASE_PROVIDER には使用する DB ドライバーを指定します",
+        "# - Prisma や直接接続用の URL をサービスごとに入力してください",
+        "# ============================================================",
+        "DATABASE_PROVIDER=turso",
+        "DATABASE_URL=file:./prisma/dev.db",
+        "DIRECT_DATABASE_URL=file:./prisma/dev.db",
+        "PRISMA_DATABASE_URL=file:./prisma/dev.db",
+        "",
+        "# ============================================================",
+        "# Turso を利用する場合の設定",
+        "# - Turso を使用しない場合は空のままで問題ありません",
+        "# ============================================================",
+        "TURSO_DATABASE_URL=",
+        "TURSO_AUTH_TOKEN=",
+        "",
+        "# ============================================================",
+        "# Supabase を利用する場合の設定",
+        "# - Supabase を使用しない場合は空のままで問題ありません",
+        "# ============================================================",
+        "SUPABASE_URL={{DEV_SUPABASE_URL}}",
+        "SUPABASE_SERVICE_ROLE_KEY={{DEV_SUPABASE_SERVICE_ROLE_KEY}}",
+        "",
+        "# ============================================================",
+        "# ファイルストレージ設定",
+        "# - Vercel Blob などのストレージを利用する場合に入力します",
+        "# - `_DEV` サフィックス付きの変数は互換性維持のため残しています",
+        "# ============================================================",
+        "BLOB_READ_WRITE_TOKEN={{DEV_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID={{DEV_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL={{DEV_BLOB_BASE_URL}}",
+        "BLOB_READ_WRITE_TOKEN_DEV={{DEV_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID_DEV={{DEV_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL_DEV={{DEV_BLOB_BASE_URL}}",
+        "",
+        "# EOF",
+        "",
+    ].join("\n"),
+    ".env.staging": [
+        "# ============================================================",
+        "# ステージング環境の基本設定",
+        "# - 本番前の確認用ドメインに合わせて調整してください",
+        "# ============================================================",
+        "NODE_ENV=production",
+        "NEXT_PUBLIC_ENV=staging",
+        "NEXT_PUBLIC_APP_URL=https://staging.example.com",
+        "",
+        "# ============================================================",
+        "# 認証・セッション関連の設定",
+        "# - 本番同等の値を設定しつつ、漏洩しないように取り扱ってください",
+        "# ============================================================",
+        "BETTER_AUTH_URL=https://staging.example.com",
+        "BETTER_AUTH_SECRET=change-me-staging",
+        "",
+        "# ============================================================",
+        "# データベース接続設定（ステージング環境）",
+        "# - DATABASE_PROVIDER には使用する DB ドライバーを指定します",
+        "# - Prisma 用、直接接続用など環境ごとの URL を入力してください",
+        "# ============================================================",
+        "DATABASE_PROVIDER={{DATABASE_PROVIDER}}",
+        "DATABASE_URL={{STAGING_DATABASE_URL}}",
+        "DIRECT_DATABASE_URL={{STAGING_DIRECT_DATABASE_URL}}",
+        "PRISMA_DATABASE_URL={{STAGING_PRISMA_DATABASE_URL}}",
+        "",
+        "# ============================================================",
+        "# Turso を利用する場合の設定",
+        "# ============================================================",
+        "TURSO_DATABASE_URL={{STAGING_TURSO_DATABASE_URL}}",
+        "TURSO_AUTH_TOKEN={{STAGING_TURSO_AUTH_TOKEN}}",
+        "",
+        "# ============================================================",
+        "# Supabase を利用する場合の設定",
+        "# ============================================================",
+        "SUPABASE_URL={{STAGING_SUPABASE_URL}}",
+        "SUPABASE_SERVICE_ROLE_KEY={{STAGING_SUPABASE_SERVICE_ROLE_KEY}}",
+        "",
+        "# ============================================================",
+        "# ファイルストレージ設定",
+        "# - `_STG` サフィックス付きの変数は互換性維持のため残しています",
+        "# ============================================================",
+        "BLOB_READ_WRITE_TOKEN={{STAGING_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID={{STAGING_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL={{STAGING_BLOB_BASE_URL}}",
+        "BLOB_READ_WRITE_TOKEN_STG={{STAGING_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID_STG={{STAGING_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL_STG={{STAGING_BLOB_BASE_URL}}",
+        "",
+        "# EOF",
+        "",
+    ].join("\n"),
+    ".env.prod": [
+        "# ============================================================",
+        "# 本番環境の基本設定",
+        "# - 公開用ドメインに合わせて調整してください",
+        "# ============================================================",
+        "NODE_ENV=production",
+        "NEXT_PUBLIC_ENV=production",
+        "NEXT_PUBLIC_APP_URL=https://app.example.com",
+        "",
+        "# ============================================================",
+        "# 認証・セッション関連の設定",
+        "# - 認証コールバック先とシークレットは厳重に管理してください",
+        "# ============================================================",
+        "BETTER_AUTH_URL=https://app.example.com",
+        "BETTER_AUTH_SECRET=change-me-production",
+        "",
+        "# ============================================================",
+        "# データベース接続設定（本番環境）",
+        "# - DATABASE_PROVIDER には使用する DB ドライバーを指定します",
+        "# - それぞれの URL を本番向けに差し替えてください",
+        "# ============================================================",
+        "DATABASE_PROVIDER={{DATABASE_PROVIDER}}",
+        "DATABASE_URL={{PROD_DATABASE_URL}}",
+        "DIRECT_DATABASE_URL={{PROD_DIRECT_DATABASE_URL}}",
+        "PRISMA_DATABASE_URL={{PROD_PRISMA_DATABASE_URL}}",
+        "",
+        "# ============================================================",
+        "# Turso を利用する場合の設定",
+        "# ============================================================",
+        "TURSO_DATABASE_URL={{PROD_TURSO_DATABASE_URL}}",
+        "TURSO_AUTH_TOKEN={{PROD_TURSO_AUTH_TOKEN}}",
+        "",
+        "# ============================================================",
+        "# Supabase を利用する場合の設定",
+        "# ============================================================",
+        "SUPABASE_URL={{PROD_SUPABASE_URL}}",
+        "SUPABASE_SERVICE_ROLE_KEY={{PROD_SUPABASE_SERVICE_ROLE_KEY}}",
+        "",
+        "# ============================================================",
+        "# ファイルストレージ設定",
+        "# - Vercel Blob などのストレージを利用する場合に入力します",
+        "# - `_PROD` サフィックス付きの変数は互換性維持のため残しています",
+        "# ============================================================",
+        "BLOB_READ_WRITE_TOKEN={{PROD_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID={{PROD_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL={{PROD_BLOB_BASE_URL}}",
+        "BLOB_READ_WRITE_TOKEN_PROD={{PROD_BLOB_READ_WRITE_TOKEN}}",
+        "BLOB_STORE_ID_PROD={{PROD_BLOB_STORE_ID}}",
+        "BLOB_BASE_URL_PROD={{PROD_BLOB_BASE_URL}}",
+        "",
+        "# EOF",
+        "",
+    ].join("\n"),
+};
+
+async function readTemplateEnvFile(filename: string): Promise<string | null> {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const candidatePaths = [
+        resolve(currentDir, "../../../../templates", TEMPLATE_NAME, filename),
+        resolve(currentDir, "../../../templates", TEMPLATE_NAME, filename),
+        resolve(currentDir, "../../templates", TEMPLATE_NAME, filename),
+    ];
+
+    for (const candidate of candidatePaths) {
+        try {
+            return await readFile(candidate, "utf-8");
+        } catch {
+            // 次の候補を試行
+        }
+    }
+
+    return null;
+}
+
+function buildDefaultEnvContent(filename: string): string {
+    if (ENV_FILE_FALLBACKS[filename]) {
+        return ENV_FILE_FALLBACKS[filename];
+    }
+
+    return [
+        "# ============================================================",
+        `# ${filename} generated by Fluorite Flake`,
+        "# 必要な環境変数を入力してください",
+        "# ============================================================",
+        "",
+    ].join("\n");
+}
+
+async function ensureEnvFiles(appDirectory: string): Promise<string[]> {
+    const created: string[] = [];
+
+    for (const envFile of ENV_FILES) {
+        const targetPath = join(appDirectory, envFile);
+        if (existsSync(targetPath)) {
+            continue;
+        }
+
+        const templateContent = await readTemplateEnvFile(envFile);
+        const content = templateContent ?? buildDefaultEnvContent(envFile);
+
+        try {
+            await writeFile(targetPath, content, "utf-8");
+            created.push(envFile);
+            console.log(
+                templateContent
+                    ? `🆕 ${envFile} をテンプレートから作成しました`
+                    : `🆕 ${envFile} をデフォルト内容で作成しました`
+            );
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(`環境変数ファイル ${envFile} の作成に失敗しました: ${message}`);
+        }
+    }
+
+    return created;
+}
 
 function slugify(value: string): string {
     return value
@@ -365,7 +639,8 @@ async function configureEnvironmentFiles(
         credentials?: GenerationContext["databaseCredentials"];
         databaseConfig?: GenerationContext["databaseConfig"];
         blobConfig?: GenerationContext["blobConfig"];
-    }
+    },
+    filesCreated?: string[]
 ): Promise<void> {
     const replacements = buildEnvReplacements({
         database: options.database,
@@ -374,6 +649,16 @@ async function configureEnvironmentFiles(
         databaseConfig: options.databaseConfig,
         blobConfig: options.blobConfig,
     });
+
+    const newlyCreated = await ensureEnvFiles(appDirectory);
+
+    if (filesCreated && newlyCreated.length > 0) {
+        for (const file of newlyCreated) {
+            if (!filesCreated.includes(file)) {
+                filesCreated.push(file);
+            }
+        }
+    }
 
     await Promise.all(
         ENV_FILES.map(async (filename) => {
@@ -682,13 +967,17 @@ export async function generateFullStackAdmin(
         filesCreated.push(...result.files);
         directoriesCreated.push(...result.directories.map((relativePath) => join(targetDirectory, relativePath)));
 
-        await configureEnvironmentFiles(targetDirectory, {
-            database: config.database,
-            projectName: config.name,
-            credentials: context.databaseCredentials,
-            databaseConfig: context.databaseConfig,
-            blobConfig: context.blobConfig,
-        });
+        await configureEnvironmentFiles(
+            targetDirectory,
+            {
+                database: config.database,
+                projectName: config.name,
+                credentials: context.databaseCredentials,
+                databaseConfig: context.databaseConfig,
+                blobConfig: context.blobConfig,
+            },
+            filesCreated
+        );
 
         // BETTER_AUTH_SECRET自動生成（configureEnvironmentFiles後に実行）
         await replaceAuthSecrets(targetDirectory);
