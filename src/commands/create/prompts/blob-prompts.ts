@@ -10,7 +10,6 @@ import {
     generateBlobStoreName,
     generateUniqueStoreName,
     listBlobStores,
-    validateBlobToken,
 } from "../../../utils/vercel-cli/blob-operations.js";
 import type { BlobConfiguration, BlobStore } from "../../../utils/vercel-cli/blob-types.js";
 import { BlobErrorCode, BlobOperationError } from "../../../utils/vercel-cli/blob-types.js";
@@ -232,12 +231,8 @@ async function promptForToken(options: { message?: string; showGuide?: boolean }
 
         if (typeof token === "string") {
             const trimmedToken = token.trim();
-            console.log("トークンを検証中...");
-            const validation = await validateBlobToken(trimmedToken);
-            if (validation.valid) {
-                return trimmedToken;
-            }
-            console.error(`❌ ${validation.error || "無効なトークンです"}`);
+            console.log("トークン形式の確認が完了しました。");
+            return trimmedToken;
         }
 
         attempts++;

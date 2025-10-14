@@ -235,10 +235,8 @@ async function main(): Promise<void> {
             await clearEnvironmentVariables(variablesToClear, environment, baseEnv);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            if (
-                environment === 'staging' &&
-                errorMessage.includes('Environment "staging" was not found')
-            ) {
+            // Vercel のプレビュー環境でカスタム環境 staging を利用している場合の案内を出す
+            if (errorMessage.includes('Environment "staging" was not found')) {
                 console.log(
                     `  ⚠️  Note: Custom environment 'staging' does not exist in Vercel Dashboard.`
                 );

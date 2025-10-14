@@ -63,6 +63,32 @@ describe("WorkspaceManager", () => {
             expect(scripts["lint:all"]).toBe("pnpm --filter web run lint");
         });
     });
+
+    test("ディレクトリ名ベースでスクリプトキーを生成する", () => {
+        const manager = new WorkspaceManager();
+        const workspace = {
+            rootPath: "/repo",
+            workspaceFile: "/repo/pnpm-workspace.yaml",
+            apps: [
+                {
+                    name: "acme-super-long-app-web",
+                    type: "nextjs" as const,
+                    path: "/repo/apps/web",
+                    scripts: {
+                        build: "next build",
+                    },
+                    packageJson: {},
+                    hasDependencies: true,
+                },
+            ],
+            packages: [],
+        } as const;
+
+        const scripts = manager.generateRootScripts(workspace);
+
+        expect(scripts["web:build"]).toBe("pnpm --filter acme-super-long-app-web run build");
+        expect(scripts["acme-super-long-app-web:build"]).toBeUndefined();
+    });
 });
 
 describe("syncRootScripts", () => {

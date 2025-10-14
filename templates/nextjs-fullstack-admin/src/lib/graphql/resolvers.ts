@@ -3,7 +3,7 @@ import { GraphQLScalarType, Kind } from 'graphql';
 import prisma from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { AccessLogger } from '@/lib/access-logger';
-import { APP_ROLES, ROLE_PERMISSIONS } from '@/lib/roles';
+import { APP_ROLES, ROLE_PERMISSIONS, type AppRole } from '@/lib/roles';
 import bcrypt from 'bcryptjs';
 
 // Custom DateTime scalar
@@ -70,7 +70,7 @@ interface AccessLogInput {
 }
 
 interface UserUpdateData {
-    role: string;
+    role: AppRole;
     MemberId?: string | null;
     memberSince?: Date | null;
 }
@@ -643,20 +643,24 @@ export const resolvers = {
 
             const { userId, role, MemberId } = args.input;
 
-            if (!Object.values(APP_ROLES).includes(role as keyof typeof APP_ROLES)) {
+            const roleKey = role.toUpperCase?.() as keyof typeof APP_ROLES | undefined;
+            const normalizedRole =
+                (roleKey && APP_ROLES[roleKey]) || (role.toLowerCase?.() as AppRole | undefined);
+
+            if (!normalizedRole || !Object.values(APP_ROLES).includes(normalizedRole)) {
                 throw new GraphQLError('Invalid role', {
                     extensions: { code: 'BAD_USER_INPUT' },
                 });
             }
 
-            const updateData: UserUpdateData = { role };
+            const updateData: UserUpdateData = { role: normalizedRole };
 
-            if (role === APP_ROLES._MEMBER && MemberId) {
+            if (normalizedRole === APP_ROLES._MEMBER && MemberId) {
                 updateData.MemberId = MemberId;
                 updateData.memberSince = new Date();
             }
 
-            if (role === APP_ROLES.USER) {
+            if (normalizedRole === APP_ROLES.USER) {
                 updateData.MemberId = null;
                 updateData.memberSince = null;
             }
