@@ -57,8 +57,9 @@ export class WorkspaceManager {
 
         // アプリ別スクリプト生成
         for (const app of workspace.apps) {
+            const appDirectoryName = path.basename(app.path);
             for (const [scriptName] of Object.entries(app.scripts)) {
-                scripts[`${app.name}:${scriptName}`] = this.buildFilterCommand(app.name, scriptName);
+                scripts[`${appDirectoryName}:${scriptName}`] = this.buildFilterCommand(app.name, scriptName);
             }
         }
 
