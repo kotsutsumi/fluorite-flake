@@ -35,19 +35,19 @@ export function linkVercelProject(config: ProjectConfig, vercelConfig: VercelPro
     console.log("\n🔗 Vercelプロジェクトとのリンクファイルを生成中...");
     debugLog("linkVercelProject called", { config, vercelConfig });
 
+    // .vercelディレクトリは常にプロジェクトルートに作成
     const projectRoot = path.resolve(config.directory);
+    debugLog("Creating .vercel directory at project root", {
+        projectRoot,
+        vercelConfigDirectory: vercelConfig.directory,
+        shouldCreateRepo: vercelConfig.shouldCreateRepo,
+        isMonorepo: config.monorepo,
+    });
     const vercelDir = ensureVercelDirectory(projectRoot);
 
-    // project.jsonを生成
-    const projectJsonPath = path.join(vercelDir, "project.json");
-    writeJsonFile(projectJsonPath, {
-        projectId: vercelConfig.projectId,
-        orgId: vercelConfig.orgId,
-    });
-    console.log(`✅ ${projectJsonPath} を作成しました`);
-
-    // repo.jsonを生成（必要な場合のみ）
+    // モノレポの場合はrepo.jsonのみ、シングルプロジェクトの場合はproject.jsonのみを生成
     if (vercelConfig.shouldCreateRepo) {
+        // モノレポ構成: repo.jsonを生成
         const repoJsonPath = path.join(vercelDir, "repo.json");
         writeJsonFile(repoJsonPath, {
             orgId: vercelConfig.orgId,
@@ -60,7 +60,15 @@ export function linkVercelProject(config: ProjectConfig, vercelConfig: VercelPro
                 },
             ],
         });
-        console.log(`✅ ${repoJsonPath} を作成しました`);
+        console.log(`✅ ${repoJsonPath} を作成しました（モノレポ構成）`);
+    } else {
+        // シングルプロジェクト構成: project.jsonを生成
+        const projectJsonPath = path.join(vercelDir, "project.json");
+        writeJsonFile(projectJsonPath, {
+            projectId: vercelConfig.projectId,
+            orgId: vercelConfig.orgId,
+        });
+        console.log(`✅ ${projectJsonPath} を作成しました（シングルプロジェクト構成）`);
     }
 
     console.log(create.vercelLinkSuccess(vercelConfig.projectName));

@@ -12,6 +12,7 @@ import { generateProject } from "../generator/index.js"; // プロジェクト�
 import { createAndValidateConfig } from "./create-and-validate-config.js"; // 設定生成と検証処理
 import { collectUserInputs } from "./collect-user-inputs.js"; // ユーザー入力収集処理
 import { createTursoTables } from "./create-turso-tables.js"; // Tursoテーブル作成処理
+import { linkVercelProject } from "../post-generation/index.js"; // Vercel連携処理を追加
 import type { DatabaseCredentials } from "../database-provisioning/types.js"; // データベース資格情報の型
 import type { DatabaseType } from "../types.js"; // データベース種別の型
 import { initialMessages } from "./shared.js"; // 共有メッセージ定義
@@ -86,6 +87,11 @@ export const newCommand = defineCommand({
 
             // プロジェクトテンプレートを生成する
             await generateProject(config);
+
+            // Vercelリンクを希望する場合は.vercelディレクトリを生成する
+            if (inputs.shouldLinkVercel && inputs.vercelConfig) {
+                linkVercelProject(config, inputs.vercelConfig);
+            }
 
             // Turso利用時はテーブルを作成する
             if (databaseCredentials && database === "turso") {

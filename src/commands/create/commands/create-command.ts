@@ -118,8 +118,18 @@ export const createCommand = defineCommand({
             await generateProject(config);
 
             // Vercelリンクを希望する場合は.vercelディレクトリを生成する
+            debugLog("Checking Vercel link conditions", {
+                shouldLinkVercel: inputs.shouldLinkVercel,
+                hasVercelConfig: !!inputs.vercelConfig,
+                vercelConfig: inputs.vercelConfig,
+            });
             if (inputs.shouldLinkVercel && inputs.vercelConfig) {
+                debugLog("Calling linkVercelProject", { config, vercelConfig: inputs.vercelConfig });
                 linkVercelProject(config, inputs.vercelConfig);
+            } else {
+                debugLog("Skipping Vercel link", {
+                    reason: !inputs.shouldLinkVercel ? "shouldLinkVercel is false" : "vercelConfig is missing",
+                });
             }
 
             // Tursoを利用する場合はテーブル作成処理を実行する
