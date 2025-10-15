@@ -1,29 +1,27 @@
 {
-  "name": "@{{projectName}}/monorepo",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter admin dev\" \"pnpm --filter mobile dev\"",
-    "build": "pnpm --recursive build",
-    "test": "pnpm --recursive test",
-    "lint": "pnpm --recursive lint",
-    "format": "pnpm --recursive format",
-    "clean": "pnpm --recursive clean",
-    "db:generate": "pnpm --filter backend db:generate",
-    "db:push": "pnpm --filter backend db:push",
-    "db:seed": "pnpm --filter backend db:seed",
-    "setup": "pnpm install && pnpm db:generate && pnpm db:push && pnpm db:seed"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "turbo": "^1.10.16"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=8.0.0"
-  },
-  "packageManager": "pnpm@8.15.1"
+    "name": "@{{projectName}}/monorepo",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter admin dev\" \"pnpm --filter mobile dev\"",
+        "build": "pnpm --recursive build",
+        "test": "pnpm --recursive test",
+        "lint": "pnpm --recursive lint",
+        "format": "pnpm --recursive format",
+        "clean": "pnpm --recursive clean",
+        "db:generate": "pnpm --filter backend db:generate",
+        "db:push": "pnpm --filter backend db:push",
+        "db:seed": "pnpm --filter backend db:seed",
+        "setup": "pnpm install && pnpm db:generate && pnpm db:push && pnpm db:seed"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "turbo": "^1.10.16"
+    },
+    "engines": {
+        "node": ">=20.0.0",
+        "pnpm": ">=8.0.0"
+    },
+    "packageManager": "pnpm@8.15.1"
 }
-
-// EOF
