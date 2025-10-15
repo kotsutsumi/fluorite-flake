@@ -93,8 +93,29 @@
             "projectInfo": "プロジェクト情報",
             "databaseInfo": "データベース設定",
             "continuePrompt": "この設定でプロジェクトを作成しますか？",
-            "cancelled": "プロジェクト作成をキャンセルしました"
-        }
+            "cancelled": "プロジェクト作成をキャンセルしました",
+            "vercelLink": "Vercelプロジェクトリンク"
+        },
+        "vercelLinkConfirm": "生成したプロジェクトをVercelプロジェクトとリンクしますか？",
+        "vercelLinkSkipped": "Vercelプロジェクトとのリンクをスキップしました。",
+        "vercelLinkProjectListFailed": "Vercelプロジェクトの取得に失敗しました。`vercel login` を実行し、再度お試しください。",
+        "vercelLinkSelectProject": "リンクするVercelプロジェクトを選択してください。",
+        "vercelLinkManualChoice": "プロジェクト情報を手動で入力する",
+        "vercelLinkProjectIdPrompt": "VercelプロジェクトID（prj_...）を入力してください",
+        "vercelLinkProjectIdError": "プロジェクトIDは必須です。",
+        "vercelLinkProjectNamePrompt": "Vercel上のプロジェクト名を入力してください。",
+        "vercelLinkProjectNameError": "プロジェクト名は必須です。",
+        "vercelLinkCreateRepoPrompt": ".vercel/repo.json を生成してワークスペースに関連付けますか？",
+        "vercelLinkToggleYes": "はい",
+        "vercelLinkToggleNo": "いいえ",
+        "vercelLinkDirectoryPrompt": "プロジェクトの相対パス（例: apps/web）を入力してください。",
+        "vercelLinkDirectoryError": "ディレクトリは必須です。",
+        "vercelLinkRemotePrompt": "関連付けるGitリモート名を入力してください。",
+        "vercelLinkRemoteError": "リモート名は必須です。",
+        "vercelLinkOrgIdPrompt": "Vercelの組織/チームID（team_...）を入力してください。",
+        "vercelLinkOrgIdError": "組織IDは必須です。",
+        "vercelLinkCancelled": "リンク処理をキャンセルしました。必要なときは `vercel link` を実行してください。",
+        "vercelLinkSuccess": "Vercelプロジェクト {projectName} とリンクしました。"
     },
     "readme": {
         "title": "{name}",

@@ -4,7 +4,6 @@
  * ユーザーの入力内容を表示し、最終確認を行う処理を提供します。
  * 副作用（ファイル生成、API呼び出し）は一切実行しません。
  */
-
 import { getMessages, type LocaleMessages } from "../../../i18n.js";
 import { confirm } from "../../../utils/user-input/index.js";
 import type { BlobConfiguration } from "../../../utils/vercel-cli/blob-types.js";
@@ -33,6 +32,8 @@ export type ConfirmationInputs = {
     outputDirectory?: string;
     /** ドキュメントサイト生成フラグ */
     shouldGenerateDocs?: boolean;
+    /** Vercelプロジェクトへのリンクを希望するか */
+    shouldLinkVercel?: boolean;
 };
 
 /**
@@ -63,6 +64,13 @@ export async function displayConfirmation(inputs: ConfirmationInputs): Promise<b
     );
     if (inputs.shouldGenerateDocs !== undefined) {
         console.log(`   ドキュメントサイト生成: ${inputs.shouldGenerateDocs ? "有効" : "無効"}`);
+    }
+    if (inputs.shouldLinkVercel !== undefined) {
+        console.log(
+            `   ${messages.create.confirmation.vercelLink}: ${
+                inputs.shouldLinkVercel ? messages.common.enabled : messages.common.disabled
+            }`
+        );
     }
     if (inputs.outputDirectory) {
         console.log(`   ${messages.common.outputDir}: ${inputs.outputDirectory}`);

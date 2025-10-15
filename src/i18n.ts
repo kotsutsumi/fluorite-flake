@@ -7,6 +7,7 @@ import { type ExecSyncOptions, execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { getShellForPlatform } from "./utils/shell-helper/index.js";
 
 // 現在のファイルのディレクトリを取得
@@ -215,6 +216,26 @@ type RawLocaleMessages = {
         directoryRemoved: string;
         failedToRemoveDirectory: string;
         operationCancelled: string;
+        vercelLinkConfirm: string;
+        vercelLinkSkipped: string;
+        vercelLinkProjectListFailed: string;
+        vercelLinkSelectProject: string;
+        vercelLinkManualChoice: string;
+        vercelLinkProjectIdPrompt: string;
+        vercelLinkProjectIdError: string;
+        vercelLinkProjectNamePrompt: string;
+        vercelLinkProjectNameError: string;
+        vercelLinkCreateRepoPrompt: string;
+        vercelLinkToggleYes: string;
+        vercelLinkToggleNo: string;
+        vercelLinkDirectoryPrompt: string;
+        vercelLinkDirectoryError: string;
+        vercelLinkRemotePrompt: string;
+        vercelLinkRemoteError: string;
+        vercelLinkOrgIdPrompt: string;
+        vercelLinkOrgIdError: string;
+        vercelLinkCancelled: string;
+        vercelLinkSuccess: string;
         blob: {
             setupPrompt: string;
             modeNew: string;
@@ -265,6 +286,7 @@ type RawLocaleMessages = {
             databaseInfo: string;
             continuePrompt: string;
             cancelled: string;
+            vercelLink: string;
         };
     };
     readme: {
@@ -375,6 +397,26 @@ export type LocaleMessages = {
         directoryRemoved: string;
         failedToRemoveDirectory: string;
         operationCancelled: string;
+        vercelLinkConfirm: string;
+        vercelLinkSkipped: string;
+        vercelLinkProjectListFailed: string;
+        vercelLinkSelectProject: string;
+        vercelLinkManualChoice: string;
+        vercelLinkProjectIdPrompt: string;
+        vercelLinkProjectIdError: string;
+        vercelLinkProjectNamePrompt: string;
+        vercelLinkProjectNameError: string;
+        vercelLinkCreateRepoPrompt: string;
+        vercelLinkToggleYes: string;
+        vercelLinkToggleNo: string;
+        vercelLinkDirectoryPrompt: string;
+        vercelLinkDirectoryError: string;
+        vercelLinkRemotePrompt: string;
+        vercelLinkRemoteError: string;
+        vercelLinkOrgIdPrompt: string;
+        vercelLinkOrgIdError: string;
+        vercelLinkCancelled: string;
+        vercelLinkSuccess: (projectName: string) => string;
         blob: {
             setupPrompt: string;
             modeNew: string;
@@ -425,6 +467,7 @@ export type LocaleMessages = {
             databaseInfo: string;
             continuePrompt: string;
             cancelled: string;
+            vercelLink: string;
         };
     };
     readme: {
@@ -594,6 +637,27 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             directoryRemoved: rawMessages.create.directoryRemoved,
             failedToRemoveDirectory: rawMessages.create.failedToRemoveDirectory,
             operationCancelled: rawMessages.create.operationCancelled,
+            vercelLinkConfirm: rawMessages.create.vercelLinkConfirm,
+            vercelLinkSkipped: rawMessages.create.vercelLinkSkipped,
+            vercelLinkProjectListFailed: rawMessages.create.vercelLinkProjectListFailed,
+            vercelLinkSelectProject: rawMessages.create.vercelLinkSelectProject,
+            vercelLinkManualChoice: rawMessages.create.vercelLinkManualChoice,
+            vercelLinkProjectIdPrompt: rawMessages.create.vercelLinkProjectIdPrompt,
+            vercelLinkProjectIdError: rawMessages.create.vercelLinkProjectIdError,
+            vercelLinkProjectNamePrompt: rawMessages.create.vercelLinkProjectNamePrompt,
+            vercelLinkProjectNameError: rawMessages.create.vercelLinkProjectNameError,
+            vercelLinkCreateRepoPrompt: rawMessages.create.vercelLinkCreateRepoPrompt,
+            vercelLinkToggleYes: rawMessages.create.vercelLinkToggleYes,
+            vercelLinkToggleNo: rawMessages.create.vercelLinkToggleNo,
+            vercelLinkDirectoryPrompt: rawMessages.create.vercelLinkDirectoryPrompt,
+            vercelLinkDirectoryError: rawMessages.create.vercelLinkDirectoryError,
+            vercelLinkRemotePrompt: rawMessages.create.vercelLinkRemotePrompt,
+            vercelLinkRemoteError: rawMessages.create.vercelLinkRemoteError,
+            vercelLinkOrgIdPrompt: rawMessages.create.vercelLinkOrgIdPrompt,
+            vercelLinkOrgIdError: rawMessages.create.vercelLinkOrgIdError,
+            vercelLinkCancelled: rawMessages.create.vercelLinkCancelled,
+            vercelLinkSuccess: (projectName: string) =>
+                formatMessage(rawMessages.create.vercelLinkSuccess, { projectName }),
             blob: {
                 setupPrompt: "Vercel Blobの設定方法を選択してください:",
                 modeNew: "新規Blobストアを作成",
@@ -647,6 +711,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 databaseInfo: rawMessages.create.confirmation.databaseInfo,
                 continuePrompt: rawMessages.create.confirmation.continuePrompt,
                 cancelled: rawMessages.create.confirmation.cancelled,
+                vercelLink: rawMessages.create.confirmation.vercelLink,
             },
         },
         readme: {

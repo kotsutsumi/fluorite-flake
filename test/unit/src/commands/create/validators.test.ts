@@ -8,7 +8,7 @@ import {
     validateDatabase,
     validateProjectType,
     validateTemplate,
-} from "../../../../../src/commands/create/validators.js";
+} from "../../../../../src/commands/create/validators/index.js";
 
 describe("createコマンドのバリデーション機能", () => {
     describe("validateProjectType", () => {

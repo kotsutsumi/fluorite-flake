@@ -6,7 +6,7 @@ import { cancel, confirm, isCancel, select } from "@clack/prompts";
 import { getMessages } from "../../../i18n.js";
 import { PROJECT_TYPE_DESCRIPTIONS } from "../constants.js";
 import type { ProjectType } from "../types.js";
-import { isFullStackTemplate, isMonorepoRecommended } from "../validators.js";
+import { isFullStackTemplate, isMonorepoRecommended } from "../validators/index.js";
 import type { TemplateSelectionResult } from "./types.js";
 
 type TemplateSelectorOptions = {
