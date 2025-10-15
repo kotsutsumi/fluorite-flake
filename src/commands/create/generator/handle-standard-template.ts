@@ -16,6 +16,7 @@ import type { Ora } from "ora"; // スピナー型定義
 
 import { CONFIGURE_TIMEOUT_MS, INSTALL_TIMEOUT_MS } from "./constants.js"; // 待機時間定数
 import { getBuildCommand, getDevCommand } from "./command-mapping.js"; // コマンド解決ユーティリティ
+import { getFrameworkDependencies } from "./framework-dependencies.js"; // フレームワーク依存関係取得
 import type { ProjectConfig } from "../types.js"; // プロジェクト設定型
 
 /**
@@ -29,6 +30,9 @@ export async function handleStandardTemplate(config: ProjectConfig, spinner: Ora
         copyMonorepoTemplates(config, config.pnpmVersion); // 共通テンプレートをコピーする
         createWebAppPackageJson(config); // Webアプリ用のpackage.jsonを生成する
     } else {
+        // フレームワーク別の依存関係を取得する
+        const frameworkDeps = getFrameworkDependencies(config.type);
+
         const packageJsonPath = path.join(config.directory, "package.json"); // package.jsonの出力先パスを決定する
         const packageJsonContent = {
             name: config.name, // プロジェクト名
@@ -38,8 +42,8 @@ export async function handleStandardTemplate(config: ProjectConfig, spinner: Ora
                 dev: getDevCommand(config.type), // 開発コマンド
                 build: getBuildCommand(config.type), // ビルドコマンド
             },
-            dependencies: {}, // 初期段階では依存関係を空にしておく
-            devDependencies: {}, // 開発依存関係も空
+            dependencies: frameworkDeps.dependencies, // フレームワーク固有の依存関係
+            devDependencies: frameworkDeps.devDependencies, // フレームワーク固有の開発依存関係
         };
         fs.writeFileSync(packageJsonPath, JSON.stringify(packageJsonContent, null, 2)); // package.jsonを書き込む
     }

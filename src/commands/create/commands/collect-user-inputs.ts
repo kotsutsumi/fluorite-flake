@@ -40,7 +40,7 @@ export async function collectUserInputs(
         hasExplicitMonorepo
     );
 
-    // データベースとBlob設定を収集する
+    // データベースとBlob設定を収集する（キャンセル時は例外が投げられる）
     const { database, databaseConfig, blobConfig } = await collectDatabaseAndBlobConfiguration(
         args,
         template,

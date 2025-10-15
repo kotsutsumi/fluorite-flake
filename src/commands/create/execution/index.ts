@@ -51,10 +51,15 @@ export type BlobCredentials = {
 /**
  * 確認済み入力に基づいてプロビジョニングを実行
  *
+ * ロールバック機能を実装し、部分的な失敗時にリソースリークを防ぐ
+ *
  * @param inputs - 確認済みの入力情報
  * @returns プロビジョニング実行結果
  */
 export async function executeProvisioning(inputs: ConfirmationInputs): Promise<ExecutionResult> {
+    // ロールバック用のアクションを記録する配列
+    const rollbackActions: Array<() => Promise<void>> = [];
+
     try {
         const result: ExecutionResult = { success: false };
 
@@ -69,23 +74,55 @@ export async function executeProvisioning(inputs: ConfirmationInputs): Promise<E
             }
             result.databaseCredentials = dbResult.credentials;
             result.databases = dbResult.databases;
+
+            // データベース作成成功時、ロールバックアクションを登録
+            if (dbResult.credentials) {
+                rollbackActions.push(async () => {
+                    try {
+                        console.log("🔄 データベースのロールバックを実行中...");
+                        await rollbackDatabaseProvisioning(inputs.databaseConfig!, dbResult.credentials);
+                        console.log("✅ データベースのロールバックが完了しました");
+                    } catch (rollbackError) {
+                        console.error("⚠️ データベースのロールバックに失敗しました:", rollbackError);
+                    }
+                });
+            }
         }
 
         // Blobプロビジョニングの実行（将来実装）
         if (inputs.blobConfig) {
             const blobResult = await executeBlobProvisioning(inputs.blobConfig);
-            if (blobResult.success) {
-                result.blobCredentials = blobResult.credentials;
-            }
-            // Blobの失敗は警告レベルとし、プロジェクト作成は継続
+
+            // Blob失敗時はデータベースをロールバック
             if (!blobResult.success) {
-                console.warn(`⚠️ Blob設定に問題がありました: ${blobResult.error}`);
+                console.warn(`⚠️ Blob設定に失敗しました: ${blobResult.error}`);
+                console.log("🔄 既に作成されたリソースをロールバックします...");
+
+                // ロールバックアクションを逆順で実行
+                for (const rollback of rollbackActions.reverse()) {
+                    await rollback();
+                }
+
+                return {
+                    success: false,
+                    error: `Blobプロビジョニングに失敗: ${blobResult.error}`,
+                };
             }
+
+            result.blobCredentials = blobResult.credentials;
         }
 
         result.success = true;
         return result;
     } catch (error) {
+        // エラー発生時は全てのリソースをロールバック
+        console.error("❌ プロビジョニング中にエラーが発生しました");
+        console.log("🔄 既に作成されたリソースをロールバックします...");
+
+        for (const rollback of rollbackActions.reverse()) {
+            await rollback();
+        }
+
         return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
@@ -145,9 +182,11 @@ async function executeDatabaseProvisioning(config: DatabaseProvisioningConfig): 
 }
 
 /**
- * Blobプロビジョニングを実行（将来実装）
+ * Blobプロビジョニングを実行（現在は未実装）
+ *
+ * 注意: 現在はプレースホルダー実装のため、実際のVercel API呼び出しは行われません
  */
-async function executeBlobProvisioning(config: BlobConfiguration): Promise<{
+async function executeBlobProvisioning(_config: BlobConfiguration): Promise<{
     success: boolean;
     credentials?: BlobCredentials;
     error?: string;
@@ -155,21 +194,57 @@ async function executeBlobProvisioning(config: BlobConfiguration): Promise<{
     try {
         console.log("📦 Vercel Blob設定を実行中...");
 
-        // 現在は設定情報をそのまま返す（将来の実装でAPI呼び出しを追加予定）
-        console.log(`✅ Vercel Blob設定完了: ${config.storeName}`);
+        // TODO: 実際のVercel API呼び出しを実装する必要があります
+        console.warn("⚠️ Vercel Blob設定は現在プレースホルダー実装です");
+        console.warn("💡 手動でVercelダッシュボードから設定してください:");
+        console.warn(`   1. Vercel ダッシュボードにアクセス`);
+        console.warn(`   2. プロジェクトを選択`);
+        console.warn(`   3. Storage > Blob から新しいストアを作成`);
+        console.warn(`   4. 環境変数 BLOB_READ_WRITE_TOKEN を設定`);
 
+        // プレースホルダーではなく、未実装であることを明示的にエラーとして返す
         return {
-            success: true,
-            credentials: {
-                token: "placeholder-token",
-                storeName: config.storeName || "default-store",
-            },
+            success: false,
+            error: "Vercel Blob設定は現在未実装です。手動で設定してください。",
         };
     } catch (error) {
         return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
         };
+    }
+}
+
+/**
+ * データベースプロビジョニングのロールバック処理
+ *
+ * 作成されたデータベースを削除してリソースリークを防ぐ
+ */
+async function rollbackDatabaseProvisioning(
+    config: DatabaseProvisioningConfig,
+    credentials?: DatabaseCredentials
+): Promise<void> {
+    if (!credentials) {
+        return; // 認証情報がない場合は何もしない
+    }
+
+    try {
+        console.log(`🗑️ データベースを削除しています: ${config.databaseName}`);
+
+        // データベースの自動削除は未実装のため、手動削除の案内を表示
+        console.warn("⚠️ データベースの自動削除は未実装です");
+        console.warn("💡 手動でデータベースを削除してください:");
+
+        if (config.type === "turso") {
+            console.warn(`   turso db destroy ${config.naming.dev}`);
+            console.warn(`   turso db destroy ${config.naming.staging}`);
+            console.warn(`   turso db destroy ${config.naming.prod}`);
+        } else if (config.type === "supabase") {
+            console.warn("   Supabase ダッシュボードからプロジェクトを削除してください");
+        }
+    } catch (error) {
+        console.error("⚠️ ロールバック処理でエラーが発生しました:", error);
+        throw error;
     }
 }
 

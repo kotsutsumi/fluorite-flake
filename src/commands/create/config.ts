@@ -1,16 +1,17 @@
 /**
  * プロジェクト設定作成機能
  */
-import { validatePnpm } from "../../utils/pnpm-validator/index.js"; // pnpmが利用可能かを検証するヘルパーを読み込む
 import { PROJECT_TYPE_DESCRIPTIONS } from "./constants.js"; // プロジェクトタイプごとの説明定義を参照する
 import type { CreateOptions, ExtendedProjectConfig, ProjectConfig, ProjectType } from "./types.js"; // 設定生成に必要な型群を取り込む
 import { validateProjectType, validateTemplate } from "./validators/index.js"; // プロジェクトタイプとテンプレートの検証関数を読み込む
 
 /**
  * 引数からプロジェクト設定を作成
+ *
+ * 注意: pnpm検証は呼び出し元で実行済みのため、ここでは実施しない
  */
 export function createProjectConfig(projectType: string, options: CreateOptions): ProjectConfig | null {
-    // monorepo-ready構造のためpnpmの存在を確認（デフォルトでmonorepo=trueのため常時チェック）
+    // モノレポ利用判定を行う
     let willUseMonorepo: boolean; // モノレポ構築を行うかどうかのフラグを用意する
     if (options.simple) {
         willUseMonorepo = false; // simple指定時は常にモノレポを無効にする
@@ -18,12 +19,6 @@ export function createProjectConfig(projectType: string, options: CreateOptions)
         willUseMonorepo = Boolean(options.monorepo); // 引数が与えられていればその値を採用する
     } else {
         willUseMonorepo = true; // それ以外はデフォルトでモノレポを有効にする
-    }
-    if (willUseMonorepo) {
-        const pnpmValid = validatePnpm(); // モノレポ構成ではpnpmの利用可否をチェックする
-        if (!pnpmValid) {
-            return null; // pnpmが使えない場合は設定生成を中断する
-        }
     }
 
     // プロジェクトタイプの検証

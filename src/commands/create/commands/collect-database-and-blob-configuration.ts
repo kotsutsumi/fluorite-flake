@@ -2,6 +2,7 @@
  * データベースおよびBlobストレージ設定の収集ロジックを提供する
  */
 import type { BlobConfiguration } from "../../../utils/vercel-cli/blob-types.js"; // Vercel Blob構成の型定義を読み込む
+import { UserCancelledError } from "../execution/index.js"; // ユーザーキャンセルエラーをインポート
 import { collectDatabaseConfig } from "../database-provisioning/prompts.js"; // データベース設定を対話的に取得する関数をインポートする
 import type { DatabaseProvisioningConfig } from "../database-provisioning/types.js"; // データベースプロビジョニング設定の型を取り込む
 import { collectBlobConfiguration } from "../prompts/blob-prompts.js"; // Blob設定を収集するユーティリティを読み込む
@@ -41,17 +42,16 @@ export async function collectDatabaseAndBlobConfiguration(
                 databaseConfig = await collectDatabaseConfig(projectName, database);
                 console.log(`✅ データベース設定を収集しました (${database})`);
             } catch (error) {
-                // キャンセル用のエラーはここで正しく扱って処理を終了する
+                // キャンセル用のエラーは UserCancelledError として投げる
                 if (error instanceof Error && error.message === "DATABASE_PROVISIONING_CANCELLED") {
-                    console.warn("⚠️ データベース設定をキャンセルしました。処理を終了します。");
-                    process.exit(0);
+                    throw new UserCancelledError("データベース設定がキャンセルされました");
                 }
 
-                // それ以外のエラーはメッセージを表示して失敗終了する
+                // それ以外のエラーはメッセージを表示して再スローする
                 console.error(
                     `❌ データベース設定収集に失敗しました: ${error instanceof Error ? error.message : error}`
                 );
-                process.exit(1);
+                throw error;
             }
         }
     }
