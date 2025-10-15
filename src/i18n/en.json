@@ -99,7 +99,7 @@
             "cancelled": "Project creation cancelled",
             "vercelLink": "Link Vercel project"
         },
-        "vercelLinkConfirm": "Would you like to link this project with Vercel now?",
+        "vercelLinkConfirm": "🔗 Would you like to link this project with Vercel now?",
         "vercelLinkSkipped": "Skipping Vercel project linking.",
         "vercelLinkProjectListFailed": "Failed to fetch Vercel projects. Please run `vercel login` and try again.",
         "vercelLinkSelectProject": "Select a Vercel project to link.",

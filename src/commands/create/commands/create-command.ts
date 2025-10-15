@@ -9,7 +9,7 @@ import { validatePnpmWithDetails } from "../../../utils/pnpm-validator/index.js"
 import { confirmDirectoryOverwrite } from "../../../utils/user-input/index.js"; // CLIプロンプトのヘルパー群を読み込む
 import type { DatabaseCredentials } from "../database-provisioning/types.js"; // データベース資格情報の型を参照する
 import type { DatabaseType, ProjectConfig } from "../types.js"; // データベース種別とプロジェクト設定の型を参照する
-import { promptAndLinkVercelProject } from "../post-generation/index.js"; // プロジェクト生成後のVercel連携処理を取り込む
+import { linkVercelProject } from "../post-generation/index.js"; // プロジェクト生成後のVercel連携処理を取り込む
 import { displayConfirmation } from "../confirmation/index.js"; // 確認フェーズの表示処理を読み込む
 import { executeProvisioning } from "../execution/index.js"; // データベースなどのプロビジョニング処理を実行する関数
 import { generateProject } from "../generator/index.js"; // 実際にテンプレートを生成する関数を利用する
@@ -117,9 +117,9 @@ export const createCommand = defineCommand({
             // プロジェクトのテンプレートを生成する
             await generateProject(config);
 
-            // Vercelリンクを希望する場合はここで設定する
-            if (inputs.shouldLinkVercel) {
-                await promptAndLinkVercelProject(config);
+            // Vercelリンクを希望する場合は.vercelディレクトリを生成する
+            if (inputs.shouldLinkVercel && inputs.vercelConfig) {
+                linkVercelProject(config, inputs.vercelConfig);
             }
 
             // Tursoを利用する場合はテーブル作成処理を実行する

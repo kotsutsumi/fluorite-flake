@@ -96,7 +96,7 @@
             "cancelled": "プロジェクト作成をキャンセルしました",
             "vercelLink": "Vercelプロジェクトリンク"
         },
-        "vercelLinkConfirm": "生成したプロジェクトをVercelプロジェクトとリンクしますか？",
+        "vercelLinkConfirm": "🔗 生成したプロジェクトをVercelプロジェクトとリンクしますか？",
         "vercelLinkSkipped": "Vercelプロジェクトとのリンクをスキップしました。",
         "vercelLinkProjectListFailed": "Vercelプロジェクトの取得に失敗しました。`vercel login` を実行し、再度お試しください。",
         "vercelLinkSelectProject": "リンクするVercelプロジェクトを選択してください。",

@@ -4,8 +4,10 @@
  * シンプルなYes/No確認プロンプトを提供します。
  */
 
-import { stdin, stdout } from "node:process";
-import { createInterface } from "node:readline";
+import prompts from "prompts";
+
+const affirmativeKeywords = new Set(["y", "yes", "はい", "よろしく", "ok", "true", "1"]);
+const negativeKeywords = new Set(["n", "no", "いいえ", "だめ", "cancel", "false", "0"]);
 
 /**
  * ユーザーに確認プロンプトを表示し、Yes/Noの回答を取得
@@ -15,43 +17,29 @@ import { createInterface } from "node:readline";
  * @returns ユーザーがYesを選択した場合はtrue、Noの場合はfalse
  */
 export async function confirm(message: string, defaultValue = false): Promise<boolean> {
-    return new Promise((resolve) => {
-        const rl = createInterface({
-            input: stdin,
-            output: stdout,
-        });
-
-        // プロンプト文字列を作成（デフォルト値を表示）
-        const promptSuffix = defaultValue ? " (Y/n)" : " (y/N)";
-        const fullPrompt = `${message}${promptSuffix} `;
-
-        rl.question(fullPrompt, (answer) => {
-            rl.close();
-
-            const normalizedAnswer = answer.trim().toLowerCase();
-
-            if (normalizedAnswer === "") {
-                // 空の場合はデフォルト値を使用
-                resolve(defaultValue);
-                return;
-            }
-
-            // Yes系の回答
-            if (["y", "yes", "はい", "よろしく", "ok"].includes(normalizedAnswer)) {
-                resolve(true);
-                return;
-            }
-
-            // No系の回答
-            if (["n", "no", "いいえ", "だめ", "cancel"].includes(normalizedAnswer)) {
-                resolve(false);
-                return;
-            }
-
-            // その他の場合はデフォルト値を使用
-            resolve(defaultValue);
-        });
+    const promptSuffix = defaultValue ? " (Y/n)" : " (y/N)";
+    const response = await prompts({
+        type: "text",
+        name: "answer",
+        message: `${message}${promptSuffix}`,
+        initial: defaultValue ? "y" : "n",
     });
+
+    const normalizedAnswer = typeof response.answer === "string" ? response.answer.trim().toLowerCase() : "";
+
+    if (normalizedAnswer === "") {
+        return defaultValue;
+    }
+
+    if (affirmativeKeywords.has(normalizedAnswer)) {
+        return true;
+    }
+
+    if (negativeKeywords.has(normalizedAnswer)) {
+        return false;
+    }
+
+    return defaultValue;
 }
 
 // EOF

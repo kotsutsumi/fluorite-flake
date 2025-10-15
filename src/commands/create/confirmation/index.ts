@@ -11,6 +11,24 @@ import type { DatabaseProvisioningConfig } from "../database-provisioning/types.
 import type { DatabaseType } from "../types.js";
 
 /**
+ * Vercelプロジェクト設定情報
+ */
+export type VercelProjectConfig = {
+    /** プロジェクトID */
+    projectId: string;
+    /** プロジェクト名 */
+    projectName: string;
+    /** 組織ID */
+    orgId: string;
+    /** リポジトリディレクトリ */
+    directory?: string;
+    /** リモート名 */
+    remoteName?: string;
+    /** リポジトリ設定を作成するか */
+    shouldCreateRepo?: boolean;
+};
+
+/**
  * 確認フェーズで使用する入力情報の型定義
  */
 export type ConfirmationInputs = {
@@ -34,6 +52,8 @@ export type ConfirmationInputs = {
     shouldGenerateDocs?: boolean;
     /** Vercelプロジェクトへのリンクを希望するか */
     shouldLinkVercel?: boolean;
+    /** Vercelプロジェクト設定（リンクする場合のみ） */
+    vercelConfig?: VercelProjectConfig;
 };
 
 /**
@@ -71,6 +91,15 @@ export async function displayConfirmation(inputs: ConfirmationInputs): Promise<b
                 inputs.shouldLinkVercel ? messages.common.enabled : messages.common.disabled
             }`
         );
+        if (inputs.shouldLinkVercel && inputs.vercelConfig) {
+            console.log(`     - プロジェクト名: ${inputs.vercelConfig.projectName}`);
+            console.log(`     - プロジェクトID: ${inputs.vercelConfig.projectId}`);
+            console.log(`     - 組織ID: ${inputs.vercelConfig.orgId}`);
+            if (inputs.vercelConfig.shouldCreateRepo) {
+                console.log(`     - リポジトリディレクトリ: ${inputs.vercelConfig.directory || "."}`);
+                console.log(`     - リモート名: ${inputs.vercelConfig.remoteName || "origin"}`);
+            }
+        }
     }
     if (inputs.outputDirectory) {
         console.log(`   ${messages.common.outputDir}: ${inputs.outputDirectory}`);
