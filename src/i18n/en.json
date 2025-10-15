@@ -96,8 +96,29 @@
             "projectInfo": "Project Information",
             "databaseInfo": "Database Configuration",
             "continuePrompt": "Do you want to proceed with this configuration?",
-            "cancelled": "Project creation cancelled"
-        }
+            "cancelled": "Project creation cancelled",
+            "vercelLink": "Link Vercel project"
+        },
+        "vercelLinkConfirm": "🔗 Would you like to link this project with Vercel now?",
+        "vercelLinkSkipped": "Skipping Vercel project linking.",
+        "vercelLinkProjectListFailed": "Failed to fetch Vercel projects. Please run `vercel login` and try again.",
+        "vercelLinkSelectProject": "Select a Vercel project to link.",
+        "vercelLinkManualChoice": "Enter project information manually",
+        "vercelLinkProjectIdPrompt": "Enter the Vercel project ID (prj_...)",
+        "vercelLinkProjectIdError": "Project ID is required.",
+        "vercelLinkProjectNamePrompt": "Enter the Vercel project name.",
+        "vercelLinkProjectNameError": "Project name is required.",
+        "vercelLinkCreateRepoPrompt": "Generate .vercel/repo.json for this workspace?",
+        "vercelLinkToggleYes": "Yes",
+        "vercelLinkToggleNo": "No",
+        "vercelLinkDirectoryPrompt": "Enter the relative directory for this project (e.g. apps/web).",
+        "vercelLinkDirectoryError": "Directory is required.",
+        "vercelLinkRemotePrompt": "Enter the Git remote name to associate.",
+        "vercelLinkRemoteError": "Remote name is required.",
+        "vercelLinkOrgIdPrompt": "Enter the Vercel org/team ID (team_...).",
+        "vercelLinkOrgIdError": "Organization ID is required.",
+        "vercelLinkCancelled": "Linking was cancelled. You can run `vercel link` later.",
+        "vercelLinkSuccess": "Linked to Vercel project {projectName}."
     },
     "readme": {
         "title": "{name}",
