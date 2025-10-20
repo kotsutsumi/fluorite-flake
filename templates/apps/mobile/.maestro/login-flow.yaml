@@ -1,4 +1,4 @@
-appId: com.kotsutsumi.verceltest
+appId: com.fluorite-flake.app
 ---
 # ログインフローテスト
 # ユーザーがログインできることを確認

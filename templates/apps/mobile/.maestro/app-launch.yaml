@@ -1,4 +1,4 @@
-appId: com.kotsutsumi.verceltest
+appId: com.fluorite-flake.app
 ---
 # アプリ起動テスト
 # アプリが正常に起動し、基本画面が表示されることを確認

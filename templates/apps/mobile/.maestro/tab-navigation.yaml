@@ -1,4 +1,4 @@
-appId: com.kotsutsumi.verceltest
+appId: com.fluorite-flake.app
 ---
 # タブナビゲーションテスト
 # 各タブが正しく切り替わり、画面が表示されることを確認

@@ -4,11 +4,10 @@
  * - プロジェクト固有のローカルフォント (Geist) を登録し、CSS 変数として注入
  * - docsRepositoryBase を設定してページから GitHub の編集画面へ遷移できるようにする
  */
-
+import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Footer, Layout, Navbar } from "nextra-theme-docs";
-import type { ReactNode } from "react";
 import "nextra-theme-docs/style.css";
 import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
@@ -25,14 +24,14 @@ const geistMono = localFont({
   variable: "--font-mono",
 });
 
-const PROJECT_REPO = "https://github.com/kotsutsumi/vercel-test";
+const PROJECT_REPO = "https://github.com/kotsutsumi/fluorite-flake";
 
 export const metadata: Metadata = {
   title: {
     default: "Fluorite Flake Docs",
     template: "%s | Fluorite Flake Docs",
   },
-  description: "Documentation for the Vercel Test Turborepo workspaces.",
+  description: "Documentation for the Fluorite Flake Turborepo workspaces.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -51,7 +50,7 @@ const navbar = (
   />
 );
 
-const footer = <Footer>MIT {new Date().getFullYear()} © Vercel Test.</Footer>;
+const footer = <Footer>MIT {new Date().getFullYear()} © Fluorite Flake.</Footer>;
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const pageMap = await getPageMap();
