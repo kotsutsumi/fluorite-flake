@@ -90,8 +90,8 @@ export async function provisionSupabaseProjects(
             // URL構築
             const url = `postgresql://postgres:[YOUR-PASSWORD]@db.${projectRef}.supabase.co:5432/postgres`;
 
-            credentials.urls[env] = url;
-            credentials.tokens[env] = apiKeys.serviceRole; // Service Roleキーを使用
+            credentials.urls![env] = url;
+            credentials.tokens![env] = apiKeys.serviceRole; // Service Roleキーを使用
 
             databases.push({
                 environment: env,

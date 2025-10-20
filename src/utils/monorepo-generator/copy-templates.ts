@@ -41,7 +41,7 @@ function findPackageRoot(startPath: string): string {
  * @param pnpmVersion pnpmバージョン（省略時は"latest"）
  */
 export function copyMonorepoTemplates(config: ProjectConfig, pnpmVersion?: string): void {
-    const { directory, name } = config;
+    const { directory, name = "my-project" } = config;
 
     // パッケージルートディレクトリを取得
     const __filename = fileURLToPath(import.meta.url);
