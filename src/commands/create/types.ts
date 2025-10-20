@@ -17,17 +17,17 @@ export type DatabaseType = "turso" | "supabase" | "sqlite" | "none";
  * プロジェクト設定
  */
 export interface ProjectConfig {
-	projectName: string;
-	projectType: ProjectType;
-	template: string;
-	directory: string;
-	database?: DatabaseType;
-	isMonorepoMode?: boolean;
-	pnpmVersion?: string;
-	name?: string;
-	type?: string;
-	monorepo?: boolean;
-	shouldGenerateDocs?: boolean;
+    projectName: string;
+    projectType: ProjectType;
+    template: string;
+    directory: string;
+    database?: DatabaseType;
+    isMonorepoMode?: boolean;
+    pnpmVersion?: string;
+    name?: string;
+    type?: string;
+    monorepo?: boolean;
+    shouldGenerateDocs?: boolean;
 }
 
 // EOF
