@@ -1,0 +1,204 @@
+// Prisma schema with Post model for demonstration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("PRISMA_DATABASE_URL")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  emailVerified Boolean      @default(false)
+  name          String?
+  image         String?
+  role          String       @default("user")
+  approvalStatus ApprovalStatus @default(APPROVED)
+  approvalStatusUpdatedAt DateTime?
+  approvalStatusUpdatedBy String?
+  approvalNote   String?
+  MemberId   String?      @unique // 会員ID (管理画面で設定)
+  memberSince   DateTime?    // 会員登録日
+  metadata      Json?        // 追加のユーザーメタデータ
+  isActive      Boolean      @default(true)
+  deactivatedAt DateTime?
+  deactivatedBy String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  posts         Post[]
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Member[]
+  accessLogs    AccessLog[]
+  devices       DeviceInfo[]
+
+  @@index([approvalStatus])
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  content     String?
+  published   Boolean  @default(false)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([published])
+}
+
+model Account {
+  id                     String   @id @default(cuid())
+  userId                 String
+  accountId              String
+  providerId             String
+  accessToken            String?
+  refreshToken           String?
+  idToken                String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  scope                  String?
+  password               String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String      @id @default(cuid())
+  expiresAt    DateTime
+  token        String      @unique
+  ipAddress    String?
+  userAgent    String?
+  userId       String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessLogs   AccessLog[]
+
+  @@index([userId])
+}
+
+model Verification {
+  id          String   @id @default(cuid())
+  identifier  String
+  value       String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Organization {
+  id         String       @id @default(cuid())
+  name       String
+  slug       String       @unique
+  metadata   String?      // JSON stored as string for SQLite compatibility
+  createdAt  DateTime     @default(now())
+  members    Member[]
+  invitations Invitation[]
+  accessLogs AccessLog[]
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  email          String
+  role           String
+  status         String       @default("pending")
+  organizationId String
+  invitedBy      String?
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model AccessLog {
+  id            String       @id @default(cuid())
+  userId        String?      // nullable for unauthenticated access
+  sessionId     String?      // for authenticated sessions
+  deviceId      String?      // for mobile device tracking
+  ipAddress     String?
+  userAgent     String?
+  method        String       // GET, POST, etc.
+  path          String       // URL path accessed
+  query         String?      // query parameters as JSON
+  statusCode    Int?         // HTTP status code
+  responseTime  Int?         // response time in ms
+  referrer      String?
+  country       String?      // geolocation data
+  city          String?
+  platform      String?      // web, ios, android
+  appVersion    String?      // for mobile app versioning
+  organizationId String?     // if user belongs to organization
+  createdAt     DateTime     @default(now())
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session       Session?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  device        DeviceInfo?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  organization  Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([deviceId])
+  @@index([ipAddress])
+  @@index([path])
+  @@index([platform])
+  @@index([createdAt])
+  @@index([organizationId])
+}
+
+model DeviceInfo {
+  id              String      @id @default(cuid())
+  deviceId        String      @unique // unique device identifier (like Firebase Instance ID)
+  platform        String      // ios, android, web
+  osVersion       String?
+  appVersion      String?
+  deviceModel     String?
+  deviceName      String?
+  pushToken       String?     // for push notifications
+  timezone        String?
+  locale          String?
+  userId          String?     // nullable - can track before login
+  firstSeenAt     DateTime    @default(now())
+  lastSeenAt      DateTime    @default(now())
+  isActive        Boolean     @default(true)
+  metadata        String?     // JSON for additional device info
+  accessLogs      AccessLog[]
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([deviceId])
+  @@index([platform])
+  @@index([userId])
+  @@index([lastSeenAt])
+}

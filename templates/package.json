@@ -1,0 +1,71 @@
+{
+  "name": "vercel-test",
+  "private": true,
+  "scripts": {
+    "postinstall": "pnpm prisma:generate",
+    "prisma:generate": "pnpm --filter backend exec prisma generate --schema=prisma/schema.prisma",
+    "build": "scripts/free-port.sh && turbo run build",
+    "dev": "scripts/free-port.sh && turbo run dev",
+    "lint": "ultracite check",
+    "format": "ultracite fix",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "test:scripts": "vitest run --config scripts/vitest.config.ts",
+    "test:scripts:watch": "vitest watch --config scripts/vitest.config.ts",
+    "test:scripts:ui": "vitest --ui --config scripts/vitest.config.ts",
+    "test:scripts:coverage": "vitest run --coverage --config scripts/vitest.config.ts",
+    "env:push:preview": "tsx scripts/env-push-all.ts preview",
+    "env:push:production": "tsx scripts/env-push-all.ts production",
+    "env:push:staging": "tsx scripts/env-push-all.ts staging",
+    "env:push": "tsx scripts/env-push-all.ts all",
+    "env:pull": "tsx scripts/env-pull.ts",
+    "env:encrypt": "tsx scripts/env-tools.ts encrypt",
+    "env:decrypt": "tsx scripts/env-tools.ts decrypt",
+    "env:init": "tsx scripts/libs/env-init/index.ts",
+    "env:gen:secret": "tsx scripts/generate-better-auth-secrets.ts",
+    "db:push": "turbo run db:push",
+    "db:seed": "turbo run db:seed",
+    "db:reset": "turbo run db:reset",
+    "db:cloud:create": "tsx scripts/db-cloud.ts create",
+    "db:cloud:migrate:preview": "tsx scripts/db-cloud.ts migrate preview",
+    "db:cloud:migrate:staging": "tsx scripts/db-cloud.ts migrate staging",
+    "db:cloud:migrate:production": "tsx scripts/db-cloud.ts migrate production",
+    "db:cloud:migrate": "tsx scripts/db-cloud.ts migrate all",
+    "db:cloud:push:preview": "tsx scripts/db-cloud.ts push preview",
+    "db:cloud:push:staging": "tsx scripts/db-cloud.ts push staging",
+    "db:cloud:push:production": "tsx scripts/db-cloud.ts push production",
+    "db:cloud:push": "tsx scripts/db-cloud.ts push all",
+    "db:cloud:seed:preview": "tsx scripts/db-cloud.ts seed preview",
+    "db:cloud:seed:staging": "tsx scripts/db-cloud.ts seed staging",
+    "db:cloud:seed:production": "tsx scripts/db-cloud.ts seed production",
+    "db:cloud:seed": "tsx scripts/db-cloud.ts seed all",
+    "db:cloud:reset:preview": "tsx scripts/db-cloud.ts reset preview",
+    "db:cloud:reset:staging": "tsx scripts/db-cloud.ts reset staging",
+    "db:cloud:reset:production": "tsx scripts/db-cloud.ts reset production",
+    "db:cloud:reset": "tsx scripts/db-cloud.ts reset all"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "tsx": "^4.20.6",
+    "turbo": "^2.5.8",
+    "typescript": "5.9.3",
+    "ultracite": "^5.6.4",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.18.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@apollo/protobufjs",
+      "@prisma/adapter-libsql",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
+  }
+}

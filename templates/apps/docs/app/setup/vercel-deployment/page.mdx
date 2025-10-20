@@ -1,0 +1,401 @@
+---
+title: Vercel デプロイ
+description: Vercel プロジェクトのリンク、環境設定、自動デプロイの構成
+---
+
+# Vercel デプロイ
+
+このプロジェクトは Vercel にデプロイすることを前提に設計されています。Web、Backend、Docs の各アプリを個別の Vercel プロジェクトとしてデプロイします。
+
+## 📋 Vercel プランと環境
+
+### Hobby プラン（無料）
+
+- **Preview**: Pull Request ごとに自動生成
+- **Production**: `main` ブランチのデプロイ
+
+### Pro プラン（有料）
+
+- **Preview**: Pull Request ごとに自動生成
+- **Staging**: `staging` ブランチの専用環境
+- **Production**: `main` ブランチの本番環境
+
+Pro プランでは Staging 環境を使って本番デプロイ前の最終検証が可能です。
+
+## 🚀 初回セットアップ
+
+### 前提条件
+
+- GitHub リポジトリが作成されている
+- Vercel アカウントが作成されている（[vercel.com](https://vercel.com)）
+- Vercel CLI がインストールされている
+
+```bash
+npm install -g vercel
+```
+
+### Vercel CLI のログイン
+
+```bash
+vercel login
+```
+
+ブラウザが開き、認証を完了します。
+
+## 🔗 アプリのリンク
+
+各アプリを個別の Vercel プロジェクトにリンクします。
+
+### Web アプリのリンク
+
+```bash
+cd apps/web
+vercel link --repo
+```
+
+対話形式で以下を選択：
+
+1. **Set up and deploy**: `y`（初回）または `n`（既存プロジェクト）
+2. **Scope**: あなたの Vercel アカウント/チームを選択
+3. **Link to existing project**: `y`（既存）または `n`（新規作成）
+4. **Project name**: `your-project-web`（新規の場合）
+
+### Backend アプリのリンク
+
+```bash
+cd apps/backend
+vercel link --repo
+```
+
+同様の手順で `your-project-backend` としてリンクします。
+
+### Docs アプリのリンク
+
+```bash
+cd apps/docs
+vercel link --repo
+```
+
+同様の手順で `your-project-docs` としてリンクします。
+
+### リンク確認
+
+各アプリディレクトリに `.vercel` フォルダーが作成されます：
+
+```
+apps/web/.vercel/project.json
+apps/backend/.vercel/project.json
+apps/docs/.vercel/project.json
+```
+
+⚠️ **注意**: `.vercel` フォルダーは `.gitignore` に含まれています。チームメンバーは各自 `vercel link` を実行してください。
+
+## 🌐 環境変数の設定
+
+### Vercel ダッシュボードから設定
+
+1. [Vercel Dashboard](https://vercel.com/dashboard) にアクセス
+2. プロジェクトを選択
+3. **Settings > Environment Variables** に移動
+4. 必要な環境変数を追加
+
+### CLI から一括設定
+
+`pnpm env:push` コマンドを使用すると、ローカルの `.env.local` から環境変数を一括アップロードできます。
+
+```bash
+# 全環境に push
+pnpm env:push
+
+# 特定環境のみ
+pnpm env:push:preview
+pnpm env:push:production
+pnpm env:push:staging
+```
+
+### 各アプリの必須環境変数
+
+#### Web アプリ
+
+```bash
+BETTER_AUTH_URL=https://your-project-web.vercel.app
+BETTER_AUTH_SECRET=your-production-secret
+NEXT_PUBLIC_API_URL=https://your-project-backend.vercel.app
+```
+
+#### Backend アプリ
+
+```bash
+BETTER_AUTH_URL=https://your-project-backend.vercel.app
+BETTER_AUTH_SECRET=your-production-secret
+DATABASE_PROVIDER=turso
+DATABASE_URL=libsql://your-db.turso.io
+DATABASE_AUTH_TOKEN=your-token
+BLOB_READ_WRITE_TOKEN=your-vercel-blob-token
+GRAPHQL_ENDPOINT=https://your-project-backend.vercel.app/api/graphql
+```
+
+#### Docs アプリ
+
+環境変数は特に必要ありません（静的ドキュメントサイト）。
+
+## 🎯 デプロイフロー
+
+### Preview デプロイ（Pull Request）
+
+1. 機能ブランチを作成
+   ```bash
+   git checkout -b feature/new-feature
+   ```
+
+2. 変更をコミット
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   ```
+
+3. GitHub に Push
+   ```bash
+   git push origin feature/new-feature
+   ```
+
+4. Pull Request を作成
+
+5. **自動デプロイ**: Vercel が自動的に Preview 環境をビルド・デプロイ
+
+6. **Preview URL**: PR のコメントに自動投稿されます
+   ```
+   ✅ Preview: https://your-project-web-git-feature-new-feature.vercel.app
+   ```
+
+### Production デプロイ（main ブランチ）
+
+1. Pull Request をマージ
+   ```bash
+   # GitHub UI でマージ または
+   git checkout main
+   git merge feature/new-feature
+   git push origin main
+   ```
+
+2. **自動デプロイ**: `main` ブランチへの Push で自動的に Production にデプロイ
+
+3. **本番 URL**:
+   ```
+   https://your-project-web.vercel.app
+   https://your-project-backend.vercel.app
+   https://your-project-docs.vercel.app
+   ```
+
+### Staging デプロイ（Pro プランのみ）
+
+1. Staging ブランチを作成（初回のみ）
+   ```bash
+   git checkout -b staging
+   git push origin staging
+   ```
+
+2. Vercel ダッシュボードで Staging 環境を設定
+   - **Settings > Git** に移動
+   - **Production Branch** を `main` のまま維持
+   - **Staging Branch** を `staging` に設定
+
+3. Staging ブランチに変更をマージ
+   ```bash
+   git checkout staging
+   git merge feature/new-feature
+   git push origin staging
+   ```
+
+4. **Staging URL**:
+   ```
+   https://your-project-web-staging.vercel.app
+   ```
+
+5. Staging で検証後、`main` にマージして Production デプロイ
+
+## 🔧 ビルド設定
+
+### Turborepo との統合
+
+Vercel は Turborepo を自動検出し、最適化されたビルドを実行します。
+
+#### Web アプリ
+
+- **Framework Preset**: Next.js
+- **Build Command**: `cd ../.. && pnpm turbo run build --filter=web`
+- **Output Directory**: `apps/web/.next`
+- **Install Command**: `pnpm install`
+
+#### Backend アプリ
+
+- **Framework Preset**: Next.js
+- **Build Command**: `cd ../.. && pnpm turbo run build --filter=backend`
+- **Output Directory**: `apps/backend/.next`
+- **Install Command**: `pnpm install`
+
+#### Docs アプリ
+
+- **Framework Preset**: Next.js
+- **Build Command**: `cd ../.. && pnpm turbo run build --filter=docs`
+- **Output Directory**: `apps/docs/.next`
+- **Install Command**: `pnpm install`
+
+### ビルドコマンドのカスタマイズ
+
+Vercel ダッシュボードの **Settings > General** で変更可能：
+
+1. **Root Directory**: そのまま（モノレポルート）
+2. **Build & Development Settings** で上記コマンドを確認
+
+## 🚨 トラブルシューティング
+
+### ビルドエラー: `pnpm not found`
+
+**症状**: Vercel ビルドで `command not found: pnpm`
+
+**解決方法**:
+1. Vercel ダッシュボードで **Settings > General** に移動
+2. **Node.js Version** を 22.x に設定
+3. `package.json` に `packageManager` フィールドがあることを確認
+   ```json
+   {
+     "packageManager": "pnpm@10.18.3"
+   }
+   ```
+
+### ビルドエラー: Prisma Client が見つからない
+
+**症状**: `@prisma/client` が見つからないエラー
+
+**解決方法**:
+1. `package.json` の `postinstall` スクリプトを確認
+   ```json
+   {
+     "scripts": {
+       "postinstall": "turbo run prisma:generate"
+     }
+   }
+   ```
+2. `prisma/schema.prisma` がリポジトリに含まれているか確認
+
+### 環境変数が反映されない
+
+**症状**: デプロイ後に環境変数関連のエラー
+
+**解決方法**:
+1. Vercel ダッシュボードで環境変数を確認
+2. 対象環境（Preview / Production / Staging）が正しいか確認
+3. **Redeploy** で再デプロイ
+   ```bash
+   vercel --prod  # Production に再デプロイ
+   ```
+
+### データベース接続エラー
+
+**症状**: `Database connection failed`
+
+**解決方法**:
+1. `DATABASE_URL` と `DATABASE_AUTH_TOKEN` が正しいか確認
+2. Turso/Supabase のデータベースが存在するか確認
+3. ネットワーク制限（IP ホワイトリスト）を確認
+
+### デプロイが遅い
+
+**症状**: ビルドに 5 分以上かかる
+
+**解決方法**:
+1. Turborepo Remote Caching を有効化
+   ```bash
+   turbo login
+   turbo link
+   ```
+2. Vercel ダッシュボードで **Turbo Cache** を有効化
+3. `.gitignore` に不要なファイルが含まれていないか確認
+
+## 📊 デプロイメントのモニタリング
+
+### デプロイメント履歴
+
+Vercel ダッシュボードの **Deployments** タブで確認：
+
+- ✅ 成功したデプロイ
+- ❌ 失敗したデプロイ
+- ⏳ ビルド中のデプロイ
+
+### ログの確認
+
+各デプロイメントをクリックして **Build Logs** を確認できます。
+
+### パフォーマンスメトリクス
+
+**Analytics** タブで以下を確認：
+
+- ページビュー
+- Core Web Vitals（LCP, FID, CLS）
+- レスポンスタイム
+
+## 🔗 カスタムドメインの設定
+
+### ドメインの追加
+
+1. Vercel ダッシュボードで **Settings > Domains** に移動
+2. **Add** をクリック
+3. ドメイン名を入力（例: `yourdomain.com`）
+4. DNS レコードを設定
+
+### DNS 設定
+
+#### A レコード（推奨）
+
+```
+Type: A
+Name: @
+Value: 76.76.21.21
+```
+
+#### CNAME レコード
+
+```
+Type: CNAME
+Name: www
+Value: cname.vercel-dns.com
+```
+
+### SSL 証明書
+
+Vercel が自動的に Let's Encrypt の SSL 証明書を発行します。
+
+## 📚 関連リソース
+
+- **[環境変数管理](/setup/environment-variables)** - 環境変数の詳細設定
+- **[データベース（クラウド）](/setup/database-cloud)** - データベース接続の設定
+- **[デプロイメント](/deployment)** - デプロイ戦略の詳細
+- **[Vercel 公式ドキュメント](https://vercel.com/docs)** - Vercel の詳細ガイド
+
+## 💡 ベストプラクティス
+
+1. **環境分離**:
+   - Preview: 機能ごとに自動デプロイ
+   - Staging: 本番前の最終検証（Pro プラン）
+   - Production: 本番環境
+
+2. **自動デプロイ**:
+   - `main` ブランチへのマージで自動デプロイ
+   - PR ごとに Preview 環境を自動生成
+   - CI/CD パイプラインと連携
+
+3. **環境変数**:
+   - 環境ごとに異なる値を設定
+   - `pnpm env:push` で効率的に管理
+   - シークレットは定期的にローテーション
+
+4. **モニタリング**:
+   - デプロイメント履歴を定期的に確認
+   - Analytics でパフォーマンスを監視
+   - エラーログを早期に検知
+
+5. **セキュリティ**:
+   - 環境変数にシークレットを保存
+   - カスタムドメインで HTTPS を有効化
+   - IP 制限やアクセス制御を検討

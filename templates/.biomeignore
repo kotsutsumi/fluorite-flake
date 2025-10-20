@@ -1,0 +1,4 @@
+# Biome ignore file
+# packages/ui をlintとformatの対象外にする
+
+packages/ui/**

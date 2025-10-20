@@ -1,0 +1,92 @@
+---
+title: ホーム
+description: フルスタック Turborepo モノレポのドキュメント
+---
+
+# プロジェクトドキュメントへようこそ
+
+このサイトは、Next.js / Expo / Prisma / Better Auth で構成されたフルスタックアプリケーションの包括的なドキュメントです。
+
+## 🎯 このドキュメントについて
+
+初めての方でも迷わずプロジェクトをセットアップし、開発から本番デプロイまで完了できるように設計されています。
+
+### 📚 ドキュメント構成
+
+- **[Introduction](/introduction)**: プロジェクトの概要と技術スタック
+- **[Getting Started](/getting-started)**: 初期セットアップとクイックスタート
+- **[Setup](/setup)**: 環境変数、データベース、デプロイ設定
+- **[Development](/development)**: 開発ガイドとコマンドリファレンス
+- **[Architecture](/architecture)**: システム設計とアーキテクチャ解説
+- **[Deployment](/deployment)**: 本番環境へのデプロイ手順
+- **[Guides](/guides)**: チーム開発、API 使用法などの実践ガイド
+
+## 🚀 クイックナビゲーション
+
+### 初めての方
+
+1. **[前提条件](/getting-started/prerequisites)** - 必要なツールとバージョン確認
+2. **[ローカルセットアップ](/getting-started/local-setup)** - 5 ステップで開発開始
+3. **[コマンドリファレンス](/development/commands)** - よく使うコマンド一覧
+
+### 本番デプロイ
+
+1. **[Vercel 連携](/setup/vercel-deployment)** - アプリの Vercel リンク
+2. **[Turso Cloud データベース](/setup/database-cloud)** - クラウド DB の作成
+3. **[EAS 設定](/setup/eas-setup)** - モバイルアプリのビルド・リリース
+
+### 開発者向け
+
+- **[テスト戦略](/development/testing)** - ユニット・E2E テストの実行
+- **[データベース操作](/guides/database-operations)** - Prisma コマンドの使い分け
+- **[API 使用ガイド](/guides/api-usage)** - GraphQL / REST API の利用方法
+
+## 💡 よくある質問
+
+### 環境変数はどこに書く？
+
+各アプリの `.env.local` ファイルに記載します。初期生成は `pnpm env:init` で実行できます。
+
+詳細は [環境変数管理](/setup/environment-variables) を参照してください。
+
+### データベースのマイグレーションはどうする？
+
+ローカル開発では `pnpm db:reset`、本番環境では `pnpm db:cloud:migrate` を使用します。
+
+詳細は [データベース操作ガイド](/guides/database-operations) を参照してください。
+
+### チームで環境変数を共有するには？
+
+`pnpm env:encrypt` で暗号化し、`pnpm env:decrypt` で復号します。
+
+詳細は [チーム開発ガイド](/guides/team-collaboration) を参照してください。
+
+## 🛠️ プロジェクト構成
+
+このモノレポは以下のアプリとパッケージで構成されています：
+
+### Apps
+
+- **web**: マーケティングサイト・フロントエンド（ポート 3000）
+- **backend**: 管理ダッシュボード + API サーバー（ポート 3001）
+- **docs**: ドキュメントサイト（ポート 3002）
+- **mobile**: Expo モバイルアプリ（ポート 8081）
+
+### Packages
+
+- **ui**: 共通 UI コンポーネントライブラリ（shadcn/ui ベース）
+- **typescript-config**: 共通 TypeScript 設定
+
+## 🔗 外部リソース
+
+- [GitHub リポジトリ](https://github.com/your-org/your-repo)
+- [Next.js ドキュメント](https://nextjs.org/docs)
+- [Expo ドキュメント](https://docs.expo.dev/)
+- [Prisma ドキュメント](https://www.prisma.io/docs)
+- [Better Auth ドキュメント](https://www.better-auth.com/docs)
+
+## 📝 ドキュメントの改善
+
+ドキュメントに不足や誤りがある場合は、[Issues](https://github.com/your-org/your-repo/issues) でお知らせください。
+
+プルリクエストも歓迎します！

@@ -1,0 +1,9 @@
+appId: com.kotsutsumi.verceltest
+---
+# アプリ起動テスト
+# アプリが正常に起動し、基本画面が表示されることを確認
+
+- launchApp
+- assertVisible: "ログイン"
+- assertVisible: "メールアドレス"
+- assertVisible: "パスワード"

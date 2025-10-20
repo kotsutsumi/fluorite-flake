@@ -1,0 +1,282 @@
+---
+title: Vercel Blob Storage
+description: Vercel Blobストレージの設定とファイルアップロード機能の実装
+---
+
+# Vercel Blob ストレージガイド
+
+このガイドでは、Vercel Blobを使用したファイルアップロード機能の設定方法を説明します。
+
+## 概要
+
+このプロジェクトは、**環境適応型のストレージ抽象化レイヤー**を実装しており、開発環境と本番環境で自動的にストレージバックエンドを切り替えます：
+
+- **ローカル開発**: `.storage` ディレクトリにファイルを保存
+- **Vercel 本番**: Vercel Blob にアップロードしてCDN配信
+
+設定が不要なため、ローカル開発ではすぐに利用できます。
+
+## ローカル開発での使用
+
+環境変数を設定せずにそのまま使用できます：
+
+```bash
+# 開発サーバー起動
+pnpm --filter backend dev
+
+# ファイルアップロードを試す
+# → .storage/ ディレクトリに自動保存
+# → http://localhost:3001/api/storage/<filename> でアクセス可能
+```
+
+### ストレージ状態の確認
+
+現在のストレージモードを確認するには：
+
+```bash
+curl http://localhost:3001/api/storage/debug
+```
+
+**ローカルモードの場合:**
+```json
+{
+  "type": "local",
+  "message": "Using local file storage (.storage directory)",
+  "reason": "No BLOB_READ_WRITE_TOKEN configured, Not running on Vercel"
+}
+```
+
+## Vercel Blobのセットアップ
+
+本番環境でVercel Blobを使用する場合の設定手順です。
+
+### ステップ1: Blobストアの作成
+
+1. [Vercel Dashboard](https://vercel.com/dashboard) にログイン
+2. プロジェクトを選択
+3. **Storage** タブをクリック
+4. **Create Database** → **Blob** を選択
+5. ストア名を入力（例: `backend-uploads`）
+6. **Create** をクリック
+
+### ステップ2: 環境変数の確認
+
+Blobストア作成後、以下の環境変数が自動的に追加されます：
+
+| 変数名 | 説明 |
+|--------|------|
+| `BLOB_READ_WRITE_TOKEN` | Blob APIのアクセストークン |
+
+Vercel の **Settings** → **Environment Variables** で確認できます。
+
+### ステップ3: 環境別の設定（Pro以上）
+
+Vercel Proアカウント以上では、環境ごとに異なるBlobストアを設定できます：
+
+#### Preview環境用
+
+1. 新しいBlobストアを作成（例: `backend-uploads-preview`）
+2. 環境変数のスコープを **Preview** に設定
+
+#### Staging環境用
+
+1. 新しいBlobストアを作成（例: `backend-uploads-staging`）
+2. 環境変数のスコープを **Staging** に設定
+
+#### Production環境用
+
+1. 新しいBlobストアを作成（例: `backend-uploads-production`）
+2. 環境変数のスコープを **Production** に設定
+
+## ローカルでの本番モードテスト
+
+ローカル環境でVercel Blobをテストする場合：
+
+```bash
+# .env.local に以下を追加
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxxxxxxxxxx
+VERCEL=1
+
+# 開発サーバー再起動
+pnpm --filter backend dev
+
+# ストレージモードを確認
+curl http://localhost:3001/api/storage/debug
+```
+
+**Vercel Blobモードの場合:**
+```json
+{
+  "type": "vercel-blob",
+  "message": "Using Vercel Blob Storage",
+  "hasToken": true,
+  "isVercel": true
+}
+```
+
+## API リファレンス
+
+### ファイルアップロード
+
+```bash
+POST /api/upload
+
+# リクエスト
+curl -X POST http://localhost:3001/api/upload \
+  -F "file=@/path/to/image.png"
+
+# レスポンス
+{
+  "url": "http://localhost:3001/api/storage/1234567890.png"  # ローカル
+  "url": "https://xxxxx.public.blob.vercel-storage.com/..."  # Vercel Blob
+}
+```
+
+### ストレージ情報
+
+```bash
+GET /api/storage/debug
+
+# レスポンス（ローカル）
+{
+  "type": "local",
+  "message": "Using local file storage (.storage directory)",
+  "apiEndpoint": "/api/storage",
+  "environment": "development"
+}
+
+# レスポンス（Vercel Blob）
+{
+  "type": "vercel-blob",
+  "message": "Using Vercel Blob Storage",
+  "hasToken": true,
+  "isVercel": true,
+  "environment": "production"
+}
+```
+
+## コード例
+
+### TypeScriptでの使用
+
+```typescript
+import { uploadBuffer, uploadFile, deleteFile, listFiles } from "@/lib/storage";
+
+// Bufferからアップロード
+const buffer = Buffer.from("Hello World");
+const url = await uploadBuffer(buffer, "uploads/file.txt", "text/plain");
+
+// Fileオブジェクトからアップロード
+const file = new File(["content"], "image.png", { type: "image/png" });
+const url = await uploadFile(file, { pathname: "uploads/image.png" });
+
+// ファイル削除
+await deleteFile(url);
+
+// ファイル一覧取得
+const files = await listFiles({ prefix: "uploads/", limit: 10 });
+```
+
+すべての関数は環境に応じて自動的に適切なバックエンドを使用します。
+
+### Reactコンポーネントでの使用
+
+```tsx
+"use client";
+
+import { useState } from "react";
+
+export function FileUpload() {
+  const [uploading, setUploading] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    setUrl(data.url);
+    setUploading(false);
+  };
+
+  return (
+    <div>
+      <input type="file" onChange={handleUpload} disabled={uploading} />
+      {url && <img src={url} alt="Uploaded" />}
+    </div>
+  );
+}
+```
+
+## トラブルシューティング
+
+### ローカルでアップロードが失敗する
+
+**症状**: ファイルアップロードエラー
+
+**解決方法**:
+```bash
+# .storageディレクトリの権限確認
+ls -la .storage
+
+# 権限がない場合は作成
+mkdir -p .storage
+chmod 755 .storage
+
+# ストレージモード確認
+curl http://localhost:3001/api/storage/debug
+```
+
+### Vercelデプロイ後にアップロードが失敗する
+
+**症状**: 本番環境でアップロードエラー
+
+**解決方法**:
+1. Vercel Dashboardで `BLOB_READ_WRITE_TOKEN` が設定されているか確認
+2. 環境変数のスコープが正しいか確認（Preview/Staging/Production）
+3. Blobストアが作成されているか確認
+4. デプロイログで環境変数が読み込まれているか確認
+
+### 環境ごとに異なるBlobストアを使いたい
+
+**要件**: Preview/Staging/Productionで別々のストレージ
+
+**解決方法**:
+1. Vercel Proアカウントにアップグレード
+2. 環境ごとにBlobストアを個別に作成
+3. 環境変数のスコープを適切に設定
+
+## ベストプラクティス
+
+### セキュリティ
+
+- 本番環境では必ずVercel Blobを使用する
+- アクセストークンは環境変数で管理し、コードに含めない
+- ファイルアップロードにサイズ制限を設ける
+
+### パフォーマンス
+
+- 画像は適切なサイズにリサイズしてからアップロード
+- ファイル命名規則を統一（例: `profiles/user-{id}-{timestamp}.{ext}`）
+- 定期的に不要なファイルを削除
+
+### コスト最適化
+
+- 環境ごとにBlobストアを分離（開発データと本番データを混在させない）
+- 不要なファイルの自動削除ポリシーを設定
+- Vercel Blobの使用量を定期的にモニタリング
+
+## 次のステップ
+
+- [環境変数の管理](/deployment/environment-variables)
+- [データベースのセットアップ](/deployment/database)
+- [EASモバイルビルド](/deployment/mobile-eas)

@@ -1,0 +1,409 @@
+---
+title: データベース（クラウド）
+description: Turso CloudまたはSupabaseのセットアップとマイグレーション管理
+---
+
+# データベース（クラウド）
+
+本番環境では、Turso Cloud（libSQL）または Supabase（PostgreSQL）を使用してクラウドデータベースを管理します。
+
+## 📋 データベースプロバイダーの選択
+
+### Turso Cloud（推奨）
+
+- **libSQL**: SQLite ベースの分散データベース
+- **エッジ配信**: 世界中のエッジロケーションで低レイテンシー
+- **無料枠**: 開発・小規模プロジェクトに十分
+- **GitHub 連携**: GitHub アカウントで即座にセットアップ
+
+### Supabase
+
+- **PostgreSQL**: フル機能のリレーショナルデータベース
+- **リアルタイム機能**: WebSocket ベースのリアルタイム更新
+- **認証・ストレージ**: データベース以外の機能も統合
+- **無料枠**: プロジェクトあたり 500MB まで無料
+
+このガイドでは Turso Cloud を中心に説明しますが、Supabase への切り替えも簡単です。
+
+## 🚀 Turso Cloud のセットアップ
+
+### ステップ 1: Turso CLI のインストール
+
+```bash
+# macOS / Linux
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Windows (PowerShell)
+irm https://get.tur.so/install.ps1 | iex
+```
+
+インストール確認：
+
+```bash
+turso --version
+```
+
+### ステップ 2: Turso にログイン
+
+```bash
+turso auth login
+```
+
+ブラウザが開き、GitHub アカウントで認証します。
+
+### ステップ 3: クラウドデータベースの作成
+
+```bash
+pnpm db:cloud:create
+```
+
+このコマンドは対話形式で以下を作成します：
+
+1. **Preview 環境用データベース**: `your-project-preview`
+2. **Staging 環境用データベース**: `your-project-staging`（オプション）
+3. **Production 環境用データベース**: `your-project-production`
+
+**実行例**：
+
+```
+? Enter your project name: my-app
+Creating database: my-app-preview...
+✓ Database created: libsql://my-app-preview-xxx.turso.io
+
+? Create staging database? (y/n) n
+
+Creating database: my-app-production...
+✓ Database created: libsql://my-app-production-xxx.turso.io
+
+✓ All databases created successfully!
+```
+
+### ステップ 4: データベース認証トークンの取得
+
+```bash
+# Preview 環境
+turso db tokens create my-app-preview
+
+# Production 環境
+turso db tokens create my-app-production
+```
+
+### ステップ 5: 環境変数の設定
+
+各アプリの `.env.local` に接続情報を追加します：
+
+```bash
+# apps/backend/.env.local
+DATABASE_PROVIDER=turso
+DATABASE_URL=libsql://my-app-preview-xxx.turso.io
+DATABASE_AUTH_TOKEN=your-preview-token-here
+```
+
+Vercel 環境変数にも追加：
+
+```bash
+# Vercel ダッシュボードまたは CLI で設定
+vercel env add DATABASE_URL
+vercel env add DATABASE_AUTH_TOKEN
+```
+
+または `pnpm env:push` で一括アップロード：
+
+```bash
+pnpm env:push:preview
+pnpm env:push:production
+```
+
+## 🗄️ データベースコマンドの詳細
+
+### マイグレーション実行
+
+**全環境にマイグレーション**：
+
+```bash
+pnpm db:cloud:migrate
+```
+
+**特定環境のみ**：
+
+```bash
+# Preview 環境
+pnpm db:cloud:migrate:preview
+
+# Production 環境
+pnpm db:cloud:migrate:production
+
+# Staging 環境
+pnpm db:cloud:migrate:staging
+```
+
+**仕組み**：
+- `prisma/migrations/` ディレクトリのマイグレーションファイルを順次実行
+- マイグレーション履歴は `_prisma_migrations` テーブルで管理
+- 未実行のマイグレーションのみが適用されます
+
+### スキーマ Push
+
+**全環境に Push**：
+
+```bash
+pnpm db:cloud:push
+```
+
+**特定環境のみ**：
+
+```bash
+pnpm db:cloud:push:preview
+pnpm db:cloud:push:production
+pnpm db:cloud:push:staging
+```
+
+**マイグレーションとの違い**：
+- `migrate`: マイグレーションファイル経由で段階的に適用（本番推奨）
+- `push`: 現在の `schema.prisma` を直接反映（開発・プロトタイプ向け）
+
+### シードデータの投入
+
+**全環境にシード**：
+
+```bash
+pnpm db:cloud:seed
+```
+
+**特定環境のみ**：
+
+```bash
+pnpm db:cloud:seed:preview
+pnpm db:cloud:seed:production
+pnpm db:cloud:seed:staging
+```
+
+**シードスクリプト**：
+- `prisma/seed.ts` が実行されます
+- デフォルトユーザー、サンプルデータなどを作成
+
+### データベースのリセット
+
+**全環境をリセット**：
+
+```bash
+pnpm db:cloud:reset
+```
+
+**特定環境のみ**：
+
+```bash
+pnpm db:cloud:reset:preview
+pnpm db:cloud:reset:production  # 注意: 本番データが削除されます！
+pnpm db:cloud:reset:staging
+```
+
+**実行内容**：
+1. データベースを削除
+2. 新しいデータベースを作成
+3. マイグレーションを実行
+4. シードデータを投入
+
+⚠️ **警告**: このコマンドはデータを完全に削除します。本番環境では慎重に使用してください。
+
+## 🔄 環境別のワークフロー
+
+### Preview 環境（開発・テスト）
+
+```bash
+# 1. データベースを作成（初回のみ）
+pnpm db:cloud:create
+
+# 2. スキーマを push（開発中）
+pnpm db:cloud:push:preview
+
+# 3. シードデータを投入
+pnpm db:cloud:seed:preview
+
+# 4. 動作確認後、マイグレーションファイルを生成
+pnpm prisma:migrate:dev --name add_user_role
+```
+
+### Production 環境（本番）
+
+```bash
+# 1. データベースを作成（初回のみ）
+pnpm db:cloud:create
+
+# 2. マイグレーションを実行（安全）
+pnpm db:cloud:migrate:production
+
+# 3. 必要に応じてシードデータを投入
+pnpm db:cloud:seed:production
+```
+
+### Staging 環境（ステージング - Pro アカウント）
+
+```bash
+# Staging 環境は Production の前に検証するための環境
+pnpm db:cloud:migrate:staging
+pnpm db:cloud:seed:staging
+```
+
+## 🔍 データベースの管理
+
+### Turso CLI でデータベース一覧を確認
+
+```bash
+turso db list
+```
+
+### データベースに接続（SQL Shell）
+
+```bash
+turso db shell my-app-preview
+```
+
+SQL を直接実行できます：
+
+```sql
+SELECT * FROM User;
+SELECT * FROM Post LIMIT 10;
+```
+
+### データベースの削除
+
+```bash
+turso db destroy my-app-preview
+```
+
+⚠️ **警告**: データは復元できません。
+
+## 🔀 Supabase への切り替え
+
+### ステップ 1: Supabase プロジェクトの作成
+
+1. [Supabase Dashboard](https://app.supabase.com/) にアクセス
+2. 新しいプロジェクトを作成
+3. データベースパスワードを設定
+4. リージョンを選択（東京: `ap-northeast-1`）
+
+### ステップ 2: 接続情報の取得
+
+Supabase ダッシュボードの「Settings > Database」から接続文字列を取得：
+
+```
+postgresql://postgres:your-password@db.xxx.supabase.co:5432/postgres
+```
+
+### ステップ 3: 環境変数の更新
+
+```bash
+# apps/backend/.env.local
+DATABASE_PROVIDER=supabase
+DATABASE_URL=postgresql://postgres:your-password@db.xxx.supabase.co:5432/postgres
+```
+
+### ステップ 4: Prisma スキーマの更新
+
+`prisma/schema.prisma` のプロバイダーを変更：
+
+```prisma
+datasource db {
+  provider = "postgresql"  // "sqlite" から変更
+  url      = env("DATABASE_URL")
+}
+```
+
+### ステップ 5: マイグレーション
+
+```bash
+# Prisma Client を再生成
+pnpm prisma:generate
+
+# マイグレーションを適用
+pnpm db:cloud:migrate:production
+```
+
+## 🧪 データベースのテスト
+
+### スキーマの検証
+
+```bash
+pnpm prisma:validate
+```
+
+### マイグレーション状態の確認
+
+```bash
+pnpm prisma:migrate:status
+```
+
+### データベース接続のテスト
+
+```bash
+cd apps/backend
+pnpm run test:db-connection
+```
+
+## 🚨 トラブルシューティング
+
+### 認証エラー
+
+**症状**: `Authentication failed` または `Invalid token`
+
+**解決方法**:
+1. トークンが正しいか確認
+   ```bash
+   turso db tokens create my-app-preview
+   ```
+2. 環境変数 `DATABASE_AUTH_TOKEN` を更新
+3. Vercel 環境変数も更新（本番環境の場合）
+
+### マイグレーション失敗
+
+**症状**: `Migration failed to apply`
+
+**解決方法**:
+1. マイグレーション履歴を確認
+   ```bash
+   pnpm prisma:migrate:status
+   ```
+2. 失敗したマイグレーションをロールバック
+   ```bash
+   pnpm prisma:migrate:resolve --rolled-back
+   ```
+3. 再度マイグレーションを実行
+
+### データベース接続タイムアウト
+
+**症状**: `Connection timed out`
+
+**解決方法**:
+1. `DATABASE_URL` が正しいか確認
+2. ネットワーク接続を確認
+3. Turso/Supabase のステータスページを確認
+
+## 📚 関連リソース
+
+- **[データベース（ローカル）](/setup/database-local)** - ローカル開発のデータベース設定
+- **[環境変数管理](/setup/environment-variables)** - 環境変数の設定方法
+- **[Vercel デプロイ](/setup/vercel-deployment)** - データベース接続の本番設定
+- **[データベース操作ガイド](/guides/database-operations)** - Prisma コマンドの詳細
+
+## 💡 ベストプラクティス
+
+1. **環境分離**:
+   - Preview: 開発・テスト用
+   - Staging: 本番前の検証用（Pro アカウント）
+   - Production: 本番環境
+
+2. **マイグレーション管理**:
+   - Preview で `prisma migrate dev` で開発
+   - Production で `prisma migrate deploy` で適用
+   - マイグレーションファイルは Git 管理
+
+3. **バックアップ**:
+   - Turso: 自動バックアップあり（有料プラン）
+   - Supabase: 自動バックアップあり（Pro プラン）
+   - 定期的にデータエクスポート推奨
+
+4. **セキュリティ**:
+   - 認証トークンは環境変数で管理
+   - 本番環境のトークンは定期的にローテーション
+   - IP 制限を設定（可能な場合）

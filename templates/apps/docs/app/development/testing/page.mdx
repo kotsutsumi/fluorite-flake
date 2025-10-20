@@ -1,0 +1,255 @@
+---
+title: テスト戦略
+description: ユニットテストとE2Eテストの実行方法と戦略
+---
+
+# テスト戦略
+
+このプロジェクトでは、品質を保証するために複数のテスト手法を組み合わせています。
+
+## 📋 テストの種類
+
+### ユニットテスト
+
+**目的**: 個々の関数やコンポーネントの動作を検証
+
+**テストランナー**: Vitest + React Testing Library
+
+**対象アプリ**: web, backend, docs, mobile
+
+### E2Eテスト
+
+**目的**: ユーザーの操作フローをエンドツーエンドで検証
+
+**テストフレームワーク**:
+- **Web/Backend/Docs**: Playwright
+- **Mobile**: Maestro
+
+## 🧪 ユニットテストの実行
+
+### 全ワークスペースのテスト
+
+```bash
+pnpm test
+```
+
+### アプリごとのテスト
+
+```bash
+# Web アプリ
+pnpm --filter=web test:unit
+
+# Backend アプリ
+pnpm --filter=backend test:unit
+
+# Docs アプリ
+pnpm --filter=docs test:unit
+
+# Mobile アプリ
+pnpm --filter=mobile test:unit
+```
+
+### ウォッチモード
+
+```bash
+pnpm --filter=web test:watch
+```
+
+ファイルの変更を監視し、自動的にテストを再実行します。
+
+### UI モード
+
+```bash
+pnpm --filter=web test:ui
+```
+
+ブラウザで http://localhost:51204 が開き、テスト結果をインタラクティブに確認できます。
+
+### カバレッジ
+
+```bash
+pnpm --filter=web test:unit --coverage
+```
+
+カバレッジレポートが `coverage/` ディレクトリに生成されます。
+
+## 🎭 E2Eテストの実行
+
+### Playwright（Web/Backend/Docs）
+
+```bash
+# E2E テストを実行
+pnpm --filter=web test:e2e
+
+# UI モードで実行
+pnpm --filter=web test:e2e:ui
+
+# ブラウザ表示ありで実行
+pnpm --filter=web test:e2e:headed
+
+# デバッグモードで実行
+pnpm --filter=web test:e2e:debug
+```
+
+### Maestro（Mobile）
+
+```bash
+# すべてのフローを実行
+maestro test apps/mobile/.maestro/
+
+# 特定のフローを実行
+maestro test apps/mobile/.maestro/login-flow.yaml
+```
+
+## 📝 テストの書き方
+
+### ユニットテストの例
+
+```typescript
+// apps/web/tests/unit/components/Button.test.tsx
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { Button } from '@/components/Button';
+
+describe('Button', () => {
+  it('renders with text', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+
+  it('calls onClick when clicked', async () => {
+    const onClick = vi.fn();
+    render(<Button onClick={onClick}>Click me</Button>);
+
+    await userEvent.click(screen.getByText('Click me'));
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+});
+```
+
+### E2Eテストの例（Playwright）
+
+```typescript
+// apps/web/tests/e2e/login.test.ts
+import { expect, test } from '@playwright/test';
+
+test('user can log in', async ({ page }) => {
+  await page.goto('http://localhost:3000');
+
+  await page.getByRole('link', { name: 'ログイン' }).click();
+  await page.getByLabel('メールアドレス').fill('test@example.com');
+  await page.getByLabel('パスワード').fill('password123');
+  await page.getByRole('button', { name: 'ログイン' }).click();
+
+  await expect(page.getByText('ようこそ')).toBeVisible();
+});
+```
+
+### E2Eテストの例（Maestro）
+
+```yaml
+# apps/mobile/.maestro/login-flow.yaml
+appId: com.yourcompany.mobile
+---
+- launchApp
+- tapOn: "ログインボタン"
+- inputText: "test@example.com"
+- tapOn: "次へ"
+- inputText: "password123"
+- tapOn: "ログイン"
+- assertVisible: "ホーム画面"
+```
+
+## 🎯 テスト戦略
+
+### ユニットテスト
+
+**何をテストするか**:
+- ビジネスロジック
+- ユーティリティ関数
+- UI コンポーネント（スナップショット含む）
+- API ルート（モック使用）
+
+**カバレッジ目標**: 80%以上
+
+### E2Eテスト
+
+**何をテストするか**:
+- ユーザーの主要フロー（ログイン、登録、投稿など）
+- クリティカルパス（購入、決済など）
+- クロスブラウザ互換性（Playwright）
+
+**カバレッジ目標**: 主要フローの100%
+
+## 🚨 CI/CDでのテスト
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/test.yml
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install
+      - run: pnpm test
+      - run: pnpm test:e2e
+```
+
+## 📊 テストレポート
+
+### Vitest UI
+
+```bash
+pnpm --filter=web test:ui
+```
+
+ブラウザでテスト結果を視覚的に確認できます。
+
+### Playwright レポート
+
+```bash
+pnpm --filter=web test:e2e
+npx playwright show-report
+```
+
+HTML レポートが生成され、ブラウザで開きます。
+
+## 💡 ベストプラクティス
+
+1. **テストを書く習慣**:
+   - 新機能の実装時にテストも作成
+   - バグ修正時に回帰テストを追加
+
+2. **テストの独立性**:
+   - テスト間で状態を共有しない
+   - 各テストは独立して実行可能
+
+3. **適切なテスト粒度**:
+   - ユニットテスト: 細かい粒度
+   - E2Eテスト: ユーザーフロー全体
+
+4. **モックの活用**:
+   - 外部APIはモック
+   - データベースはテスト用インスタンス
+
+5. **CI/CDの統合**:
+   - PR作成時に自動テスト実行
+   - mainマージ前に必須チェック
+
+## 📚 関連リソース
+
+- **[コマンドリファレンス](/development/commands)** - テストコマンドの詳細
+- **[Lint とフォーマット](/development/linting)** - コード品質の維持
+- **[トラブルシューティング](/development/troubleshooting)** - テスト関連の問題解決

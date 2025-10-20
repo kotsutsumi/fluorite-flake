@@ -1,0 +1,252 @@
+---
+title: チーム開発ガイド
+description: チームでの効率的な開発フローとベストプラクティス
+---
+
+# チーム開発ガイド
+
+複数人でのプロジェクト開発における推奨フローとベストプラクティスをまとめました。
+
+## 🚀 セットアップフロー
+
+### 新メンバーのオンボーディング
+
+```bash
+# 1. リポジトリをクローン
+git clone https://github.com/your-org/your-repo.git
+cd your-repo
+
+# 2. 依存関係をインストール
+pnpm install
+
+# 3. 環境変数を復号
+pnpm env:decrypt
+# パスワードはチームリーダーから受け取る
+
+# 4. データベースをセットアップ
+pnpm db:reset
+
+# 5. 開発サーバーを起動
+pnpm dev
+```
+
+## 🔐 環境変数の共有
+
+### 初回共有
+
+```bash
+# チームリーダー側
+pnpm env:encrypt
+# パスワードを設定して env.encrypted.zip を生成
+
+git add env.encrypted.zip
+git commit -m "chore: add encrypted env"
+git push
+```
+
+### メンバーが取得
+
+```bash
+# メンバー側
+git pull
+pnpm env:decrypt
+# パスワードを入力
+```
+
+### 更新時の手順
+
+```bash
+# 環境変数を更新
+vim apps/backend/.env.local
+
+# 再暗号化
+pnpm env:encrypt
+
+# コミット
+git add env.encrypted.zip
+git commit -m "chore: update encrypted env"
+git push
+```
+
+## 🌿 ブランチ戦略
+
+### Git Flow
+
+```
+main（本番環境）
+  ├─ staging（ステージング環境）- Pro プランのみ
+  └─ feature/* （機能開発ブランチ）
+```
+
+### ブランチ命名規則
+
+- `feature/user-authentication` - 新機能
+- `fix/login-bug` - バグ修正
+- `refactor/api-structure` - リファクタリング
+- `docs/update-readme` - ドキュメント更新
+
+## 📝 コミットメッセージ
+
+### Conventional Commits
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### タイプ
+
+- `feat`: 新機能
+- `fix`: バグ修正
+- `docs`: ドキュメント更新
+- `style`: コードスタイル修正
+- `refactor`: リファクタリング
+- `test`: テスト追加・修正
+- `chore`: その他の変更
+
+### 例
+
+```bash
+git commit -m "feat(auth): add password reset functionality"
+git commit -m "fix(api): resolve CORS issue in production"
+git commit -m "docs: update setup guide in README"
+```
+
+## 🔄 開発フロー
+
+### 機能開発
+
+```bash
+# 1. 最新の main を取得
+git checkout main
+git pull origin main
+
+# 2. 機能ブランチを作成
+git checkout -b feature/new-feature
+
+# 3. 開発・テスト
+pnpm dev
+# コーディング...
+pnpm test
+pnpm lint
+
+# 4. コミット
+git add .
+git commit -m "feat: add new feature"
+
+# 5. Push
+git push origin feature/new-feature
+
+# 6. Pull Request を作成
+# GitHub UI で PR を作成
+
+# 7. レビュー・マージ
+# レビュー承認後、Squash and merge
+```
+
+## 👀 コードレビュー
+
+### レビュアーの責務
+
+- **機能性**: 要件を満たしているか
+- **コード品質**: 可読性、保守性
+- **テスト**: 適切なテストがあるか
+- **パフォーマンス**: 明らかな性能問題がないか
+
+### レビュー時のチェックリスト
+
+- ✅ Lint エラーがないか
+- ✅ 型エラーがないか
+- ✅ テストが通るか
+- ✅ ビルドが成功するか
+- ✅ 命名が適切か
+- ✅ コメントが適切か
+
+## 🗃️ データベースマイグレーション
+
+### 開発環境でのマイグレーション
+
+```bash
+# 1. スキーマを編集
+vim apps/backend/prisma/schema.prisma
+
+# 2. マイグレーションを生成
+pnpm prisma:migrate:dev --name add_user_role
+
+# 3. コミット
+git add prisma/migrations
+git commit -m "feat(db): add user role field"
+```
+
+### チームメンバーがマイグレーションを適用
+
+```bash
+# Pull 後
+git pull
+
+# マイグレーションを適用
+pnpm db:reset
+```
+
+## 🚢 デプロイフロー
+
+### Preview デプロイ
+
+- PR 作成時に自動的に Preview 環境が作成される
+- URL は PR コメントに投稿される
+
+### Production デプロイ
+
+```bash
+# main ブランチにマージ
+# → 自動的に Production にデプロイ
+```
+
+## 💬 コミュニケーション
+
+### 推奨ツール
+
+- **Slack/Discord**: 日常的なコミュニケーション
+- **GitHub Issues**: タスク管理・バグトラッキング
+- **GitHub Discussions**: 設計議論
+- **PR コメント**: コードレビュー
+
+### 報告タイミング
+
+- **朝会**: 今日やること
+- **PR作成時**: レビュー依頼
+- **ブロック時**: すぐに相談
+- **完了時**: PRマージ報告
+
+## 📚 ドキュメント管理
+
+### 更新すべきドキュメント
+
+- **README.md**: プロジェクト概要
+- **apps/docs**: 詳細ガイド
+- **CHANGELOG.md**: 変更履歴
+- **API ドキュメント**: エンドポイント仕様
+
+### ドキュメント更新のタイミング
+
+- 新機能追加時
+- API変更時
+- 設定変更時
+- トラブルシューティング追加時
+
+## 🎯 ベストプラクティス
+
+1. **小さなPR**: 500行以下を目安に
+2. **頻繁なコミット**: 論理的な単位でコミット
+3. **テストを書く**: 新機能には必ずテストを追加
+4. **早めのレビュー依頼**: 実装の方向性を早期確認
+5. **定期的な同期**: mainブランチを定期的にマージ
+
+## 📚 関連リソース
+
+- **[環境変数管理](/setup/environment-variables)** - 環境変数の暗号化・共有
+- **[データベース操作](/guides/database-operations)** - マイグレーション管理
+- **[コマンドリファレンス](/development/commands)** - よく使うコマンド

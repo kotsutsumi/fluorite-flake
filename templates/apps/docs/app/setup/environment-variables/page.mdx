@@ -1,0 +1,271 @@
+---
+title: 環境変数管理
+description: 環境変数の設定、暗号化、共有、Vercelへのpush方法
+---
+
+# 環境変数管理
+
+このプロジェクトでは、環境変数を安全かつ効率的に管理するための複数のツールを提供しています。
+
+## 📋 環境変数の基本
+
+### 環境変数ファイルの種類
+
+| ファイル | 用途 | Git管理 |
+| --- | --- | --- |
+| `.env.local.example` | テンプレート（サンプル値） | ✅ コミット |
+| `.env.local` | ローカル開発用の実際の値 | ❌ `.gitignore` |
+| `.env` | 共通の環境変数（オプション） | ⚠️ シークレット以外のみ |
+| `env.encrypted.zip` | 暗号化された環境変数（チーム共有用） | ✅ コミット可 |
+
+### アプリごとの環境変数
+
+各アプリは独立した環境変数ファイルを持ちます：
+
+- `apps/web/.env.local` - Webアプリ
+- `apps/backend/.env.local` - Backendアプリ
+- `apps/docs/.env.local` - Docsアプリ
+- `apps/mobile/.env.local` - Mobileアプリ
+
+## 🚀 環境変数の初期化
+
+### ステップ 1: テンプレートから生成
+
+プロジェクト初回セットアップ時に実行します：
+
+```bash
+pnpm env:init
+```
+
+このコマンドは、各アプリの `.env.local.example` を `.env.local` にコピーします。
+
+### ステップ 2: 認証シークレットの生成
+
+Better Auth のシークレットキーを生成します：
+
+```bash
+pnpm end:gen:secret
+```
+
+生成されたシークレットは各アプリの `.env.local` の `BETTER_AUTH_SECRET` に自動設定されます。
+
+### ステップ 3: 値の確認と編集
+
+`.env.local` ファイルを開き、必要な値を設定します：
+
+```bash
+# apps/web/.env.local の例
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=generated-secret-key-here
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+## 🔐 環境変数の暗号化と共有
+
+チームで環境変数を安全に共有するには、暗号化ツールを使用します。
+
+### 暗号化
+
+```bash
+pnpm env:encrypt
+```
+
+実行すると：
+1. パスワードの入力を求められます
+2. 各アプリの `.env*` ファイルが収集されます
+3. `env.encrypted.zip` として暗号化されます
+
+**暗号化されるファイル**：
+- `apps/*/env.local`
+- `apps/*/.env`
+- `apps/*/.env.*.local`
+
+### 復号
+
+チームメンバーが環境変数を取得する場合：
+
+```bash
+pnpm env:decrypt
+```
+
+実行すると：
+1. パスワードの入力を求められます
+2. `env.encrypted.zip` が復号されます
+3. 各アプリの `.env*` ファイルが復元されます
+
+### セキュリティのベストプラクティス
+
+- ✅ **パスワードは安全に共有**: 1Password、Slack DM、対面で共有
+- ✅ **定期的な更新**: シークレットキーは定期的にローテーション
+- ✅ **本番環境は別管理**: 本番環境の環境変数は Vercel で直接管理
+- ❌ **絶対にしない**: パスワードをGitコミット、公開チャンネルで共有
+
+## ☁️ Vercel への環境変数 Push
+
+ローカルの環境変数を Vercel プロジェクトに一括アップロードできます。
+
+### 全環境に Push
+
+```bash
+pnpm env:push
+```
+
+これは以下と同等です：
+- `pnpm env:push:preview`
+- `pnpm env:push:production`
+- `pnpm env:push:staging`（Pro アカウントのみ）
+
+### 特定環境に Push
+
+```bash
+# Preview 環境のみ
+pnpm env:push:preview
+
+# Production 環境のみ
+pnpm env:push:production
+
+# Staging 環境のみ（Pro アカウント）
+pnpm env:push:staging
+```
+
+### Push の仕組み
+
+`pnpm env:push` は内部で以下を実行します：
+
+1. `.env.local` から環境変数を読み取り
+2. Vercel CLI (`vercel env add`) を使用してアップロード
+3. 既存の環境変数は上書きされます
+
+**注意事項**：
+- Vercel CLI が事前にインストールされている必要があります
+- Vercel プロジェクトにリンクされている必要があります（`vercel link --repo`）
+- 認証トークンが必要です（`vercel login`）
+
+## 🏗️ 環境変数の構造
+
+### Web アプリ
+
+```bash
+# Better Auth 設定
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your-secret-key
+
+# API エンドポイント
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+### Backend アプリ
+
+```bash
+# Better Auth 設定
+BETTER_AUTH_URL=http://localhost:3001
+BETTER_AUTH_SECRET=your-secret-key
+
+# データベース接続
+DATABASE_PROVIDER=turso
+DATABASE_URL=file:./dev.db
+DATABASE_AUTH_TOKEN=
+
+# Vercel Blob（本番環境）
+BLOB_READ_WRITE_TOKEN=
+
+# GraphQL 設定
+GRAPHQL_ENDPOINT=http://localhost:3001/api/graphql
+```
+
+### Mobile アプリ
+
+```bash
+# API エンドポイント
+EXPO_PUBLIC_API_URL=http://localhost:3001
+
+# 実機テスト時は IP アドレスを使用
+# EXPO_PUBLIC_API_URL=http://192.168.1.100:3001
+```
+
+## 🧪 環境変数のテスト
+
+環境変数が正しく設定されているか確認します：
+
+```bash
+# Web アプリの環境変数を確認
+cd apps/web
+pnpm run env
+
+# Backend アプリの環境変数を確認
+cd apps/backend
+pnpm run env
+```
+
+## 🚨 トラブルシューティング
+
+### 環境変数が反映されない
+
+**症状**: 変更した環境変数が反映されない
+
+**解決方法**:
+1. 開発サーバーを再起動（Next.js は環境変数をキャッシュします）
+2. `.env.local` が正しいディレクトリにあるか確認
+3. `NEXT_PUBLIC_` プレフィックスが必要な変数か確認
+
+### 暗号化/復号が失敗する
+
+**症状**: `pnpm env:encrypt` または `pnpm env:decrypt` がエラー
+
+**解決方法**:
+1. `zip` コマンドがインストールされているか確認
+   ```bash
+   # macOS
+   brew install zip
+
+   # Ubuntu/Debian
+   sudo apt-get install zip
+   ```
+2. パスワードが正しいか確認（復号時）
+3. `.env.local` ファイルが存在するか確認（暗号化時）
+
+### Vercel Push が失敗する
+
+**症状**: `pnpm env:push` がエラー
+
+**解決方法**:
+1. Vercel CLI がインストールされているか確認
+   ```bash
+   npm install -g vercel
+   ```
+2. Vercel にログインしているか確認
+   ```bash
+   vercel login
+   ```
+3. プロジェクトがリンクされているか確認
+   ```bash
+   vercel link --repo
+   ```
+
+## 📚 関連リソース
+
+- **[データベース（ローカル）](/setup/database-local)** - ローカルデータベースの設定
+- **[データベース（クラウド）](/setup/database-cloud)** - Turso Cloud の環境変数設定
+- **[Vercel デプロイ](/setup/vercel-deployment)** - Vercel 環境変数の直接管理
+- **[チーム開発ガイド](/guides/team-collaboration)** - チーム開発での環境変数管理
+
+## 💡 ベストプラクティス
+
+1. **ローカル開発**:
+   - `.env.local` でローカル専用の値を管理
+   - `.env.local.example` は常に最新のテンプレートを維持
+
+2. **チーム共有**:
+   - `pnpm env:encrypt` で安全に共有
+   - パスワードは安全な方法で共有
+   - 定期的に暗号化ファイルを更新
+
+3. **本番環境**:
+   - Vercel ダッシュボードで直接管理
+   - `pnpm env:push` で一括セットアップ
+   - シークレットは定期的にローテーション
+
+4. **セキュリティ**:
+   - `.env.local` は絶対にコミットしない
+   - シークレットキーは強力なランダム文字列を使用
+   - 本番環境とローカル環境で異なる値を使用
