@@ -33,6 +33,36 @@ async function setExecutablePermissions(dir: string): Promise<void> {
 }
 
 /**
+ * ディレクトリ内の全てのgitignoreファイルを.gitignoreにリネームする関数
+ * npmパッケージでは.gitignoreが除外されるため、gitignore（ドットなし）で配布し、
+ * コピー時に.gitignoreにリネームする
+ * @param dir - 対象ディレクトリのパス
+ */
+async function renameGitignoreFiles(dir: string): Promise<void> {
+    try {
+        // ディレクトリ内のエントリを取得
+        const entries = await fsPromises.readdir(dir, { withFileTypes: true });
+
+        // 各エントリを処理
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+
+            if (entry.isDirectory()) {
+                // ディレクトリの場合は再帰的に処理
+                await renameGitignoreFiles(fullPath);
+            } else if (entry.isFile() && entry.name === "gitignore") {
+                // gitignoreファイルの場合は.gitignoreにリネーム
+                const newPath = path.join(dir, ".gitignore");
+                await fsPromises.rename(fullPath, newPath);
+            }
+        }
+    } catch (error) {
+        // エラーが発生した場合はログ出力して続行
+        console.warn(`Warning: Failed to rename gitignore files in ${dir}:`, error);
+    }
+}
+
+/**
  * templates/ ディレクトリを指定先にコピーする関数
  * @param templatesDir - templates/ ディレクトリのパス
  * @param targetDir - コピー先のディレクトリパス
@@ -50,6 +80,9 @@ export async function copyTemplates(templatesDir: string, targetDir: string): Pr
             errorOnExist: false,
             preserveTimestamps: true,
         });
+
+        // コピー後、gitignoreファイルを.gitignoreにリネーム
+        await renameGitignoreFiles(targetDir);
 
         // コピー後、全ての.shファイルに実行権限を付与
         await setExecutablePermissions(targetDir);
