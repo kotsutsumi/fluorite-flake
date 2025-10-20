@@ -117,6 +117,27 @@
         "vercelLinkCancelled": "リンク処理をキャンセルしました。必要なときは `vercel link` を実行してください。",
         "vercelLinkSuccess": "Vercelプロジェクト {projectName} とリンクしました。"
     },
+    "new": {
+        "commandDescription": "新しいプロジェクトを作成します",
+        "projectNamePrompt": "プロジェクト名を入力してください:",
+        "projectNamePlaceholder": "プロジェクト名（例: my-awesome-project）",
+        "projectNameRequired": "プロジェクト名は必須です",
+        "invalidProjectName": "無効なプロジェクト名です。英数字、ハイフン、アンダースコアのみ使用できます。",
+        "directoryExists": "ディレクトリ '{directory}' は既に存在します。",
+        "confirmOverwrite": "既存のディレクトリを削除して新しいプロジェクトを作成しますか？",
+        "operationCancelled": "操作がキャンセルされました。",
+        "generatingProject": "プロジェクト '{projectName}' を生成中...",
+        "setupComplete": "✅ プロジェクト \"{projectName}\" のセットアップが完了しました！",
+        "setupFailed": "❌ プロジェクトのセットアップに失敗しました",
+        "nextStepsTitle": "次のコマンドで開発を開始できます:",
+        "nextStepsCommands": ["  cd {projectName}", "  pnpm dev"],
+        "serverInfo": "開発サーバーが起動します:",
+        "serverList": [
+            "  - backend: http://localhost:3001",
+            "  - web: http://localhost:3000",
+            "  - docs: http://localhost:3002"
+        ]
+    },
     "readme": {
         "title": "{name}",
         "description": "Fluorite Flakeで作成された{type}プロジェクトです。",

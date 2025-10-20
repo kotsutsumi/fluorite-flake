@@ -289,6 +289,23 @@ type RawLocaleMessages = {
             vercelLink: string;
         };
     };
+    new: {
+        commandDescription: string;
+        projectNamePrompt: string;
+        projectNamePlaceholder: string;
+        projectNameRequired: string;
+        invalidProjectName: string;
+        directoryExists: string;
+        confirmOverwrite: string;
+        operationCancelled: string;
+        generatingProject: string;
+        setupComplete: string;
+        setupFailed: string;
+        nextStepsTitle: string;
+        nextStepsCommands: string[];
+        serverInfo: string;
+        serverList: string[];
+    };
     readme: {
         title: string;
         description: string;
@@ -469,6 +486,23 @@ export type LocaleMessages = {
             cancelled: string;
             vercelLink: string;
         };
+    };
+    new: {
+        commandDescription: string;
+        projectNamePrompt: string;
+        projectNamePlaceholder: string;
+        projectNameRequired: string;
+        invalidProjectName: string;
+        directoryExists: string;
+        confirmOverwrite: string;
+        operationCancelled: string;
+        generatingProject: string;
+        setupComplete: string;
+        setupFailed: string;
+        nextStepsTitle: string;
+        nextStepsCommands: string[];
+        serverInfo: string;
+        serverList: string[];
     };
     readme: {
         title: string;
@@ -713,6 +747,23 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 cancelled: rawMessages.create.confirmation.cancelled,
                 vercelLink: rawMessages.create.confirmation.vercelLink,
             },
+        },
+        new: {
+            commandDescription: rawMessages.new.commandDescription,
+            projectNamePrompt: rawMessages.new.projectNamePrompt,
+            projectNamePlaceholder: rawMessages.new.projectNamePlaceholder,
+            projectNameRequired: rawMessages.new.projectNameRequired,
+            invalidProjectName: rawMessages.new.invalidProjectName,
+            directoryExists: rawMessages.new.directoryExists,
+            confirmOverwrite: rawMessages.new.confirmOverwrite,
+            operationCancelled: rawMessages.new.operationCancelled,
+            generatingProject: rawMessages.new.generatingProject,
+            setupComplete: rawMessages.new.setupComplete,
+            setupFailed: rawMessages.new.setupFailed,
+            nextStepsTitle: rawMessages.new.nextStepsTitle,
+            nextStepsCommands: rawMessages.new.nextStepsCommands,
+            serverInfo: rawMessages.new.serverInfo,
+            serverList: rawMessages.new.serverList,
         },
         readme: {
             title: rawMessages.readme.title,

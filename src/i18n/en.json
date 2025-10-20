@@ -120,6 +120,27 @@
         "vercelLinkCancelled": "Linking was cancelled. You can run `vercel link` later.",
         "vercelLinkSuccess": "Linked to Vercel project {projectName}."
     },
+    "new": {
+        "commandDescription": "Create a new project",
+        "projectNamePrompt": "Enter project name:",
+        "projectNamePlaceholder": "Project name (e.g. my-awesome-project)",
+        "projectNameRequired": "Project name is required",
+        "invalidProjectName": "Invalid project name. Only alphanumeric characters, hyphens, and underscores are allowed.",
+        "directoryExists": "Directory '{directory}' already exists.",
+        "confirmOverwrite": "Do you want to remove the existing directory and create a new project?",
+        "operationCancelled": "Operation cancelled.",
+        "generatingProject": "Generating project '{projectName}'...",
+        "setupComplete": "✅ Project \"{projectName}\" setup complete!",
+        "setupFailed": "❌ Project setup failed",
+        "nextStepsTitle": "Next steps to start development:",
+        "nextStepsCommands": ["  cd {projectName}", "  pnpm dev"],
+        "serverInfo": "Development servers will start:",
+        "serverList": [
+            "  - backend: http://localhost:3001",
+            "  - web: http://localhost:3000",
+            "  - docs: http://localhost:3002"
+        ]
+    },
     "readme": {
         "title": "{name}",
         "description": "A {type} project created with Fluorite Flake.",

@@ -1,22 +1,20 @@
 /**
  * createコマンドの実装を提供するモジュール
+ *
+ * createコマンドは newCommand のエイリアスとして機能します
  */
 import { defineCommand } from "citty";
+import { newCommand } from "./new-command.js";
 
 /**
  * createコマンドの定義
- * 現在は開発中のため、メッセージのみを表示します
+ * newCommand と同じ実装を使用
  */
 export const createCommand = defineCommand({
+    ...newCommand,
     meta: {
+        ...newCommand.meta,
         name: "create",
-        description: "新しいプロジェクトを作成します（開発中）",
-    },
-    args: {},
-    async run() {
-        console.log("🚧 createコマンドは現在開発中です");
-        console.log("📝 近日中に利用可能になります");
-        process.exit(0);
     },
 });
 
