@@ -1,0 +1,453 @@
+---
+title: EAS セットアップ
+description: Expo Application Services（EAS）のセットアップとモバイルアプリのビルド・リリース
+---
+
+# EAS セットアップ
+
+EAS（Expo Application Services）は、Expo アプリのビルド、リリース、更新を管理するクラウドサービスです。
+
+## 📋 EAS の概要
+
+### 主要機能
+
+- **EAS Build**: iOS/Android アプリのクラウドビルド
+- **EAS Submit**: App Store / Google Play への自動リリース
+- **EAS Update**: Over-The-Air（OTA）アップデート
+
+### 料金プラン
+
+- **Free**: 月 30 ビルドまで無料
+- **Production**: 月 $29 から、無制限ビルド
+- **Enterprise**: カスタムプラン、SLA 対応
+
+詳細は [EAS Pricing](https://expo.dev/pricing) を参照してください。
+
+## 🚀 初回セットアップ
+
+### ステップ 1: EAS CLI のインストール
+
+```bash
+npm install --global eas-cli
+```
+
+バージョン確認：
+
+```bash
+eas --version
+```
+
+### ステップ 2: Expo アカウントの作成
+
+```bash
+eas login
+```
+
+または [Expo Dashboard](https://expo.dev/) でアカウントを作成してログインします。
+
+### ステップ 3: Expo プロジェクトの作成
+
+1. [Expo Dashboard](https://expo.dev/accounts/[your-account]/projects) にアクセス
+2. **Create a Project** をクリック
+3. プロジェクト名を入力（例: `your-mobile-app`）
+4. **Project ID** をコピー（例: `12345678-1234-1234-1234-123456789abc`）
+
+### ステップ 4: プロジェクトの初期化
+
+```bash
+cd apps/mobile
+eas init --id 12345678-1234-1234-1234-123456789abc
+```
+
+これにより `app.json` に以下が追加されます：
+
+```json
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "12345678-1234-1234-1234-123456789abc"
+      }
+    }
+  }
+}
+```
+
+### ステップ 5: ビルド設定の作成
+
+`eas.json` が自動生成されます。このファイルでビルドプロファイルを管理します。
+
+## 🏗️ ビルド設定（`eas.json`）
+
+### 基本的なビルドプロファイル
+
+```json
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  }
+}
+```
+
+### プロファイルの説明
+
+#### Development（開発用）
+
+- **用途**: 開発中のテスト、デバッグ
+- **配布**: 社内のみ（TestFlight / Internal Testing）
+- **特徴**: Development Client を含む、高速なイテレーション
+
+```json
+{
+  "development": {
+    "developmentClient": true,
+    "distribution": "internal",
+    "ios": {
+      "simulator": true
+    }
+  }
+}
+```
+
+#### Preview（プレビュー用）
+
+- **用途**: ステークホルダー向けプレビュー
+- **配布**: 社内テスト（TestFlight / Internal Testing）
+- **特徴**: 本番に近い設定、OTA 更新対応
+
+```json
+{
+  "preview": {
+    "distribution": "internal",
+    "env": {
+      "EXPO_PUBLIC_API_URL": "https://staging-api.example.com"
+    }
+  }
+}
+```
+
+#### Production（本番用）
+
+- **用途**: App Store / Google Play リリース
+- **配布**: 一般公開
+- **特徴**: 自動バージョンインクリメント、最適化ビルド
+
+```json
+{
+  "production": {
+    "autoIncrement": true,
+    "env": {
+      "EXPO_PUBLIC_API_URL": "https://api.example.com"
+    }
+  }
+}
+```
+
+## 📱 iOS アプリのビルド
+
+### 前提条件
+
+- Apple Developer アカウント（$99/年）
+- App Store Connect でアプリを作成
+
+### ステップ 1: Apple Developer との連携
+
+```bash
+eas credentials
+```
+
+対話形式で以下を設定：
+
+1. **Platform**: `ios`
+2. **What do you want to do?**: `Set up a new Apple team`
+3. Apple ID とパスワードを入力
+
+EAS が自動的に以下を管理します：
+
+- 証明書（Distribution Certificate）
+- プロビジョニングプロファイル
+- Push 通知証明書
+
+### ステップ 2: ビルドの実行
+
+```bash
+# 開発用ビルド
+eas build --platform ios --profile development
+
+# プレビュー用ビルド
+eas build --platform ios --profile preview
+
+# 本番用ビルド
+eas build --platform ios --profile production
+```
+
+ビルドはクラウドで実行され、完了後にダウンロードリンクが表示されます。
+
+### ステップ 3: TestFlight へのアップロード
+
+```bash
+# ビルドと同時にリリース
+eas build --platform ios --profile production --auto-submit
+
+# または既存ビルドをリリース
+eas submit --platform ios --latest
+```
+
+必要な情報：
+
+- **Apple ID**: App Store Connect のアカウント
+- **App-specific password**: [appleid.apple.com](https://appleid.apple.com/) で生成
+- **ASC App ID**: App Store Connect のアプリ ID
+
+## 🤖 Android アプリのビルド
+
+### 前提条件
+
+- Google Play Developer アカウント（$25 初回のみ）
+- Google Play Console でアプリを作成
+
+### ステップ 1: Google Play との連携
+
+```bash
+eas credentials
+```
+
+対話形式で以下を設定：
+
+1. **Platform**: `android`
+2. **What do you want to do?**: `Set up a new Keystore`
+
+EAS が自動的に Keystore を生成・管理します。
+
+### ステップ 2: ビルドの実行
+
+```bash
+# 開発用ビルド（APK）
+eas build --platform android --profile development
+
+# プレビュー用ビルド（AAB）
+eas build --platform android --profile preview
+
+# 本番用ビルド（AAB）
+eas build --platform android --profile production
+```
+
+### ステップ 3: Google Play へのアップロード
+
+#### Service Account の作成
+
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. プロジェクトを選択
+3. **IAM & Admin > Service Accounts** に移動
+4. Service Account を作成
+5. JSON キーをダウンロード
+
+#### リリース
+
+```bash
+# ビルドと同時にリリース
+eas build --platform android --profile production --auto-submit
+
+# または既存ビルドをリリース
+eas submit --platform android --latest
+```
+
+必要な情報：
+
+- **Service Account JSON**: ダウンロードした JSON ファイルのパス
+- **Track**: `internal` / `alpha` / `beta` / `production`
+
+## 🔄 OTA（Over-The-Air）アップデート
+
+### OTA アップデートとは
+
+コードやアセットの変更をアプリストアを経由せずに配信する機能です。
+
+**制限事項**：
+- JavaScript コードとアセットのみ更新可能
+- ネイティブコードの変更には新しいビルドが必要
+
+### ステップ 1: EAS Update の設定
+
+```bash
+eas update:configure
+```
+
+`app.json` に以下が追加されます：
+
+```json
+{
+  "expo": {
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/[project-id]"
+    }
+  }
+}
+```
+
+### ステップ 2: アップデートの公開
+
+```bash
+# Preview ブランチにアップデート
+eas update --branch preview --message "Fix critical bug"
+
+# Production ブランチにアップデート
+eas update --branch production --message "Add new feature"
+```
+
+### ステップ 3: アップデートの確認
+
+アプリを再起動すると、自動的に最新のアップデートがダウンロードされます。
+
+```bash
+# アップデート履歴を確認
+eas update:list --branch production
+```
+
+## 🔧 環境変数の設定
+
+### ビルド時の環境変数
+
+`eas.json` でプロファイルごとに環境変数を設定できます：
+
+```json
+{
+  "build": {
+    "preview": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging-api.example.com"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.example.com"
+      }
+    }
+  }
+}
+```
+
+### EAS Secret の使用
+
+機密情報は EAS Secret で管理します：
+
+```bash
+# Secret を追加
+eas secret:create --name API_KEY --value your-secret-key
+
+# Secret 一覧を確認
+eas secret:list
+
+# Secret を削除
+eas secret:delete --name API_KEY
+```
+
+ビルド時に自動的に環境変数として利用可能になります。
+
+## 📊 ビルドの管理
+
+### ビルド履歴の確認
+
+```bash
+eas build:list
+```
+
+Web ダッシュボードでも確認できます：[Expo Dashboard > Builds](https://expo.dev/accounts/[your-account]/projects/[project-name]/builds)
+
+### ビルドのキャンセル
+
+```bash
+eas build:cancel
+```
+
+### ビルドログの確認
+
+```bash
+eas build:view [build-id]
+```
+
+## 🚨 トラブルシューティング
+
+### ビルドエラー: `Provisioning profile doesn't match`
+
+**症状**: iOS ビルドで証明書エラー
+
+**解決方法**:
+```bash
+eas credentials --platform ios
+# 既存の証明書を削除して再作成
+```
+
+### ビルドエラー: `Keystore not found`
+
+**症状**: Android ビルドで Keystore エラー
+
+**解決方法**:
+```bash
+eas credentials --platform android
+# 新しい Keystore を生成
+```
+
+### OTA アップデートが適用されない
+
+**症状**: アプリを再起動してもアップデートされない
+
+**解決方法**:
+1. `runtimeVersion` が一致しているか確認
+2. アプリが正しいブランチを参照しているか確認
+3. ネットワーク接続を確認
+
+### ビルドが遅い
+
+**症状**: ビルドに 30 分以上かかる
+
+**解決方法**:
+1. 依存関係を最適化
+2. `.gitignore` に不要なファイルを追加
+3. EAS の有料プランで優先ビルドを利用
+
+## 📚 関連リソース
+
+- **[モバイルアプリ](/architecture/mobile)** - モバイルアプリのアーキテクチャ
+- **[環境変数管理](/setup/environment-variables)** - 環境変数の詳細設定
+- **[モバイルリリース](/deployment/mobile-release)** - リリースフローの詳細
+- **[EAS 公式ドキュメント](https://docs.expo.dev/eas/)** - EAS の詳細ガイド
+
+## 💡 ベストプラクティス
+
+1. **ビルドプロファイルの使い分け**:
+   - Development: 日々の開発とデバッグ
+   - Preview: ステークホルダー向けプレビュー
+   - Production: 本番リリース
+
+2. **証明書の管理**:
+   - EAS に証明書管理を任せる（推奨）
+   - 既存の証明書がある場合は手動管理も可能
+
+3. **OTA アップデート**:
+   - バグ修正や小さな機能追加に活用
+   - 大きな変更やネイティブコードの変更は新しいビルド
+
+4. **環境変数**:
+   - プロファイルごとに異なる API エンドポイントを設定
+   - 機密情報は EAS Secret で管理
+
+5. **テスト配布**:
+   - TestFlight（iOS）と Internal Testing（Android）で事前テスト
+   - 段階的なリリース（10% → 50% → 100%）
+
+6. **バージョン管理**:
+   - `autoIncrement` で自動的にビルド番号を増加
+   - セマンティックバージョニング（1.0.0 → 1.1.0）を採用

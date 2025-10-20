@@ -1,0 +1,74 @@
+---
+title: Deployment
+description: デプロイメントガイド - Vercel、データベース、ストレージの設定
+---
+
+# デプロイメントガイド
+
+このガイドでは、アプリケーションをVercelにデプロイする手順と、必要なインフラストラクチャの設定方法を説明します。
+
+## 概要
+
+本番環境のデプロイには以下のコンポーネントが必要です：
+
+- **Vercel**: ホスティングプラットフォーム
+- **Turso/Supabase**: データベース
+- **Vercel Blob**: ファイルストレージ（オプション）
+
+## Vercelプロジェクトのセットアップ
+
+### 1. プロジェクトのリンク
+
+各アプリケーションを個別のVercelプロジェクトにリンクします：
+
+```bash
+# Webアプリケーション
+cd apps/web
+vercel link --repo
+
+# 管理画面（Backend）
+cd apps/backend
+vercel link --repo
+
+# ドキュメント
+cd apps/docs
+vercel link --repo
+```
+
+### 2. 環境の準備
+
+**Vercel Hobbyアカウント:**
+- `preview` (Pull Request)
+- `production` (mainブランチ)
+
+**Vercel Proアカウント以上:**
+- `preview` (Pull Request)
+- `staging` (stagingブランチ)
+- `production` (mainブランチ)
+
+## データベースのセットアップ
+
+詳細な手順は各データベースプロバイダーのドキュメントを参照してください：
+
+### Turso（推奨）
+
+```bash
+# クラウドデータベースインスタンスを作成
+pnpm db:cloud:create
+
+# 環境別にマイグレーション実行
+pnpm db:cloud:migrate:preview
+pnpm db:cloud:migrate:staging    # Pro以上
+pnpm db:cloud:migrate:production
+
+# または全環境一括
+pnpm db:cloud:migrate
+```
+
+### Supabase
+
+1. [Supabase Dashboard](https://app.supabase.com/) でプロジェクトを作成
+2. 接続文字列を取得
+3. 環境変数に設定
+
+続きは[Vercel Blob ストレージ](/deployment/vercel-blob)のセットアップへ。

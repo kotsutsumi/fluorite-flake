@@ -1,126 +1,193 @@
 /**
- * newコマンド（createのエイリアス）の実装を提供するモジュール
+ * newコマンドの実装を提供するモジュール
  */
-import { defineCommand } from "citty"; // CittyのdefineCommandを利用してコマンドを構築する
+import { cancel, isCancel, text } from "@clack/prompts";
+import { type CommandContext, defineCommand } from "citty";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { debugLog } from "../../../debug.js"; // デバッグログ出力ユーティリティ
-import { getMessages } from "../../../i18n.js"; // メッセージ辞書を取得する
-import { validatePnpmWithDetails } from "../../../utils/pnpm-validator/index.js"; // pnpm検証ロジックを利用する
-import { displayConfirmation } from "../confirmation/index.js"; // 確認フェーズの表示処理
-import { UserCancelledError, executeProvisioning } from "../execution/index.js"; // プロビジョニング実行処理とエラー定義
-import { generateProject } from "../generator/index.js"; // プロジェクト生成関数
-import { createAndValidateConfig } from "./create-and-validate-config.js"; // 設定生成と検証処理
-import { collectUserInputs } from "./collect-user-inputs.js"; // ユーザー入力収集処理
-import { createTursoTables } from "./create-turso-tables.js"; // Tursoテーブル作成処理
-import { linkVercelProject } from "../post-generation/index.js"; // Vercel連携処理を追加
-import type { DatabaseCredentials } from "../database-provisioning/types.js"; // データベース資格情報の型
-import type { DatabaseType } from "../types.js"; // データベース種別の型
-import { initialMessages } from "./shared.js"; // 共有メッセージ定義
-import { createCommandArgs } from "./create-command-args.js"; // createコマンドと共通の引数定義
+import { getMessages } from "../../../i18n.js";
+import { generateProject } from "../../../utils/project-generator/index.js";
+
+// プロジェクト名の検証に利用する正規表現
+const PROJECT_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 /**
- * newコマンドはcreateコマンドのエイリアスとして振る舞う
+ * プロジェクト名を取得する関数
+ * @param args - コマンド引数
+ * @returns プロジェクト名
+ */
+async function getProjectName(args: CommandContext["args"]): Promise<string> {
+    const { new: messages } = getMessages();
+
+    // コマンドライン引数からプロジェクト名を取得
+    if (args._[0] && typeof args._[0] === "string") {
+        const projectName = args._[0];
+
+        // プロジェクト名のバリデーション
+        if (!PROJECT_NAME_PATTERN.test(projectName)) {
+            console.log(messages.invalidProjectName);
+            process.exit(1);
+        }
+
+        return projectName;
+    }
+
+    // 引数がない場合は対話的にプロンプトで入力を求める
+    while (true) {
+        const response = await text({
+            message: messages.projectNamePrompt,
+            placeholder: messages.projectNamePlaceholder,
+            validate(value) {
+                const trimmed = (value || "").trim();
+
+                if (!trimmed) {
+                    return messages.projectNameRequired;
+                }
+
+                if (!PROJECT_NAME_PATTERN.test(trimmed)) {
+                    return messages.invalidProjectName;
+                }
+
+                return;
+            },
+        });
+
+        // 入力がキャンセルされた場合は終了
+        if (isCancel(response)) {
+            cancel(messages.operationCancelled);
+            process.exit(0);
+        }
+
+        const trimmed = (response || "").trim();
+
+        if (trimmed && PROJECT_NAME_PATTERN.test(trimmed)) {
+            return trimmed;
+        }
+    }
+}
+
+/**
+ * プロジェクトディレクトリのパスを決定する関数
+ * @param projectName - プロジェクト名
+ * @returns プロジェクトディレクトリのパス
+ */
+function getProjectDirectory(projectName: string): string {
+    // 開発モードでは既に process.cwd() が temp/dev に変更されているため、
+    // 開発時・本番時ともにプロジェクト名を追加するだけで正しいパスになる
+    // - 開発時: temp/dev（現在地） + <project-name> = temp/dev/<project-name>
+    // - 本番時: .（現在地） + <project-name> = ./<project-name>
+    return path.join(process.cwd(), projectName);
+}
+
+/**
+ * templates/ ディレクトリのパスを取得する関数
+ * @returns templates/ ディレクトリのパス
+ */
+function getTemplatesDirectory(): string {
+    // このファイルのディレクトリから templates/ への相対パスを計算
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    // src/commands/create/commands/ -> templates/
+    // 開発時は src/ からの相対パス、ビルド後は dist/ からの相対パス
+    const isDev = process.env.NODE_ENV === "development";
+
+    if (isDev) {
+        // 開発時: src/commands/create/commands/ -> templates/
+        return path.join(__dirname, "../../../../templates");
+    }
+
+    // ビルド後: dist/commands/create/commands/ -> templates/
+    return path.join(__dirname, "../../../../templates");
+}
+
+/**
+ * newコマンドの定義
  */
 export const newCommand = defineCommand({
     meta: {
-        name: "new", // コマンド名
-        description: initialMessages.create.newCommandDescription, // コマンド説明
+        name: "new",
+        description: getMessages().new.commandDescription,
     },
-    args: createCommandArgs, // createコマンドと同じ引数定義を共有する
-    async run(context) {
-        const { args, rawArgs } = context; // 受け取った引数と生引数を展開する
-        const { create } = getMessages(); // 最新のメッセージを読み込む
-        debugLog(create.debugCommandCalled, args); // 呼び出し情報をデバッグ出力する
+    args: {
+        // プロジェクト名（位置引数）
+        projectName: {
+            type: "positional",
+            description: "プロジェクト名",
+            required: false,
+        },
+    },
+    async run(context: CommandContext) {
+        const { new: messages } = getMessages();
 
-        try {
-            // 副作用のない入力収集フェーズ
-            const inputs = await collectUserInputs(args, rawArgs); // ユーザー入力をまとめて取得する
+        // 1. プロジェクト名を取得
+        const projectName = await getProjectName(context.args);
 
-            // モノレポ選択時はpnpmのバリデーションを実施する
-            let pnpmVersion: string | undefined;
-            if (inputs.monorepoPreference) {
-                const pnpmValidation = validatePnpmWithDetails(); // pnpmの状態を確認する
-                if (!pnpmValidation.isValid) {
-                    process.exit(1); // バリデーション失敗で終了する
-                }
-                pnpmVersion = pnpmValidation.version; // 成功時はバージョンを保持する
-            }
+        // 2. プロジェクトディレクトリのパスを決定
+        const targetDir = getProjectDirectory(projectName);
 
-            // 確認フェーズを実行しキャンセル時は終了する
-            const confirmed = await displayConfirmation(inputs); // 入力内容の確認表示
-            if (!confirmed) {
-                process.exit(0); // キャンセル時の正常終了
-            }
+        // 3. ディレクトリの重複チェック
+        if (fs.existsSync(targetDir)) {
+            console.log(messages.directoryExists.replace("{directory}", targetDir));
 
-            // プロビジョニングと生成フェーズの準備を行う
-            let databaseCredentials: DatabaseCredentials | undefined;
-            let database: DatabaseType | undefined;
-
-            // プロビジョニングが必要な場合のみ実行する
-            if (inputs.databaseConfig) {
-                console.log("🚀 プロビジョニングを実行しています..."); // 進捗メッセージ
-                const result = await executeProvisioning(inputs); // プロビジョニングを実行する
-
-                if (!result.success) {
-                    console.error(`❌ プロビジョニングに失敗しました: ${result.error}`); // エラーメッセージ
-                    process.exit(1); // エラー終了
-                }
-
-                databaseCredentials = result.databaseCredentials; // 成功時に資格情報を保持する
-                database = inputs.databaseConfig.type; // 選択されたDB種別を保持する
-            }
-
-            // プロジェクト設定を生成して検証する
-            const config = await createAndValidateConfig({
-                projectType: inputs.projectType,
-                projectName: inputs.projectName,
-                template: inputs.template,
-                args,
-                isMonorepoMode: inputs.monorepoPreference,
-                database: database ?? inputs.database,
-                databaseConfig: inputs.databaseConfig,
-                databaseCredentials,
-                blobConfig: inputs.blobConfig,
-                pnpmVersion,
-                shouldGenerateDocs: inputs.shouldGenerateDocs,
+            // 既存ディレクトリの削除確認
+            const confirmResponse = await text({
+                message: messages.confirmOverwrite,
+                placeholder: "y/N",
             });
 
-            // プロジェクトテンプレートを生成する
-            await generateProject(config);
-
-            // Vercelリンクを希望する場合は.vercelディレクトリを生成する
-            if (inputs.shouldLinkVercel && inputs.vercelConfig) {
-                linkVercelProject(config, inputs.vercelConfig);
-            }
-
-            // Turso利用時はテーブルを作成する
-            if (databaseCredentials && database === "turso") {
-                console.log("🗄️ Tursoクラウドデータベースにテーブルを作成中..."); // 進捗メッセージ
-                await createTursoTables(config, databaseCredentials);
-            }
-
-            // 正常完了をデバッグログに記録する
-            debugLog("New command completed successfully");
-        } catch (error) {
-            // ユーザーキャンセルの場合は警告メッセージを表示して正常終了
-            if (error instanceof UserCancelledError) {
-                console.warn("⚠️ 操作がキャンセルされました");
+            if (isCancel(confirmResponse)) {
+                cancel(messages.operationCancelled);
                 process.exit(0);
             }
 
-            // 発生したエラーを詳細に表示する
-            console.error("❌ プロジェクトの作成に失敗しました");
-            if (error instanceof Error) {
-                console.error(`🐛 デバッグ: ${error.message}`); // エラーメッセージを表示
-                debugLog("Detailed error:", error); // 詳細ログ
-            } else {
-                console.error(`🐛 デバッグ: ${String(error)}`); // 非Errorの場合の表示
-                debugLog("Detailed error:", error); // 詳細ログ
+            const shouldOverwrite = confirmResponse === "y" || confirmResponse === "Y" || confirmResponse === "yes";
+
+            if (!shouldOverwrite) {
+                cancel(messages.operationCancelled);
+                process.exit(0);
             }
-            process.exit(1); // エラー終了
+
+            // 既存ディレクトリを削除
+            fs.rmSync(targetDir, { recursive: true, force: true });
         }
 
-        process.exit(0); // 正常終了
+        // 4. templates/ ディレクトリのパスを取得
+        const templatesDir = getTemplatesDirectory();
+
+        // 5. プロジェクトを生成
+        const result = await generateProject({
+            projectName,
+            templatesDir,
+            targetDir,
+            runSetup: true,
+        });
+
+        // 6. 結果の表示
+        if (result.success) {
+            console.log("");
+            console.log(messages.setupComplete.replace("{projectName}", projectName));
+            console.log("");
+            console.log(messages.nextStepsTitle);
+            for (const cmd of messages.nextStepsCommands) {
+                console.log(cmd.replace("{projectName}", projectName));
+            }
+            console.log("");
+            console.log(messages.serverInfo);
+            for (const server of messages.serverList) {
+                console.log(server);
+            }
+            console.log("");
+        } else {
+            console.log("");
+            console.log(messages.setupFailed);
+            if (result.error) {
+                console.log(result.error);
+            }
+            process.exit(1);
+        }
     },
 });
 

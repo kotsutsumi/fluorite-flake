@@ -96,8 +96,8 @@ export async function provisionTursoDatabases(options: TursoProvisioningOptions)
                 throw new Error(`トークン生成失敗: ${tokenError instanceof Error ? tokenError.message : tokenError}`);
             }
 
-            credentials.urls[env] = url;
-            credentials.tokens[env] = token;
+            credentials.urls![env] = url;
+            credentials.tokens![env] = token;
 
             databases.push({
                 environment: env,
@@ -143,9 +143,9 @@ export async function provisionTursoDatabases(options: TursoProvisioningOptions)
     // credentials の完全性を検証（成功したデータベースのみ）
     const successfulEnvs = successfulDatabases.map((db) => db.environment);
     for (const env of successfulEnvs) {
-        if (!(credentials.urls[env] && credentials.tokens[env])) {
+        if (!(credentials.urls![env] && credentials.tokens![env])) {
             throw new Error(
-                `${env}環境の認証情報が不完全です - URL: ${credentials.urls[env] ? "設定済み" : "未設定"}, Token: ${credentials.tokens[env] ? "設定済み" : "未設定"}`
+                `${env}環境の認証情報が不完全です - URL: ${credentials.urls![env] ? "設定済み" : "未設定"}, Token: ${credentials.tokens![env] ? "設定済み" : "未設定"}`
             );
         }
     }
@@ -329,8 +329,8 @@ export async function createTablesInTursoDatabases(
 
     for (const env of environments) {
         try {
-            const url = credentials.urls[env];
-            const token = credentials.tokens[env];
+            const url = credentials.urls![env];
+            const token = credentials.tokens![env];
 
             // 詳細な認証情報バリデーション
             if (!(url && token)) {
@@ -389,8 +389,8 @@ export async function createTablesInTursoDatabases(
                 // URL_INVALID エラーの場合は特別な診断情報を提供
                 if (errorMessage.includes("URL_INVALID") || errorMessage.includes("undefined")) {
                     console.error("🔍 診断情報:");
-                    console.error(`   - データベースURL: ${credentials.urls[env] || "undefined"}`);
-                    console.error(`   - 認証トークン: ${credentials.tokens[env] ? "設定済み" : "undefined"}`);
+                    console.error(`   - データベースURL: ${credentials.urls![env] || "undefined"}`);
+                    console.error(`   - 認証トークン: ${credentials.tokens![env] ? "設定済み" : "undefined"}`);
                     console.error("   - このエラーは通常、プロビジョニング段階でのデータベース作成失敗が原因です");
                     console.error(`   - 'turso auth whoami' でTurso CLIの認証状況を確認してください`);
                 } else {
@@ -416,8 +416,8 @@ export async function createTablesInTursoDatabases(
             console.error("🔍 詳細診断情報:");
             console.error(`   - 環境: ${env}`);
             console.error(`   - プロジェクトパス: ${projectPath}`);
-            console.error(`   - データベースURL: ${credentials.urls[env] || "undefined"}`);
-            console.error(`   - 認証トークン: ${credentials.tokens[env] ? "設定済み" : "undefined"}`);
+            console.error(`   - データベースURL: ${credentials.urls![env] || "undefined"}`);
+            console.error(`   - 認証トークン: ${credentials.tokens![env] ? "設定済み" : "undefined"}`);
 
             if (error instanceof Error && error.stack) {
                 console.error(`   - スタックトレース: ${error.stack.split("\n")[0]}`);
@@ -844,8 +844,8 @@ export async function seedTursoDatabases(
 
     for (const env of environments) {
         try {
-            const url = credentials.urls[env];
-            const token = credentials.tokens[env];
+            const url = credentials.urls![env];
+            const token = credentials.tokens![env];
 
             if (!(url && token)) {
                 console.warn(`⚠️ ${env}環境の認証情報が不足しています`);

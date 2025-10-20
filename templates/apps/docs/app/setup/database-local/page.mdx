@@ -1,0 +1,386 @@
+---
+title: データベース（ローカル）
+description: ローカル開発環境でのPrismaとデータベースのセットアップ
+---
+
+# データベース（ローカル）
+
+ローカル開発環境では、軽量な SQLite データベースを使用します。Prisma ORM を通じて型安全なデータアクセスが可能です。
+
+## 📋 ローカルデータベースの概要
+
+### 使用技術
+
+- **Prisma**: TypeScript 対応の次世代 ORM
+- **libSQL**: SQLite ベースの軽量データベース（ローカル開発）
+- **SQLite**: ファイルベースのリレーショナルデータベース
+
+### ローカルデータベースファイル
+
+```
+apps/backend/dev.db        # メインデータベース
+apps/backend/dev.db-shm    # 共有メモリファイル
+apps/backend/dev.db-wal    # Write-Ahead Log
+```
+
+これらのファイルは `.gitignore` に含まれており、コミットされません。
+
+## 🚀 初回セットアップ
+
+### ステップ 1: 依存関係のインストール
+
+```bash
+pnpm install
+```
+
+`postinstall` フックが自動的に Prisma Client を生成します：
+
+```bash
+# 自動実行: pnpm prisma:generate
+```
+
+### ステップ 2: データベースのリセット
+
+```bash
+pnpm db:reset
+```
+
+このコマンドは以下を実行します：
+
+1. 既存のデータベースを削除（強制リセット）
+2. マイグレーションを適用
+3. シードデータを投入
+
+**出力例**：
+
+```
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+
+✔ Database reset successful
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20231201000000_init/
+    └─ migration.sql
+
+✔ Generated Prisma Client
+
+Running seed command: tsx prisma/seed.ts
+✔ Seed data created: 1 user, 5 posts
+```
+
+## 🛠️ データベースコマンド
+
+### Prisma Client の生成
+
+```bash
+pnpm prisma:generate
+```
+
+**用途**: `prisma/schema.prisma` の変更後に TypeScript 型を再生成
+
+### データベースへのスキーマ Push
+
+```bash
+pnpm db:push
+```
+
+**用途**:
+- 開発中に素早くスキーマをデータベースに反映
+- マイグレーションファイルを作成せずにスキーマを適用
+- プロトタイピングや初期開発に最適
+
+**注意**: 本番環境では `migrate` を使用してください。
+
+### シードデータの投入
+
+```bash
+pnpm db:seed
+```
+
+**用途**: テスト用のデフォルトユーザーやサンプルデータを作成
+
+**シードスクリプト**: `apps/backend/prisma/seed.ts`
+
+### データベースのリセット
+
+```bash
+pnpm db:reset
+```
+
+**用途**: データベースをクリーンな状態にリセット
+
+**実行内容**:
+1. `prisma migrate reset --force`（確認なしでリセット）
+2. `prisma db seed`（シードデータを投入）
+
+## 🗂️ Prisma スキーマ
+
+### スキーマファイル
+
+`apps/backend/prisma/schema.prisma` でデータベーススキーマを定義します。
+
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### スキーマの変更フロー
+
+1. **スキーマを編集**:
+   ```prisma
+   model User {
+     id        String   @id @default(cuid())
+     email     String   @unique
+     name      String?
+     role      String   @default("user")  // 追加
+     posts     Post[]
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+   }
+   ```
+
+2. **マイグレーションを生成**:
+   ```bash
+   pnpm prisma:migrate:dev --name add_user_role
+   ```
+
+3. **Prisma Client を再生成**（自動実行）:
+   ```bash
+   # 自動実行されますが、手動でも実行可能
+   pnpm prisma:generate
+   ```
+
+4. **開発サーバーを再起動**:
+   ```bash
+   pnpm dev
+   ```
+
+## 📊 Prisma Studio
+
+### Prisma Studio の起動
+
+```bash
+cd apps/backend
+pnpm prisma:studio
+```
+
+ブラウザで `http://localhost:5555` が開き、GUI でデータベースを操作できます。
+
+**機能**:
+- データの閲覧・編集・削除
+- リレーションの視覚化
+- クエリの実行
+
+## 🔍 データベースの検証
+
+### スキーマの検証
+
+```bash
+pnpm prisma:validate
+```
+
+`schema.prisma` の構文エラーをチェックします。
+
+### マイグレーション状態の確認
+
+```bash
+pnpm prisma:migrate:status
+```
+
+**出力例**:
+
+```
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+
+Status
+2 migrations found in prisma/migrations
+
+Migration: 20231201000000_init  Applied
+Migration: 20231202000000_add_user_role  Applied
+
+Database schema is up to date!
+```
+
+## 🧪 シードスクリプト
+
+### シードスクリプトの編集
+
+`apps/backend/prisma/seed.ts`:
+
+```typescript
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // ユーザーを作成
+  const user = await prisma.user.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: {
+      email: 'admin@example.com',
+      name: 'Admin User',
+      role: 'admin',
+    },
+  });
+
+  console.log('✓ Created user:', user.email);
+
+  // 投稿を作成
+  const posts = await Promise.all([
+    prisma.post.create({
+      data: {
+        title: 'First Post',
+        content: 'This is the first post',
+        published: true,
+        authorId: user.id,
+      },
+    }),
+    prisma.post.create({
+      data: {
+        title: 'Second Post',
+        content: 'This is the second post',
+        published: false,
+        authorId: user.id,
+      },
+    }),
+  ]);
+
+  console.log(`✓ Created ${posts.length} posts`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+```
+
+### シードの実行
+
+```bash
+pnpm db:seed
+```
+
+## 🚨 トラブルシューティング
+
+### Prisma Client が見つからない
+
+**症状**: `@prisma/client` モジュールが見つからない
+
+**解決方法**:
+```bash
+pnpm prisma:generate
+```
+
+### マイグレーションエラー
+
+**症状**: マイグレーション適用時にエラー
+
+**解決方法**:
+```bash
+# マイグレーション履歴を確認
+pnpm prisma:migrate:status
+
+# 失敗したマイグレーションをロールバック
+pnpm prisma:migrate:resolve --rolled-back <migration-name>
+
+# データベースをリセット（開発環境のみ）
+pnpm db:reset
+```
+
+### データベースファイルがロックされている
+
+**症状**: `database is locked`
+
+**解決方法**:
+1. 開発サーバーを停止
+2. Prisma Studio を停止
+3. データベースファイルを削除
+   ```bash
+   rm apps/backend/dev.db*
+   ```
+4. データベースを再作成
+   ```bash
+   pnpm db:reset
+   ```
+
+### シードデータが投入されない
+
+**症状**: `pnpm db:seed` が実行されない
+
+**解決方法**:
+1. `package.json` の `prisma.seed` を確認
+   ```json
+   {
+     "prisma": {
+       "seed": "tsx prisma/seed.ts"
+     }
+   }
+   ```
+2. シードスクリプトの構文エラーを確認
+   ```bash
+   tsx apps/backend/prisma/seed.ts
+   ```
+
+## 📚 関連リソース
+
+- **[データベース（クラウド）](/setup/database-cloud)** - Turso Cloud のセットアップ
+- **[データベース操作ガイド](/guides/database-operations)** - Prisma コマンドの詳細
+- **[Prisma 公式ドキュメント](https://www.prisma.io/docs)** - Prisma の詳細ガイド
+
+## 💡 ベストプラクティス
+
+1. **マイグレーションの管理**:
+   - 開発中は `db:push` で素早く反映
+   - 本番環境では必ず `migrate` を使用
+   - マイグレーションファイルは Git 管理
+
+2. **シードデータ**:
+   - テスト用のデフォルトユーザーを作成
+   - サンプルデータで開発をスムーズに
+   - `upsert` で冪等性を保つ
+
+3. **スキーマ設計**:
+   - リレーションを明示的に定義
+   - インデックスを適切に設定
+   - デフォルト値を活用
+
+4. **開発ワークフロー**:
+   - スキーマ変更 → マイグレーション生成 → Prisma Client 再生成
+   - Prisma Studio で動作確認
+   - テストデータでバリデーション

@@ -1,0 +1,236 @@
+---
+title: アーキテクチャ概要
+description: システム全体のアーキテクチャと設計思想
+---
+
+# アーキテクチャ概要
+
+このプロジェクトは、モダンなフルスタック Turborepo モノレポとして設計されています。
+
+## 🏗️ 全体アーキテクチャ
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#e3f2fd','primaryTextColor':'#1a237e','primaryBorderColor':'#90caf9','lineColor':'#64b5f6','secondaryColor':'#fff3e0','tertiaryColor':'#f3e5f5','tertiaryBorderColor':'#ce93d8','tertiaryTextColor':'#4a148c'}}}%%
+graph TB
+    subgraph Turborepo["🚀 Turborepo モノレポ"]
+        subgraph Apps["アプリケーション"]
+            Web["📱 Web<br/>:3000<br/>Next.js 15"]
+            Backend["⚙️ Backend<br/>:3001<br/>API + Dashboard"]
+            Docs["📚 Docs<br/>:3002<br/>Nextra 4"]
+            Mobile["📲 Mobile<br/>:8081<br/>Expo 54"]
+        end
+
+        subgraph Packages["共有パッケージ"]
+            UI["🎨 @repo/ui<br/>UIコンポーネント"]
+            TSConfig["⚡ @repo/typescript-config<br/>TypeScript設定"]
+        end
+
+        Web --> UI
+        Web --> TSConfig
+        Backend --> UI
+        Backend --> TSConfig
+        Docs --> TSConfig
+        Mobile --> UI
+        Mobile --> TSConfig
+    end
+
+    subgraph Deploy["デプロイ先"]
+        Vercel["☁️ Vercel<br/>Web/Backend/Docs"]
+        Turso["🗄️ Turso/Supabase<br/>Database"]
+        EAS["📱 EAS<br/>Mobile App"]
+    end
+
+    Web --> Vercel
+    Backend --> Vercel
+    Backend --> Turso
+    Docs --> Vercel
+    Mobile --> EAS
+    Mobile -.GraphQL.-> Backend
+
+    classDef blueNode fill:#e3f2fd,stroke:#90caf9,stroke-width:2px,color:#1565c0
+    classDef orangeNode fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#e65100
+    classDef purpleNode fill:#f3e5f5,stroke:#ce93d8,stroke-width:2px,color:#7b1fa2
+    classDef greenNode fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#2e7d32
+    classDef tealNode fill:#e0f2f1,stroke:#4db6ac,stroke-width:2px,color:#00695c
+
+    class Web,Vercel,TSConfig blueNode
+    class Backend,UI orangeNode
+    class Docs,Packages purpleNode
+    class Mobile,Turso,Deploy greenNode
+    class EAS tealNode
+```
+
+## 📦 モノレポ構成
+
+### Apps（アプリケーション）
+
+| アプリ | ポート | 説明 | 技術スタック |
+|--------|--------|------|--------------|
+| **web** | 3000 | マーケティングサイト・フロントエンド | Next.js 15, React 19 |
+| **backend** | 3001 | 管理ダッシュボード + API サーバー | Next.js 15, Apollo Server, Prisma |
+| **docs** | 3002 | ドキュメントサイト | Next.js 15, Nextra 4 |
+| **mobile** | 8081 | モバイルアプリ | Expo 54, React Native |
+
+### Packages（共有パッケージ）
+
+| パッケージ | 説明 | 使用者 |
+|-----------|------|--------|
+| **@repo/ui** | 共有 UI コンポーネントライブラリ | web, backend, mobile |
+| **@repo/typescript-config** | 共通 TypeScript 設定 | 全アプリ |
+
+## 🎯 設計思想
+
+### 1. モノレポによる統合管理
+
+**利点**:
+- コードの再利用性向上
+- 一貫した開発環境
+- 依存関係の一元管理
+- 効率的なビルドとキャッシング
+
+### 2. 型安全性の徹底
+
+**実現方法**:
+- TypeScript による完全な型定義
+- Prisma による型安全なデータベースアクセス
+- GraphQL による型安全な API 通信
+- Zod によるランタイムバリデーション
+
+### 3. 開発者体験の最適化
+
+**特徴**:
+- ホットリロード対応
+- 高速なビルド（Turbopack）
+- 自動型生成
+- 統一されたツールチェイン
+
+## 🔄 データフロー
+
+### 認証フロー
+
+```mermaid
+flowchart TD
+    User["👤 ユーザー"] --> Client["🖥️ Web/Mobile"]
+    Client --> Auth["🔐 Better Auth<br/>(Backend)"]
+    Auth --> Session["🎫 Session Management"]
+    Session --> Routes["🛡️ Protected Routes"]
+
+    classDef userNode fill:#e3f2fd,stroke:#90caf9,stroke-width:2px,color:#1565c0
+    classDef clientNode fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#e65100
+    classDef authNode fill:#f3e5f5,stroke:#ce93d8,stroke-width:2px,color:#7b1fa2
+    classDef sessionNode fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#2e7d32
+    classDef routeNode fill:#fce4ec,stroke:#f48fb1,stroke-width:2px,color:#c2185b
+
+    class User userNode
+    class Client clientNode
+    class Auth authNode
+    class Session sessionNode
+    class Routes routeNode
+```
+
+### API通信フロー
+
+```mermaid
+flowchart TD
+    Client["📱 Web/Mobile Client"] --> GraphQL["🔌 GraphQL API<br/>(Backend)"]
+    GraphQL --> Prisma["⚡ Prisma ORM"]
+    Prisma --> DB["🗄️ Database<br/>(libSQL/PostgreSQL)"]
+
+    classDef clientNode fill:#e3f2fd,stroke:#90caf9,stroke-width:2px,color:#1565c0
+    classDef apiNode fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#e65100
+    classDef ormNode fill:#f3e5f5,stroke:#ce93d8,stroke-width:2px,color:#7b1fa2
+    classDef dbNode fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#2e7d32
+
+    class Client clientNode
+    class GraphQL apiNode
+    class Prisma ormNode
+    class DB dbNode
+```
+
+### ファイルストレージフロー
+
+```mermaid
+flowchart TD
+    Upload["📤 Client Upload"] --> API["🔌 API Endpoint<br/>(Backend)"]
+    API --> Storage{"🔀 環境判定"}
+    Storage -->|Development| Local["💾 Local Storage"]
+    Storage -->|Production| Blob["☁️ Vercel Blob"]
+
+    classDef uploadNode fill:#e3f2fd,stroke:#90caf9,stroke-width:2px,color:#1565c0
+    classDef apiNode fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#e65100
+    classDef storageNode fill:#f3e5f5,stroke:#ce93d8,stroke-width:2px,color:#7b1fa2
+    classDef localNode fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#2e7d32
+    classDef blobNode fill:#e0f7fa,stroke:#4dd0e1,stroke-width:2px,color:#00838f
+
+    class Upload uploadNode
+    class API apiNode
+    class Storage storageNode
+    class Local localNode
+    class Blob blobNode
+```
+
+## 🛡️ セキュリティ層
+
+### 認証・認可
+
+- Better Auth によるセッション管理
+- JWT トークンによる API 認証
+- ロールベースアクセス制御（RBAC）
+
+### データ保護
+
+- 環境変数による機密情報管理
+- データベース接続の暗号化
+- HTTPS 通信の強制
+
+## 📊 スケーラビリティ
+
+### 水平スケーリング
+
+- Vercel の自動スケーリング
+- CDN によるグローバル配信
+- エッジロケーションの活用
+
+### パフォーマンス最適化
+
+- Turborepo キャッシング
+- 増分ビルド
+- 静的生成とサーバーサイドレンダリングの使い分け
+
+## 🧩 依存関係管理
+
+### パッケージマネージャー
+
+**pnpm の採用理由**:
+- ディスクスペースの効率化
+- 高速なインストール
+- Workspace 対応
+
+### バージョン管理
+
+- 各アプリは独立したバージョン
+- 共有パッケージは Workspace プロトコル
+- 自動的な依存関係解決
+
+## 🔧 ビルドシステム
+
+### Turborepo
+
+**特徴**:
+- 並列ビルド実行
+- インテリジェントキャッシング
+- 依存関係グラフの自動解決
+
+**主要タスク**:
+- `dev`: 開発サーバー起動
+- `build`: プロダクションビルド
+- `test`: テスト実行
+- `lint`: Lint チェック
+
+## 📚 関連ドキュメント
+
+- **[Backend アーキテクチャ](/architecture/backend)** - API とデータベース設計
+- **[Web アーキテクチャ](/architecture/web)** - フロントエンド設計
+- **[Mobile アーキテクチャ](/architecture/mobile)** - モバイルアプリ設計
+- **[Database アーキテクチャ](/architecture/database)** - データベース設計
+- **[認証フロー](/architecture/authentication)** - 認証システム設計

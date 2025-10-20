@@ -1,72 +1,33 @@
 /**
- * createコマンドの型定義
+ * createコマンド関連の型定義
+ * 現在は開発中のため、最小限の型定義のみを提供します
  */
-import type { BlobConfiguration } from "../../utils/vercel-cli/blob-types.js";
-import type { PROJECT_TEMPLATES, PROJECT_TYPE_DESCRIPTIONS } from "./constants.js";
-import type { DatabaseCredentials, DatabaseProvisioningConfig } from "./database-provisioning/types.js";
 
 /**
- * データベースタイプの型
+ * プロジェクトタイプ
  */
-export type DatabaseType = "turso" | "supabase" | "sqlite";
+export type ProjectType = "nextjs" | "expo" | "tauri";
 
 /**
- * createコマンドのオプション型
+ * データベースタイプ
  */
-export type CreateOptions = {
-    name?: string;
-    template?: string;
-    force?: boolean;
-    dir?: string;
-    monorepo?: boolean;
-    simple?: boolean;
-    database?: DatabaseType;
-};
+export type DatabaseType = "turso" | "supabase" | "sqlite" | "none";
 
 /**
- * プロジェクトタイプの型
+ * プロジェクト設定
  */
-export type ProjectType = keyof typeof PROJECT_TEMPLATES;
-
-/**
- * テンプレートタイプの型
- */
-export type TemplateType<T extends ProjectType> = (typeof PROJECT_TEMPLATES)[T][number];
-
-/**
- * プロジェクト設定の型
- */
-export type ProjectConfig = {
-    type: ProjectType;
-    name: string;
+export interface ProjectConfig {
+    projectName: string;
+    projectType: ProjectType;
+    template: string;
     directory: string;
-    template?: string;
-    force: boolean;
-    monorepo: boolean;
     database?: DatabaseType;
-    databaseConfig?: DatabaseProvisioningConfig;
-    databaseCredentials?: DatabaseCredentials;
-    blobConfig?: BlobConfiguration;
+    isMonorepoMode?: boolean;
     pnpmVersion?: string;
-    shouldGenerateDocs?: boolean; // ドキュメント生成フラグ
-};
-
-/**
- * 拡張プロジェクト設定の型（追加情報付き）
- */
-export type ExtendedProjectConfig = ProjectConfig & {
-    description?: string;
-    templateDescription?: string;
-    isFullStack?: boolean;
-    hasAuthentication?: boolean;
-    hasDatabase?: boolean;
-    framework?: string;
-    features?: string[];
-};
-
-/**
- * プロジェクトタイプ説明の型
- */
-export type ProjectTypeDescription = typeof PROJECT_TYPE_DESCRIPTIONS;
+    name?: string;
+    type?: string;
+    monorepo?: boolean;
+    shouldGenerateDocs?: boolean;
+}
 
 // EOF

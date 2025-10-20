@@ -1,0 +1,95 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
+  "extends": ["ultracite"],
+  "formatter": {
+    "lineWidth": 100
+  },
+  "linter": {
+    "rules": {
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 20
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "apps/backend/app/globals.css",
+        "apps/web/app/globals.css",
+        "apps/docs/app/globals.css"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/mobile/**"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noDeprecatedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/ui/**"],
+      "linter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": ["scripts/libs/**/index.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/__tests__/**",
+        "**/tests/**",
+        "**/e2e/**",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noMagicNumbers": "off",
+            "useBlockStatements": "off"
+          },
+          "complexity": {
+            "noForEach": "off",
+            "useOptionalChain": "warn"
+          },
+          "performance": {
+            "noBarrelFile": "off",
+            "useTopLevelRegex": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "warn",
+            "noUnusedFunctionParameters": "warn"
+          }
+        }
+      }
+    }
+  ],
+  "javascript": {
+    "formatter": {
+      "semicolons": "always"
+    }
+  }
+}

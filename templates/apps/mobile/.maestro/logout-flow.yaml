@@ -1,0 +1,21 @@
+appId: com.fluorite-flake.app
+---
+# ログアウトフローテスト
+# ユーザーがログアウトできることを確認
+
+# 注意: このフローはログイン後の状態を前提としています
+
+- launchApp
+
+# ホーム画面の確認
+- assertVisible: "ようこそ"
+
+# ログアウトボタンをタップ
+- tapOn: "ログアウト"
+
+# ログイン画面に戻ることを確認
+- assertVisible:
+    text: "ログイン"
+    timeout: 5000
+- assertVisible: "メールアドレス"
+- assertVisible: "パスワード"

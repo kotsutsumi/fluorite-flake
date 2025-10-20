@@ -1,0 +1,319 @@
+---
+title: Lint とフォーマット
+description: Ultracite（Biome）を使用したコード品質の維持
+---
+
+# Lint とフォーマット
+
+このプロジェクトでは、[Ultracite](https://ultracite.dev/)（Biomeベース）を使用して、統一されたコードスタイルと品質を維持しています。
+
+## 📋 Ultracite とは
+
+Ultracite は Biome をベースにした高速なリンター・フォーマッターです。
+
+**特徴**:
+- **高速**: Rust で実装された高速な処理
+- **統一設定**: リポジトリ全体で一貫したルール
+- **自動修正**: 多くの問題を自動で修正
+- **TypeScript 対応**: 完全な型チェック統合
+
+## 🚀 基本コマンド
+
+### Lint チェック
+
+```bash
+# 全ワークスペースをチェック
+pnpm lint
+
+# 特定のアプリのみ
+pnpm --filter=web lint
+pnpm --filter=backend lint
+```
+
+問題を検出するだけで、自動修正は行いません。
+
+### 自動修正
+
+```bash
+# 全ワークスペースを修正
+pnpm format
+
+# 特定のアプリのみ
+pnpm --filter=web format
+pnpm --filter=backend format
+```
+
+以下を自動的に実行します：
+- コードフォーマット
+- インポート文の整列
+- 修正可能なLintエラーの修正
+
+### 型チェック
+
+```bash
+# 全ワークスペースの型チェック
+pnpm check-types
+
+# 特定のアプリのみ
+pnpm --filter=web check-types
+```
+
+TypeScript の型エラーを検出します。
+
+## ⚙️ 設定ファイル
+
+### biome.json
+
+リポジトリルートの `biome.json` で全体の設定を管理します：
+
+```json
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": []
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always"
+    }
+  }
+}
+```
+
+### 主要な設定
+
+#### フォーマット設定
+
+- **インデント**: 2スペース
+- **行幅**: 100文字
+- **クォート**: ダブルクォート
+- **セミコロン**: 必須
+
+#### Lint ルール
+
+- **推奨ルール**: 有効
+- **カスタムルール**: `biome.json` の `overrides` で設定
+
+## 🎯 コーディングスタイル
+
+### TypeScript
+
+```typescript
+// ✅ Good
+export function getUserData(userId: string): Promise<User> {
+  return fetchUser(userId);
+}
+
+// ❌ Bad
+export function getUserData(userId: string): Promise<User> {
+    return fetchUser(userId); // インデントが4スペース
+}
+```
+
+### React コンポーネント
+
+```tsx
+// ✅ Good
+export function Button({ children, onClick }: ButtonProps) {
+  return (
+    <button onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+// ❌ Bad
+export function Button({ children, onClick }: ButtonProps) {
+  return <button onClick={onClick}>{children}</button>; // 複数行推奨
+}
+```
+
+### インポート文
+
+```typescript
+// ✅ Good（自動整列）
+import { type ReactNode } from "react";
+import { Button } from "@/components/Button";
+import { getUserData } from "@/lib/api";
+
+// ❌ Bad（順不同）
+import { getUserData } from "@/lib/api";
+import { type ReactNode } from "react";
+import { Button } from "@/components/Button";
+```
+
+## 🔧 エディター統合
+
+### VS Code
+
+`.vscode/settings.json`:
+
+```json
+{
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  }
+}
+```
+
+### 推奨拡張機能
+
+```json
+{
+  "recommendations": [
+    "biomejs.biome"
+  ]
+}
+```
+
+## 🚨 CI/CD での Lint
+
+### GitHub Actions
+
+```yaml
+name: Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm check-types
+```
+
+### Pre-commit フック
+
+```bash
+# .husky/pre-commit
+pnpm lint-staged
+```
+
+## 📊 Lint エラーの種類
+
+### 構文エラー
+
+```typescript
+// ❌ セミコロン不足
+const user = getUserData()
+
+// ✅ 修正後
+const user = getUserData();
+```
+
+### 未使用変数
+
+```typescript
+// ❌ 未使用のインポート
+import { useState, useEffect } from "react"; // useEffect未使用
+
+// ✅ 修正後
+import { useState } from "react";
+```
+
+### 型エラー
+
+```typescript
+// ❌ 型不一致
+const age: number = "25";
+
+// ✅ 修正後
+const age: number = 25;
+```
+
+## 💡 ベストプラクティス
+
+1. **コミット前に必ずフォーマット**:
+   ```bash
+   pnpm format
+   ```
+
+2. **エディターの保存時フォーマット有効化**:
+   - VS Code: `editor.formatOnSave: true`
+
+3. **PRレビュー前にチェック**:
+   ```bash
+   pnpm lint && pnpm check-types
+   ```
+
+4. **自動修正できない問題は手動で対応**:
+   - Lintエラーメッセージを確認
+   - 該当箇所を手動修正
+
+5. **カスタムルールの追加**:
+   - `biome.json` の `overrides` セクション
+   - プロジェクト固有のルールを追加
+
+## 🎓 よくある問題と解決方法
+
+### エラー: `Could not resolve configuration`
+
+**原因**: biome.json が見つからない
+
+**解決方法**:
+```bash
+# ルートディレクトリで実行されているか確認
+pwd
+```
+
+### エラー: `Files to format not found`
+
+**原因**: 対象ファイルが存在しない、または除外されている
+
+**解決方法**:
+```bash
+# .gitignore を確認
+cat .gitignore
+```
+
+### 型チェックが遅い
+
+**原因**: 大量のファイルを型チェック
+
+**解決方法**:
+```bash
+# 特定のアプリのみチェック
+pnpm --filter=web check-types
+```
+
+## 📚 関連リソース
+
+- **[コマンドリファレンス](/development/commands)** - Lintコマンドの詳細
+- **[テスト戦略](/development/testing)** - テストとの組み合わせ
+- **[トラブルシューティング](/development/troubleshooting)** - 問題解決ガイド
+- **[Biome 公式ドキュメント](https://biomejs.dev/)** - Biome の詳細

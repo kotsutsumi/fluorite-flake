@@ -1,0 +1,20 @@
+import type { Config } from "tailwindcss";
+
+/**
+ * 共有UIパッケージ用のTailwind CSS v4設定
+ *
+ * この設定は packages/ui のコンポーネントで使用されるユーティリティクラスを定義します。
+ * 各アプリケーション（apps/*）はこの設定を拡張または上書きできます。
+ */
+const config: Config = {
+  // UIパッケージ内のファイルをスキャン
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  // ダークモードをクラスベースで制御
+  darkMode: "class",
+};
+
+export default config;
+
+// EOF

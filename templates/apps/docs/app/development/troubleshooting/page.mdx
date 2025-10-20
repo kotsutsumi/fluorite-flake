@@ -1,0 +1,392 @@
+---
+title: トラブルシューティング
+description: よくある問題と解決方法
+---
+
+# トラブルシューティング
+
+開発中によく遭遇する問題とその解決方法をまとめました。
+
+## 🚨 開発サーバー関連
+
+### ポート衝突エラー
+
+**症状**: `Address already in use: 3000` などのエラー
+
+**解決方法**:
+```bash
+# 自動解放（pnpm dev 実行時）
+pnpm dev
+
+# 手動解放
+lsof -ti:3000 | xargs kill  # Web
+lsof -ti:3001 | xargs kill  # Backend
+lsof -ti:3002 | xargs kill  # Docs
+lsof -ti:8081 | xargs kill  # Mobile
+```
+
+### 開発サーバーが起動しない
+
+**症状**: `pnpm dev` がエラーで終了
+
+**解決方法**:
+1. Node.js バージョンを確認
+   ```bash
+   node --version  # 22以上が必要
+   ```
+
+2. 依存関係を再インストール
+   ```bash
+   rm -rf node_modules
+   pnpm install
+   ```
+
+3. キャッシュをクリア
+   ```bash
+   pnpm turbo clean
+   ```
+
+### ホットリロードが動作しない
+
+**症状**: ファイルを変更しても反映されない
+
+**解決方法**:
+1. サーバーを再起動
+   ```bash
+   # Ctrl+C で停止
+   pnpm dev
+   ```
+
+2. ブラウザのキャッシュをクリア
+   - **macOS**: `Cmd + Shift + R`
+   - **Windows/Linux**: `Ctrl + Shift + R`
+
+## 🗄️ データベース関連
+
+### Prisma Client が見つからない
+
+**症状**: `@prisma/client` モジュールが見つからない
+
+**解決方法**:
+```bash
+pnpm prisma:generate
+```
+
+### マイグレーションエラー
+
+**症状**: `Migration failed to apply`
+
+**解決方法**:
+```bash
+# ローカル開発の場合、データベースをリセット
+pnpm db:reset
+
+# 本番環境の場合、マイグレーション履歴を確認
+pnpm prisma:migrate:status
+
+# 失敗したマイグレーションをロールバック
+pnpm prisma:migrate:resolve --rolled-back <migration-name>
+```
+
+### データベースがロックされている
+
+**症状**: `database is locked`
+
+**解決方法**:
+1. 開発サーバーを停止
+2. Prisma Studio を停止
+3. データベースファイルを削除
+   ```bash
+   rm apps/backend/dev.db*
+   ```
+4. データベースを再作成
+   ```bash
+   pnpm db:reset
+   ```
+
+### シードデータが投入されない
+
+**症状**: `pnpm db:seed` が実行されない
+
+**解決方法**:
+1. `package.json` の `prisma.seed` を確認
+2. シードスクリプトの構文エラーを確認
+   ```bash
+   tsx apps/backend/prisma/seed.ts
+   ```
+
+## 📦 依存関係関連
+
+### pnpm install が失敗する
+
+**症状**: 依存関係のインストールエラー
+
+**解決方法**:
+1. pnpm のバージョンを確認
+   ```bash
+   pnpm --version  # 10.18.3が必要
+   ```
+
+2. ロックファイルを削除して再インストール
+   ```bash
+   rm pnpm-lock.yaml
+   pnpm install
+   ```
+
+3. キャッシュをクリア
+   ```bash
+   pnpm store prune
+   pnpm install
+   ```
+
+### パッケージのバージョン競合
+
+**症状**: `ENOENT` や `ERR_PNPM_` エラー
+
+**解決方法**:
+```bash
+# 依存関係を確認
+pnpm why <package-name>
+
+# アップデート
+pnpm update --interactive --latest
+```
+
+## 🎨 Lint・フォーマット関連
+
+### Lint エラーが消えない
+
+**症状**: `pnpm format` 後もエラーが残る
+
+**解決方法**:
+1. エディターの設定を確認
+2. 手動でエラー箇所を修正
+3. 型エラーの場合
+   ```bash
+   pnpm check-types
+   ```
+
+### エディターでフォーマットが動作しない
+
+**症状**: 保存時にフォーマットされない
+
+**解決方法**:
+1. VS Code 拡張機能をインストール
+   - Biome 拡張機能
+2. `.vscode/settings.json` を確認
+3. エディターを再起動
+
+## 🧪 テスト関連
+
+### テストが失敗する
+
+**症状**: 以前は通っていたテストが失敗
+
+**解決方法**:
+1. テストファイルを確認
+2. モックデータを更新
+3. スナップショットを更新
+   ```bash
+   pnpm --filter=web test:unit -u
+   ```
+
+### E2Eテストがタイムアウト
+
+**症状**: Playwright テストがタイムアウト
+
+**解決方法**:
+1. タイムアウト時間を延長
+   ```typescript
+   test.setTimeout(60000); // 60秒
+   ```
+2. 開発サーバーが起動しているか確認
+3. ネットワーク接続を確認
+
+## 🌐 環境変数関連
+
+### 環境変数が反映されない
+
+**症状**: 設定した環境変数が読み込まれない
+
+**解決方法**:
+1. `.env.local` が正しいディレクトリにあるか確認
+2. 開発サーバーを再起動
+3. `NEXT_PUBLIC_` プレフィックスが必要か確認（Next.js）
+
+### 暗号化/復号が失敗する
+
+**症状**: `pnpm env:encrypt` または `pnpm env:decrypt` がエラー
+
+**解決方法**:
+1. `zip` コマンドがインストールされているか確認
+   ```bash
+   which zip
+   ```
+2. パスワードが正しいか確認
+3. ファイルパーミッションを確認
+
+## 🚢 ビルド・デプロイ関連
+
+### ビルドエラー
+
+**症状**: `pnpm build` が失敗
+
+**解決方法**:
+1. 型エラーを確認
+   ```bash
+   pnpm check-types
+   ```
+2. ビルドキャッシュをクリア
+   ```bash
+   pnpm turbo clean
+   rm -rf apps/*/.next
+   ```
+3. 依存関係を再インストール
+   ```bash
+   pnpm install
+   ```
+
+### Vercel デプロイエラー
+
+**症状**: Vercel でビルドが失敗
+
+**解決方法**:
+1. ビルドログを確認
+2. 環境変数が設定されているか確認
+3. Node.js バージョンを確認（22以上）
+4. ローカルでビルドを確認
+   ```bash
+   pnpm build
+   ```
+
+### EAS ビルドエラー
+
+**症状**: EAS でモバイルアプリのビルドが失敗
+
+**解決方法**:
+1. `eas.json` の構文を確認
+2. 証明書を再生成
+   ```bash
+   eas credentials
+   ```
+3. ビルドログを確認
+   ```bash
+   eas build:view <build-id>
+   ```
+
+## 📱 モバイルアプリ関連
+
+### Metro が起動しない
+
+**症状**: Expo 開発サーバーが起動しない
+
+**解決方法**:
+1. ポートを解放
+   ```bash
+   lsof -ti:8081 | xargs kill
+   ```
+2. キャッシュをクリア
+   ```bash
+   cd apps/mobile
+   pnpm start -- --clear
+   ```
+
+### GraphQL リクエストエラー
+
+**症状**: モバイルアプリから API リクエストが失敗
+
+**解決方法**:
+1. Backend API が起動しているか確認
+2. `.env.local` の `EXPO_PUBLIC_API_URL` を確認
+3. iOS/実機の場合、IP アドレスを使用
+   ```bash
+   # .env.local
+   EXPO_PUBLIC_API_URL=http://192.168.1.100:3001
+   ```
+
+## 🔧 パフォーマンス関連
+
+### ビルドが遅い
+
+**症状**: ビルドに5分以上かかる
+
+**解決方法**:
+1. Turborepo Remote Caching を有効化
+   ```bash
+   turbo login
+   turbo link
+   ```
+2. 不要なファイルを `.gitignore` に追加
+3. 並列ビルド数を調整
+
+### 開発サーバーが重い
+
+**症状**: ファイル変更後の再ビルドが遅い
+
+**解決方法**:
+1. Turbopack を使用（Next.js 15）
+2. メモリを増やす
+   ```bash
+   export NODE_OPTIONS="--max-old-space-size=4096"
+   ```
+3. 不要な監視ファイルを除外
+
+## 🆘 その他の問題
+
+### Git 関連
+
+**症状**: Git コミット・プッシュエラー
+
+**解決方法**:
+```bash
+# 状態を確認
+git status
+
+# ブランチを確認
+git branch
+
+# リモートとの同期
+git fetch origin
+git pull origin main
+```
+
+### ファイルパーミッションエラー
+
+**症状**: `EACCES` エラー
+
+**解決方法**:
+```bash
+# 所有権を変更
+sudo chown -R $(whoami) .
+
+# パーミッションを変更
+chmod -R 755 .
+```
+
+## 📚 さらなるヘルプ
+
+問題が解決しない場合：
+
+1. **GitHub Issues**: [プロジェクトのIssues](https://github.com/your-org/your-repo/issues)
+2. **公式ドキュメント**: 各技術の公式ドキュメントを参照
+3. **コミュニティ**: Discord、Stack Overflow で質問
+
+## 💡 予防策
+
+1. **定期的なアップデート**:
+   ```bash
+   pnpm update --interactive --latest
+   ```
+
+2. **依存関係の監査**:
+   ```bash
+   pnpm audit
+   ```
+
+3. **バックアップの作成**:
+   - 重要なコミット前にバックアップ
+   - データベースのエクスポート
+
+4. **ドキュメントの更新**:
+   - 新しい問題と解決方法を記録
+   - チーム内で共有

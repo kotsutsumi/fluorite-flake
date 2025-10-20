@@ -1,0 +1,29 @@
+appId: com.fluorite-flake.app
+---
+# ログインフローテスト
+# ユーザーがログインできることを確認
+
+env:
+  TEST_EMAIL: ${TEST_EMAIL-test@example.com}
+  TEST_PASSWORD: ${TEST_PASSWORD-password123}
+
+- launchApp
+
+# ログイン画面の確認
+- assertVisible: "ログイン"
+- assertVisible: "メールアドレス"
+- assertVisible: "パスワード"
+
+# 認証情報を入力
+- tapOn: "メールアドレス"
+- inputText: ${TEST_EMAIL}
+- tapOn: "パスワード"
+- inputText: ${TEST_PASSWORD}
+
+# ログインボタンをタップ
+- tapOn: "ログイン"
+
+# ログイン成功を確認（ホーム画面が表示される）
+- assertVisible:
+    text: "ようこそ"
+    timeout: 10000

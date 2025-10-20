@@ -1,0 +1,210 @@
+---
+title: Getting Started
+description: プロジェクトのクイックスタートガイド
+---
+
+# Getting Started
+
+このガイドでは、プロジェクトのクローンから開発開始までの手順を説明します。**5 ステップ・約 5 分** でローカル開発環境が立ち上がります。
+
+## 📋 前提条件
+
+以下のツールが必要です：
+
+- **Node.js**: 22 以上
+- **pnpm**: 10.18.3 以上
+- **Git**: バージョン管理用
+
+インストール確認：
+
+```bash
+node --version  # v22.0.0 以上
+pnpm --version  # 10.18.3 以上
+git --version   # Git がインストールされているか確認
+```
+
+pnpm がインストールされていない場合：
+
+```bash
+npm install -g pnpm@10.18.3
+```
+
+## 🚀 クイックスタート（ローカル開発のみ）
+
+### ステップ 1: リポジトリをクローン
+
+```bash
+git clone https://github.com/your-org/your-repo.git
+cd your-repo
+```
+
+### ステップ 2: 依存関係をインストール
+
+```bash
+pnpm install
+```
+
+これにより、全ワークスペースの依存関係がインストールされ、Prisma Client が自動生成されます（`postinstall` フック）。
+
+### ステップ 3: 環境変数を初期化
+
+```bash
+pnpm env:init
+```
+
+各アプリの `.env.local` ファイルが `.env.local.example` から自動生成されます。
+
+### ステップ 4: 認証シークレットを生成
+
+```bash
+pnpm end:gen:secret
+```
+
+Better Auth のシークレットキーが生成され、各アプリの `.env.local` に自動設定されます。
+
+### ステップ 5: データベースをセットアップ
+
+```bash
+pnpm db:reset
+```
+
+ローカル SQLite データベースが初期化され、シードデータが投入されます。
+
+### 開発サーバーを起動
+
+```bash
+pnpm dev
+```
+
+以下のアプリが並行起動します：
+
+- **Web**: http://localhost:3000
+- **Backend**: http://localhost:3001
+- **Docs**: http://localhost:3002
+- **Mobile**: http://localhost:8081
+
+**🎉 完了！** ブラウザでアプリにアクセスできます。
+
+## 📱 モバイルアプリの起動
+
+Metro バンドラーが起動したら：
+
+- **iOS Simulator**: ターミナルで `i` キーを押す
+- **Android Emulator**: ターミナルで `a` キーを押す
+- **実機（Expo Go）**: QR コードをスキャン
+
+詳細は [Mobile アプリガイド](/architecture/mobile) を参照してください。
+
+## 🔧 次のステップ
+
+### 開発を始める
+
+- **[コマンドリファレンス](/development/commands)** - よく使うコマンド一覧
+- **[テスト実行](/development/testing)** - ユニット・E2E テストの実行方法
+- **[Lint とフォーマット](/development/linting)** - コード品質の維持
+
+### 本番環境へのデプロイ
+
+ローカル開発ができたら、本番環境へのデプロイを設定しましょう：
+
+1. **[Vercel 連携](/setup/vercel-deployment)** - Web/Backend/Docs の Vercel デプロイ
+2. **[Turso Cloud データベース](/setup/database-cloud)** - クラウドデータベースの作成
+3. **[EAS 設定](/setup/eas-setup)** - モバイルアプリのビルドとリリース
+
+詳細は [本番環境セットアップ](/getting-started/production-setup) を参照してください。
+
+## 🚨 トラブルシューティング
+
+### ポート衝突エラー
+
+**症状**: `Address already in use` エラー
+
+**解決方法**:
+```bash
+# pnpm dev で自動解放されますが、手動で実行する場合：
+lsof -ti:3000 | xargs kill  # Web
+lsof -ti:3001 | xargs kill  # Backend
+lsof -ti:3002 | xargs kill  # Docs
+lsof -ti:8081 | xargs kill  # Mobile
+```
+
+### Prisma エラー
+
+**症状**: `@prisma/client` が見つからない
+
+**解決方法**:
+```bash
+pnpm prisma:generate
+```
+
+### 環境変数が反映されない
+
+**症状**: 設定が反映されない
+
+**解決方法**:
+1. `.env.local` が存在するか確認
+2. 開発サーバーを再起動（Next.js は環境変数をキャッシュします）
+3. `pnpm env:init` で再生成
+
+詳細は [トラブルシューティング](/development/troubleshooting) を参照してください。
+
+## 💡 開発のヒント
+
+### 特定のアプリのみ起動
+
+```bash
+# Web アプリのみ
+pnpm --filter web dev
+
+# Backend アプリのみ
+pnpm --filter backend dev
+
+# Docs アプリのみ
+pnpm --filter docs dev
+
+# Mobile アプリのみ
+pnpm --filter mobile dev
+```
+
+### ビルドの実行
+
+```bash
+# 全アプリをビルド
+pnpm build
+
+# 特定のアプリをビルド
+pnpm --filter web build
+pnpm --filter backend build
+```
+
+### テストの実行
+
+```bash
+# 全テストを実行
+pnpm test
+
+# 特定のアプリのテスト
+pnpm --filter backend test
+
+# ユニットテストのみ
+pnpm --filter backend test:unit
+
+# E2E テストのみ
+pnpm --filter backend test:e2e
+```
+
+## 📚 次に読むべきドキュメント
+
+- **[環境変数管理](/setup/environment-variables)** - 環境変数の詳細設定
+- **[データベースローカル設定](/setup/database-local)** - Prisma とデータベースの理解
+- **[アーキテクチャ概要](/architecture/overview)** - システム全体の設計
+
+## 🎓 学習リソース
+
+プロジェクトの技術スタックを学ぶための公式ドキュメント：
+
+- [Next.js App Router](https://nextjs.org/docs/app)
+- [Expo](https://docs.expo.dev/)
+- [Prisma](https://www.prisma.io/docs)
+- [Better Auth](https://www.better-auth.com/docs)
+- [Turborepo](https://turbo.build/repo/docs)

@@ -1,0 +1,560 @@
+---
+title: コマンドリファレンス
+description: プロジェクトで使用可能なすべてのコマンドの完全なリファレンス
+---
+
+# コマンドリファレンス
+
+このプロジェクトで使用可能なすべてのコマンドを網羅的に解説します。
+
+## 🚀 開発コマンド
+
+### 開発サーバーの起動
+
+```bash
+# 全アプリを起動（推奨）
+pnpm dev
+
+# 特定のアプリのみ起動
+pnpm --filter=web dev          # Web (http://localhost:3000)
+pnpm --filter=backend dev      # Backend (http://localhost:3001)
+pnpm --filter=docs dev         # Docs (http://localhost:3002)
+pnpm --filter=mobile dev       # Mobile (http://localhost:8081)
+```
+
+**実行内容**:
+- `scripts/free-port.sh` でポートを自動解放
+- `turbo run dev` で並行起動
+
+### ビルド
+
+```bash
+# 全アプリをビルド
+pnpm build
+
+# 特定のアプリのみビルド
+pnpm --filter=web build
+pnpm --filter=backend build
+pnpm --filter=docs build
+pnpm --filter=mobile build
+```
+
+### プロダクションサーバーの起動
+
+```bash
+# ビルド成果物を起動
+pnpm --filter=web start
+pnpm --filter=backend start
+pnpm --filter=docs start
+```
+
+## 🧪 テストコマンド
+
+### 全テストの実行
+
+```bash
+# 全ワークスペースのテストを実行
+pnpm test
+
+# スクリプトのテストを実行
+pnpm test:scripts
+```
+
+### アプリごとのテスト
+
+#### Web アプリ
+
+```bash
+cd apps/web
+
+# ユニットテスト
+pnpm test:unit
+pnpm test:watch         # ウォッチモード
+pnpm test:ui            # UI モード
+
+# E2E テスト
+pnpm test:e2e
+pnpm test:e2e:ui        # UI モード
+pnpm test:e2e:headed    # ブラウザ表示あり
+pnpm test:e2e:debug     # デバッグモード
+
+# すべてのテスト
+pnpm test:all
+```
+
+#### Backend アプリ
+
+```bash
+cd apps/backend
+
+# ユニットテスト
+pnpm test:unit
+pnpm test:watch
+
+# E2E テスト
+pnpm test:e2e
+pnpm test:e2e:ui
+
+# すべてのテスト
+pnpm test:all
+```
+
+#### Docs アプリ
+
+```bash
+cd apps/docs
+
+# ユニットテスト
+pnpm test:unit
+
+# E2E テスト
+pnpm test:e2e
+```
+
+#### Mobile アプリ
+
+```bash
+cd apps/mobile
+
+# ユニットテスト
+pnpm test:unit
+pnpm test:watch
+
+# E2E テスト（Maestro）
+maestro test .maestro/
+maestro test .maestro/login-flow.yaml
+```
+
+## 🎨 Lint・フォーマット・型チェック
+
+### Lint とフォーマット
+
+```bash
+# Lint チェック
+pnpm lint
+
+# 自動修正
+pnpm format
+
+# 特定のアプリのみ
+pnpm --filter=web lint
+pnpm --filter=backend format
+```
+
+### 型チェック
+
+```bash
+# 全ワークスペースの型チェック
+pnpm check-types
+
+# 特定のアプリのみ
+pnpm --filter=web check-types
+pnpm --filter=backend check-types
+```
+
+## 🗄️ データベースコマンド
+
+### ローカルデータベース
+
+```bash
+# Prisma Client を生成
+pnpm prisma:generate
+
+# スキーマを push（開発中）
+pnpm db:push
+
+# シードデータを投入
+pnpm db:seed
+
+# データベースをリセット
+pnpm db:reset
+
+# Prisma Studio を起動
+cd apps/backend
+pnpm prisma:studio
+```
+
+### マイグレーション
+
+```bash
+# マイグレーションを生成
+pnpm prisma:migrate:dev --name add_user_role
+
+# マイグレーションを適用
+pnpm prisma:migrate:deploy
+
+# マイグレーション状態を確認
+pnpm prisma:migrate:status
+
+# スキーマを検証
+pnpm prisma:validate
+```
+
+### クラウドデータベース（Turso/Supabase）
+
+```bash
+# データベースを作成
+pnpm db:cloud:create
+
+# マイグレーション実行
+pnpm db:cloud:migrate              # 全環境
+pnpm db:cloud:migrate:preview      # Preview 環境
+pnpm db:cloud:migrate:production   # Production 環境
+pnpm db:cloud:migrate:staging      # Staging 環境
+
+# スキーマを push
+pnpm db:cloud:push                 # 全環境
+pnpm db:cloud:push:preview
+pnpm db:cloud:push:production
+pnpm db:cloud:push:staging
+
+# シードデータを投入
+pnpm db:cloud:seed                 # 全環境
+pnpm db:cloud:seed:preview
+pnpm db:cloud:seed:production
+pnpm db:cloud:seed:staging
+
+# データベースをリセット
+pnpm db:cloud:reset                # 全環境
+pnpm db:cloud:reset:preview
+pnpm db:cloud:reset:production     # 注意: 本番データが削除されます！
+pnpm db:cloud:reset:staging
+```
+
+## 🔐 環境変数管理
+
+### 環境変数の初期化
+
+```bash
+# .env.local.example から .env.local を生成
+pnpm env:init
+
+# Better Auth のシークレットを生成
+pnpm end:gen:secret
+```
+
+### 環境変数の暗号化/復号
+
+```bash
+# 暗号化（チーム共有用）
+pnpm env:encrypt
+
+# 復号（チームメンバーが取得）
+pnpm env:decrypt
+```
+
+### Vercel への環境変数 Push
+
+```bash
+# 全環境に push
+pnpm env:push
+
+# 特定環境のみ
+pnpm env:push:preview
+pnpm env:push:production
+pnpm env:push:staging
+```
+
+## 📱 モバイルアプリコマンド
+
+### Expo 開発
+
+```bash
+cd apps/mobile
+
+# 開発サーバーを起動
+pnpm dev
+
+# iOS シミュレーターで起動
+pnpm ios
+
+# Android エミュレーターで起動
+pnpm android
+
+# Web ブラウザで起動
+pnpm web
+
+# Web プラットフォーム向けにエクスポート
+pnpm build
+```
+
+### EAS（Expo Application Services）
+
+```bash
+cd apps/mobile
+
+# EAS にログイン
+eas login
+
+# プロジェクトを初期化
+eas init --id <project-id>
+
+# ビルドを実行
+eas build --platform ios --profile production
+eas build --platform android --profile production
+eas build --platform all --profile production
+
+# アプリをリリース
+eas submit --platform ios --latest
+eas submit --platform android --latest
+
+# OTA アップデート
+eas update --branch production --message "Fix critical bug"
+
+# ビルド履歴を確認
+eas build:list
+
+# アップデート履歴を確認
+eas update:list --branch production
+```
+
+## 🚢 デプロイメント
+
+### Vercel デプロイ
+
+```bash
+# Vercel CLI にログイン
+vercel login
+
+# プロジェクトをリンク
+cd apps/web
+vercel link --repo
+
+cd apps/backend
+vercel link --repo
+
+cd apps/docs
+vercel link --repo
+
+# 手動デプロイ
+vercel --prod
+```
+
+### Turbo Remote Caching
+
+```bash
+# Vercel にログイン
+turbo login
+
+# プロジェクトをリンク
+turbo link
+```
+
+## 🧹 クリーンアップ
+
+### キャッシュのクリア
+
+```bash
+# Turbo キャッシュをクリア
+pnpm turbo clean
+
+# node_modules を削除して再インストール
+pnpm clean:all
+pnpm install
+
+# ビルド成果物を削除
+rm -rf apps/*/dist apps/*/.next apps/*/out
+```
+
+### ポートの解放
+
+```bash
+# 使用中のポートを解放（macOS）
+lsof -ti:3000 | xargs kill   # Web
+lsof -ti:3001 | xargs kill   # Backend
+lsof -ti:3002 | xargs kill   # Docs
+lsof -ti:8081 | xargs kill   # Mobile
+```
+
+## 📊 ユーティリティコマンド
+
+### 依存関係の更新
+
+```bash
+# 全パッケージの依存関係を確認
+pnpm outdated
+
+# インタラクティブに更新
+pnpm update --interactive --latest
+
+# 特定のパッケージを更新
+pnpm update react react-dom
+```
+
+### パッケージの追加
+
+```bash
+# ワークスペースルートに追加
+pnpm add -w <package>
+
+# 特定のアプリに追加
+pnpm --filter=web add <package>
+pnpm --filter=backend add -D <package>  # devDependencies
+```
+
+### スクリプトの実行
+
+```bash
+# カスタムスクリプトを実行
+pnpm run <script-name>
+
+# 特定のアプリでスクリプトを実行
+pnpm --filter=<app> run <script-name>
+```
+
+## 🔍 診断コマンド
+
+### バージョン確認
+
+```bash
+node --version    # Node.js バージョン
+pnpm --version    # pnpm バージョン
+turbo --version   # Turbo バージョン
+vercel --version  # Vercel CLI バージョン
+eas --version     # EAS CLI バージョン
+```
+
+### 依存関係の確認
+
+```bash
+# 依存関係ツリーを表示
+pnpm list
+
+# 特定のパッケージを検索
+pnpm list <package-name>
+
+# なぜこのパッケージがインストールされているか確認
+pnpm why <package-name>
+```
+
+### プロジェクト情報
+
+```bash
+# Turborepo の設定を確認
+cat turbo.json
+
+# ワークスペースの一覧
+pnpm -r list --depth -1
+
+# Git の状態を確認
+git status
+git log --oneline -10
+```
+
+## 📋 よく使うコマンドの組み合わせ
+
+### 初回セットアップ
+
+```bash
+# 1. 依存関係をインストール
+pnpm install
+
+# 2. 環境変数を初期化
+pnpm env:init
+
+# 3. 認証シークレットを生成
+pnpm end:gen:secret
+
+# 4. データベースをセットアップ
+pnpm db:reset
+
+# 5. 開発サーバーを起動
+pnpm dev
+```
+
+### コミット前のチェック
+
+```bash
+# 1. Lint とフォーマット
+pnpm format
+
+# 2. 型チェック
+pnpm check-types
+
+# 3. テストを実行
+pnpm test
+
+# 4. ビルドを確認
+pnpm build
+```
+
+### データベースのリフレッシュ
+
+```bash
+# 1. データベースをリセット
+pnpm db:reset
+
+# 2. 開発サーバーを再起動
+pnpm dev
+```
+
+### 環境変数の共有
+
+```bash
+# 1. 環境変数を暗号化
+pnpm env:encrypt
+
+# 2. Git にコミット
+git add env.encrypted.zip
+git commit -m "chore: update encrypted env"
+git push
+
+# チームメンバー側:
+# 3. リポジトリを pull
+git pull
+
+# 4. 環境変数を復号
+pnpm env:decrypt
+```
+
+## 🚨 トラブルシューティングコマンド
+
+### 開発環境のリセット
+
+```bash
+# 1. キャッシュをクリア
+pnpm turbo clean
+
+# 2. node_modules を削除
+rm -rf node_modules apps/*/node_modules packages/*/node_modules
+
+# 3. ロックファイルを削除（オプション）
+rm pnpm-lock.yaml
+
+# 4. 再インストール
+pnpm install
+
+# 5. Prisma Client を再生成
+pnpm prisma:generate
+
+# 6. データベースをリセット
+pnpm db:reset
+```
+
+### ビルドエラーの解決
+
+```bash
+# 1. ビルドキャッシュをクリア
+pnpm turbo clean
+
+# 2. 型を再チェック
+pnpm check-types
+
+# 3. 再ビルド
+pnpm build
+```
+
+## 📚 関連リソース
+
+- **[開発ガイド](/development)** - 開発ワークフローの詳細
+- **[テスト戦略](/development/testing)** - テストの詳細ガイド
+- **[Lint とフォーマット](/development/linting)** - コード品質の維持
+- **[トラブルシューティング](/development/troubleshooting)** - 一般的な問題と解決方法
+
+## 💡 ヒント
+
+- **並列実行**: `pnpm -r` で全ワークスペースに対してコマンドを並列実行
+- **フィルター**: `--filter` で特定のワークスペースを指定
+- **Turbo キャッシュ**: 2 回目以降のビルドは高速化されます
+- **Watch モード**: 開発中は `test:watch` でファイル変更を監視
+- **デバッグ**: `DEBUG=* pnpm dev` で詳細ログを表示

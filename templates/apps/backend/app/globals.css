@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "../../../packages/ui/src/styles/globals.css";
+@import "tw-animate-css";
+@source "../../../packages/ui/src";
+
+/**
+ * backend アプリ用のカスタムグローバルスタイル
+ */
+
+/* EOF */

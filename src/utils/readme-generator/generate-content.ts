@@ -20,7 +20,7 @@ export function generateReadmeContent(config: ProjectConfig): string {
  * シンプルプロジェクト用のREADME内容を生成
  */
 function generateSimpleReadme(config: ProjectConfig, readme: ReturnType<typeof getMessages>["readme"]): string {
-    const { name, type, template } = config;
+    const { name = "my-project", type = "nextjs", template } = config;
 
     // 基本的なコマンドリストを作成
     const gettingStartedCommands = readme.gettingStartedCommands
@@ -52,7 +52,7 @@ ${readme.convertToMonorepoCommand}
  * モノレポプロジェクト用のREADME内容を生成
  */
 function generateMonorepoReadme(config: ProjectConfig, readme: ReturnType<typeof getMessages>["readme"]): string {
-    const { name } = config;
+    const { name = "my-project" } = config;
 
     // 開発コマンドリストを作成
     const developmentCommands = readme.developmentCommands
