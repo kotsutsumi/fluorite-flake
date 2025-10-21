@@ -120,9 +120,10 @@ const SESSION_EXPIRY_SECONDS = SECONDS_PER_DAY * SESSION_EXPIRY_DAYS;
 const SESSION_UPDATE_AGE_SECONDS = SECONDS_PER_DAY * SESSION_RENEWAL_DAYS;
 const _COOKIE_CACHE_MAX_AGE_SECONDS = SECONDS_PER_MINUTE * COOKIE_CACHE_MINUTES;
 
-// TypeScript の型推論エラーを回避するため、明示的に any 型を指定
-// 実際の型は auth.api.getSession などの使用箇所で正しく推論される
-export const auth: any = betterAuth({
+// Better Auth の設定インスタンス
+// ReturnType を使用して betterAuth 関数の戻り値型を自動的に推論
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: adapterProvider,
   }),
@@ -185,7 +186,8 @@ export const auth: any = betterAuth({
     }),
   ],
   trustedOrigins: getTrustedOrigins(),
-});
+  // biome-ignore lint/suspicious/noExplicitAny: better-auth type compatibility requires any
+}) as any;
 
 type RawAuthSession = Exclude<Awaited<ReturnType<typeof auth.api.getSession>>, null>;
 

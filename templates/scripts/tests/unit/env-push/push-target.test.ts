@@ -161,6 +161,107 @@ describe("pushTarget", () => {
       pushTarget("preview", { ...options, cwd: "/nonexistent/path" }, depsWithoutFileExists)
     ).rejects.toThrow(".env.preview not found in /nonexistent/path");
   });
+
+  it("gitBranchが指定されている場合にコマンド引数に含めること", async () => {
+    const mod = await import("../../../libs/env-push/types.js");
+    const originalTargets = { ...mod.TARGETS };
+
+    // Temporarily modify preview target to include gitBranch
+    (mod.TARGETS.preview as any) = {
+      ...originalTargets.preview,
+      gitBranch: "develop",
+    };
+
+    const mockEnvMap = new Map([["KEY", "value"]]);
+    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
+
+    const options: PushTargetOptions = {
+      cwd: "/test/cwd",
+      projectRoot: "/test/root",
+      projectConfig: null,
+    };
+
+    await pushTarget("preview", options, mockDependencies);
+
+    expect(mockDependencies.runCommand).toHaveBeenCalledWith(
+      "vercel",
+      ["env", "add", "KEY", "preview", "develop", "--force"],
+      expect.any(Object)
+    );
+
+    // Restore original TARGETS
+    (mod.TARGETS.preview as any) = originalTargets.preview;
+  });
+
+  it("gitBranchが見つからない場合に警告を表示してスキップすること", async () => {
+    const mod = await import("../../../libs/env-push/types.js");
+    const originalTargets = { ...mod.TARGETS };
+
+    // Temporarily modify preview target to include gitBranch
+    (mod.TARGETS.preview as any) = {
+      ...originalTargets.preview,
+      gitBranch: "nonexistent-branch",
+    };
+
+    const mockEnvMap = new Map([
+      ["KEY1", "value1"],
+      ["KEY2", "value2"],
+    ]);
+    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
+
+    // First call fails with gitBranch error, second call succeeds
+    mockDependencies.runCommand = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Command exited with code 1: nonexistent-branch not found"))
+      .mockRejectedValueOnce(new Error("Command exited with code 1: nonexistent-branch not found"));
+
+    const options: PushTargetOptions = {
+      cwd: "/test/cwd",
+      projectRoot: "/test/root",
+      projectConfig: null,
+    };
+
+    await pushTarget("preview", options, mockDependencies);
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      '⚠️  Git branch "nonexistent-branch" not found. Skipping preview environment.'
+    );
+    // Should only warn once for multiple variables
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+
+    // Restore original TARGETS
+    (mod.TARGETS.preview as any) = originalTargets.preview;
+  });
+
+  it("gitBranch以外のエラーは再スローすること", async () => {
+    const mockEnvMap = new Map([["KEY", "value"]]);
+    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
+
+    mockDependencies.runCommand = vi.fn().mockRejectedValue(new Error("Network error"));
+
+    const options: PushTargetOptions = {
+      cwd: "/test/cwd",
+      projectRoot: "/test/root",
+      projectConfig: null,
+    };
+
+    await expect(pushTarget("preview", options, mockDependencies)).rejects.toThrow("Network error");
+  });
+
+  it("Error以外のエラーも正しく処理すること", async () => {
+    const mockEnvMap = new Map([["KEY", "value"]]);
+    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
+
+    mockDependencies.runCommand = vi.fn().mockRejectedValue("string error");
+
+    const options: PushTargetOptions = {
+      cwd: "/test/cwd",
+      projectRoot: "/test/root",
+      projectConfig: null,
+    };
+
+    await expect(pushTarget("preview", options, mockDependencies)).rejects.toBe("string error");
+  });
 });
 
 // EOF

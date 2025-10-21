@@ -110,4 +110,39 @@ describe("pullTarget", () => {
     expect(content).toContain("DATABASE_URL=postgresql://localhost/db");
     expect(content).toContain("API_KEY=secret123");
   });
+
+  it("includes git-branch argument when gitBranch is specified", async () => {
+    // Dynamically import and mock TARGETS
+    const mod = await import("../../../libs/env-push/types.js");
+    const originalTargets = { ...mod.TARGETS };
+
+    // Temporarily modify preview target to include gitBranch
+    (mod.TARGETS.preview as any) = {
+      ...originalTargets.preview,
+      gitBranch: "develop",
+    };
+
+    const appDir = await createAppDir();
+    const remote = ["NEXT_PUBLIC_APP_URL=https://branch.example.com"].join("\n");
+
+    await invokePullTarget(
+      {
+        appName: "web",
+        appDir,
+        targetName: "preview",
+        projectConfig: { orgId: "org_123", projectId: "proj_123" },
+      },
+      remote,
+      (args) => {
+        expect(args).toContain("--git-branch");
+        expect(args).toContain("develop");
+      }
+    );
+
+    const content = await readFile(join(appDir, ".env.preview"), "utf8");
+    expect(content).toContain("NEXT_PUBLIC_APP_URL=https://branch.example.com");
+
+    // Restore original TARGETS
+    (mod.TARGETS.preview as any) = originalTargets.preview;
+  });
 });
