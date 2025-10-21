@@ -1,330 +1,240 @@
-# CLAUDE.md
+# リポジトリガイドライン
 
-このファイルは、Claude Code (claude.ai/code) がこのリポジトリのコードを扱う際のガイダンスを提供します。
+## プロジェクト構成とモジュール整理
 
-## 基本
+この Turborepo ではクライアントアプリを `apps` に、共有コードを `packages` に、ルートレベルのスクリプトライブラリを `scripts/libs` にまとめています。
 
-- 応答は、全て日本語で行う事
+### アプリケーション (`apps/`)
 
-## 🚨 重要: コード変更後の必須作業
+- **`apps/backend`**: Next.js (App Router) で実装されたバックオフィス兼 API サーバー。Better Auth 認証、Prisma (libSQL/Turso または Supabase)、GraphQL (Apollo Server) + REST API、ダッシュボード UI を提供します。開発環境では `http://localhost:3001` で起動します。詳細は `apps/backend/README.md` を参照してください。
+- **`apps/web`**: メインのフロントエンドアプリケーション。Next.js + Better Auth で実装され、`http://localhost:3000` で起動します。
+- **`apps/docs`**: ドキュメントサイト。Next.js + Nextra で実装され、`http://localhost:3002` で起動します。
+- **`apps/mobile`**: モバイルアプリケーション。Expo/React Native + Apollo Client で実装され、GraphQL API 経由で backend と通信します。
 
-**すべてのコード変更後（ファイルの作成・編集・削除）の後は、必ずイテレーション作業を実行する事**
+### 共有パッケージ (`packages/`)
 
-この作業をスキップしてはいけません。作業完了の判断基準は：
+- **`packages/ui`**: 共有 UI コンポーネントライブラリ。Radix UI、shadcn/ui スタイル、Tiptap エディター、TanStack Table、React Hook Form、Zod など豊富なコンポーネントを含みます。
+- **`packages/typescript-config`**: 共有 TypeScript 設定プリセット。
 
-1. すべてのリント・フォーマットエラーが解消されている
-2. TypeScriptのビルドが成功している
-3. テストが通っている
-4. EOFタグが適切に配置されている
-5. 日本語コメントが適切に記述されている
+### スクリプトライブラリ (`scripts/libs/`)
 
-**例外なく実行してください**
+- **`scripts/libs/db-cloud`**: Turso/Supabase クラウドデータベース管理 CLI。データベースの作成、マイグレーション、push、seed、reset を環境別（preview/staging/production）に実行できます。
+- **`scripts/libs/env-tools`**: 環境変数の暗号化/復号ツール。チーム共有用の `.env` ファイルを `env.encrypted.zip` として安全に管理できます。
+- **`scripts/libs/env-push`**: Vercel への環境変数 push 管理ツール。環境別（preview/staging/production）に環境変数を一括アップロードできます。
+- **`scripts/libs/vercel-link`**: Vercel プロジェクトリンクと環境変数自動設定ツール。チーム選択、アプリ列挙、プロジェクトリンク、環境ファイル更新を対話的に実行できます。
 
-## 実装方針
+Lint とフォーマットの設定はリポジトリルートの `biome.json` に配置されています。新しいタスクを追加する際は、該当するパッケージ内で定義し、`turbo.json` で Turbo のキャッシュと依存関係解決に組み込んでください。
 
-TypeScriptのモジュールは、`xxxx.ts`でまとめるよりも、
+## ビルド・テスト・開発コマンド
 
-```
-xxxx/index.ts # exports
-    /hoge1.ts # some func
-    /hoge2.ts # some func
-```
+### 開発・ビルド
 
-のように、各関数、型などは分割して作成する事
+- `pnpm dev` – 全アプリの開発サーバーを起動します（backend: 3001, web: 3000, docs: 3002）。特定のアプリに絞る場合は `--filter=backend`、`--filter=web`、`--filter=docs`、`--filter=mobile` を追加します。
+- `pnpm build` – 全ワークスペースで `next build` / `expo export` を実行し、成果物を生成します。
+- `pnpm dev` の実行前に `scripts/free-port.sh` が自動的に使用中ポートを解放します。
 
-### ✅ 必須のファイル構造規則
+### Lint・フォーマット・型チェック
 
-**すべてのユーティリティファイルは必ずディレクトリ構造にする事**
+- `pnpm lint` – `ultracite check` を実行してリポジトリ全体の Lint とスタイルを検証します。
+- `pnpm format` – `ultracite fix` を実行してフォーマット、インポート整列、自動修正を適用します。
+- `pnpm check-types` – 各パッケージで `tsc --noEmit` を実行し、型のリグレッションを防ぎます。
 
-- ✅ **正しい構造**: `src/utils/pnpm-validator/index.ts`, `src/utils/monorepo-generator/index.ts`
-- ❌ **間違った構造**: `src/utils/pnpm-validator.ts`, `src/utils/monorepo-generator.ts`
+### テスト
 
-### ディレクトリ構造の例
+- `pnpm test` – 全ワークスペースのテストを実行します（backend, web, docs, mobile すべてのユニット・E2E テスト）。
+- `pnpm test:scripts` – `scripts/` ディレクトリのユニットテストを実行します（Vitest）。
+- `pnpm test:scripts:watch` / `pnpm test:scripts:ui` – スクリプトテストのウォッチモード / UI モード。
+- `pnpm --filter=<app> test` – 特定アプリのデフォルトテスト（通常は `test` のエイリアス）を実行します。
+- `pnpm --filter=<app> test:unit` – 特定アプリのユニットテストを実行します（Vitest）。
+- `pnpm --filter=<app> test:e2e` – 特定アプリの E2E テストを実行します（Playwright または Maestro）。
+- `pnpm --filter=<app> test:all` – 特定アプリのすべてのテスト（ユニット + E2E）を実行します。
 
-```
-src/utils/
-├── pnpm-validator/
-│   ├── index.ts              # export文のみ
-│   ├── validate-pnpm.ts      # メイン機能
-│   └── show-install-guide.ts # サブ機能
-└── monorepo-generator/
-    ├── index.ts              # export文のみ
-    ├── create-structure.ts   # ディレクトリ作成
-    ├── copy-templates.ts     # テンプレートコピー
-    └── create-web-app.ts     # Webアプリ設定
-```
+詳細はテストガイドラインを参照してください。
 
-### index.tsの書き方
+### データベース管理
 
-```typescript
-/**
- * ユーティリティの説明
- */
+#### ローカル開発環境
 
-export { mainFunction } from "./main-function.js";
-export { subFunction } from "./sub-function.js";
-export type { SomeType } from "./types.js";
+- `pnpm prisma:generate` – Prisma Client を生成します（postinstall 時に自動実行）。
+- `pnpm db:push` – Prisma スキーマをローカルデータベースに適用します。
+- `pnpm db:seed` – ローカルデータベースにシードデータを投入します。
+- `pnpm db:reset` – ローカルデータベースをリセット（force-reset + seed）します。
 
-// EOF
-```
+#### クラウド環境（Turso/Supabase）
 
-### 機能分割の原則
+- `pnpm db:cloud:create` – 新しいクラウドデータベースインスタンスを作成します。
+- `pnpm db:cloud:migrate` – 全環境（preview, staging, production）にマイグレーションを実行します。
+- `pnpm db:cloud:migrate:preview` / `:staging` / `:production` – 特定環境にマイグレーションを実行します。
+- `pnpm db:cloud:push` – 全環境にスキーマを push します。
+- `pnpm db:cloud:push:preview` / `:staging` / `:production` – 特定環境にスキーマを push します。
+- `pnpm db:cloud:seed` – 全環境にシードデータを投入します。
+- `pnpm db:cloud:seed:preview` / `:staging` / `:production` – 特定環境にシードデータを投入します。
+- `pnpm db:cloud:reset` – 全環境のデータベースをリセットします。
+- `pnpm db:cloud:reset:preview` / `:staging` / `:production` – 特定環境のデータベースをリセットします。
 
-1. **単一責任**: 各ファイルは1つの明確な責任を持つ
-2. **関連性**: 関連する機能をディレクトリでグループ化
-3. **再利用性**: 個別の機能を独立してインポート可能
-4. **保守性**: 機能追加時は新しいファイルを追加し、index.tsを更新
+詳細は `apps/backend/README.md` を参照してください。
 
-### 実装時の注意点
+### Vercel プロジェクトリンク管理
 
-- 新しいユーティリティを作成する際は、**必ず**ディレクトリ構造を使用する
-- 既存の単一ファイル（`.ts`）を見つけた場合は、ディレクトリ構造に変換する
-- `index.ts`ファイルは export 文のみを含む
-- インポート時は `/index.js` を明示的に指定する
+- `pnpm vercel:link` – Vercel プロジェクトリンクと環境変数の自動設定を行います。このコマンドは以下を実行します：
+  1. Vercel CLI ログイン確認（未ログインの場合は `vercel login` を促す）
+  2. Vercel チーム選択（`vercel teams ls` から選択し `vercel switch` で切り替え）
+  3. apps/ 配下のアプリを列挙して処理対象を選択（全件またはスキップ指定）
+  4. 各アプリで以下を実行：
+     - `vercel link --repo` でプロジェクトにリンク
+     - `.vercel/repo.json` からプロジェクト名を取得
+     - `.env.production`、`.env.staging`、`.env.preview` の URL 環境変数を自動更新：
+       - `NEXT_PUBLIC_APP_URL`
+       - `BETTER_AUTH_URL`
+       - `NEXT_PUBLIC_API_URL`
+  5. 結果サマリーをテーブル表示
+  6. `git status` と次のステップ（`pnpm env:push` など）を案内
 
-## イテレーション作業
+**実行後の推奨ステップ**:
+```bash
+# 変更をコミット
+git add .
+git commit -m "chore: update Vercel project links and environment URLs"
 
-**自動実行**: コードの修正・追加・削除を行った際は、**必ず**以下の処理を実行してください。
-
-**手動実行**: ユーザーが `:iter` と入力した場合
-
-**重要**:
-
-- ファイルの作成・編集・削除などのコード変更を行った場合、**自動的に**以下の作業を順番に実行してください
-- `:iter` コマンドが入力された場合も、同様に以下の作業を実行してください
-- 他の作業は中断してこの処理を優先してください
-
-### イテレーション作業の実行順序
-
-1. レビュー作業
-2. 実装作業
-3. クリーンアップ
-4. EOFタグ追加
-5. コードコメント作業
-
-各段階で進捗を報告し、完了後は次の段階に進んでください。
-
-### レビュー作業
-
-以下の手順で**必ず実行**すること：
-
-1. **レビュー実行**: `coderabbit --prompt-only` を実行
-2. **修正作業**: 実行結果を基にして必要な修正を実行
-3. **文書同期**: 変更したソースと対応する `docs/reviews/src/...` のレビュー文書を**同じイテレーション内**で更新
-
-**エラーチェック重要ポイント**:
-
-- レビュー文書の**古い内容を残さない**こと
-- **全ての変更ファイル**に対応するレビュー文書が存在すること
-- レビュー文書の内容が**最新のコード**と一致していること
-
-#### レポート作成
-
-**作成ルール**:
-
-- パス: `docs/reviews/<ソースのディレクトリ>/<ファイル名>.md`
-- 内容: 修正されたファイルの処理内容を**詳細に説明**
-
-**チェック項目**:
-
-- ✅ 作成されていないファイルが無いかを確認
-- ✅ 未作成のものは作成する
-- ✅ コードが修正されている可能性があるため、一通りドキュメントと差異が無いか確認
-- ✅ `docs/reviews/src` を含む**既存のレビュー文書**も必ず最新コードと照合
-- ✅ 差異があれば**同じイテレーションの中で更新を完了**させる
-
-### 実装作業
-
-**実装条件の確認**:
-
-- `docs/plans` 下にファイルがある場合は実装計画が存在
-- `[ STATUS:READY ]` が記載されている場合**のみ**実装を実行
-
-**実行手順**:
-
-1. **ステータス変更**: `[ STATUS:READY ]` → `[ STATUS:IMPLEMENTING ]`（重複作業防止）
-2. **実装実行**: 計画内容に従って実装を行う
-3. **報告作成**: `docs/implement-reports` に同じファイル名で実装報告を作成
-4. **ステータス完了**: `[ STATUS:IMPLEMENTING ]` → `[ STATUS:DONE ]`（重複作業防止）
-
-**エラーチェック項目**:
-
-- ✅ ステータス変更を**忘れずに実行**すること
-- ✅ 実装報告は**詳細に記述**すること
-- ✅ 実装内容と計画内容が**一致**していること
-
-この作業を行った際は、分かり易く実装作業をしたことをコンソールに表示してください。
-
-**実装作業の表示例**:
-
-```
-🔧 実装作業開始: docs/plans/[ファイル名] の内容を実装中...
-✅ 実装完了: [実装した機能の概要]
-📝 実装報告作成: docs/implement-reports/[ファイル名].md
+# 環境変数を Vercel にプッシュ
+pnpm env:push
 ```
 
-### クリーンアップ
+### 環境変数管理
 
-以下のコマンドを**順番に実行**し、**全てのエラーを解消**してから次の段階に進むこと：
+- `pnpm env:encrypt` – 各アプリの `.env*` ファイルを `env.encrypted.zip` に暗号化します。
+- `pnpm env:decrypt` – `env.encrypted.zip` を復号して `.env*` ファイルを復元します。
+- `pnpm env:pull` – Vercel から環境変数を取得して `.env.*` ファイルに保存します。既存ファイルがある場合は、コメントと構造を保持しながら値のみを更新し、新規変数は下部にコメント付きセクションで追加します。
+- `pnpm env:push` – 全アプリの全環境（preview, staging, production）に環境変数を Vercel にプッシュします。`apps/` 配下の各ディレクトリから `.env.preview`、`.env.staging`、`.env.production` を自動検出して一括プッシュします。
+- `pnpm env:push:preview` / `:production` / `:staging` – 全アプリの特定環境に環境変数を Vercel にプッシュします。
+
+**注意**: `env:push` コマンドは `scripts/env-push-all.ts` ラッパースクリプトを使用しており、どのディレクトリから実行しても動作します。各アプリに必要な `.env` ファイル（`.env.preview`、`.env.staging`、`.env.production`）が揃っていない場合は自動的にスキップされます。
+
+## コーディングスタイルと命名規約
+
+すべて TypeScript を使用します。公開する React コンポーネントはパスカルケース、フックやユーティリティはキャメルケース、Next.js のルートフォルダーは小文字で統一してください。
+
+Lint とフォーマットの挙動は Ultracite のプリセットを拡張した `biome.json` で集中管理されています。Ultracite は以下のスタイルを強制します：
+
+- 2 スペースインデント
+- ダブルクオート
+- セミコロン必須
+- 行幅 100 文字
+
+スタイル調整は `pnpm format` CLI に任せてください。各アプリやパッケージに特有の Lint ルールは `biome.json` の `overrides` セクションで定義されています。
+
+## テストガイドライン
+
+このプロジェクトでは、すべてのワークスペースに包括的なテスト環境が整備されています。
+
+### ユニットテスト（全ワークスペース共通）
+
+- **テストランナー**: Vitest + @testing-library/react または @testing-library/react-native
+- **実行コマンド**:
+  - `pnpm --filter=<app> test:unit` – ユニットテストを実行
+  - `pnpm --filter=<app> test:watch` – ウォッチモードで実行
+  - `pnpm --filter=<app> test:ui` – UI モードで実行（Vitest UI）
+  - `pnpm --filter=<app> test:unit` で `--coverage` フラグを付けるとカバレッジレポートを生成します
+- **テストファイル配置**: `apps/<app>/tests/unit/` ディレクトリに `*.test.ts(x)` 形式で配置
+- **設定ファイル**: 各アプリの `vitest.config.ts`、`vitest.setup.ts`
+
+### E2E テスト（Web アプリ: backend, web, docs）
+
+- **テストフレームワーク**: Playwright
+- **実行コマンド**:
+  - `pnpm --filter=<app> test:e2e` – E2E テストを実行
+  - `pnpm --filter=<app> test:e2e:ui` – UI モードで実行（Playwright UI）
+  - `pnpm --filter=<app> test:e2e:headed` – ブラウザ表示ありで実行
+  - `pnpm --filter=<app> test:e2e:debug` – デバッグモードで実行
+- **テストファイル配置**: `apps/<app>/tests/e2e/` ディレクトリに `*.test.ts` または `*.spec.ts` 形式で配置
+- **設定ファイル**: 各アプリの `playwright.config.ts`
+- **テスト成果物**: `test-results/` と `playwright-report/` に出力されます（`.gitignore` に含まれています）
+
+### E2E テスト（モバイルアプリ: mobile）
+
+- **テストフレームワーク**: Maestro
+- **インストール**: `curl -Ls "https://get.maestro.mobile.dev" | bash`
+- **実行コマンド**:
+  - `maestro test apps/mobile/.maestro/` – すべてのフローを実行
+  - `maestro test apps/mobile/.maestro/<flow-name>.yaml` – 特定のフローを実行
+- **フローファイル配置**: `apps/mobile/.maestro/` ディレクトリに `*.yaml` 形式で配置
+- **サンプルフロー**: `app-launch.yaml`、`login-flow.yaml`、`tab-navigation.yaml`、`logout-flow.yaml`
+
+### スクリプトのユニットテスト
+
+- **テストランナー**: Vitest
+- **実行コマンド**:
+  - `pnpm test:scripts` – スクリプトのユニットテストを実行
+  - `pnpm test:scripts:watch` – ウォッチモードで実行
+  - `pnpm test:scripts:ui` – UI モードで実行
+  - `pnpm test:scripts:coverage` – カバレッジレポート付きで実行
+- **テストファイル配置**: `scripts/tests/` ディレクトリ
+- **設定ファイル**: `scripts/vitest.config.ts`
+
+### テストの追加ガイドライン
+
+新しい機能を実装する際は、以下のガイドラインに従ってテストを追加してください：
+
+- 仕様は実装の近くに `*.test.ts(x)` または `*.spec.ts` 形式で配置します。
+- 新しい UI コンポーネントにはスモークテストと利用例の更新を必ず用意してください。
+- テストがなくても作業後は `pnpm lint`（Biome）と `pnpm check-types` を実行してください。
+- `turbo.json` では `test`, `test:unit`, `test:e2e`, `test:all` などのタスクが定義されており、依存関係に基づいて自動的に実行されます。
+
+## コミットとプルリクエストのガイドライン
+
+コミットサブジェクトは「Add hero banner」のように短く命令形で記述し、必要に応じて意図やフォローアップを本文に記録します。関連する Issue は本文で `Refs #123` のように参照してください。
+
+プルリクエストでは以下を明記してください：
+
+- 変更概要
+- 該当する場合の UI スクリーンショット
+- 実行したコマンド（テスト、ビルド、Lint など）
+- 必要な環境設定や移行手順（データベースマイグレーション、環境変数追加など）
+
+自動化が成功してから Draft を解除します。
+
+## 環境と設定のヒント
+
+### 前提条件
+
+- **Node.js**: 22 以上（`package.json` の `engines` で指定）
+- **pnpm**: 10.18.3（`packageManager` フィールドで指定）
+
+### 環境変数管理
+
+シークレットは各アプリの `.env.local` に保管し、Turbo は `.env*` ファイルをタスク入力として扱うためリポジトリには含めないでください。
+
+チームで共有する際は、`pnpm env:encrypt` で暗号化し、`pnpm env:decrypt` で復号してください。Vercel へのデプロイ時は `pnpm env:push` で環境変数を一括アップロードできます。
+
+詳細は `apps/backend/README.md` の「環境変数」セクションを参照してください。
+
+### Turbo Remote Caching
+
+ビルドが成功したら以下のコマンドを実行して Vercel Remote Caching を有効にし、CI やチームでのビルド効率を高めましょう：
 
 ```bash
-# 1. リント実行とエラー確認
-pnpm lint
-# エラーが出た場合は修正してから次へ
-
-# 2. フォーマット実行
-pnpm format
-# フォーマットエラーがある場合は修正してから次へ
-
-# 3. テスト実行と結果確認
-pnpm test:run
-# テストが失敗した場合は修正してから次へ
-
-# 4. ビルド実行と成功確認
-pnpm build
-# ビルドエラーがある場合は修正してから次へ
+turbo login
+turbo link
 ```
 
-**重要な維持ルール**:
+### Expo CLI（モバイルアプリ）
 
-- 各コマンドで**エラーが発生した場合は、必ず修正**してから次に進む
-- 全てのコマンドが**エラー無しで完了**することを確認する
-- 作業終了時は**huskyのpre-commitチェックにパス**する状態を維持する
-- 警告も含めて**全て解消**した状態を保つこと
+`apps/mobile` は Expo CLI を使用するため、以下のコマンドが利用できます：
 
-### 4. srcディレクトリ下の .ts, .tsx, .js, .jsxの末尾にEOFを付ける
+- `pnpm --filter=mobile run dev` – Expo 開発サーバーを起動
+- `pnpm --filter=mobile run android` – Android エミュレーターで起動
+- `pnpm --filter=mobile run ios` – iOS シミュレーターで起動
+- `pnpm --filter=mobile run web` – Web ブラウザで起動
+- `pnpm --filter=mobile run build` – Web プラットフォーム向けにエクスポート（`expo export --platform web`）
 
-ファイルの最後に
+### ポート管理
 
-```
-// EOF
-```
-
-を必ず付ける事
-
-md, mdx, jsonなどドキュメントファイルには、付けないこと。
-
-### 5. コードコメント
-
-- コードのコメントは全て日本語で記述する事
-- 可能な限りコードの処理内容をコメントで記載する事
-- 既存のコード内のコメントで日本語になっていないものは翻訳して修正する事
-- 特にtestディレクトリ下のテストコードは、ステップバイステップの詳細なコメントを記述する事
-
-## 開発コマンド
+開発サーバーの起動前に `scripts/free-port.sh` が自動的に実行され、使用中のポート（3000, 3001, 3002）を解放します。macOS で権限エラーが出る場合は、手動で以下のコマンドを実行してください：
 
 ```bash
-# 開発ワークフロー
-pnpm dev                 # デバッグ出力付きで開発モードでCLIを実行
-pnpm build               # TypeScriptをdist/にビルド
-pnpm test                # Vitestでユニットテストを実行
-pnpm test:run            # ウォッチモードなしでテストを一度実行
-pnpm test:coverage       # カバレッジレポート付きでテストを実行
-
-# コード品質
-pnpm lint                # Biomeでリント
-pnpm format              # Biomeでフォーマット
-pnpm check               # リントとフォーマットチェックの両方を実行
-
-# 特定コンポーネントのテスト
-pnpm test src/debug      # 特定のモジュールをテスト
-pnpm test src/header
+lsof -ti:3001 | xargs kill
 ```
 
-## 高レベルアーキテクチャ
+### Prisma の切替（libSQL / Supabase）
 
-### CLIフレームワークとコマンド構造
-
-このプロジェクトは[Citty](https://github.com/unjs/citty)を使用したCLIツールで、モジュラーなコマンド構造を採用：
-
-- **エントリーポイント**: `src/cli.ts` - 開発モード初期化付きのメインCLIエントリーポイント
-- **コマンド**: `src/commands/create.ts` - TypeScript優先テンプレート付きのプロジェクト作成ロジック
-- **コアモジュール**: 各ユーティリティは集中した責務を持つ（debug、header、i18n）
-
-### 国際化（i18n）システム
-
-プロジェクトには包括的なi18nシステム（`src/i18n.ts`）があります：
-
-- **ロケール検出**: 環境変数（`FLUORITE_LOCALE`、`LANG`など）とIntl APIから自動検出
-- **サポートロケール**: 英語（`en`）と日本語（`ja`）、英語がフォールバック
-- **メッセージ構造**: CLI出力、コマンド説明、デバッグ情報用の型付きメッセージインターフェース
-- **使用方法**: すべてのユーザー向け文字列は`getMessages()`または`getMessagesForLocale()`を使用
-
-### 開発モードとデバッグシステム
-
-`NODE_ENV=development`の場合、CLIは広範囲なデバッグを提供：
-
-- **ワークスペース設定**: `temp/dev`ディレクトリを作成し、作業ディレクトリを変更
-- **デバッグ出力**: 開発情報用のグレースタイルのコンソール出力
-- **環境情報**: 現在のディレクトリ、Nodeバージョン、CLI引数を表示
-- **デバッグログ**: `debugLog()`関数による条件付きデバッグメッセージ
-
-### テストアーキテクチャ
-
-Vitestによる多層テスト：
-
-- **ユニットテスト**: `test/unit/` - 個別関数の高速で独立したテスト
-- **機能テスト**: `test/functional/` - CLIコマンドの統合テスト
-- **シナリオテスト**: `test/scenario/` - エンドツーエンドテスト（Flutter/Tauriは現在無効）
-- **テスト設定**: 異なるタイムアウトと並行設定を持つ個別プロジェクト
-
-### プロジェクト生成システム
-
-複数フレームワーク用のボイラープレートプロジェクトを生成するコア機能：
-
-- **サポートタイプ**: `nextjs`、`expo`、`tauri`でTypeScriptがデフォルトテンプレート
-- **テンプレートシステム**: プロジェクトタイプごとの設定可能なテンプレート
-- **バリデーション**: ユーザーフレンドリーなエラーメッセージ付きのタイプとテンプレート検証
-- **スピナーUI**: ユーザーフィードバック用の`ora`による進捗表示
-
-## 主要パターンと規約
-
-### コード組織
-
-- **単一責任**: 各モジュールは一つの明確な目的を持つ（debug、header、i18nなど）
-- **TypeScript優先**: デフォルトテンプレートはTypeScript、全体で適切な型定義
-- **ESMモジュール**: インポートで`.js`拡張子を使用するESモジュール
-- **関数型スタイル**: モジュールは集中したユーティリティ関数をエクスポート
-
-### エラーハンドリング
-
-- **バリデーション優先**: 有用なエラーメッセージ付きの処理前入力検証
-- **グレースフル失敗**: バリデーション失敗時の適切な終了コードでのコマンド終了
-- **開発コンテキスト**: トラブルシューティング用の開発モードでの追加デバッグ出力
-
-### ユーザーエクスペリエンス
-
-- **国際化対応**: すべてのユーザー向けテキストが英語と日本語をサポート
-- **進捗フィードバック**: 長時間実行操作用のスピナーアニメーション
-- **有用なエラー**: 利用可能オプション付きの明確なエラーメッセージ
-- **開発支援**: 開発モードでの広範囲なデバッグ情報
-
-### テストパターン
-
-- **包括的モッキング**: 外部依存関係（fs、chalk、process）の適切なモック
-- **ロケールテスト**: 英語と日本語メッセージバリアントの両方を検証
-- **環境分離**: テストは環境変数を保存・復元
-- **日本語コメント**: テストファイルにはテスト目的を説明する詳細な日本語コメント
-
-## 重要な実装注意事項
-
-### Node.js互換性
-
-- **最小バージョン**: Node.js 20.0.0+が必要
-- **ファイルシステム**: 非推奨の`fs.rmdirSync()`の代わりに最新の`fs.rmSync()`を使用
-- **ESMのみ**: package.jsonで`"type": "module"`の純粋ESMパッケージ
-
-### 開発ワークフロー
-
-- **ホットリロード**: `pnpm dev`は即座のフィードバック用にtsxで実行
-- **品質ゲート**: リントとフォーマット用のBiome（ESLint/Prettierの置き換え）
-- **カバレッジ**: CLIエントリーポイントを除外したカバレッジレポート付きVitest
-- **多言語**: テストコメントとユーザー出力の両方が英語と日本語をサポート
-
-### フレームワーク統合
-
-CLIは複数のフレームワークタイプをスキャフォールドするよう設計、各々特定の規約を持つ：
-
-- 全フレームワークでTypeScriptがデフォルト選択
-- フレームワーク固有のテンプレートと検証ルール
-- 新しいプロジェクトタイプ追加用の拡張可能なコマンド構造
+`apps/backend` では `DATABASE_PROVIDER` 環境変数で `turso`（既定）/ `supabase` を切り替え可能です。`supabase` の場合は PostgreSQL 用の接続文字列を指定してください。詳細は `apps/backend/README.md` を参照してください。
