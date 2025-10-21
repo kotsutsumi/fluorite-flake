@@ -56,9 +56,11 @@ fluorite-flake create my-app --type nextjs --template typescript
 # Alternative create command
 fluorite-flake new my-app
 
-# Check dashboard status (rebuilding)
+# Launch TUI dashboard (beta)
 fluorite-flake dashboard
 ```
+
+Press `s` to toggle between Vercel and Turso views, and `q` (or `Esc`) to exit.
 
 > ℹ️ **Locale**: CLI output follows your OS locale (Japanese or English). Override it with `-L, --locale <en|ja>` or set `FLUORITE_LOCALE` when testing.
 

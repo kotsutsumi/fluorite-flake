@@ -6,7 +6,7 @@
         "commandLines": [
             "  create <name>    プロジェクトを新規作成します",
             "  new <name>       create のエイリアスです",
-            "  dashboard        ダッシュボード再構築の状態を表示します"
+            "  dashboard        ダッシュボードを起動します（ベータ）"
         ],
         "projectTypes": "プロジェクト種別: nextjs, expo, tauri",
         "examplesHeading": "使用例:",
@@ -15,8 +15,25 @@
         "devNoSubcommand": "メインコマンドがサブコマンドなしで呼び出されました"
     },
     "dashboard": {
-        "commandDescription": "ダッシュボード再構築のステータスメッセージを表示します",
-        "placeholderMessage": "ダッシュボード機能は現在再構築中です。後ほど再度お試しください。"
+        "commandDescription": "インタラクティブなダッシュボードを起動します（ベータ）",
+        "headerTitle": "Fluorite ダッシュボード",
+        "instructions": [
+            "「s」キーでサービスを切り替え",
+            "「q」キーまたはEscで終了"
+        ],
+        "activeServiceLabel": "アクティブなサービス",
+        "services": {
+            "vercel": "Vercel",
+            "turso": "Turso Cloud"
+        },
+        "placeholders": {
+            "vercel": "Vercelダッシュボードのモックです。プロジェクト一覧、デプロイ、環境情報がここに表示されます。",
+            "turso": "Turso Cloudダッシュボードのモックです。データベース、ブランチ、利用状況がここに表示されます。"
+        },
+        "nonInteractiveError": [
+            "⚠️  このダッシュボードはインタラクティブな端末でのみ利用できます。",
+            "    ローカルのターミナルから直接実行してください。"
+        ]
     },
     "create": {
         "commandDescription": "新しいプロジェクトを作成します",

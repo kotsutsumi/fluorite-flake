@@ -112,21 +112,9 @@ export const PROJECT_TYPES = {
 
 // ダッシュボードテスト設定
 export const DASHBOARD_CONFIG = {
-    SERVICES: ["vercel", "turso", "supabase", "github"] as const,
-    TABS: ["overview", "operations", "logs", "metrics"] as const,
+    SERVICES: ["vercel", "turso"] as const,
     KEYBOARD_SHORTCUTS: {
-        SERVICES: {
-            vercel: "v",
-            turso: "t",
-            supabase: "s",
-            github: "g",
-        },
-        TABS: {
-            overview: "1",
-            operations: "2",
-            logs: "3",
-            metrics: "4",
-        },
+        CYCLE_SERVICE: "s",
         ACTIONS: {
             quit: "q",
             escape: "\u001b", // ESC key

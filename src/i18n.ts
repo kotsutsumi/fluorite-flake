@@ -157,7 +157,18 @@ type RawLocaleMessages = {
     };
     dashboard: {
         commandDescription: string;
-        placeholderMessage: string;
+        headerTitle: string;
+        instructions: string[];
+        activeServiceLabel: string;
+        services: {
+            vercel: string;
+            turso: string;
+        };
+        placeholders: {
+            vercel: string;
+            turso: string;
+        };
+        nonInteractiveError: string[];
     };
     create: {
         commandDescription: string;
@@ -364,7 +375,18 @@ export type LocaleMessages = {
     };
     dashboard: {
         commandDescription: string;
-        placeholderMessage: string;
+        headerTitle: string;
+        instructions: string[];
+        activeServiceLabel: string;
+        services: {
+            vercel: string;
+            turso: string;
+        };
+        placeholders: {
+            vercel: string;
+            turso: string;
+        };
+        nonInteractiveError: string[];
     };
     create: {
         commandDescription: string;
@@ -588,7 +610,18 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
         },
         dashboard: {
             commandDescription: rawMessages.dashboard.commandDescription,
-            placeholderMessage: rawMessages.dashboard.placeholderMessage,
+            headerTitle: rawMessages.dashboard.headerTitle,
+            instructions: rawMessages.dashboard.instructions,
+            activeServiceLabel: rawMessages.dashboard.activeServiceLabel,
+            services: {
+                vercel: rawMessages.dashboard.services.vercel,
+                turso: rawMessages.dashboard.services.turso,
+            },
+            placeholders: {
+                vercel: rawMessages.dashboard.placeholders.vercel,
+                turso: rawMessages.dashboard.placeholders.turso,
+            },
+            nonInteractiveError: rawMessages.dashboard.nonInteractiveError,
         },
         create: {
             commandDescription: rawMessages.create.commandDescription,

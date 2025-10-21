@@ -75,7 +75,18 @@ describe("国際化ユーティリティ", () => {
                     },
                     dashboard: {
                         commandDescription: "Test dashboard description",
-                        placeholderMessage: "Dashboard is being rebuilt."
+                        headerTitle: "Test header",
+                        instructions: ["Instruction 1", "Instruction 2"],
+                        activeServiceLabel: "Active service",
+                        services: {
+                            vercel: "Test Vercel",
+                            turso: "Test Turso"
+                        },
+                        placeholders: {
+                            vercel: "Vercel placeholder",
+                            turso: "Turso placeholder"
+                        },
+                        nonInteractiveError: ["Non interactive line 1", "Non interactive line 2"]
                     },
                     create: {
                         commandDescription: "Test command",
@@ -204,7 +215,18 @@ describe("国際化ユーティリティ", () => {
                     },
                     dashboard: {
                         commandDescription: "テストダッシュボード説明",
-                        placeholderMessage: "ダッシュボードは再構築中です。"
+                        headerTitle: "テストヘッダー",
+                        instructions: ["sキーで切り替え", "qキーで終了"],
+                        activeServiceLabel: "アクティブなサービス",
+                        services: {
+                            vercel: "テストVercel",
+                            turso: "テストTurso"
+                        },
+                        placeholders: {
+                            vercel: "Vercelプレースホルダー",
+                            turso: "Tursoプレースホルダー"
+                        },
+                        nonInteractiveError: ["非TTYメッセージ1", "非TTYメッセージ2"]
                     },
                     create: {
                         commandDescription: "テストコマンド",
@@ -402,6 +424,9 @@ describe("国際化ユーティリティ", () => {
 
             expect(messages.cli.metaDescription).toBe("Test CLI description");
             expect(messages.create.commandDescription).toBe("Test command");
+            expect(messages.dashboard.services.vercel).toBe("Test Vercel");
+            expect(messages.dashboard.instructions).toEqual(["Instruction 1", "Instruction 2"]);
+            expect(messages.dashboard.nonInteractiveError).toEqual(["Non interactive line 1", "Non interactive line 2"]);
             expect(messages.debug.devModeEnabled).toBe("Dev mode");
 
             // 関数が正しく動作することを確認
@@ -416,6 +441,9 @@ describe("国際化ユーティリティ", () => {
 
             expect(messages.cli.metaDescription).toBe("テストCLI説明");
             expect(messages.create.commandDescription).toBe("テストコマンド");
+            expect(messages.dashboard.services.turso).toBe("テストTurso");
+            expect(messages.dashboard.instructions).toEqual(["sキーで切り替え", "qキーで終了"]);
+            expect(messages.dashboard.nonInteractiveError).toEqual(["非TTYメッセージ1", "非TTYメッセージ2"]);
             expect(messages.debug.devModeEnabled).toBe("開発モード");
 
             // 関数が正しく動作することを確認

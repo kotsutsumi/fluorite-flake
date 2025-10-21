@@ -6,7 +6,7 @@
         "commandLines": [
             "  create <name>    Create a new project",
             "  new <name>       Create a new project (alias for create)",
-            "  dashboard        Display dashboard rebuild status"
+            "  dashboard        Launch dashboard (beta)"
         ],
         "projectTypes": "Project types: nextjs, expo, tauri",
         "examplesHeading": "Examples:",
@@ -18,8 +18,25 @@
         "devNoSubcommand": "Main command called with no subcommand"
     },
     "dashboard": {
-        "commandDescription": "Display dashboard rebuild status message",
-        "placeholderMessage": "The dashboard feature is currently being rebuilt. Please try again later."
+        "commandDescription": "Launch interactive dashboard (beta)",
+        "headerTitle": "Fluorite Dashboard",
+        "instructions": [
+            "Press \"s\" to switch services",
+            "Press \"q\" or Esc to exit"
+        ],
+        "activeServiceLabel": "Active service",
+        "services": {
+            "vercel": "Vercel",
+            "turso": "Turso Cloud"
+        },
+        "placeholders": {
+            "vercel": "Vercel dashboard mock: projects, deployments, and environments will appear here.",
+            "turso": "Turso Cloud dashboard mock: databases, branches, and usage metrics will appear here."
+        },
+        "nonInteractiveError": [
+            "⚠️  The dashboard requires an interactive terminal.",
+            "    Run this command directly in a local terminal session."
+        ]
     },
     "create": {
         "commandDescription": "Create a new project",

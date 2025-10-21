@@ -21,7 +21,9 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 const version = packageJson.version;
 
 // 開発環境での初期化
-if (isDevelopment()) {
+const isDashboardInvocation = process.argv.includes("dashboard");
+
+if (isDevelopment() && !isDashboardInvocation) {
     // 詳細な環境情報を表示
     printDevelopmentInfo();
 
@@ -42,7 +44,7 @@ const main = defineCommand({
     },
     run(context: CommandContext) {
         // 開発モードでのコンテキストデバッグ
-        if (isDevelopment()) {
+        if (isDevelopment() && !isDashboardInvocation) {
             debugLog("Context debug:", {
                 subCommand: context.subCommand,
                 args: context.args,
@@ -60,7 +62,7 @@ const main = defineCommand({
         const hasSubCommand =
             process.argv.includes("create") || process.argv.includes("new") || process.argv.includes("dashboard");
         if (hasSubCommand) {
-            if (isDevelopment()) {
+            if (isDevelopment() && !isDashboardInvocation) {
                 debugLog("Detected subcommand in process.argv, skipping main command");
             }
             return;
@@ -74,7 +76,9 @@ const main = defineCommand({
         const { cli } = getMessages();
 
         // 開発モードでの詳細なデバッグ情報
-        debugLog(cli.devNoSubcommand);
+        if (!isDashboardInvocation) {
+            debugLog(cli.devNoSubcommand);
+        }
 
         // ヘッダー表示
         printHeader();
@@ -96,18 +100,18 @@ const main = defineCommand({
     },
 });
 
-if (isDevelopment()) {
+if (isDevelopment() && !isDashboardInvocation) {
     debugLog("About to run main command");
 }
 
 runMain(main)
     .then((result) => {
-        if (isDevelopment()) {
+        if (isDevelopment() && !isDashboardInvocation) {
             debugLog("Main command execution completed", result);
         }
     })
     .catch((error) => {
-        if (isDevelopment()) {
+        if (isDevelopment() && !isDashboardInvocation) {
             debugLog("Main command execution failed", error);
         }
     });
