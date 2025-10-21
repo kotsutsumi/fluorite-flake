@@ -71,8 +71,7 @@ describe("runCommand", () => {
 
     await runCommand("cat", [], options);
 
-    expect(mockChild.stdin.write).toHaveBeenCalledWith("test input\n");
-    expect(mockChild.stdin.end).toHaveBeenCalled();
+    expect(mockChild.stdin.end).toHaveBeenCalledWith("test input");
   });
 
   it("コマンドが0以外のコードで終了した場合にエラーをスローすること", async () => {

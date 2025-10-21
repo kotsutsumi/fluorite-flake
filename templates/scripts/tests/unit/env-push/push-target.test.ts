@@ -82,7 +82,7 @@ describe("pushTarget", () => {
     expect(mockDependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("gitBranchがある場合にargsに追加すること", async () => {
+  it("stagingカスタム環境に環境変数をpushすること", async () => {
     const mockEnvMap = new Map([["KEY", "value"]]);
     vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
 
@@ -96,7 +96,7 @@ describe("pushTarget", () => {
 
     expect(mockDependencies.runCommand).toHaveBeenCalledWith(
       "vercel",
-      ["env", "add", "KEY", "preview", "staging", "--force"],
+      ["env", "add", "KEY", "staging", "--force"],
       expect.any(Object)
     );
   });
@@ -160,80 +160,6 @@ describe("pushTarget", () => {
     await expect(
       pushTarget("preview", { ...options, cwd: "/nonexistent/path" }, depsWithoutFileExists)
     ).rejects.toThrow(".env.preview not found in /nonexistent/path");
-  });
-
-  it("gitブランチが存在しないエラーの場合に警告を表示してスキップすること", async () => {
-    const mockEnvMap = new Map([["KEY1", "value1"]]);
-    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
-
-    // runCommandを最初の呼び出しでgitブランチエラーをスローするようにモック
-    mockDependencies.runCommand = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("Command exited with code 1: staging not found"));
-
-    const options: PushTargetOptions = {
-      cwd: "/test/cwd",
-      projectRoot: "/test/root",
-      projectConfig: null,
-    };
-
-    // stagingターゲットにはgitBranchが設定されている
-    await pushTarget("staging", options, mockDependencies);
-
-    // 警告が表示される
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      '⚠️  Git branch "staging" not found. Skipping staging environment.'
-    );
-
-    // エラーは再スローされない（スキップされる）
-    expect(mockDependencies.runCommand).toHaveBeenCalledTimes(1);
-  });
-
-  it("gitブランチエラー以外のエラーは再スローすること", async () => {
-    const mockEnvMap = new Map([["KEY1", "value1"]]);
-    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
-
-    // runCommandを異なるエラーでスローするようにモック
-    const otherError = new Error("Network error: connection timeout");
-    mockDependencies.runCommand = vi.fn().mockRejectedValueOnce(otherError);
-
-    const options: PushTargetOptions = {
-      cwd: "/test/cwd",
-      projectRoot: "/test/root",
-      projectConfig: null,
-    };
-
-    // エラーが再スローされる
-    await expect(pushTarget("staging", options, mockDependencies)).rejects.toThrow(
-      "Network error: connection timeout"
-    );
-
-    // 警告は表示されない
-    expect(consoleWarnSpy).not.toHaveBeenCalled();
-  });
-
-  it("Error以外のエラーオブジェクトを正しく処理すること", async () => {
-    const mockEnvMap = new Map([["KEY1", "value1"]]);
-    vi.mocked(readEnvMap).mockResolvedValue(mockEnvMap);
-
-    // runCommandを文字列エラーでスローするようにモック
-    mockDependencies.runCommand = vi
-      .fn()
-      .mockRejectedValueOnce("Command exited with code 1: staging branch error");
-
-    const options: PushTargetOptions = {
-      cwd: "/test/cwd",
-      projectRoot: "/test/root",
-      projectConfig: null,
-    };
-
-    // stagingターゲットのgitブランチエラーとして処理される
-    await pushTarget("staging", options, mockDependencies);
-
-    // 警告が表示される
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      '⚠️  Git branch "staging" not found. Skipping staging environment.'
-    );
   });
 });
 

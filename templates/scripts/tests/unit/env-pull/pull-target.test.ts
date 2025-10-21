@@ -65,7 +65,7 @@ describe("pullTarget", () => {
     expect(content).toContain("SHARED_TOKEN=abc123");
   });
 
-  it("includes git branch when pulling staging environment", async () => {
+  it("pulls from staging custom environment", async () => {
     const appDir = await createAppDir();
     const remote = ["NEXT_PUBLIC_APP_URL=https://staging.example.com"].join("\n");
     await invokePullTarget(
@@ -77,8 +77,9 @@ describe("pullTarget", () => {
       },
       remote,
       (args) => {
-        expect(args).toContain("--git-branch");
+        expect(args).toContain("--environment");
         expect(args).toContain("staging");
+        expect(args).not.toContain("--git-branch");
       }
     );
 

@@ -6,7 +6,7 @@ export type TargetName = "preview" | "production" | "staging";
 
 export type TargetSelection = TargetName | "all";
 
-export type DeploymentTarget = "development" | "preview" | "production";
+export type DeploymentTarget = "development" | "preview" | "production" | "staging";
 
 export type TargetConfig = {
   readonly envFile: string;
@@ -30,8 +30,7 @@ export const TARGETS: Record<TargetName, TargetConfig> = {
   },
   staging: {
     envFile: ".env.staging",
-    deploymentTarget: "preview",
-    gitBranch: "staging",
+    deploymentTarget: "staging",
   },
 };
 
