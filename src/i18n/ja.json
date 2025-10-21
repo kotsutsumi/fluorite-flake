@@ -6,13 +6,17 @@
         "commandLines": [
             "  create <name>    プロジェクトを新規作成します",
             "  new <name>       create のエイリアスです",
-            "  dashboard        TUIダッシュボードを起動します"
+            "  dashboard        ダッシュボード再構築の状態を表示します"
         ],
         "projectTypes": "プロジェクト種別: nextjs, expo, tauri",
         "examplesHeading": "使用例:",
         "exampleLines": ["  fluorite-flake create my-app", "  fluorite-flake new desktop-app --type tauri --simple"],
         "helpHint": "詳しくは各コマンドで --help を実行してください",
         "devNoSubcommand": "メインコマンドがサブコマンドなしで呼び出されました"
+    },
+    "dashboard": {
+        "commandDescription": "ダッシュボード再構築のステータスメッセージを表示します",
+        "placeholderMessage": "ダッシュボード機能は現在再構築中です。後ほど再度お試しください。"
     },
     "create": {
         "commandDescription": "新しいプロジェクトを作成します",

@@ -56,7 +56,7 @@ fluorite-flake create my-app --type nextjs --template typescript
 # Alternative create command
 fluorite-flake new my-app
 
-# Launch TUI dashboard (beta)
+# Check dashboard status (rebuilding)
 fluorite-flake dashboard
 ```
 

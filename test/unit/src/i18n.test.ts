@@ -73,6 +73,10 @@ describe("国際化ユーティリティ", () => {
                         helpHint: "test hint",
                         devNoSubcommand: "test dev message",
                     },
+                    dashboard: {
+                        commandDescription: "Test dashboard description",
+                        placeholderMessage: "Dashboard is being rebuilt."
+                    },
                     create: {
                         commandDescription: "Test command",
                         newCommandDescription: "Test new command",
@@ -128,6 +132,23 @@ describe("国際化ユーティリティ", () => {
                             cancelled: "Project creation cancelled",
                         },
                     },
+                    new: {
+                        commandDescription: "New command description",
+                        projectNamePrompt: "Enter project name",
+                        projectNamePlaceholder: "project-name",
+                        projectNameRequired: "Project name is required",
+                        invalidProjectName: "Invalid project name",
+                        directoryExists: "Directory exists",
+                        confirmOverwrite: "Overwrite?",
+                        operationCancelled: "Operation cancelled",
+                        generatingProject: "Generating {projectName}",
+                        setupComplete: "Setup complete for {projectName}",
+                        setupFailed: "Setup failed",
+                        nextStepsTitle: "Next steps",
+                        nextStepsCommands: ["cd {projectName}", "pnpm dev"],
+                        serverInfo: "Servers:",
+                        serverList: ["web", "backend"]
+                    },
                     readme: {
                         title: "{name}",
                         description: "A {type} project created with Fluorite Flake.",
@@ -180,6 +201,10 @@ describe("国際化ユーティリティ", () => {
                         exampleLines: ["テスト例"],
                         helpHint: "テストヒント",
                         devNoSubcommand: "テスト開発メッセージ",
+                    },
+                    dashboard: {
+                        commandDescription: "テストダッシュボード説明",
+                        placeholderMessage: "ダッシュボードは再構築中です。"
                     },
                     create: {
                         commandDescription: "テストコマンド",
@@ -235,6 +260,23 @@ describe("国際化ユーティリティ", () => {
                             continuePrompt: "この設定でプロジェクトを作成しますか？",
                             cancelled: "プロジェクト作成をキャンセルしました",
                         },
+                    },
+                    new: {
+                        commandDescription: "新規コマンド説明",
+                        projectNamePrompt: "プロジェクト名を入力してください",
+                        projectNamePlaceholder: "project-name",
+                        projectNameRequired: "プロジェクト名は必須です",
+                        invalidProjectName: "無効なプロジェクト名です",
+                        directoryExists: "ディレクトリが存在します",
+                        confirmOverwrite: "上書きしますか？",
+                        operationCancelled: "操作をキャンセルしました",
+                        generatingProject: "{projectName} を生成中",
+                        setupComplete: "{projectName} のセットアップが完了しました",
+                        setupFailed: "セットアップに失敗しました",
+                        nextStepsTitle: "次のステップ",
+                        nextStepsCommands: ["cd {projectName}", "pnpm dev"],
+                        serverInfo: "開発サーバー:",
+                        serverList: ["web", "backend"]
                     },
                     readme: {
                         title: "{name}",

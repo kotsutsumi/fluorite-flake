@@ -6,7 +6,7 @@
         "commandLines": [
             "  create <name>    Create a new project",
             "  new <name>       Create a new project (alias for create)",
-            "  dashboard        Launch TUI dashboard"
+            "  dashboard        Display dashboard rebuild status"
         ],
         "projectTypes": "Project types: nextjs, expo, tauri",
         "examplesHeading": "Examples:",
@@ -16,6 +16,10 @@
         ],
         "helpHint": "Use --help with any command for more information",
         "devNoSubcommand": "Main command called with no subcommand"
+    },
+    "dashboard": {
+        "commandDescription": "Display dashboard rebuild status message",
+        "placeholderMessage": "The dashboard feature is currently being rebuilt. Please try again later."
     },
     "create": {
         "commandDescription": "Create a new project",

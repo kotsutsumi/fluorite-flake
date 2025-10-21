@@ -155,6 +155,10 @@ type RawLocaleMessages = {
         helpHint: string;
         devNoSubcommand: string;
     };
+    dashboard: {
+        commandDescription: string;
+        placeholderMessage: string;
+    };
     create: {
         commandDescription: string;
         newCommandDescription: string;
@@ -357,6 +361,10 @@ export type LocaleMessages = {
         exampleLines: string[];
         helpHint: string;
         devNoSubcommand: string;
+    };
+    dashboard: {
+        commandDescription: string;
+        placeholderMessage: string;
     };
     create: {
         commandDescription: string;
@@ -577,6 +585,10 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             exampleLines: rawMessages.cli.exampleLines,
             helpHint: rawMessages.cli.helpHint,
             devNoSubcommand: rawMessages.cli.devNoSubcommand,
+        },
+        dashboard: {
+            commandDescription: rawMessages.dashboard.commandDescription,
+            placeholderMessage: rawMessages.dashboard.placeholderMessage,
         },
         create: {
             commandDescription: rawMessages.create.commandDescription,
