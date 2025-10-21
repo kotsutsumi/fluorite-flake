@@ -41,7 +41,12 @@ export async function handleEnvPush(argv: readonly string[]): Promise<void> {
   }
 }
 
-if (!process.env.VITEST) {
+// ESモジュールでメインモジュールかどうかを判定
+// import.meta.url === `file://${process.argv[1]}` は、
+// スクリプトが直接実行された場合のみtrueになる
+const isMainModule = process.argv[1] && import.meta.url.endsWith(process.argv[1]);
+
+if (!process.env.VITEST && isMainModule) {
   handleEnvPush(process.argv).catch((error) => {
     console.error("❌ Unhandled error:", error);
     process.exitCode = 1;

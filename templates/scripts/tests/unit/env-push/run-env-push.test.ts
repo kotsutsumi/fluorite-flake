@@ -123,7 +123,7 @@ describe("runEnvPush", () => {
     );
     expect(runCommandMock).toHaveBeenCalledWith(
       "vercel",
-      ["env", "add", "KEY3", "preview", "staging", "--force"],
+      ["env", "add", "KEY3", "staging", "--force"],
       expect.anything()
     );
 

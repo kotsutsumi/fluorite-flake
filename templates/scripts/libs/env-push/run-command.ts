@@ -39,9 +39,10 @@ export const runCommand: RunCommandFn = async (command, args, options) => {
     });
 
     if (options.input !== undefined) {
-      child.stdin?.write(`${options.input}\n`);
+      child.stdin?.end(options.input);
+    } else {
+      child.stdin?.end();
     }
-    child.stdin?.end();
   });
 };
 

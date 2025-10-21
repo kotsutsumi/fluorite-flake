@@ -67,7 +67,11 @@ async function hasEnvFiles(appDir: string): Promise<boolean> {
 /**
  * 指定されたアプリディレクトリで env-push.ts を実行
  */
-async function pushEnvForApp(appDir: string, selection: string): Promise<EnvPushResult> {
+async function pushEnvForApp(
+  appDir: string,
+  selection: string,
+  projectRoot: string
+): Promise<EnvPushResult> {
   const appName = appDir.split("/").pop() || "unknown";
 
   console.log(`\n📦 ${appName} の環境変数をプッシュ中...`);
@@ -86,8 +90,14 @@ async function pushEnvForApp(appDir: string, selection: string): Promise<EnvPush
       // process.exitCode をリセット（handleEnvPush が設定する可能性があるため）
       process.exitCode = 0;
 
-      // handleEnvPush を実行（selection を引数として渡す）
-      await envPushModule.handleEnvPush(["node", "env-push.ts", selection]);
+      // handleEnvPush を実行（selection と projectRoot を引数として渡す）
+      await envPushModule.handleEnvPush([
+        "node",
+        "env-push.ts",
+        selection,
+        "--project-root",
+        projectRoot,
+      ]);
 
       console.log(`✅ ${appName} の環境変数プッシュが完了しました`);
 
@@ -149,7 +159,7 @@ async function main(): Promise<void> {
       continue;
     }
 
-    const result = await pushEnvForApp(appDir, selection);
+    const result = await pushEnvForApp(appDir, selection, projectRoot);
     results.push(result);
   }
 
