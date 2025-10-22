@@ -7,6 +7,7 @@ type TerminalSize = {
     rows: number | undefined;
 };
 
+// ターミナルのサイズ変更イベントを監視し、常に最新の幅・高さを保持する。
 function useTerminalSize(): TerminalSize {
     const { stdout } = useStdout();
     const [size, setSize] = useState<TerminalSize>({
@@ -37,6 +38,7 @@ function useTerminalSize(): TerminalSize {
     return size;
 }
 
+// Ink アプリ全体をターミナルのフルサイズに合わせてラップするコンテナ。
 export function FullscreenContainer({ children }: PropsWithChildren): JSX.Element {
     const { stdout } = useStdout();
     const size = useTerminalSize();
@@ -46,6 +48,7 @@ export function FullscreenContainer({ children }: PropsWithChildren): JSX.Elemen
             return;
         }
 
+        // ANSI シーケンスで画面を初期化し、残像が残らないようにする。
         stdout.write("\u001b[2J\u001b[3J\u001b[H");
     }, [stdout]);
 
@@ -56,4 +59,4 @@ export function FullscreenContainer({ children }: PropsWithChildren): JSX.Elemen
     );
 }
 
-// EOF
+// ファイル終端

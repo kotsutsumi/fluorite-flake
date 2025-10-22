@@ -10,11 +10,12 @@ import { parseService, type ServiceType } from "./types/common.js";
 export type { ServiceType } from "./types/common.js";
 
 /**
- * Launch the dashboard UI.
+ * ダッシュボード UI を起動するエントリーポイント。
  */
 export async function launchDashboard(initialService?: ServiceType): Promise<void> {
     const { dashboard } = getMessages();
 
+    // TTY でない場合は Ink UI が表示できないため、メッセージを出して終了する。
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
         for (const line of dashboard.nonInteractiveError) {
             console.log(line);
@@ -23,6 +24,7 @@ export async function launchDashboard(initialService?: ServiceType): Promise<voi
         return;
     }
 
+    // Provider でラップした Ink ツリーを生成してからレンダリングする。
     const tree = React.createElement(DashboardProvider, { initialService }, React.createElement(DashboardApp));
 
     const { waitUntilExit } = render(tree, {
@@ -32,6 +34,7 @@ export async function launchDashboard(initialService?: ServiceType): Promise<voi
     await waitUntilExit();
 }
 
+// Citty で CLI コマンドを定義し、引数から初期表示サービスを受け取る。
 export const dashboardCommand = defineCommand({
     meta: {
         name: "dashboard",
@@ -40,7 +43,7 @@ export const dashboardCommand = defineCommand({
     args: {
         service: {
             type: "string",
-            description: "Initial service to display (vercel|turso)",
+        description: "Initial service to display (vercel|turso)",
         },
     },
     async run({ args }) {
@@ -49,4 +52,4 @@ export const dashboardCommand = defineCommand({
     },
 });
 
-// EOF
+// ファイル終端

@@ -15,12 +15,14 @@ import { getPlaceholder } from "./utils/getPlaceholder.js";
 import { getServiceLabel } from "./utils/getServiceLabel.js";
 import { useDashboardShortcuts } from "./utils/useDashboardShortcuts.js";
 
+// ダッシュボード全体の Ink レイアウトを組み立てるトップレベルコンポーネント。
 export function DashboardApp(): JSX.Element {
     const { activeService } = useDashboard();
     const { dashboard } = getMessages();
 
     useDashboardShortcuts();
 
+    // サービスごとのショートカット表記を参照しやすいようにマッピングしておく。
     const { vercel: vercelShortcuts, turso: tursoShortcuts, logs: logsShortcuts } = dashboard.footerShortcuts;
 
     const footerShortcutsMap = useMemo(
@@ -32,22 +34,27 @@ export function DashboardApp(): JSX.Element {
         [logsShortcuts, tursoShortcuts, vercelShortcuts]
     );
 
+    // 初期値として現在のサービスに対応したショートカットラベルを設定する。
     const [footerShortcutsLabel, setFooterShortcutsLabel] = useState(() => footerShortcutsMap[activeService]);
 
     useEffect(() => {
+        // フッターのショートカット表示はアクティブサービスの切り替えに追従させる。
         setFooterShortcutsLabel(footerShortcutsMap[activeService]);
     }, [activeService, footerShortcutsMap]);
 
+    // メッセージ辞書からアクティブサービスの表示名を取り出す。
     const serviceLabel = useMemo(
         () => getServiceLabel(activeService, dashboard.services),
         [activeService, dashboard.services]
     );
 
+    // サービスごとの説明プレースホルダーもキャッシュして渡す。
     const placeholder = useMemo(
         () => getPlaceholder(activeService, dashboard.placeholders),
         [activeService, dashboard.placeholders]
     );
 
+    // パッケージのバージョンをローカライズされた表記に整形する。
     const versionLabel = dashboard.footerVersionLabel(packageJson.version);
 
     return (
@@ -100,4 +107,4 @@ export function DashboardApp(): JSX.Element {
     );
 }
 
-// EOF
+// ファイル終端

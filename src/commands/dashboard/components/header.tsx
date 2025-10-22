@@ -7,6 +7,7 @@ type HeaderProps = {
     serviceName: string;
 };
 
+// 現在アクティブなサービス名とタイトルを表示するヘッダー。
 export function Header({ title, activeServiceLabel, serviceName }: HeaderProps): JSX.Element {
     return (
         <Box marginX={1} justifyContent="space-between">
@@ -18,4 +19,4 @@ export function Header({ title, activeServiceLabel, serviceName }: HeaderProps):
     );
 }
 
-// EOF
+// ファイル終端

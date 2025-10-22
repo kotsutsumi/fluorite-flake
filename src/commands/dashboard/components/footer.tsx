@@ -7,10 +7,12 @@ type FooterProps = {
     versionLabel: string;
 };
 
+// ショートカット表示とバージョン情報をまとめて描画するフッターコンポーネント。
 export function Footer({ shortcutsLabel, versionLabel }: FooterProps): JSX.Element {
     const [now, setNow] = useState(() => new Date());
 
     useEffect(() => {
+        // 時刻表示を 1 秒ごとに更新し、最新の情報を反映する。
         const timer = setInterval(() => {
             setNow(new Date());
         }, 1000);
@@ -33,6 +35,7 @@ export function Footer({ shortcutsLabel, versionLabel }: FooterProps): JSX.Eleme
         []
     );
 
+    // 日時表示はフォーマッターの結果をキャッシュして再計算を抑制する。
     const timestamp = useMemo(() => formatter.format(now), [formatter, now]);
 
     return (
@@ -45,4 +48,4 @@ export function Footer({ shortcutsLabel, versionLabel }: FooterProps): JSX.Eleme
     );
 }
 
-// EOF
+// ファイル終端

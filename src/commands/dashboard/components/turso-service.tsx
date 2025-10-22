@@ -30,6 +30,7 @@ type MenuItem = {
 
 type InitState = "pending" | "ready" | "blocked" | "error";
 
+// Turso 関連のセクションをメニューとして定義し、カーソル移動で切り替える。
 const MENU_ITEMS: readonly MenuItem[] = [
     { id: "database", label: "データベース", Component: DatabaseSection },
     { id: "group", label: "グループ", Component: GroupSection },
@@ -40,6 +41,7 @@ const MENU_ITEMS: readonly MenuItem[] = [
     { id: "log", label: "ログ", Component: LogSection },
 ];
 
+// Turso 連携の状態確認や初期化を担うダッシュボードセクション。
 export function TursoService({
     instructions,
     placeholder,
@@ -57,14 +59,17 @@ export function TursoService({
     const isMountedRef = useRef(true);
 
     useEffect(() => {
+        // コンポーネントのアンマウントを検知して非同期処理での状態更新を抑制する。
         return () => {
             isMountedRef.current = false;
         };
     }, []);
 
+    // フッターメッセージにナビゲーション用のキー操作表示を追加する。
     const navigationFooter = useMemo(() => `${defaultFooterLabel}  j:↓  k:↑`, [defaultFooterLabel]);
     const activeItem = MENU_ITEMS[activeIndex];
 
+    // Turso 初期化中に出力されるログをダッシュボード全体にも転記する。
     const handleLog = useCallback(
         (entry: TursoLogEntry) => {
             if (!isMountedRef.current) {
@@ -76,6 +81,7 @@ export function TursoService({
         [appendLog]
     );
 
+    // Turso Cloud を自動初期化し、状態に応じて進捗メッセージを更新する。
     const runInitialization = useCallback(async () => {
         if (initInFlightRef.current || !isMountedRef.current) {
             return;
@@ -126,6 +132,7 @@ export function TursoService({
         void runInitialization();
     }, [runInitialization]);
 
+    // 初期化の有無に応じてキー入力の挙動を切り替える。
     useInput((input, key) => {
         if (initState !== "ready") {
             if (input?.toLowerCase() === "r") {
@@ -157,6 +164,7 @@ export function TursoService({
     }, [lastLog]);
 
     useEffect(() => {
+        // 初期化未完了時は進捗メッセージをフッターに表示し、完了後はメニュー情報を載せる。
         if (initState === "ready") {
             onFooterChange(`${navigationFooter}  • ${activeItem.label}`);
             return;
@@ -165,6 +173,7 @@ export function TursoService({
         onFooterChange(`${defaultFooterLabel}  • ${displayLine}`);
     }, [activeItem.label, defaultFooterLabel, displayLine, initState, navigationFooter, onFooterChange]);
 
+    // 現在選択されているメニューに応じた描画コンポーネントを取り出す。
     const ActiveSection = activeItem.Component;
 
     if (initState !== "ready") {
@@ -202,6 +211,7 @@ export function TursoService({
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
             <Box marginBottom={1} flexDirection="column">
+                {/* Turso 操作のヒントをリスト形式で表示する。 */}
                 {instructions.map((line) => (
                     <Text key={line} dimColor>
                         {line}
@@ -210,6 +220,7 @@ export function TursoService({
             </Box>
 
             <Box flexDirection="row" flexGrow={1}>
+                {/* 左側はメニュー一覧。アクティブ項目を色付きで示す。 */}
                 <Box
                     width={24}
                     borderStyle="classic"
@@ -229,6 +240,7 @@ export function TursoService({
                     })}
                 </Box>
 
+                {/* 右側のパネルに選択中のセクションを動的に描画する。 */}
                 <Box
                     marginLeft={1}
                     borderStyle="classic"
@@ -245,4 +257,4 @@ export function TursoService({
     );
 }
 
-// EOF
+// ファイル終端

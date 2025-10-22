@@ -18,19 +18,20 @@ export type DashboardClients = {
 };
 
 /**
- * Lazy factory for external service SDK clients used by the dashboard.
- * Tokens and organization identifiers are optional so the dashboard shell
- * can render without credentials during development.
+ * ダッシュボードで利用する外部サービス向けクライアントを遅延生成する。
+ * トークンや組織 ID が無くても呼び出せるようにし、開発時のプレースホルダーにも対応する。
  */
 export function createDashboardClients(options: DashboardClientOptions = {}): DashboardClients {
     const clients: DashboardClients = {};
 
+    // 優先順位を明示して Vercel トークンを取り出す（設定ファイル > オプション直指定）。
     const vercelToken = options.vercel?.token ?? options.vercelToken;
 
     if (vercelToken) {
         clients.vercel = new Vercel({ bearerToken: vercelToken });
     }
 
+    // Turso はトークンと組織 ID の両方が揃ったときのみクライアントを生成する。
     if (options.tursoToken && options.tursoOrg) {
         clients.turso = createTursoClient({
             token: options.tursoToken,
@@ -41,4 +42,4 @@ export function createDashboardClients(options: DashboardClientOptions = {}): Da
     return clients;
 }
 
-// EOF
+// ファイル終端

@@ -11,8 +11,10 @@ type ServiceProps = {
     onFooterChange: (label: string) => void;
 };
 
+// ログウィンドウに同時表示する行数を制限してスクロールを実現する。
 const VISIBLE_LINES = 18;
 
+// ログレベルごとの配色を定義し、視認性を高める。
 const LEVEL_COLORS: Record<string, string | undefined> = {
     success: "greenBright",
     error: "redBright",
@@ -26,9 +28,11 @@ export function LogsService({
     defaultFooterLabel,
     onFooterChange,
 }: ServiceProps): JSX.Element {
+    // ダッシュボード全体のログを閲覧・スクロールするためのサービスビュー。
     const { logs, clearLogs } = useDashboard();
     const [offset, setOffset] = useState(0);
 
+    // j/k キー操作に応じて表示開始位置を更新する。
     const adjustOffset = useCallback(
         (delta: number) => {
             setOffset((current) => {
@@ -48,9 +52,11 @@ export function LogsService({
     }, [logs.length, offset]);
 
     useEffect(() => {
+        // ログタブが選択された際は初期ショートカット表示を同期する。
         onFooterChange(defaultFooterLabel);
     }, [defaultFooterLabel, onFooterChange]);
 
+    // キーボード入力からスクロールやクリア操作を受け付ける。
     useInput((input, key) => {
         if (!input && !key.upArrow && !key.downArrow) {
             return;
@@ -89,6 +95,7 @@ export function LogsService({
         []
     );
 
+    // 最新のオフセットに基づいて表示対象のログのみを切り出す。
     const visibleLogs = useMemo(() => {
         if (logs.length === 0) {
             return [];
@@ -104,6 +111,7 @@ export function LogsService({
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
             <Box marginBottom={1} flexDirection="column">
+                {/* 操作ガイドを冒頭に表示して、キー操作をすぐ確認できるようにする。 */}
                 {instructions.map((line) => (
                     <Text key={line} dimColor>
                         {line}
@@ -111,6 +119,7 @@ export function LogsService({
                 ))}
             </Box>
 
+            {/* ログの有無に応じて、空表示かログ一覧を切り替える。 */}
             {visibleLogs.length === 0 ? (
                 <Box flexDirection="column" flexGrow={1} alignItems="center" justifyContent="center">
                     <Text dimColor>{placeholder}</Text>
@@ -139,4 +148,4 @@ export function LogsService({
     );
 }
 
-// EOF
+// ファイル終端

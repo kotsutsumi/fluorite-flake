@@ -55,6 +55,7 @@ const CONFIG_FILE_NAME = "flake.json";
 const TOKEN_URL = "https://vercel.com/account/settings/tokens";
 const INPUT_CARET = "▋";
 
+// Vercel 管理で扱う各セクションをメニューとして定義する。
 const MENU_ITEMS: readonly MenuItem[] = [
     { id: "project", label: "プロジェクト管理", Component: ProjectSection },
     { id: "domain", label: "ドメイン", Component: DomainSection },
@@ -92,10 +93,12 @@ type TokenVerificationResult =
           errorMessage: string;
       };
 
+// 取得した値がプレーンオブジェクトかどうかを判定する小さな型ガード。
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
 }
 
+// ユーザーのホームディレクトリ配下から Fluorite の設定ファイルを読み出す。
 async function loadConfig(): Promise<ConfigLoadResult> {
     const configDir = path.join(os.homedir(), CONFIG_DIRECTORY_NAME);
     await fsExtra.ensureDir(configDir);
@@ -119,6 +122,7 @@ async function loadConfig(): Promise<ConfigLoadResult> {
     };
 }
 
+// 一時ファイルを利用して JSON を安全に保存し、書き込み途中の破損を防ぐ。
 async function writeJsonAtomic(filePath: string, payload: unknown): Promise<void> {
     const serialized = `${JSON.stringify(payload, null, 4)}\n`;
     const tempPath = `${filePath}.tmp`;
@@ -127,6 +131,7 @@ async function writeJsonAtomic(filePath: string, payload: unknown): Promise<void
     await fsExtra.move(tempPath, filePath, { overwrite: true });
 }
 
+// 検証済みのアクセストークンを設定ファイルに書き戻すか、無効化する。
 async function persistVercelAccessKey(token: string | undefined): Promise<void> {
     const { path: configPath, data } = await loadConfig();
 
@@ -152,6 +157,7 @@ async function persistVercelAccessKey(token: string | undefined): Promise<void> 
     await writeJsonAtomic(configPath, nextData);
 }
 
+// 保存済みトークンを読み込み、利用可能な文字列のみ返す。
 async function loadStoredVercelAccessKey(): Promise<string | undefined> {
     const { data } = await loadConfig();
     const vercelSection = isRecord(data.vercel) ? data.vercel : undefined;
@@ -159,6 +165,7 @@ async function loadStoredVercelAccessKey(): Promise<string | undefined> {
     return typeof candidate === "string" && candidate.trim().length > 0 ? candidate : undefined;
 }
 
+// 例外オブジェクトからユーザーに提示できるメッセージを抽出する。
 function extractErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message) {
         return error.message;
@@ -169,6 +176,7 @@ function extractErrorMessage(error: unknown): string {
     return "unknown error";
 }
 
+// SDK 経由でアクセストークンの妥当性を検証し、HTTP ステータスも拾う。
 async function verifyVercelToken(token: string): Promise<TokenVerificationResult> {
     try {
         const client = new Vercel({ bearerToken: token });
@@ -186,6 +194,7 @@ async function verifyVercelToken(token: string): Promise<TokenVerificationResult
     }
 }
 
+// Vercel 連携を行うダッシュボード画面の本体。トークン検証やメニュー切替を担う。
 export function VercelService({
     instructions,
     placeholder,
@@ -209,6 +218,7 @@ export function VercelService({
     const isMountedRef = useRef(true);
     const hasAttemptedInitRef = useRef(false);
 
+    // アンマウント時に入力モードを解除し、非同期処理の後続更新を防ぐ。
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
@@ -223,6 +233,7 @@ export function VercelService({
 
         hasAttemptedInitRef.current = true;
 
+        // 保存されているトークンを検証し、状態とログを適切に更新する初期化処理。
         const initialize = async (): Promise<void> => {
             try {
                 const storedToken = await loadStoredVercelAccessKey();
@@ -291,12 +302,14 @@ export function VercelService({
         void initialize();
     }, [appendLog, initState, vercelMessages]);
 
+    // 再度トークンを要求する状態に遷移した際はアクションリストを先頭に戻す。
     useEffect(() => {
         if (initState === "needs-token" || initState === "error") {
             setSelectedActionIndex(0);
         }
     }, [initState]);
 
+    // 入力モード中は Ink のグローバルショートカットを抑制する。
     useEffect(() => {
         setInputMode(initState === "input");
     }, [initState, setInputMode]);
@@ -309,9 +322,11 @@ export function VercelService({
         [vercelMessages.enterToken, vercelMessages.openTokenPage]
     );
 
+    // フッターには標準ショートカットに加えて上下移動キーを追記する。
     const navigationFooter = useMemo(() => `${defaultFooterLabel}  j:↓  k:↑`, [defaultFooterLabel]);
     const activeItem = MENU_ITEMS[activeIndex];
 
+    // トークン入力中はカーソル風の文字を末尾に追加し、状況を視覚化する。
     const inputDisplay = useMemo(() => {
         if (!tokenDraft) {
             return `${vercelMessages.inputPromptEmpty}${INPUT_CARET}`;
@@ -319,6 +334,7 @@ export function VercelService({
         return `${vercelMessages.inputPromptValue(tokenDraft)}${INPUT_CARET}`;
     }, [tokenDraft, vercelMessages]);
 
+    // ブラウザ起動を試み、失敗時はフォールバックコマンドを順に試す。
     const launchBrowser = useCallback(async () => {
         if (isLaunchingBrowser) {
             return;
@@ -395,6 +411,7 @@ export function VercelService({
         }
     }, [appendLog, isLaunchingBrowser, vercelMessages]);
 
+    // 入力されたトークンを検証・保存し、成功時には準備完了へ遷移させる。
     const submitToken = useCallback(async () => {
         const trimmed = tokenDraft.trim();
 
@@ -470,6 +487,7 @@ export function VercelService({
         appendLog({ level: "success", message: vercelMessages.logTokenSaved });
     }, [appendLog, setInputMode, tokenDraft, vercelMessages]);
 
+    // 途中で入力を取りやめた場合は状態を初期要求へ巻き戻す。
     const cancelTokenInput = useCallback(() => {
         setTokenDraft("");
         setInputError(undefined);
@@ -479,6 +497,7 @@ export function VercelService({
         appendLog({ level: "info", message: vercelMessages.logTokenInputCancelled });
     }, [appendLog, vercelMessages.logTokenInputCancelled, vercelMessages.needsToken]);
 
+    // アクションメニューの選択結果を具体的な操作に解決する。
     const handleAction = useCallback(
         (actionId: ActionId) => {
             if (actionId === "open-token") {
@@ -497,6 +516,7 @@ export function VercelService({
         [launchBrowser, vercelMessages.inputPromptEmpty]
     );
 
+    // 初期化状況に応じたキー操作をまとめて処理する。
     useInput((input, key) => {
         if (isLaunchingBrowser) {
             return;
@@ -569,6 +589,7 @@ export function VercelService({
         }
     });
 
+    // 状態に応じたフッター文言を統一的に管理する。
     useEffect(() => {
         if (initState === "ready") {
             onFooterChange(`${navigationFooter}  • ${vercelMessages.footerReady}  • ${activeItem.label}`);
@@ -596,8 +617,10 @@ export function VercelService({
         vercelMessages,
     ]);
 
+    // アクティブなメニュー項目に紐づくセクションを動的に差し替える。
     const ActiveSection = activeItem.Component;
 
+    // 初期化が完了するまでは、状態ごとのフィードバックをカードで表示する。
     if (initState !== "ready") {
         const borderColor =
             initState === "error"
@@ -672,6 +695,7 @@ export function VercelService({
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
             <Box marginBottom={1} flexDirection="column">
+                {/* 操作手順はメッセージから配列で受け取り、そのままリスト表示する。 */}
                 {instructions.map((line) => (
                     <Text key={line} dimColor>
                         {line}
@@ -680,6 +704,7 @@ export function VercelService({
             </Box>
 
             <Box flexDirection="row" flexGrow={1}>
+                {/* 左側にメニュー一覧を表示し、現在のカーソルを強調する。 */}
                 <Box
                     width={24}
                     borderStyle="classic"
@@ -699,6 +724,7 @@ export function VercelService({
                     })}
                 </Box>
 
+                {/* 右側の表示領域にアクティブセクションをレンダリングする。 */}
                 <Box
                     marginLeft={1}
                     borderStyle="classic"
@@ -719,4 +745,4 @@ export function VercelService({
     );
 }
 
-// EOF
+// ファイル終端
