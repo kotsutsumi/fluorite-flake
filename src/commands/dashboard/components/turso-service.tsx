@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { Box, Text, useInput } from "ink";
 
+import { getMessages } from "../../../i18n.js";
+import { initializeTursoCloud } from "../../create/database-provisioning/index.js";
+import type { TursoLogEntry } from "../../create/database-provisioning/index.js";
 import { DatabaseSection } from "./turso/database.js";
 import { GroupSection } from "./turso/group.js";
 import { InviteSection } from "./turso/invite.js";
@@ -24,6 +27,8 @@ type MenuItem = {
     Component: TursoSectionComponent;
 };
 
+type InitState = "pending" | "ready" | "blocked" | "error";
+
 const MENU_ITEMS: readonly MenuItem[] = [
     { id: "database", label: "データベース", Component: DatabaseSection },
     { id: "group", label: "グループ", Component: GroupSection },
@@ -35,12 +40,91 @@ const MENU_ITEMS: readonly MenuItem[] = [
 ];
 
 export function TursoService({ instructions, placeholder, defaultFooterLabel, onFooterChange }: ServiceProps): JSX.Element {
+    const turso = useMemo(() => getMessages().create.turso, []);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [initState, setInitState] = useState<InitState>("pending");
+    const [initLogs, setInitLogs] = useState<string[]>([]);
+    const [initErrorDetail, setInitErrorDetail] = useState<string | undefined>(undefined);
+
+    const initInFlightRef = useRef(false);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     const navigationFooter = useMemo(() => `${defaultFooterLabel}  j:↓  k:↑`, [defaultFooterLabel]);
     const activeItem = MENU_ITEMS[activeIndex];
 
+    const handleLog = useCallback(
+        (entry: TursoLogEntry) => {
+            if (!isMountedRef.current) {
+                return;
+            }
+            setInitLogs((prev) => [...prev, entry.message]);
+        },
+        []
+    );
+
+    const runInitialization = useCallback(async () => {
+        if (initInFlightRef.current || !isMountedRef.current) {
+            return;
+        }
+
+        initInFlightRef.current = true;
+        setInitErrorDetail(undefined);
+        setInitState("pending");
+        setInitLogs([]);
+
+        try {
+            const result = await initializeTursoCloud({
+                onLog: handleLog,
+                suppressPrompts: true,
+                suppressStdout: true,
+            });
+
+            if (!isMountedRef.current) {
+                return;
+            }
+
+            if (result.status === "login-required") {
+                setInitState("blocked");
+                return;
+            }
+
+            if (result.status === "reused") {
+                setInitState("ready");
+                return;
+            }
+
+            setInitState("ready");
+        } catch (error) {
+            if (!isMountedRef.current) {
+                return;
+            }
+
+            const detail = error instanceof Error ? error.message : String(error);
+            setInitErrorDetail(detail);
+            setInitState("error");
+        } finally {
+            initInFlightRef.current = false;
+        }
+    }, [handleLog]);
+
+    useEffect(() => {
+        void runInitialization();
+    }, [runInitialization]);
+
     useInput((input, key) => {
+        if (initState !== "ready") {
+            if (input?.toLowerCase() === "r") {
+                void runInitialization();
+            }
+            return;
+        }
+
         if (MENU_ITEMS.length === 0) {
             return;
         }
@@ -55,11 +139,39 @@ export function TursoService({ instructions, placeholder, defaultFooterLabel, on
         }
     });
 
+    const lastLog = initLogs[initLogs.length - 1] ?? turso.initializing;
+
     useEffect(() => {
-        onFooterChange(`${navigationFooter}  • ${activeItem.label}`);
-    }, [activeItem.label, navigationFooter, onFooterChange]);
+        if (initState === "ready") {
+            onFooterChange(`${navigationFooter}  • ${activeItem.label}`);
+            return;
+        }
+
+        onFooterChange(`${defaultFooterLabel}  • ${lastLog}`);
+    }, [activeItem.label, defaultFooterLabel, initState, lastLog, navigationFooter, onFooterChange]);
 
     const ActiveSection = activeItem.Component;
+
+    if (initState !== "ready") {
+        const borderColor = initState === "error" ? "red" : initState === "blocked" ? "yellow" : "cyan";
+        const titleColor = initState === "error" ? "redBright" : initState === "blocked" ? "yellowBright" : "cyanBright";
+
+        return (
+            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0} justifyContent="center" alignItems="center">
+                <Box borderStyle="round" borderColor={borderColor} flexDirection="column" paddingX={3} paddingY={2} minWidth={36}>
+                    <Text color={titleColor}>Turso Cloud</Text>
+                    <Box marginTop={1} flexDirection="column">
+                        {initLogs.map((line, index) => (
+                            <Text key={`${index}-${line}`}>{line}</Text>
+                        ))}
+                        {initState === "error" && initErrorDetail ? (
+                            <Text color="red">{initErrorDetail}</Text>
+                        ) : null}
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
 
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>

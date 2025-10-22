@@ -9,7 +9,7 @@ type HeaderProps = {
 
 export function Header({ title, activeServiceLabel, serviceName }: HeaderProps): JSX.Element {
     return (
-        <Box justifyContent="space-between">
+        <Box marginX={1} justifyContent="space-between">
             <Text color="blackBright">🚀 {title}</Text>
             <Text color="blackBright">
                 {activeServiceLabel}: <Text color="green">{serviceName}</Text>

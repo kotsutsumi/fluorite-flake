@@ -36,10 +36,10 @@ export function Footer({ shortcutsLabel, versionLabel }: FooterProps): JSX.Eleme
     const timestamp = useMemo(() => formatter.format(now), [formatter, now]);
 
     return (
-        <Box marginTop={0} justifyContent="space-between">
+        <Box marginTop={0} marginX={1} justifyContent="space-between">
             <Text dimColor>{shortcutsLabel}</Text>
             <Text dimColor>
-                {versionLabel}  {timestamp}
+                {versionLabel} {timestamp}
             </Text>
         </Box>
     );

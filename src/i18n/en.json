@@ -141,7 +141,30 @@
         "vercelLinkOrgIdPrompt": "Enter the Vercel org/team ID (team_...).",
         "vercelLinkOrgIdError": "Organization ID is required.",
         "vercelLinkCancelled": "Linking was cancelled. You can run `vercel link` later.",
-        "vercelLinkSuccess": "Linked to Vercel project {projectName}."
+        "vercelLinkSuccess": "Linked to Vercel project {projectName}.",
+        "turso": {
+            "initializing": "🔄 Initializing Turso Cloud...",
+            "ready": "✅ Turso Cloud is ready.",
+            "initializationFailed": "❌ Turso Cloud initialization failed.",
+            "footerInitializing": "Initializing...",
+            "footerLoginRequired": "Login required",
+            "footerError": "Initialization error",
+            "retryHint": "Press \"r\" after logging in to retry.",
+            "validTokenReused": "🔁 Reusing existing Turso access token.",
+            "invalidTokenDetected": "⚠️ Stored Turso access token is invalid. Generating a new token.",
+            "noExistingToken": "ℹ️ No Turso access token found. Generating a new token.",
+            "promptLoginTitle": "Turso CLI login required",
+            "promptLogin": "Run `turso auth login` in another terminal, then rerun this command.",
+            "cliNotFound": "❌ Turso CLI is not installed or not found in PATH.",
+            "cliTokenFailed": "❌ Failed to retrieve a management token from the Turso CLI.",
+            "cliTokenEmpty": "❌ Turso CLI returned an empty token.",
+            "cliLoginConfirmed": "✅ Turso CLI login confirmed.",
+            "apiError": "⚠️ Turso API request failed ({status}).",
+            "tokenRevoked": "♻️ Revoked existing Turso token \"{tokenName}\".",
+            "tokenRegenerated": "🔑 Generated new Turso token \"{tokenName}\".",
+            "tokenCreateEmpty": "❌ Turso API did not return a token value.",
+            "tokenStored": "💾 Stored Turso access token in {configPath}."
+        }
     },
     "new": {
         "commandDescription": "Create a new project",

@@ -256,6 +256,29 @@ type RawLocaleMessages = {
         vercelLinkOrgIdError: string;
         vercelLinkCancelled: string;
         vercelLinkSuccess: string;
+        turso: {
+            validTokenReused: string;
+            invalidTokenDetected: string;
+            noExistingToken: string;
+            promptLoginTitle: string;
+            promptLogin: string;
+            cliNotFound: string;
+            cliTokenFailed: string;
+            cliTokenEmpty: string;
+            cliLoginConfirmed: string;
+            initializing: string;
+            ready: string;
+            initializationFailed: string;
+            footerInitializing: string;
+            footerLoginRequired: string;
+            footerError: string;
+            retryHint: string;
+            apiError: string;
+            tokenRevoked: string;
+            tokenRegenerated: string;
+            tokenCreateEmpty: string;
+            tokenStored: string;
+        };
         blob: {
             setupPrompt: string;
             modeNew: string;
@@ -474,6 +497,29 @@ export type LocaleMessages = {
         vercelLinkOrgIdError: string;
         vercelLinkCancelled: string;
         vercelLinkSuccess: (projectName: string) => string;
+        turso: {
+            validTokenReused: string;
+            invalidTokenDetected: string;
+            noExistingToken: string;
+            promptLoginTitle: string;
+            promptLogin: string;
+            cliNotFound: string;
+            cliTokenFailed: string;
+            cliTokenEmpty: string;
+            cliLoginConfirmed: string;
+            initializing: string;
+            ready: string;
+            initializationFailed: string;
+            footerInitializing: string;
+            footerLoginRequired: string;
+            footerError: string;
+            retryHint: string;
+            apiError: (status: string) => string;
+            tokenRevoked: (tokenName: string) => string;
+            tokenRegenerated: (tokenName: string) => string;
+            tokenCreateEmpty: string;
+            tokenStored: (configPath: string) => string;
+        };
         blob: {
             setupPrompt: string;
             modeNew: string;
@@ -753,6 +799,32 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             vercelLinkCancelled: rawMessages.create.vercelLinkCancelled,
             vercelLinkSuccess: (projectName: string) =>
                 formatMessage(rawMessages.create.vercelLinkSuccess, { projectName }),
+            turso: {
+                validTokenReused: rawMessages.create.turso.validTokenReused,
+                invalidTokenDetected: rawMessages.create.turso.invalidTokenDetected,
+                noExistingToken: rawMessages.create.turso.noExistingToken,
+                promptLoginTitle: rawMessages.create.turso.promptLoginTitle,
+                promptLogin: rawMessages.create.turso.promptLogin,
+                cliNotFound: rawMessages.create.turso.cliNotFound,
+                cliTokenFailed: rawMessages.create.turso.cliTokenFailed,
+                cliTokenEmpty: rawMessages.create.turso.cliTokenEmpty,
+                cliLoginConfirmed: rawMessages.create.turso.cliLoginConfirmed,
+                initializing: rawMessages.create.turso.initializing,
+                ready: rawMessages.create.turso.ready,
+                initializationFailed: rawMessages.create.turso.initializationFailed,
+                footerInitializing: rawMessages.create.turso.footerInitializing,
+                footerLoginRequired: rawMessages.create.turso.footerLoginRequired,
+                footerError: rawMessages.create.turso.footerError,
+                retryHint: rawMessages.create.turso.retryHint,
+                apiError: (status: string) => formatMessage(rawMessages.create.turso.apiError, { status }),
+                tokenRevoked: (tokenName: string) =>
+                    formatMessage(rawMessages.create.turso.tokenRevoked, { tokenName }),
+                tokenRegenerated: (tokenName: string) =>
+                    formatMessage(rawMessages.create.turso.tokenRegenerated, { tokenName }),
+                tokenCreateEmpty: rawMessages.create.turso.tokenCreateEmpty,
+                tokenStored: (configPath: string) =>
+                    formatMessage(rawMessages.create.turso.tokenStored, { configPath }),
+            },
             blob: {
                 setupPrompt: "Vercel Blobの設定方法を選択してください:",
                 modeNew: "新規Blobストアを作成",

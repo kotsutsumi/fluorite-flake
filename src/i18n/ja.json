@@ -138,7 +138,30 @@
         "vercelLinkOrgIdPrompt": "Vercelの組織/チームID（team_...）を入力してください。",
         "vercelLinkOrgIdError": "組織IDは必須です。",
         "vercelLinkCancelled": "リンク処理をキャンセルしました。必要なときは `vercel link` を実行してください。",
-        "vercelLinkSuccess": "Vercelプロジェクト {projectName} とリンクしました。"
+        "vercelLinkSuccess": "Vercelプロジェクト {projectName} とリンクしました。",
+        "turso": {
+            "initializing": "🔄 Turso Cloud を初期化しています...",
+            "ready": "✅ Turso Cloud の準備が完了しました。",
+            "initializationFailed": "❌ Turso Cloud の初期化に失敗しました。",
+            "footerInitializing": "初期化中...",
+            "footerLoginRequired": "ログインが必要です",
+            "footerError": "初期化エラー",
+            "retryHint": "ログイン後に \"r\" キーで再試行できます。",
+            "validTokenReused": "🔁 保存済みの Turso アクセストークンを再利用します。",
+            "invalidTokenDetected": "⚠️ 保存済みの Turso アクセストークンが無効です。新しいトークンを発行します。",
+            "noExistingToken": "ℹ️ Turso アクセストークンが見つかりません。新しいトークンを発行します。",
+            "promptLoginTitle": "Turso CLI へのログインが必要です",
+            "promptLogin": "別ターミナルで `turso auth login` を実行し、このコマンドを再度実行してください。",
+            "cliNotFound": "❌ Turso CLI が見つかりません。PATH を確認してください。",
+            "cliTokenFailed": "❌ Turso CLI から管理トークンを取得できませんでした。",
+            "cliTokenEmpty": "❌ Turso CLI が空のトークンを返しました。",
+            "cliLoginConfirmed": "✅ Turso CLI のログインを確認しました。",
+            "apiError": "⚠️ Turso API の呼び出しに失敗しました ({status})。",
+            "tokenRevoked": "♻️ 既存の Turso トークン \"{tokenName}\" を破棄しました。",
+            "tokenRegenerated": "🔑 新しい Turso トークン \"{tokenName}\" を発行しました。",
+            "tokenCreateEmpty": "❌ Turso API からトークン値が返されませんでした。",
+            "tokenStored": "💾 Turso アクセストークンを {configPath} に保存しました。"
+        }
     },
     "new": {
         "commandDescription": "新しいプロジェクトを作成します",

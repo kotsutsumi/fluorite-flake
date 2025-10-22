@@ -44,11 +44,16 @@ const MENU_ITEMS: readonly MenuItem[] = [
 
 export function VercelService({ instructions, placeholder, defaultFooterLabel, onFooterChange }: ServiceProps): JSX.Element {
     const [activeIndex, setActiveIndex] = useState(0);
+    const [isInitializing] = useState(true);
 
     const navigationFooter = useMemo(() => `${defaultFooterLabel}  j:↓  k:↑`, [defaultFooterLabel]);
     const activeItem = MENU_ITEMS[activeIndex];
 
     useInput((input, key) => {
+        if (isInitializing) {
+            return;
+        }
+
         if (MENU_ITEMS.length === 0) {
             return;
         }
@@ -64,10 +69,28 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
     });
 
     useEffect(() => {
+        if (isInitializing) {
+            onFooterChange(`${defaultFooterLabel}  • 初期化中`);
+            return;
+        }
+
         onFooterChange(`${navigationFooter}  • ${activeItem.label}`);
-    }, [activeItem.label, navigationFooter, onFooterChange]);
+    }, [activeItem.label, defaultFooterLabel, isInitializing, navigationFooter, onFooterChange]);
 
     const ActiveSection = activeItem.Component;
+
+    if (isInitializing) {
+        return (
+            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0} justifyContent="center" alignItems="center">
+                <Box borderStyle="round" borderColor="cyan" flexDirection="column" paddingX={3} paddingY={2} minWidth={30}>
+                    <Text color="cyanBright">Vercel</Text>
+                    <Box marginTop={1}>
+                        <Text>初期化処理をここに実装予定...</Text>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
 
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>

@@ -7,7 +7,7 @@ import { DashboardApp } from "./app.js";
 import { DashboardProvider } from "./state/dashboard-store.js";
 import { parseService, type ServiceType } from "./types/common.js";
 
-export { type ServiceType } from "./types/common.js";
+export type { ServiceType } from "./types/common.js";
 
 /**
  * Launch the dashboard UI.
