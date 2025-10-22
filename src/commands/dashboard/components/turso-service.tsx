@@ -179,7 +179,7 @@ export function TursoService({
     if (initState !== "ready") {
         const borderColor = initState === "error" ? "red" : initState === "blocked" ? "yellow" : "cyan";
         const titleColor =
-            initState === "error" ? "redBright" : initState === "blocked" ? "yellowBright" : "cyanBright";
+            initState === "error" ? "redBright" : initState === "blocked" ? "yellowBright" : "blueBright";
 
         return (
             <Box
@@ -216,7 +216,7 @@ export function TursoService({
                     {MENU_ITEMS.map((item, index) => {
                         const isActive = index === activeIndex;
                         return (
-                            <Text key={item.id} color={isActive ? "cyanBright" : undefined}>
+                            <Text key={item.id} color={isActive ? "blueBright" : undefined}>
                                 {isActive ? "▸ " : "  "}
                                 {item.label}
                             </Text>

@@ -6,7 +6,7 @@ import type { VercelSectionComponent } from "./types.js";
 export const TeamSection: VercelSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* 最低限の UI でも情報が伝わるよう統一フォーマットにする。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

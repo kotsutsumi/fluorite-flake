@@ -6,7 +6,7 @@ import type { VercelSectionComponent } from "./types.js";
 export const SecretsSection: VercelSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* セクションタイトルを強調し、補足情報を続けて表示する。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

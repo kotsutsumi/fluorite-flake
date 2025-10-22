@@ -6,7 +6,7 @@ import type { VercelSectionComponent } from "./types.js";
 export const EnvironmentSection: VercelSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* レイアウトは他セクションと揃え、統一感を保つ。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

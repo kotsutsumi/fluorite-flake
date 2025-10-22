@@ -6,7 +6,7 @@ import type { TursoSectionComponent } from "./types.js";
 export const MemberSection: TursoSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* シンプルなプレースホルダーでもレイアウトが崩れないようにする。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

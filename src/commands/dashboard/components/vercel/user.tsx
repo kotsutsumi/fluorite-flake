@@ -6,7 +6,7 @@ import type { VercelSectionComponent } from "./types.js";
 export const UserSection: VercelSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* タイトルと本文をわかりやすく縦方向へ配置する。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

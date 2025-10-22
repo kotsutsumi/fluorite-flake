@@ -637,7 +637,7 @@ export function VercelService({
                   ? "yellowBright"
                   : initState === "input"
                     ? "magentaBright"
-                    : "cyanBright";
+                    : "blueBright";
 
         return (
             <Box
@@ -700,7 +700,7 @@ export function VercelService({
                     {MENU_ITEMS.map((item, index) => {
                         const isActive = index === activeIndex;
                         return (
-                            <Text key={item.id} color={isActive ? "cyanBright" : undefined}>
+                            <Text key={item.id} color={isActive ? "blueBright" : undefined}>
                                 {isActive ? "▸ " : "  "}
                                 {item.label}
                             </Text>

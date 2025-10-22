@@ -6,7 +6,7 @@ import type { TursoSectionComponent } from "./types.js";
 export const GroupSection: TursoSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* シンプルな縦並びで見出しと補足テキストを描画する。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

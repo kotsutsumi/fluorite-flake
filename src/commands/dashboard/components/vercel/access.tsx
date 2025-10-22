@@ -6,7 +6,7 @@ import type { VercelSectionComponent } from "./types.js";
 export const AccessSection: VercelSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* 見出しとプレースホルダーを縦方向に整列して読みやすくする。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

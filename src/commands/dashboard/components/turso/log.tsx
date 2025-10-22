@@ -6,7 +6,7 @@ import type { TursoSectionComponent } from "./types.js";
 export const LogSection: TursoSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* ログ概要と補足情報を縦に並べて強調する。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

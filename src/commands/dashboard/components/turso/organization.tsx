@@ -6,7 +6,7 @@ import type { TursoSectionComponent } from "./types.js";
 export const OrganizationSection: TursoSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* 見出しを強調しつつ詳細文を続けて表示する。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

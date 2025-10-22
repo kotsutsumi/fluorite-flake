@@ -6,7 +6,7 @@ import type { TursoSectionComponent } from "./types.js";
 export const DatabaseSection: TursoSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* Ink で縦に並べ、見出しとプレースホルダーを分かりやすく配置する。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );

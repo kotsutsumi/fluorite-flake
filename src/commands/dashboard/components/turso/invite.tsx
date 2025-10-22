@@ -6,7 +6,7 @@ import type { TursoSectionComponent } from "./types.js";
 export const InviteSection: TursoSectionComponent = ({ sectionLabel, placeholder }) => (
     <Box flexDirection="column">
         {/* プレースホルダーがそのまま解説文になる想定。 */}
-        <Text color="cyanBright">{sectionLabel}</Text>
+        <Text color="blueBright">{sectionLabel}</Text>
         <Text>{placeholder}</Text>
     </Box>
 );
