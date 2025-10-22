@@ -160,7 +160,10 @@ type RawLocaleMessages = {
         headerTitle: string;
         instructions: string[];
         activeServiceLabel: string;
-        footerShortcutsLabel: string;
+        footerShortcuts: {
+            vercel: string;
+            turso: string;
+        };
         footerVersionLabel: string;
         services: {
             vercel: string;
@@ -380,7 +383,10 @@ export type LocaleMessages = {
         headerTitle: string;
         instructions: string[];
         activeServiceLabel: string;
-        footerShortcutsLabel: string;
+        footerShortcuts: {
+            vercel: string;
+            turso: string;
+        };
         footerVersionLabel: (version: string) => string;
         services: {
             vercel: string;
@@ -617,7 +623,10 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             headerTitle: rawMessages.dashboard.headerTitle,
             instructions: rawMessages.dashboard.instructions,
             activeServiceLabel: rawMessages.dashboard.activeServiceLabel,
-            footerShortcutsLabel: rawMessages.dashboard.footerShortcutsLabel,
+            footerShortcuts: {
+                vercel: rawMessages.dashboard.footerShortcuts.vercel,
+                turso: rawMessages.dashboard.footerShortcuts.turso,
+            },
             footerVersionLabel: (version: string) =>
                 formatMessage(rawMessages.dashboard.footerVersionLabel, { version }),
             services: {

@@ -19,7 +19,10 @@
         "headerTitle": "Fluorite Flake ダッシュボード",
         "instructions": ["「s」キーでサービスを切り替え", "「q」キーまたはEscで終了"],
         "activeServiceLabel": "アクティブなサービス",
-        "footerShortcutsLabel": "q:終了  s:サービス切替",
+        "footerShortcuts": {
+            "vercel": "q:終了  s:サービス切替",
+            "turso": "q:終了  s:サービス切替"
+        },
         "footerVersionLabel": "v{version}",
         "services": {
             "vercel": "Vercel",

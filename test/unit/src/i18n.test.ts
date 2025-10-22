@@ -78,7 +78,10 @@ describe("国際化ユーティリティ", () => {
                         headerTitle: "Test header",
                         instructions: ["Instruction 1", "Instruction 2"],
                         activeServiceLabel: "Active service",
-                        footerShortcutsLabel: "Shortcuts label",
+                        footerShortcuts: {
+                            vercel: "Vercel shortcuts",
+                            turso: "Turso shortcuts"
+                        },
                         footerVersionLabel: "v{version}",
                         services: {
                             vercel: "Test Vercel",
@@ -220,7 +223,10 @@ describe("国際化ユーティリティ", () => {
                         headerTitle: "テストヘッダー",
                         instructions: ["sキーで切り替え", "qキーで終了"],
                         activeServiceLabel: "アクティブなサービス",
-                        footerShortcutsLabel: "ショートカット表示",
+                        footerShortcuts: {
+                            vercel: "Vercelショートカット",
+                            turso: "Tursoショートカット"
+                        },
                         footerVersionLabel: "v{version}",
                         services: {
                             vercel: "テストVercel",
@@ -430,7 +436,8 @@ describe("国際化ユーティリティ", () => {
             expect(messages.create.commandDescription).toBe("Test command");
             expect(messages.dashboard.services.vercel).toBe("Test Vercel");
             expect(messages.dashboard.instructions).toEqual(["Instruction 1", "Instruction 2"]);
-            expect(messages.dashboard.footerShortcutsLabel).toBe("Shortcuts label");
+            expect(messages.dashboard.footerShortcuts.vercel).toBe("Vercel shortcuts");
+            expect(messages.dashboard.footerShortcuts.turso).toBe("Turso shortcuts");
             expect(messages.dashboard.footerVersionLabel("1.2.3")).toBe("v1.2.3");
             expect(messages.dashboard.nonInteractiveError).toEqual(["Non interactive line 1", "Non interactive line 2"]);
             expect(messages.debug.devModeEnabled).toBe("Dev mode");
@@ -449,7 +456,8 @@ describe("国際化ユーティリティ", () => {
             expect(messages.create.commandDescription).toBe("テストコマンド");
             expect(messages.dashboard.services.turso).toBe("テストTurso");
             expect(messages.dashboard.instructions).toEqual(["sキーで切り替え", "qキーで終了"]);
-            expect(messages.dashboard.footerShortcutsLabel).toBe("ショートカット表示");
+            expect(messages.dashboard.footerShortcuts.vercel).toBe("Vercelショートカット");
+            expect(messages.dashboard.footerShortcuts.turso).toBe("Tursoショートカット");
             expect(messages.dashboard.footerVersionLabel("3.4.5")).toBe("v3.4.5");
             expect(messages.dashboard.nonInteractiveError).toEqual(["非TTYメッセージ1", "非TTYメッセージ2"]);
             expect(messages.debug.devModeEnabled).toBe("開発モード");

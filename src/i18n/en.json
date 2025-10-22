@@ -22,7 +22,10 @@
         "headerTitle": "Fluorite Flake Dashboard",
         "instructions": ["Press \"s\" to switch services", "Press \"q\" or Esc to exit"],
         "activeServiceLabel": "Active service",
-        "footerShortcutsLabel": "q:Exit   s:Switch service",
+        "footerShortcuts": {
+            "vercel": "q:Exit   s:Switch service",
+            "turso": "q:Exit   s:Switch service"
+        },
         "footerVersionLabel": "v{version}",
         "services": {
             "vercel": "Vercel",
