@@ -11,3 +11,5 @@ export type VercelSectionProps = {
 };
 
 export type VercelSectionComponent = (props: VercelSectionProps) => JSX.Element;
+
+// EOF

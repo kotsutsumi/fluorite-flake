@@ -8,3 +8,5 @@ export const DeploySection: VercelSectionComponent = ({ sectionLabel, placeholde
         <Text>{placeholder}</Text>
     </Box>
 );
+
+// EOF

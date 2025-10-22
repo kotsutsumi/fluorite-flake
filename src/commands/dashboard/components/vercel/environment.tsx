@@ -8,3 +8,5 @@ export const EnvironmentSection: VercelSectionComponent = ({ sectionLabel, place
         <Text>{placeholder}</Text>
     </Box>
 );
+
+// EOF

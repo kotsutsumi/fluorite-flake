@@ -44,3 +44,5 @@ export function Footer({ shortcutsLabel, versionLabel }: FooterProps): JSX.Eleme
         </Box>
     );
 }
+
+// EOF

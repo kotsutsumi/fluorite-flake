@@ -8,3 +8,5 @@ export const DomainSection: VercelSectionComponent = ({ sectionLabel, placeholde
         <Text>{placeholder}</Text>
     </Box>
 );
+
+// EOF

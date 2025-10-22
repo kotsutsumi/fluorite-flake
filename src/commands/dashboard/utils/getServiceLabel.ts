@@ -4,3 +4,4 @@ export function getServiceLabel(service: ServiceType, labels: Record<ServiceType
     return labels[service];
 }
 
+// EOF

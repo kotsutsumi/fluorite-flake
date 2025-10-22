@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
-import { Vercel } from "@vercel/sdk";
-import { Box, Text, useInput } from "ink";
 import { execa, type Options as ExecaOptions } from "execa";
 import fsExtra from "fs-extra";
-import openBrowser from "open";
+import { Box, Text, useInput } from "ink";
 import os from "node:os";
 import path from "node:path";
+import openBrowser from "open";
+import { Vercel } from "@vercel/sdk";
 
 import { getMessages } from "../../../i18n.js";
 import { useDashboard } from "../state/dashboard-store.js";
 import { AccessSection } from "./vercel/access.js";
 import { BuildSection } from "./vercel/build.js";
 import { DeploySection } from "./vercel/deploy.js";
-import { DomainSection } from "./vercel/domain.js";
 import { DnsSection } from "./vercel/dns.js";
+import { DomainSection } from "./vercel/domain.js";
 import { EnvironmentSection } from "./vercel/environment.js";
 import { MiscSection } from "./vercel/misc.js";
 import { ProjectSection } from "./vercel/project.js";
 import { SecretsSection } from "./vercel/secrets.js";
 import { TeamSection } from "./vercel/team.js";
-import { UserSection } from "./vercel/user.js";
 import type { VercelSectionComponent } from "./vercel/types.js";
+import { UserSection } from "./vercel/user.js";
 
 type ServiceProps = {
     instructions: readonly string[];
@@ -186,7 +186,12 @@ async function verifyVercelToken(token: string): Promise<TokenVerificationResult
     }
 }
 
-export function VercelService({ instructions, placeholder, defaultFooterLabel, onFooterChange }: ServiceProps): JSX.Element {
+export function VercelService({
+    instructions,
+    placeholder,
+    defaultFooterLabel,
+    onFooterChange,
+}: ServiceProps): JSX.Element {
     const { dashboard } = useMemo(() => getMessages(), []);
     const vercelMessages = dashboard.vercel;
     const { appendLog, setInputMode } = useDashboard();
@@ -301,7 +306,7 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
             { id: "open-token", label: vercelMessages.openTokenPage },
             { id: "enter-token", label: vercelMessages.enterToken },
         ],
-        [vercelMessages.enterToken, vercelMessages.openTokenPage],
+        [vercelMessages.enterToken, vercelMessages.openTokenPage]
     );
 
     const navigationFooter = useMemo(() => `${defaultFooterLabel}  j:↓  k:↑`, [defaultFooterLabel]);
@@ -489,7 +494,7 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
                 setInitState("input");
             }
         },
-        [launchBrowser, vercelMessages.inputPromptEmpty],
+        [launchBrowser, vercelMessages.inputPromptEmpty]
     );
 
     useInput((input, key) => {
@@ -598,22 +603,36 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
             initState === "error"
                 ? "red"
                 : initState === "needs-token"
-                    ? "yellow"
-                    : initState === "input"
-                        ? "magenta"
-                        : "cyan";
+                  ? "yellow"
+                  : initState === "input"
+                    ? "magenta"
+                    : "cyan";
         const highlightColor =
             initState === "error"
                 ? "redBright"
                 : initState === "needs-token"
-                    ? "yellowBright"
-                    : initState === "input"
-                        ? "magentaBright"
-                        : "cyanBright";
+                  ? "yellowBright"
+                  : initState === "input"
+                    ? "magentaBright"
+                    : "cyanBright";
 
         return (
-            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0} justifyContent="center" alignItems="center">
-                <Box borderStyle="round" borderColor={borderColor} flexDirection="column" paddingX={3} paddingY={2} minWidth={36}>
+            <Box
+                flexDirection="column"
+                flexGrow={1}
+                paddingX={0}
+                paddingY={0}
+                justifyContent="center"
+                alignItems="center"
+            >
+                <Box
+                    borderStyle="round"
+                    borderColor={borderColor}
+                    flexDirection="column"
+                    paddingX={3}
+                    paddingY={2}
+                    minWidth={36}
+                >
                     <Text color={highlightColor}>Vercel</Text>
                     <Box marginTop={1} flexDirection="column" minHeight={2}>
                         {initState === "input" ? (
@@ -689,9 +708,15 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
                     paddingY={1}
                     flexGrow={1}
                 >
-                    <ActiveSection sectionLabel={activeItem.label} placeholder={placeholder} credentials={vercelCredentials} />
+                    <ActiveSection
+                        sectionLabel={activeItem.label}
+                        placeholder={placeholder}
+                        credentials={vercelCredentials}
+                    />
                 </Box>
             </Box>
         </Box>
     );
 }
+
+// EOF

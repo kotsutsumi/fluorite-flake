@@ -9,3 +9,4 @@ export const OrganizationSection: TursoSectionComponent = ({ sectionLabel, place
     </Box>
 );
 
+// EOF

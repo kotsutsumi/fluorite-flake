@@ -9,3 +9,4 @@ export const InviteSection: TursoSectionComponent = ({ sectionLabel, placeholder
     </Box>
 );
 
+// EOF

@@ -17,3 +17,5 @@ export function Header({ title, activeServiceLabel, serviceName }: HeaderProps):
         </Box>
     );
 }
+
+// EOF

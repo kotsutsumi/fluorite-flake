@@ -7,3 +7,4 @@ export type TursoSectionProps = {
 
 export type TursoSectionComponent = (props: TursoSectionProps) => JSX.Element;
 
+// EOF

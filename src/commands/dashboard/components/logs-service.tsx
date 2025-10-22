@@ -20,7 +20,12 @@ const LEVEL_COLORS: Record<string, string | undefined> = {
     info: undefined,
 };
 
-export function LogsService({ instructions, placeholder, defaultFooterLabel, onFooterChange }: ServiceProps): JSX.Element {
+export function LogsService({
+    instructions,
+    placeholder,
+    defaultFooterLabel,
+    onFooterChange,
+}: ServiceProps): JSX.Element {
     const { logs, clearLogs } = useDashboard();
     const [offset, setOffset] = useState(0);
 
@@ -32,7 +37,7 @@ export function LogsService({ instructions, placeholder, defaultFooterLabel, onF
                 return next;
             });
         },
-        [logs.length],
+        [logs.length]
     );
 
     useEffect(() => {
@@ -81,7 +86,7 @@ export function LogsService({ instructions, placeholder, defaultFooterLabel, onF
                 minute: "2-digit",
                 second: "2-digit",
             }),
-        [],
+        []
     );
 
     const visibleLogs = useMemo(() => {
@@ -134,3 +139,4 @@ export function LogsService({ instructions, placeholder, defaultFooterLabel, onF
     );
 }
 
+// EOF

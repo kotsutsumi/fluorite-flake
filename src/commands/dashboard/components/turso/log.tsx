@@ -9,3 +9,4 @@ export const LogSection: TursoSectionComponent = ({ sectionLabel, placeholder })
     </Box>
 );
 
+// EOF

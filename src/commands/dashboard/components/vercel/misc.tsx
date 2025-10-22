@@ -8,3 +8,5 @@ export const MiscSection: VercelSectionComponent = ({ sectionLabel, placeholder 
         <Text>{placeholder}</Text>
     </Box>
 );
+
+// EOF

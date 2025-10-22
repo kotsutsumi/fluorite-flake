@@ -4,3 +4,4 @@ export function getPlaceholder(service: ServiceType, placeholders: Record<Servic
     return placeholders[service];
 }
 
+// EOF
