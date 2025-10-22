@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import type { JSX } from "react";
-import packageJson from "../../../package.json" assert { type: "json" };
 import { Box, Text } from "ink";
 
+import packageJson from "../../../package.json" assert { type: "json" };
 import { getMessages } from "../../i18n.js";
 import { Footer } from "./components/footer.js";
 import { FullscreenContainer } from "./components/fullscreen-container.js";
@@ -40,8 +40,8 @@ export function DashboardApp(): JSX.Element {
                 />
 
                 <Box
-                    borderStyle="round"
-                    borderColor="cyan"
+                    borderStyle="single"
+                    borderColor="grey"
                     flexDirection="column"
                     paddingX={2}
                     paddingY={1}

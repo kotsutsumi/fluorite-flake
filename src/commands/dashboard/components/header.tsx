@@ -1,5 +1,5 @@
-import { Box, Text } from "ink";
 import type { JSX } from "react";
+import { Box, Text } from "ink";
 
 type HeaderProps = {
     title: string;
@@ -10,11 +10,10 @@ type HeaderProps = {
 export function Header({ title, activeServiceLabel, serviceName }: HeaderProps): JSX.Element {
     return (
         <Box justifyContent="space-between">
-            <Text color="cyanBright">{title}</Text>
-            <Text>
+            <Text color="blackBright">🚀 {title}</Text>
+            <Text color="blackBright">
                 {activeServiceLabel}: <Text color="green">{serviceName}</Text>
             </Text>
         </Box>
     );
 }
-
