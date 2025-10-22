@@ -97,4 +97,4 @@ export function DashboardApp(): JSX.Element {
     );
 }
 
-// ファイル終端
+// EOF

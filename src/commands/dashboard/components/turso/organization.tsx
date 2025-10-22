@@ -11,4 +11,4 @@ export const OrganizationSection: TursoSectionComponent = ({ sectionLabel, place
     </Box>
 );
 
-// ファイル終端
+// EOF

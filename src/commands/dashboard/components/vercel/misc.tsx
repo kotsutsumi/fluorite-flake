@@ -11,4 +11,4 @@ export const MiscSection: VercelSectionComponent = ({ sectionLabel, placeholder 
     </Box>
 );
 
-// ファイル終端
+// EOF

@@ -34,4 +34,4 @@ export function useDashboardShortcuts(): void {
     });
 }
 
-// ファイル終端
+// EOF

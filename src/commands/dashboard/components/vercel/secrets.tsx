@@ -11,4 +11,4 @@ export const SecretsSection: VercelSectionComponent = ({ sectionLabel, placehold
     </Box>
 );
 
-// ファイル終端
+// EOF

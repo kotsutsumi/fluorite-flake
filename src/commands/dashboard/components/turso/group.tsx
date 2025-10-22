@@ -11,4 +11,4 @@ export const GroupSection: TursoSectionComponent = ({ sectionLabel, placeholder 
     </Box>
 );
 
-// ファイル終端
+// EOF

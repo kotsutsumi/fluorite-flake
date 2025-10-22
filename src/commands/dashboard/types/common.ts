@@ -43,4 +43,4 @@ export function getNextService(current: PrimaryService): PrimaryService {
     return SERVICE_ORDER[nextIndex];
 }
 
-// ファイル終端
+// EOF

@@ -102,7 +102,7 @@ export function DashboardProvider({ initialService, children }: DashboardProvide
             isInputMode,
             setInputMode: setIsInputMode,
         }),
-        [activeService, appendLog, clearLogs, cycleService, isInputMode, logEntries, services],
+        [activeService, appendLog, clearLogs, cycleService, isInputMode, logEntries, services]
     );
 
     return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
@@ -119,4 +119,4 @@ export function useDashboard(): DashboardContextValue {
     return context;
 }
 
-// ファイル終端
+// EOF

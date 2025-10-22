@@ -59,4 +59,4 @@ export function FullscreenContainer({ children }: PropsWithChildren): JSX.Elemen
     );
 }
 
-// ファイル終端
+// EOF

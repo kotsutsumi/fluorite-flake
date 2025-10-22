@@ -43,7 +43,7 @@ export const dashboardCommand = defineCommand({
     args: {
         service: {
             type: "string",
-        description: "Initial service to display (vercel|turso)",
+            description: "Initial service to display (vercel|turso)",
         },
     },
     async run({ args }) {
@@ -52,4 +52,4 @@ export const dashboardCommand = defineCommand({
     },
 });
 
-// ファイル終端
+// EOF

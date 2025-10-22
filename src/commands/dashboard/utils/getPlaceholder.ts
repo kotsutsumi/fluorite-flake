@@ -5,4 +5,4 @@ export function getPlaceholder(service: ServiceType, placeholders: Record<Servic
     return placeholders[service];
 }
 
-// ファイル終端
+// EOF

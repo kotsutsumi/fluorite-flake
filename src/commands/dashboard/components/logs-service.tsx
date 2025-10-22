@@ -148,4 +148,4 @@ export function LogsService({
     );
 }
 
-// ファイル終端
+// EOF

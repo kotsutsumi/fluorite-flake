@@ -9,4 +9,4 @@ export type TursoSectionProps = {
 // Turso セクションは単純な関数コンポーネントとして扱う。
 export type TursoSectionComponent = (props: TursoSectionProps) => JSX.Element;
 
-// ファイル終端
+// EOF

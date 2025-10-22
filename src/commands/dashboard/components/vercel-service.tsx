@@ -728,4 +728,4 @@ export function VercelService({
     );
 }
 
-// ファイル終端
+// EOF

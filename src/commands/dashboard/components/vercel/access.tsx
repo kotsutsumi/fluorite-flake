@@ -11,4 +11,4 @@ export const AccessSection: VercelSectionComponent = ({ sectionLabel, placeholde
     </Box>
 );
 
-// ファイル終端
+// EOF

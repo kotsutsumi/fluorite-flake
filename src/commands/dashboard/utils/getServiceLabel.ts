@@ -5,4 +5,4 @@ export function getServiceLabel(service: ServiceType, labels: Record<ServiceType
     return labels[service];
 }
 
-// ファイル終端
+// EOF

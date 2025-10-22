@@ -11,4 +11,4 @@ export const ProjectSection: VercelSectionComponent = ({ sectionLabel, placehold
     </Box>
 );
 
-// ファイル終端
+// EOF

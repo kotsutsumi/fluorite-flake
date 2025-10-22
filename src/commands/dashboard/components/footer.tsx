@@ -48,4 +48,4 @@ export function Footer({ shortcutsLabel, versionLabel }: FooterProps): JSX.Eleme
     );
 }
 
-// ファイル終端
+// EOF

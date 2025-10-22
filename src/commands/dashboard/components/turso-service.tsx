@@ -240,4 +240,4 @@ export function TursoService({
     );
 }
 
-// ファイル終端
+// EOF

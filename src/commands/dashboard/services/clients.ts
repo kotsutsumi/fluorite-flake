@@ -42,4 +42,4 @@ export function createDashboardClients(options: DashboardClientOptions = {}): Da
     return clients;
 }
 
-// ファイル終端
+// EOF

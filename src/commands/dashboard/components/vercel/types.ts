@@ -15,4 +15,4 @@ export type VercelSectionProps = {
 // Vercel セクションは全て JSX.Element を返す関数コンポーネントとして扱う。
 export type VercelSectionComponent = (props: VercelSectionProps) => JSX.Element;
 
-// ファイル終端
+// EOF

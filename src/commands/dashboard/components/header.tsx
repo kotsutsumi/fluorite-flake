@@ -19,4 +19,4 @@ export function Header({ title, activeServiceLabel, serviceName }: HeaderProps):
     );
 }
 
-// ファイル終端
+// EOF
