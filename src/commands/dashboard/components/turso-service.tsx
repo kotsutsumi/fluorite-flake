@@ -210,25 +210,9 @@ export function TursoService({
 
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
-            <Box marginBottom={1} flexDirection="column">
-                {/* Turso 操作のヒントをリスト形式で表示する。 */}
-                {instructions.map((line) => (
-                    <Text key={line} dimColor>
-                        {line}
-                    </Text>
-                ))}
-            </Box>
-
             <Box flexDirection="row" flexGrow={1}>
                 {/* 左側はメニュー一覧。アクティブ項目を色付きで示す。 */}
-                <Box
-                    width={24}
-                    borderStyle="classic"
-                    borderColor="gray"
-                    flexDirection="column"
-                    paddingX={1}
-                    paddingY={1}
-                >
+                <Box width={24} borderStyle="single" borderColor="gray" flexDirection="column" paddingX={1}>
                     {MENU_ITEMS.map((item, index) => {
                         const isActive = index === activeIndex;
                         return (
@@ -243,11 +227,10 @@ export function TursoService({
                 {/* 右側のパネルに選択中のセクションを動的に描画する。 */}
                 <Box
                     marginLeft={1}
-                    borderStyle="classic"
+                    borderStyle="single"
                     borderColor="gray"
                     flexDirection="column"
                     paddingX={1}
-                    paddingY={1}
                     flexGrow={1}
                 >
                     <ActiveSection sectionLabel={activeItem.label} placeholder={placeholder} />

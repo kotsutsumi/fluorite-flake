@@ -694,25 +694,9 @@ export function VercelService({
 
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
-            <Box marginBottom={1} flexDirection="column">
-                {/* 操作手順はメッセージから配列で受け取り、そのままリスト表示する。 */}
-                {instructions.map((line) => (
-                    <Text key={line} dimColor>
-                        {line}
-                    </Text>
-                ))}
-            </Box>
-
             <Box flexDirection="row" flexGrow={1}>
                 {/* 左側にメニュー一覧を表示し、現在のカーソルを強調する。 */}
-                <Box
-                    width={24}
-                    borderStyle="classic"
-                    borderColor="gray"
-                    flexDirection="column"
-                    paddingX={1}
-                    paddingY={1}
-                >
+                <Box width={24} borderStyle="single" borderColor="gray" flexDirection="column" paddingX={1}>
                     {MENU_ITEMS.map((item, index) => {
                         const isActive = index === activeIndex;
                         return (
@@ -727,11 +711,10 @@ export function VercelService({
                 {/* 右側の表示領域にアクティブセクションをレンダリングする。 */}
                 <Box
                     marginLeft={1}
-                    borderStyle="classic"
+                    borderStyle="single"
                     borderColor="gray"
                     flexDirection="column"
                     paddingX={1}
-                    paddingY={1}
                     flexGrow={1}
                 >
                     <ActiveSection

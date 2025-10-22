@@ -66,14 +66,7 @@ export function DashboardApp(): JSX.Element {
                     serviceName={serviceLabel}
                 />
 
-                <Box
-                    borderStyle="single"
-                    borderColor="grey"
-                    flexDirection="column"
-                    paddingX={2}
-                    paddingY={1}
-                    flexGrow={1}
-                >
+                <Box flexGrow={1}>
                     {activeService === "vercel" ? (
                         <VercelService
                             instructions={dashboard.instructions}
@@ -98,10 +91,7 @@ export function DashboardApp(): JSX.Element {
                     )}
                 </Box>
 
-                <Footer
-                    shortcutsLabel={footerShortcutsLabel}
-                    versionLabel={versionLabel}
-                />
+                <Footer shortcutsLabel={footerShortcutsLabel} versionLabel={versionLabel} />
             </Box>
         </FullscreenContainer>
     );
