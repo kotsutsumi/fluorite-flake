@@ -1,3 +1,4 @@
+import path from "node:path";
 import React from "react";
 import { act, render } from "ink-testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +7,44 @@ import { getMessages } from "../../../../../src/i18n.js";
 
 const appendLogMock = vi.fn();
 const setInputModeMock = vi.fn();
+const ensureDirMock = vi.fn();
+const pathExistsMock = vi.fn();
+const readJsonMock = vi.fn();
+const writeFileMock = vi.fn();
+const moveMock = vi.fn();
+const vercelConstructorMock = vi.fn();
+const getAuthUserMock = vi.fn();
+
+const mockedHomedir = "/home/test-user";
+
+vi.mock("fs-extra", () => ({
+    default: {
+        ensureDir: ensureDirMock,
+        pathExists: pathExistsMock,
+        readJson: readJsonMock,
+        writeFile: writeFileMock,
+        move: moveMock,
+    },
+}));
+
+vi.mock("node:os", () => ({
+    default: {
+        homedir: () => mockedHomedir,
+    },
+    homedir: () => mockedHomedir,
+}));
+
+vi.mock("@vercel/sdk", () => ({
+    Vercel: class {
+        public user = {
+            getAuthUser: getAuthUserMock,
+        };
+
+        constructor(options: { bearerToken: string }) {
+            vercelConstructorMock(options);
+        }
+    },
+}));
 
 vi.mock("execa", () => ({
     execa: vi.fn(),
@@ -41,6 +80,7 @@ const vercelMessages = dashboard.vercel;
 const instructions = dashboard.instructions;
 const placeholder = dashboard.placeholders.vercel;
 const defaultFooterLabel = dashboard.footerShortcuts.vercel;
+const configPath = path.join(mockedHomedir, ".fluorite", "flake.json");
 
 async function flush(): Promise<void> {
     await act(async () => {
@@ -64,6 +104,21 @@ describe("VercelService", () => {
         execaMock.mockReset();
         openMock.mockReset();
         openMock.mockResolvedValue(undefined);
+
+        ensureDirMock.mockReset();
+        pathExistsMock.mockReset();
+        readJsonMock.mockReset();
+        writeFileMock.mockReset();
+        moveMock.mockReset();
+        vercelConstructorMock.mockReset();
+        getAuthUserMock.mockReset();
+
+        ensureDirMock.mockResolvedValue(undefined);
+        pathExistsMock.mockResolvedValue(false);
+        readJsonMock.mockResolvedValue({});
+        writeFileMock.mockResolvedValue(undefined);
+        moveMock.mockResolvedValue(undefined);
+        getAuthUserMock.mockResolvedValue({});
     });
 
     it("toggles input mode while entering and cancelling token input", async () => {
@@ -99,7 +154,12 @@ describe("VercelService", () => {
         unmount();
     });
 
-    it("accepts trimmed token values and transitions to ready state", async () => {
+    it("accepts trimmed token values, verifies them, and persists configuration", async () => {
+        pathExistsMock
+            .mockResolvedValueOnce(false)
+            .mockResolvedValue(true);
+        readJsonMock.mockResolvedValue({});
+
         const onFooterChange = vi.fn();
 
         const { stdin, lastFrame, unmount } = render(
@@ -119,13 +179,95 @@ describe("VercelService", () => {
         await press(stdin, "  my-vercel-token  ");
         await press(stdin, "\r");
 
+        await flush();
+
         expect(setInputModeMock).toHaveBeenCalledWith(false);
+        expect(getAuthUserMock).toHaveBeenCalledTimes(1);
+        expect(vercelConstructorMock).toHaveBeenCalledWith({ bearerToken: "my-vercel-token" });
+
+        const serializedPayloads = writeFileMock.mock.calls.map((call) => call[1] as string);
+        expect(serializedPayloads.some((entry) => entry.includes('"access_key": "my-vercel-token"'))).toBe(true);
+        expect(moveMock).toHaveBeenCalledWith(`${configPath}.tmp`, configPath, { overwrite: true });
+
         const lastLog = appendLogMock.mock.calls.at(-1)?.[0];
         expect(lastLog).toEqual({
             level: "success",
             message: vercelMessages.logTokenSaved,
         });
         expect(lastFrame()).toContain(placeholder);
+
+        unmount();
+    });
+
+    it("loads existing token on startup and transitions to ready when validation succeeds", async () => {
+        pathExistsMock.mockResolvedValue(true);
+        readJsonMock.mockResolvedValue({
+            vercel: {
+                access_key: "stored-token",
+            },
+        });
+        const onFooterChange = vi.fn();
+
+        const { lastFrame, unmount } = render(
+            <VercelService
+                instructions={instructions}
+                placeholder={placeholder}
+                defaultFooterLabel={defaultFooterLabel}
+                onFooterChange={onFooterChange}
+            />,
+        );
+
+        await flush();
+        await flush();
+
+        expect(vercelConstructorMock).toHaveBeenCalledWith({ bearerToken: "stored-token" });
+        expect(getAuthUserMock).toHaveBeenCalledTimes(1);
+
+        expect(appendLogMock).toHaveBeenCalledWith({
+            level: "success",
+            message: vercelMessages.logTokenLoaded,
+        });
+        expect(lastFrame()).toContain(placeholder);
+
+        unmount();
+    });
+
+    it("handles token validation failures by reverting to needs-token state", async () => {
+        pathExistsMock.mockResolvedValue(true);
+        readJsonMock.mockResolvedValue({
+            vercel: {
+                access_key: "invalid-token",
+            },
+        });
+        const validationError = new Error("Unauthorized");
+        (validationError as { statusCode?: number }).statusCode = 401;
+        getAuthUserMock.mockRejectedValue(validationError);
+
+        const onFooterChange = vi.fn();
+
+        const { lastFrame, unmount } = render(
+            <VercelService
+                instructions={instructions}
+                placeholder={placeholder}
+                defaultFooterLabel={defaultFooterLabel}
+                onFooterChange={onFooterChange}
+            />,
+        );
+
+        await flush();
+        await flush();
+
+        expect(appendLogMock).toHaveBeenCalledWith({
+            level: "warn",
+            message: vercelMessages.logTokenValidationFailed(validationError.message),
+        });
+
+        const serializedPayloads = writeFileMock.mock.calls.map((call) => call[1] as string);
+        expect(writeFileMock).toHaveBeenCalled();
+        expect(serializedPayloads.every((entry) => !entry.includes("invalid-token"))).toBe(true);
+
+        expect(lastFrame()).toContain(vercelMessages.tokenValidationError);
+        expect(lastFrame()).toContain(vercelMessages.tokenValidateFailed(validationError.message));
 
         unmount();
     });

@@ -44,7 +44,10 @@
             "browserOpening": "Launching browser...",
             "browserOpenFailed": "Failed to launch browser: {error}",
             "tokenValidationError": "Token validation error",
+            "tokenValidateFailed": "Token validation failed: {error}",
             "tokenMissingError": "Please enter a token",
+            "tokenLoadFailed": "Failed to load Vercel token: {error}",
+            "tokenSaveFailed": "Failed to save Vercel token: {error}",
             "tokenSaved": "✅ Vercel token saved.",
             "tokenInputCancelled": "Token input cancelled.",
             "footerInitializing": "Initializing…",
@@ -55,7 +58,11 @@
             "ready": "Vercel service is ready.",
             "logBrowserOpenStart": "🌐 Opening Vercel token page in your browser.",
             "logBrowserOpenFailed": "❌ Browser launch failed: {error}",
+            "logTokenLoaded": "♻️ Loaded existing Vercel token.",
+            "logTokenLoadFailed": "❌ Failed to load Vercel token: {error}",
             "logTokenSaved": "✅ Accepted Vercel token.",
+            "logTokenValidationFailed": "⚠️ Vercel token validation failed: {error}",
+            "logTokenSaveFailed": "❌ Failed to store Vercel token: {error}",
             "logTokenInputCancelled": "↩️ Token input cancelled."
         },
         "services": {

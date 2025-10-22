@@ -178,7 +178,10 @@ type RawLocaleMessages = {
             browserOpening: string;
             browserOpenFailed: string;
             tokenValidationError: string;
+            tokenValidateFailed: string;
             tokenMissingError: string;
+            tokenLoadFailed: string;
+            tokenSaveFailed: string;
             tokenSaved: string;
             tokenInputCancelled: string;
             footerInitializing: string;
@@ -189,7 +192,11 @@ type RawLocaleMessages = {
             ready: string;
             logBrowserOpenStart: string;
             logBrowserOpenFailed: string;
+            logTokenLoaded: string;
+            logTokenLoadFailed: string;
             logTokenSaved: string;
+            logTokenValidationFailed: string;
+            logTokenSaveFailed: string;
             logTokenInputCancelled: string;
         };
         services: {
@@ -453,7 +460,10 @@ export type LocaleMessages = {
             browserOpening: string;
             browserOpenFailed: (error: string) => string;
             tokenValidationError: string;
+            tokenValidateFailed: (error: string) => string;
             tokenMissingError: string;
+            tokenLoadFailed: (error: string) => string;
+            tokenSaveFailed: (error: string) => string;
             tokenSaved: string;
             tokenInputCancelled: string;
             footerInitializing: string;
@@ -464,7 +474,11 @@ export type LocaleMessages = {
             ready: string;
             logBrowserOpenStart: string;
             logBrowserOpenFailed: (error: string) => string;
+            logTokenLoaded: string;
+            logTokenLoadFailed: (error: string) => string;
             logTokenSaved: string;
+            logTokenValidationFailed: (error: string) => string;
+            logTokenSaveFailed: (error: string) => string;
             logTokenInputCancelled: string;
         };
         services: {
@@ -748,7 +762,13 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 browserOpenFailed: (error: string) =>
                     formatMessage(rawMessages.dashboard.vercel.browserOpenFailed, { error }),
                 tokenValidationError: rawMessages.dashboard.vercel.tokenValidationError,
+                tokenValidateFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.tokenValidateFailed, { error }),
                 tokenMissingError: rawMessages.dashboard.vercel.tokenMissingError,
+                tokenLoadFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.tokenLoadFailed, { error }),
+                tokenSaveFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.tokenSaveFailed, { error }),
                 tokenSaved: rawMessages.dashboard.vercel.tokenSaved,
                 tokenInputCancelled: rawMessages.dashboard.vercel.tokenInputCancelled,
                 footerInitializing: rawMessages.dashboard.vercel.footerInitializing,
@@ -760,7 +780,14 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 logBrowserOpenStart: rawMessages.dashboard.vercel.logBrowserOpenStart,
                 logBrowserOpenFailed: (error: string) =>
                     formatMessage(rawMessages.dashboard.vercel.logBrowserOpenFailed, { error }),
+                logTokenLoaded: rawMessages.dashboard.vercel.logTokenLoaded,
+                logTokenLoadFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logTokenLoadFailed, { error }),
                 logTokenSaved: rawMessages.dashboard.vercel.logTokenSaved,
+                logTokenValidationFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logTokenValidationFailed, { error }),
+                logTokenSaveFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logTokenSaveFailed, { error }),
                 logTokenInputCancelled: rawMessages.dashboard.vercel.logTokenInputCancelled,
             },
             services: {

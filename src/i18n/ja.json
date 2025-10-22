@@ -41,7 +41,10 @@
             "browserOpening": "ブラウザを起動しています...",
             "browserOpenFailed": "ブラウザ起動に失敗しました: {error}",
             "tokenValidationError": "トークン検証エラー",
+            "tokenValidateFailed": "トークンの検証に失敗しました: {error}",
             "tokenMissingError": "トークンを入力してください",
+            "tokenLoadFailed": "Vercel トークンの読み込みに失敗しました: {error}",
+            "tokenSaveFailed": "Vercel トークンの保存に失敗しました: {error}",
             "tokenSaved": "✅ Vercel トークンを保存しました。",
             "tokenInputCancelled": "入力をキャンセルしました。",
             "footerInitializing": "初期化中…",
@@ -52,7 +55,11 @@
             "ready": "Vercel サービスの初期化が完了しました。",
             "logBrowserOpenStart": "🌐 ブラウザでトークン発行ページを開きます。",
             "logBrowserOpenFailed": "❌ ブラウザ起動に失敗しました: {error}",
+            "logTokenLoaded": "♻️ 保存済みの Vercel トークンを読み込みました。",
+            "logTokenLoadFailed": "❌ Vercel トークンの読み込みに失敗しました: {error}",
             "logTokenSaved": "✅ Vercel トークンを受け付けました。",
+            "logTokenValidationFailed": "⚠️ Vercel トークンの検証に失敗しました: {error}",
+            "logTokenSaveFailed": "❌ Vercel トークンの保存に失敗しました: {error}",
             "logTokenInputCancelled": "↩️ トークン入力をキャンセルしました。"
         },
         "services": {

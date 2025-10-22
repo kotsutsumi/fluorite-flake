@@ -96,7 +96,10 @@ describe("国際化ユーティリティ", () => {
                             browserOpening: "Launching browser",
                             browserOpenFailed: "Browser failed: {error}",
                             tokenValidationError: "Token validation error",
+                            tokenValidateFailed: "Token validation failed: {error}",
                             tokenMissingError: "Token required",
+                            tokenLoadFailed: "Token load failed: {error}",
+                            tokenSaveFailed: "Token save failed: {error}",
                             tokenSaved: "Token saved",
                             tokenInputCancelled: "Token cancelled",
                             footerInitializing: "Initializing",
@@ -107,7 +110,11 @@ describe("国際化ユーティリティ", () => {
                             ready: "Vercel ready",
                             logBrowserOpenStart: "Log open start",
                             logBrowserOpenFailed: "Log open failed: {error}",
+                            logTokenLoaded: "Log token loaded",
+                            logTokenLoadFailed: "Log token load failed: {error}",
                             logTokenSaved: "Log token saved",
+                            logTokenValidationFailed: "Log token validation failed: {error}",
+                            logTokenSaveFailed: "Log token save failed: {error}",
                             logTokenInputCancelled: "Log token cancelled"
                         },
                         services: {
@@ -293,7 +300,10 @@ describe("国際化ユーティリティ", () => {
                             browserOpening: "ブラウザ起動中",
                             browserOpenFailed: "ブラウザ失敗: {error}",
                             tokenValidationError: "トークン検証エラー",
+                            tokenValidateFailed: "トークン検証失敗: {error}",
                             tokenMissingError: "トークンを入力してください",
+                            tokenLoadFailed: "トークン読み込み失敗: {error}",
+                            tokenSaveFailed: "トークン保存失敗: {error}",
                             tokenSaved: "トークン保存済み",
                             tokenInputCancelled: "入力をキャンセルしました",
                             footerInitializing: "初期化中",
@@ -304,7 +314,11 @@ describe("国際化ユーティリティ", () => {
                             ready: "Vercel準備完了",
                             logBrowserOpenStart: "ブラウザを開きます",
                             logBrowserOpenFailed: "ブラウザ失敗: {error}",
+                            logTokenLoaded: "トークンを読み込みました",
+                            logTokenLoadFailed: "トークン読み込み失敗: {error}",
                             logTokenSaved: "トークンを保存しました",
+                            logTokenValidationFailed: "トークン検証失敗: {error}",
+                            logTokenSaveFailed: "トークン保存失敗: {error}",
                             logTokenInputCancelled: "トークン入力をキャンセルしました"
                         },
                         services: {
@@ -547,6 +561,12 @@ describe("国際化ユーティリティ", () => {
             expect(messages.dashboard.vercel.inputPromptValue("abc")).toBe("Input: abc");
             expect(messages.dashboard.vercel.browserOpenFailed("boom")).toBe("Browser failed: boom");
             expect(messages.dashboard.vercel.logBrowserOpenFailed("boom")).toBe("Log open failed: boom");
+            expect(messages.dashboard.vercel.tokenValidateFailed("boom")).toBe("Token validation failed: boom");
+            expect(messages.dashboard.vercel.tokenLoadFailed("boom")).toBe("Token load failed: boom");
+            expect(messages.dashboard.vercel.tokenSaveFailed("boom")).toBe("Token save failed: boom");
+            expect(messages.dashboard.vercel.logTokenLoadFailed("boom")).toBe("Log token load failed: boom");
+            expect(messages.dashboard.vercel.logTokenValidationFailed("boom")).toBe("Log token validation failed: boom");
+            expect(messages.dashboard.vercel.logTokenSaveFailed("boom")).toBe("Log token save failed: boom");
             expect(messages.debug.devModeEnabled).toBe("Dev mode");
 
             // 関数が正しく動作することを確認
@@ -570,6 +590,12 @@ describe("国際化ユーティリティ", () => {
             expect(messages.dashboard.vercel.inputPromptValue("abc")).toBe("入力: abc");
             expect(messages.dashboard.vercel.browserOpenFailed("エラー")).toBe("ブラウザ失敗: エラー");
             expect(messages.dashboard.vercel.logBrowserOpenFailed("エラー")).toBe("ブラウザ失敗: エラー");
+            expect(messages.dashboard.vercel.tokenValidateFailed("エラー")).toBe("トークン検証失敗: エラー");
+            expect(messages.dashboard.vercel.tokenLoadFailed("エラー")).toBe("トークン読み込み失敗: エラー");
+            expect(messages.dashboard.vercel.tokenSaveFailed("エラー")).toBe("トークン保存失敗: エラー");
+            expect(messages.dashboard.vercel.logTokenLoadFailed("エラー")).toBe("トークン読み込み失敗: エラー");
+            expect(messages.dashboard.vercel.logTokenValidationFailed("エラー")).toBe("トークン検証失敗: エラー");
+            expect(messages.dashboard.vercel.logTokenSaveFailed("エラー")).toBe("トークン保存失敗: エラー");
             expect(messages.debug.devModeEnabled).toBe("開発モード");
 
             // 関数が正しく動作することを確認

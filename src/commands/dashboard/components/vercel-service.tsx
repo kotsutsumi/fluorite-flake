@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
+import { Vercel } from "@vercel/sdk";
 import { Box, Text, useInput } from "ink";
 import { execa, type Options as ExecaOptions } from "execa";
+import fsExtra from "fs-extra";
 import openBrowser from "open";
+import os from "node:os";
+import path from "node:path";
 
 import { getMessages } from "../../../i18n.js";
 import { useDashboard } from "../state/dashboard-store.js";
@@ -46,6 +50,8 @@ type BrowserCommand = {
     options?: ExecaOptions;
 };
 
+const CONFIG_DIRECTORY_NAME = ".fluorite";
+const CONFIG_FILE_NAME = "flake.json";
 const TOKEN_URL = "https://vercel.com/account/settings/tokens";
 const INPUT_CARET = "▋";
 
@@ -63,6 +69,123 @@ const MENU_ITEMS: readonly MenuItem[] = [
     { id: "misc", label: "その他", Component: MiscSection },
 ];
 
+type FluoriteConfig = {
+    [key: string]: unknown;
+    vercel?: {
+        [key: string]: unknown;
+        access_key?: string;
+    };
+};
+
+type ConfigLoadResult = {
+    path: string;
+    data: FluoriteConfig;
+};
+
+type TokenVerificationResult =
+    | {
+          valid: true;
+      }
+    | {
+          valid: false;
+          statusCode?: number;
+          errorMessage: string;
+      };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
+}
+
+async function loadConfig(): Promise<ConfigLoadResult> {
+    const configDir = path.join(os.homedir(), CONFIG_DIRECTORY_NAME);
+    await fsExtra.ensureDir(configDir);
+
+    const configPath = path.join(configDir, CONFIG_FILE_NAME);
+
+    if (!(await fsExtra.pathExists(configPath))) {
+        await writeJsonAtomic(configPath, {});
+        return {
+            path: configPath,
+            data: {},
+        };
+    }
+
+    const raw = await fsExtra.readJson(configPath);
+    const data = isRecord(raw) ? (raw as FluoriteConfig) : {};
+
+    return {
+        path: configPath,
+        data,
+    };
+}
+
+async function writeJsonAtomic(filePath: string, payload: unknown): Promise<void> {
+    const serialized = `${JSON.stringify(payload, null, 4)}\n`;
+    const tempPath = `${filePath}.tmp`;
+
+    await fsExtra.writeFile(tempPath, serialized, "utf8");
+    await fsExtra.move(tempPath, filePath, { overwrite: true });
+}
+
+async function persistVercelAccessKey(token: string | undefined): Promise<void> {
+    const { path: configPath, data } = await loadConfig();
+
+    const nextData: FluoriteConfig = {
+        ...data,
+    };
+    const existingVercel = isRecord(nextData.vercel) ? { ...nextData.vercel } : {};
+
+    if (token) {
+        existingVercel.access_key = token;
+        nextData.vercel = existingVercel;
+    } else if (isRecord(nextData.vercel)) {
+        delete existingVercel.access_key;
+        if (Object.keys(existingVercel).length === 0) {
+            delete nextData.vercel;
+        } else {
+            nextData.vercel = existingVercel;
+        }
+    } else {
+        delete nextData.vercel;
+    }
+
+    await writeJsonAtomic(configPath, nextData);
+}
+
+async function loadStoredVercelAccessKey(): Promise<string | undefined> {
+    const { data } = await loadConfig();
+    const vercelSection = isRecord(data.vercel) ? data.vercel : undefined;
+    const candidate = vercelSection?.access_key;
+    return typeof candidate === "string" && candidate.trim().length > 0 ? candidate : undefined;
+}
+
+function extractErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    if (typeof error === "string") {
+        return error;
+    }
+    return "unknown error";
+}
+
+async function verifyVercelToken(token: string): Promise<TokenVerificationResult> {
+    try {
+        const client = new Vercel({ bearerToken: token });
+        await client.user.getAuthUser();
+        return { valid: true };
+    } catch (error) {
+        const errorMessage = extractErrorMessage(error);
+        const statusCandidate = (error as { statusCode?: number }).statusCode;
+        const statusCode = typeof statusCandidate === "number" ? statusCandidate : undefined;
+        return {
+            valid: false,
+            statusCode,
+            errorMessage,
+        };
+    }
+}
+
 export function VercelService({ instructions, placeholder, defaultFooterLabel, onFooterChange }: ServiceProps): JSX.Element {
     const { dashboard } = useMemo(() => getMessages(), []);
     const vercelMessages = dashboard.vercel;
@@ -79,6 +202,7 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
     const [isLaunchingBrowser, setIsLaunchingBrowser] = useState(false);
 
     const isMountedRef = useRef(true);
+    const hasAttemptedInitRef = useRef(false);
 
     useEffect(() => {
         return () => {
@@ -88,20 +212,79 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
     }, [setInputMode]);
 
     useEffect(() => {
-        if (initState !== "pending") {
+        if (initState !== "pending" || hasAttemptedInitRef.current) {
             return;
         }
 
-        if (vercelCredentials.token) {
-            setStatusMessage(vercelMessages.ready);
-            setDetailMessage(undefined);
-            setInitState("ready");
-            return;
-        }
+        hasAttemptedInitRef.current = true;
 
-        setStatusMessage(vercelMessages.needsToken);
-        setInitState("needs-token");
-    }, [initState, vercelCredentials.token, vercelMessages.needsToken, vercelMessages.ready]);
+        const initialize = async (): Promise<void> => {
+            try {
+                const storedToken = await loadStoredVercelAccessKey();
+
+                if (!isMountedRef.current) {
+                    return;
+                }
+
+                if (!storedToken) {
+                    setStatusMessage(vercelMessages.needsToken);
+                    setDetailMessage(undefined);
+                    setInitState("needs-token");
+                    return;
+                }
+
+                setStatusMessage(vercelMessages.initializing);
+                setDetailMessage(undefined);
+
+                const verification = await verifyVercelToken(storedToken);
+
+                if (!isMountedRef.current) {
+                    return;
+                }
+
+                if (!verification.valid) {
+                    const message = verification.errorMessage;
+                    const logLevel = verification.statusCode === 401 ? "warn" : "error";
+                    appendLog({ level: logLevel, message: vercelMessages.logTokenValidationFailed(message) });
+
+                    try {
+                        await persistVercelAccessKey(undefined);
+                    } catch (clearError) {
+                        const clearMessage = extractErrorMessage(clearError);
+                        appendLog({ level: "error", message: vercelMessages.logTokenSaveFailed(clearMessage) });
+                    }
+
+                    if (!isMountedRef.current) {
+                        return;
+                    }
+
+                    setStatusMessage(vercelMessages.tokenValidationError);
+                    setDetailMessage(vercelMessages.tokenValidateFailed(message));
+                    setInitState("needs-token");
+                    return;
+                }
+
+                setVercelCredentials({ token: storedToken });
+                setStatusMessage(vercelMessages.ready);
+                setDetailMessage(undefined);
+                setInitState("ready");
+                appendLog({ level: "success", message: vercelMessages.logTokenLoaded });
+            } catch (error) {
+                const message = extractErrorMessage(error);
+                appendLog({ level: "error", message: vercelMessages.logTokenLoadFailed(message) });
+
+                if (!isMountedRef.current) {
+                    return;
+                }
+
+                setStatusMessage(vercelMessages.tokenLoadFailed(message));
+                setDetailMessage(undefined);
+                setInitState("needs-token");
+            }
+        };
+
+        void initialize();
+    }, [appendLog, initState, vercelMessages]);
 
     useEffect(() => {
         if (initState === "needs-token" || initState === "error") {
@@ -126,9 +309,9 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
 
     const inputDisplay = useMemo(() => {
         if (!tokenDraft) {
-            return `${vercelMessages.inputPromptEmpty} ${INPUT_CARET}`;
+            return `${vercelMessages.inputPromptEmpty}${INPUT_CARET}`;
         }
-        return `${vercelMessages.inputPromptValue(tokenDraft)} ${INPUT_CARET}`;
+        return `${vercelMessages.inputPromptValue(tokenDraft)}${INPUT_CARET}`;
     }, [tokenDraft, vercelMessages]);
 
     const launchBrowser = useCallback(async () => {
@@ -207,7 +390,7 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
         }
     }, [appendLog, isLaunchingBrowser, vercelMessages]);
 
-    const submitToken = useCallback(() => {
+    const submitToken = useCallback(async () => {
         const trimmed = tokenDraft.trim();
 
         if (!trimmed) {
@@ -220,13 +403,65 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
             return;
         }
 
-        setVercelCredentials({ token: trimmed });
         setTokenDraft("");
         setInputError(undefined);
         setDetailMessage(undefined);
-        setStatusMessage(vercelMessages.ready);
-        setInitState("ready");
+        setStatusMessage(vercelMessages.initializing);
+        setInitState("pending");
         setInputMode(false);
+
+        const verification = await verifyVercelToken(trimmed);
+
+        if (!isMountedRef.current) {
+            return;
+        }
+
+        if (!verification.valid) {
+            const message = verification.errorMessage;
+            const logLevel = verification.statusCode === 401 ? "warn" : "error";
+            appendLog({ level: logLevel, message: vercelMessages.logTokenValidationFailed(message) });
+
+            try {
+                await persistVercelAccessKey(undefined);
+            } catch (clearError) {
+                const clearMessage = extractErrorMessage(clearError);
+                appendLog({ level: "error", message: vercelMessages.logTokenSaveFailed(clearMessage) });
+            }
+
+            if (!isMountedRef.current) {
+                return;
+            }
+
+            setStatusMessage(vercelMessages.tokenValidationError);
+            setDetailMessage(vercelMessages.tokenValidateFailed(message));
+            setInitState("needs-token");
+            return;
+        }
+
+        try {
+            await persistVercelAccessKey(trimmed);
+        } catch (error) {
+            const message = extractErrorMessage(error);
+            appendLog({ level: "error", message: vercelMessages.logTokenSaveFailed(message) });
+
+            if (!isMountedRef.current) {
+                return;
+            }
+
+            setStatusMessage(vercelMessages.tokenSaveFailed(message));
+            setDetailMessage(undefined);
+            setInitState("needs-token");
+            return;
+        }
+
+        if (!isMountedRef.current) {
+            return;
+        }
+
+        setVercelCredentials({ token: trimmed });
+        setStatusMessage(vercelMessages.ready);
+        setDetailMessage(vercelMessages.tokenSaved);
+        setInitState("ready");
         appendLog({ level: "success", message: vercelMessages.logTokenSaved });
     }, [appendLog, setInputMode, tokenDraft, vercelMessages]);
 
@@ -297,7 +532,7 @@ export function VercelService({ instructions, placeholder, defaultFooterLabel, o
             }
 
             if (key.return) {
-                submitToken();
+                void submitToken();
                 return;
             }
 
