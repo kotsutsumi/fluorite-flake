@@ -85,6 +85,31 @@ describe("国際化ユーティリティ", () => {
                             logs: "Logs shortcuts"
                         },
                         footerVersionLabel: "v{version}",
+                        vercel: {
+                            initializing: "Initializing vercel",
+                            needsToken: "Need token",
+                            openTokenPage: "Open token page",
+                            enterToken: "Enter token",
+                            inputPromptEmpty: "Input: (empty)",
+                            inputPromptValue: "Input: {value}",
+                            inputHint: "Press enter or esc",
+                            browserOpening: "Launching browser",
+                            browserOpenFailed: "Browser failed: {error}",
+                            tokenValidationError: "Token validation error",
+                            tokenMissingError: "Token required",
+                            tokenSaved: "Token saved",
+                            tokenInputCancelled: "Token cancelled",
+                            footerInitializing: "Initializing",
+                            footerNeedsToken: "Awaiting token",
+                            footerInput: "Entering token",
+                            footerReady: "Ready",
+                            footerError: "Error",
+                            ready: "Vercel ready",
+                            logBrowserOpenStart: "Log open start",
+                            logBrowserOpenFailed: "Log open failed: {error}",
+                            logTokenSaved: "Log token saved",
+                            logTokenInputCancelled: "Log token cancelled"
+                        },
                         services: {
                             vercel: "Test Vercel",
                             turso: "Test Turso",
@@ -257,6 +282,31 @@ describe("国際化ユーティリティ", () => {
                             logs: "ログショートカット"
                         },
                         footerVersionLabel: "v{version}",
+                        vercel: {
+                            initializing: "Vercel初期化中",
+                            needsToken: "トークンが必要です",
+                            openTokenPage: "トークン発行ページ",
+                            enterToken: "トークン入力",
+                            inputPromptEmpty: "入力: （未入力）",
+                            inputPromptValue: "入力: {value}",
+                            inputHint: "Enterで確定 / Escで戻る",
+                            browserOpening: "ブラウザ起動中",
+                            browserOpenFailed: "ブラウザ失敗: {error}",
+                            tokenValidationError: "トークン検証エラー",
+                            tokenMissingError: "トークンを入力してください",
+                            tokenSaved: "トークン保存済み",
+                            tokenInputCancelled: "入力をキャンセルしました",
+                            footerInitializing: "初期化中",
+                            footerNeedsToken: "トークン待ち",
+                            footerInput: "入力中",
+                            footerReady: "準備完了",
+                            footerError: "エラー",
+                            ready: "Vercel準備完了",
+                            logBrowserOpenStart: "ブラウザを開きます",
+                            logBrowserOpenFailed: "ブラウザ失敗: {error}",
+                            logTokenSaved: "トークンを保存しました",
+                            logTokenInputCancelled: "トークン入力をキャンセルしました"
+                        },
                         services: {
                             vercel: "テストVercel",
                             turso: "テストTurso",
@@ -494,6 +544,9 @@ describe("国際化ユーティリティ", () => {
             expect(messages.dashboard.footerShortcuts.turso).toBe("Turso shortcuts");
             expect(messages.dashboard.footerVersionLabel("1.2.3")).toBe("v1.2.3");
             expect(messages.dashboard.nonInteractiveError).toEqual(["Non interactive line 1", "Non interactive line 2"]);
+            expect(messages.dashboard.vercel.inputPromptValue("abc")).toBe("Input: abc");
+            expect(messages.dashboard.vercel.browserOpenFailed("boom")).toBe("Browser failed: boom");
+            expect(messages.dashboard.vercel.logBrowserOpenFailed("boom")).toBe("Log open failed: boom");
             expect(messages.debug.devModeEnabled).toBe("Dev mode");
 
             // 関数が正しく動作することを確認
@@ -514,6 +567,9 @@ describe("国際化ユーティリティ", () => {
             expect(messages.dashboard.footerShortcuts.turso).toBe("Tursoショートカット");
             expect(messages.dashboard.footerVersionLabel("3.4.5")).toBe("v3.4.5");
             expect(messages.dashboard.nonInteractiveError).toEqual(["非TTYメッセージ1", "非TTYメッセージ2"]);
+            expect(messages.dashboard.vercel.inputPromptValue("abc")).toBe("入力: abc");
+            expect(messages.dashboard.vercel.browserOpenFailed("エラー")).toBe("ブラウザ失敗: エラー");
+            expect(messages.dashboard.vercel.logBrowserOpenFailed("エラー")).toBe("ブラウザ失敗: エラー");
             expect(messages.debug.devModeEnabled).toBe("開発モード");
 
             // 関数が正しく動作することを確認

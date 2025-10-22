@@ -25,6 +25,8 @@ type DashboardContextValue = {
     logs: readonly DashboardLogEntry[];
     appendLog: (entry: DashboardLogInput) => void;
     clearLogs: () => void;
+    isInputMode: boolean;
+    setInputMode: (value: boolean) => void;
 };
 
 const DashboardContext = createContext<DashboardContextValue | undefined>(undefined);
@@ -39,6 +41,7 @@ export function DashboardProvider({ initialService, children }: DashboardProvide
     const defaultService = initialService ?? SERVICE_ORDER[0];
     const [activeService, setActiveService] = useState<ServiceType>(defaultService);
     const [logEntries, setLogEntries] = useState<DashboardLogEntry[]>([]);
+    const [isInputMode, setIsInputMode] = useState(false);
     const logSequenceRef = useRef(0);
 
     const appendLog = useCallback((entry: DashboardLogInput) => {
@@ -87,8 +90,10 @@ export function DashboardProvider({ initialService, children }: DashboardProvide
             logs: logEntries,
             appendLog,
             clearLogs,
+            isInputMode,
+            setInputMode: setIsInputMode,
         }),
-        [activeService, appendLog, clearLogs, cycleService, logEntries, services],
+        [activeService, appendLog, clearLogs, cycleService, isInputMode, logEntries, services],
     );
 
     return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;

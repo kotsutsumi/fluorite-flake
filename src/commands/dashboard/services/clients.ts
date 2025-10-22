@@ -1,7 +1,12 @@
 import { Vercel } from "@vercel/sdk";
 import { createClient as createTursoClient } from "@tursodatabase/api";
 
+export type VercelClientOptions = {
+    token?: string;
+};
+
 export type DashboardClientOptions = {
+    vercel?: VercelClientOptions;
     vercelToken?: string;
     tursoToken?: string;
     tursoOrg?: string;
@@ -20,8 +25,10 @@ export type DashboardClients = {
 export function createDashboardClients(options: DashboardClientOptions = {}): DashboardClients {
     const clients: DashboardClients = {};
 
-    if (options.vercelToken) {
-        clients.vercel = new Vercel({ bearerToken: options.vercelToken });
+    const vercelToken = options.vercel?.token ?? options.vercelToken;
+
+    if (vercelToken) {
+        clients.vercel = new Vercel({ bearerToken: vercelToken });
     }
 
     if (options.tursoToken && options.tursoOrg) {

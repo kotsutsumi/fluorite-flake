@@ -167,6 +167,31 @@ type RawLocaleMessages = {
             logs: string;
         };
         footerVersionLabel: string;
+        vercel: {
+            initializing: string;
+            needsToken: string;
+            openTokenPage: string;
+            enterToken: string;
+            inputPromptEmpty: string;
+            inputPromptValue: string;
+            inputHint: string;
+            browserOpening: string;
+            browserOpenFailed: string;
+            tokenValidationError: string;
+            tokenMissingError: string;
+            tokenSaved: string;
+            tokenInputCancelled: string;
+            footerInitializing: string;
+            footerNeedsToken: string;
+            footerInput: string;
+            footerReady: string;
+            footerError: string;
+            ready: string;
+            logBrowserOpenStart: string;
+            logBrowserOpenFailed: string;
+            logTokenSaved: string;
+            logTokenInputCancelled: string;
+        };
         services: {
             vercel: string;
             turso: string;
@@ -417,6 +442,31 @@ export type LocaleMessages = {
             logs: string;
         };
         footerVersionLabel: (version: string) => string;
+        vercel: {
+            initializing: string;
+            needsToken: string;
+            openTokenPage: string;
+            enterToken: string;
+            inputPromptEmpty: string;
+            inputPromptValue: (value: string) => string;
+            inputHint: string;
+            browserOpening: string;
+            browserOpenFailed: (error: string) => string;
+            tokenValidationError: string;
+            tokenMissingError: string;
+            tokenSaved: string;
+            tokenInputCancelled: string;
+            footerInitializing: string;
+            footerNeedsToken: string;
+            footerInput: string;
+            footerReady: string;
+            footerError: string;
+            ready: string;
+            logBrowserOpenStart: string;
+            logBrowserOpenFailed: (error: string) => string;
+            logTokenSaved: string;
+            logTokenInputCancelled: string;
+        };
         services: {
             vercel: string;
             turso: string;
@@ -685,6 +735,34 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             },
             footerVersionLabel: (version: string) =>
                 formatMessage(rawMessages.dashboard.footerVersionLabel, { version }),
+            vercel: {
+                initializing: rawMessages.dashboard.vercel.initializing,
+                needsToken: rawMessages.dashboard.vercel.needsToken,
+                openTokenPage: rawMessages.dashboard.vercel.openTokenPage,
+                enterToken: rawMessages.dashboard.vercel.enterToken,
+                inputPromptEmpty: rawMessages.dashboard.vercel.inputPromptEmpty,
+                inputPromptValue: (value: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.inputPromptValue, { value }),
+                inputHint: rawMessages.dashboard.vercel.inputHint,
+                browserOpening: rawMessages.dashboard.vercel.browserOpening,
+                browserOpenFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.browserOpenFailed, { error }),
+                tokenValidationError: rawMessages.dashboard.vercel.tokenValidationError,
+                tokenMissingError: rawMessages.dashboard.vercel.tokenMissingError,
+                tokenSaved: rawMessages.dashboard.vercel.tokenSaved,
+                tokenInputCancelled: rawMessages.dashboard.vercel.tokenInputCancelled,
+                footerInitializing: rawMessages.dashboard.vercel.footerInitializing,
+                footerNeedsToken: rawMessages.dashboard.vercel.footerNeedsToken,
+                footerInput: rawMessages.dashboard.vercel.footerInput,
+                footerReady: rawMessages.dashboard.vercel.footerReady,
+                footerError: rawMessages.dashboard.vercel.footerError,
+                ready: rawMessages.dashboard.vercel.ready,
+                logBrowserOpenStart: rawMessages.dashboard.vercel.logBrowserOpenStart,
+                logBrowserOpenFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logBrowserOpenFailed, { error }),
+                logTokenSaved: rawMessages.dashboard.vercel.logTokenSaved,
+                logTokenInputCancelled: rawMessages.dashboard.vercel.logTokenInputCancelled,
+            },
             services: {
                 vercel: rawMessages.dashboard.services.vercel,
                 turso: rawMessages.dashboard.services.turso,

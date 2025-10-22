@@ -4,9 +4,13 @@ import { useDashboard } from "../state/dashboard-store.js";
 
 export function useDashboardShortcuts(): void {
     const { exit } = useApp();
-    const { cycleService, setActiveService } = useDashboard();
+    const { cycleService, setActiveService, isInputMode } = useDashboard();
 
     useInput((input, key) => {
+        if (isInputMode) {
+            return;
+        }
+
         if (!input) {
             return;
         }
