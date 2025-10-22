@@ -78,6 +78,7 @@ describe("国際化ユーティリティ", () => {
                         headerTitle: "Test header",
                         instructions: ["Instruction 1", "Instruction 2"],
                         activeServiceLabel: "Active service",
+                        footerPlaceholder: "Footer placeholder",
                         services: {
                             vercel: "Test Vercel",
                             turso: "Test Turso"
@@ -218,6 +219,7 @@ describe("国際化ユーティリティ", () => {
                         headerTitle: "テストヘッダー",
                         instructions: ["sキーで切り替え", "qキーで終了"],
                         activeServiceLabel: "アクティブなサービス",
+                        footerPlaceholder: "フッターの仮テキスト",
                         services: {
                             vercel: "テストVercel",
                             turso: "テストTurso"
@@ -426,6 +428,7 @@ describe("国際化ユーティリティ", () => {
             expect(messages.create.commandDescription).toBe("Test command");
             expect(messages.dashboard.services.vercel).toBe("Test Vercel");
             expect(messages.dashboard.instructions).toEqual(["Instruction 1", "Instruction 2"]);
+            expect(messages.dashboard.footerPlaceholder).toBe("Footer placeholder");
             expect(messages.dashboard.nonInteractiveError).toEqual(["Non interactive line 1", "Non interactive line 2"]);
             expect(messages.debug.devModeEnabled).toBe("Dev mode");
 
@@ -443,6 +446,7 @@ describe("国際化ユーティリティ", () => {
             expect(messages.create.commandDescription).toBe("テストコマンド");
             expect(messages.dashboard.services.turso).toBe("テストTurso");
             expect(messages.dashboard.instructions).toEqual(["sキーで切り替え", "qキーで終了"]);
+            expect(messages.dashboard.footerPlaceholder).toBe("フッターの仮テキスト");
             expect(messages.dashboard.nonInteractiveError).toEqual(["非TTYメッセージ1", "非TTYメッセージ2"]);
             expect(messages.debug.devModeEnabled).toBe("開発モード");
 

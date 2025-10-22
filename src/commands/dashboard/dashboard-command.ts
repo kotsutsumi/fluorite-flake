@@ -1,6 +1,6 @@
+import React from "react";
 import { defineCommand } from "citty";
 import { render } from "ink";
-import React from "react";
 
 import { getMessages } from "../../i18n.js";
 import { DashboardApp } from "./app.js";
@@ -23,11 +23,7 @@ export async function launchDashboard(initialService?: ServiceType): Promise<voi
         return;
     }
 
-    const tree = React.createElement(
-        DashboardProvider,
-        { initialService },
-        React.createElement(DashboardApp),
-    );
+    const tree = React.createElement(DashboardProvider, { initialService }, React.createElement(DashboardApp));
 
     const { waitUntilExit } = render(tree, {
         patchConsole: false,

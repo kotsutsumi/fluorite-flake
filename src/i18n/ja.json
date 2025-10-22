@@ -22,6 +22,7 @@
             "「q」キーまたはEscで終了"
         ],
         "activeServiceLabel": "アクティブなサービス",
+        "footerPlaceholder": "フッターの仮テキストです（正式版は準備中）。",
         "services": {
             "vercel": "Vercel",
             "turso": "Turso Cloud"

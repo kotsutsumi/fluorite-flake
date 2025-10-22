@@ -160,6 +160,7 @@ type RawLocaleMessages = {
         headerTitle: string;
         instructions: string[];
         activeServiceLabel: string;
+        footerPlaceholder: string;
         services: {
             vercel: string;
             turso: string;
@@ -378,6 +379,7 @@ export type LocaleMessages = {
         headerTitle: string;
         instructions: string[];
         activeServiceLabel: string;
+        footerPlaceholder: string;
         services: {
             vercel: string;
             turso: string;
@@ -613,6 +615,7 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             headerTitle: rawMessages.dashboard.headerTitle,
             instructions: rawMessages.dashboard.instructions,
             activeServiceLabel: rawMessages.dashboard.activeServiceLabel,
+            footerPlaceholder: rawMessages.dashboard.footerPlaceholder,
             services: {
                 vercel: rawMessages.dashboard.services.vercel,
                 turso: rawMessages.dashboard.services.turso,

@@ -25,6 +25,7 @@
             "Press \"q\" or Esc to exit"
         ],
         "activeServiceLabel": "Active service",
+        "footerPlaceholder": "Footer placeholder text — real service data coming soon.",
         "services": {
             "vercel": "Vercel",
             "turso": "Turso Cloud"
