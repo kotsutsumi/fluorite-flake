@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { JSX } from "react";
+import packageJson from "../../../package.json" assert { type: "json" };
 import { Box, Text } from "ink";
 
 import { getMessages } from "../../i18n.js";
@@ -26,6 +27,8 @@ export function DashboardApp(): JSX.Element {
         () => getPlaceholder(activeService, dashboard.placeholders),
         [activeService, dashboard.placeholders]
     );
+
+    const versionLabel = dashboard.footerVersionLabel(packageJson.version);
 
     return (
         <FullscreenContainer>
@@ -64,7 +67,11 @@ export function DashboardApp(): JSX.Element {
                         <Text>{placeholder}</Text>
                     </Box>
                 </Box>
-                <Footer text={dashboard.footerPlaceholder} />
+
+                <Footer
+                    shortcutsLabel={dashboard.footerShortcutsLabel}
+                    versionLabel={versionLabel}
+                />
             </Box>
         </FullscreenContainer>
     );

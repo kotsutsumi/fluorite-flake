@@ -20,12 +20,10 @@
     "dashboard": {
         "commandDescription": "Launch interactive dashboard (beta)",
         "headerTitle": "Fluorite Dashboard",
-        "instructions": [
-            "Press \"s\" to switch services",
-            "Press \"q\" or Esc to exit"
-        ],
+        "instructions": ["Press \"s\" to switch services", "Press \"q\" or Esc to exit"],
         "activeServiceLabel": "Active service",
-        "footerPlaceholder": "Footer placeholder text — real service data coming soon.",
+        "footerShortcutsLabel": "q:Exit   s:Switch service",
+        "footerVersionLabel": "v{version}",
         "services": {
             "vercel": "Vercel",
             "turso": "Turso Cloud"

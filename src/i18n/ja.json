@@ -17,12 +17,10 @@
     "dashboard": {
         "commandDescription": "インタラクティブなダッシュボードを起動します（ベータ）",
         "headerTitle": "Fluorite ダッシュボード",
-        "instructions": [
-            "「s」キーでサービスを切り替え",
-            "「q」キーまたはEscで終了"
-        ],
+        "instructions": ["「s」キーでサービスを切り替え", "「q」キーまたはEscで終了"],
         "activeServiceLabel": "アクティブなサービス",
-        "footerPlaceholder": "フッターの仮テキストです（正式版は準備中）。",
+        "footerShortcutsLabel": "q:終了  s:サービス切替",
+        "footerVersionLabel": "v{version}",
         "services": {
             "vercel": "Vercel",
             "turso": "Turso Cloud"
