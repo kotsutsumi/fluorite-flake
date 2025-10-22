@@ -16,7 +16,7 @@
     },
     "dashboard": {
         "commandDescription": "インタラクティブなダッシュボードを起動します（ベータ）",
-        "headerTitle": "Fluorite ダッシュボード",
+        "headerTitle": "Fluorite Flake ダッシュボード",
         "instructions": ["「s」キーでサービスを切り替え", "「q」キーまたはEscで終了"],
         "activeServiceLabel": "アクティブなサービス",
         "footerShortcutsLabel": "q:終了  s:サービス切替",

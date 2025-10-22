@@ -19,7 +19,7 @@
     },
     "dashboard": {
         "commandDescription": "Launch interactive dashboard (beta)",
-        "headerTitle": "Fluorite Dashboard",
+        "headerTitle": "Fluorite Flake Dashboard",
         "instructions": ["Press \"s\" to switch services", "Press \"q\" or Esc to exit"],
         "activeServiceLabel": "Active service",
         "footerShortcutsLabel": "q:Exit   s:Switch service",
