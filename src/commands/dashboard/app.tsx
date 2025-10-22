@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 import type { JSX } from "react";
-import { Box, Text } from "ink";
+import { Box } from "ink";
 
 import packageJson from "../../../package.json" assert { type: "json" };
 import { getMessages } from "../../i18n.js";
 import { Footer } from "./components/footer.js";
 import { FullscreenContainer } from "./components/fullscreen-container.js";
 import { Header } from "./components/header.js";
+import { TursoService } from "./components/turso-service.js";
+import { VercelService } from "./components/vercel-service.js";
 import { useDashboard } from "./state/dashboard-store.js";
 import { getPlaceholder } from "./utils/getPlaceholder.js";
 import { getServiceLabel } from "./utils/getServiceLabel.js";
@@ -43,29 +45,15 @@ export function DashboardApp(): JSX.Element {
                     borderStyle="single"
                     borderColor="grey"
                     flexDirection="column"
-                    paddingX={2}
-                    paddingY={1}
+                    paddingX={0}
+                    paddingY={0}
                     flexGrow={1}
                 >
-                    <Box marginTop={1} flexDirection="column">
-                        {dashboard.instructions.map((line) => (
-                            <Text key={line} dimColor>
-                                {line}
-                            </Text>
-                        ))}
-                    </Box>
-
-                    <Box
-                        marginTop={1}
-                        borderStyle="classic"
-                        borderColor="gray"
-                        flexDirection="column"
-                        paddingX={1}
-                        paddingY={1}
-                        flexGrow={1}
-                    >
-                        <Text>{placeholder}</Text>
-                    </Box>
+                    {activeService === "vercel" ? (
+                        <VercelService instructions={dashboard.instructions} placeholder={placeholder} />
+                    ) : (
+                        <TursoService instructions={dashboard.instructions} placeholder={placeholder} />
+                    )}
                 </Box>
 
                 <Footer
