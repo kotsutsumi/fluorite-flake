@@ -159,19 +159,23 @@ type RawLocaleMessages = {
         commandDescription: string;
         headerTitle: string;
         instructions: string[];
+        logsInstructions: string[];
         activeServiceLabel: string;
         footerShortcuts: {
             vercel: string;
             turso: string;
+            logs: string;
         };
         footerVersionLabel: string;
         services: {
             vercel: string;
             turso: string;
+            logs: string;
         };
         placeholders: {
             vercel: string;
             turso: string;
+            logs: string;
         };
         nonInteractiveError: string[];
     };
@@ -405,19 +409,23 @@ export type LocaleMessages = {
         commandDescription: string;
         headerTitle: string;
         instructions: string[];
+        logsInstructions: string[];
         activeServiceLabel: string;
         footerShortcuts: {
             vercel: string;
             turso: string;
+            logs: string;
         };
         footerVersionLabel: (version: string) => string;
         services: {
             vercel: string;
             turso: string;
+            logs: string;
         };
         placeholders: {
             vercel: string;
             turso: string;
+            logs: string;
         };
         nonInteractiveError: string[];
     };
@@ -668,20 +676,24 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             commandDescription: rawMessages.dashboard.commandDescription,
             headerTitle: rawMessages.dashboard.headerTitle,
             instructions: rawMessages.dashboard.instructions,
+            logsInstructions: rawMessages.dashboard.logsInstructions,
             activeServiceLabel: rawMessages.dashboard.activeServiceLabel,
             footerShortcuts: {
                 vercel: rawMessages.dashboard.footerShortcuts.vercel,
                 turso: rawMessages.dashboard.footerShortcuts.turso,
+                logs: rawMessages.dashboard.footerShortcuts.logs,
             },
             footerVersionLabel: (version: string) =>
                 formatMessage(rawMessages.dashboard.footerVersionLabel, { version }),
             services: {
                 vercel: rawMessages.dashboard.services.vercel,
                 turso: rawMessages.dashboard.services.turso,
+                logs: rawMessages.dashboard.services.logs,
             },
             placeholders: {
                 vercel: rawMessages.dashboard.placeholders.vercel,
                 turso: rawMessages.dashboard.placeholders.turso,
+                logs: rawMessages.dashboard.placeholders.logs,
             },
             nonInteractiveError: rawMessages.dashboard.nonInteractiveError,
         },

@@ -77,19 +77,23 @@ describe("国際化ユーティリティ", () => {
                         commandDescription: "Test dashboard description",
                         headerTitle: "Test header",
                         instructions: ["Instruction 1", "Instruction 2"],
+                        logsInstructions: ["Scroll with j/k", "Press c to clear"],
                         activeServiceLabel: "Active service",
                         footerShortcuts: {
                             vercel: "Vercel shortcuts",
-                            turso: "Turso shortcuts"
+                            turso: "Turso shortcuts",
+                            logs: "Logs shortcuts"
                         },
                         footerVersionLabel: "v{version}",
                         services: {
                             vercel: "Test Vercel",
-                            turso: "Test Turso"
+                            turso: "Test Turso",
+                            logs: "Test Logs"
                         },
                         placeholders: {
                             vercel: "Vercel placeholder",
-                            turso: "Turso placeholder"
+                            turso: "Turso placeholder",
+                            logs: "Logs placeholder"
                         },
                         nonInteractiveError: ["Non interactive line 1", "Non interactive line 2"]
                     },
@@ -245,19 +249,23 @@ describe("国際化ユーティリティ", () => {
                         commandDescription: "テストダッシュボード説明",
                         headerTitle: "テストヘッダー",
                         instructions: ["sキーで切り替え", "qキーで終了"],
+                        logsInstructions: ["j/kでスクロール", "cでクリア"],
                         activeServiceLabel: "アクティブなサービス",
                         footerShortcuts: {
                             vercel: "Vercelショートカット",
-                            turso: "Tursoショートカット"
+                            turso: "Tursoショートカット",
+                            logs: "ログショートカット"
                         },
                         footerVersionLabel: "v{version}",
                         services: {
                             vercel: "テストVercel",
-                            turso: "テストTurso"
+                            turso: "テストTurso",
+                            logs: "テストログ"
                         },
                         placeholders: {
                             vercel: "Vercelプレースホルダー",
-                            turso: "Tursoプレースホルダー"
+                            turso: "Tursoプレースホルダー",
+                            logs: "ログプレースホルダー"
                         },
                         nonInteractiveError: ["非TTYメッセージ1", "非TTYメッセージ2"]
                     },

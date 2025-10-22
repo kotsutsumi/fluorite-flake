@@ -18,19 +18,27 @@
         "commandDescription": "インタラクティブなダッシュボードを起動します（ベータ）",
         "headerTitle": "Fluorite Flake ダッシュボード",
         "instructions": ["「s」キーでサービスを切り替え", "「q」キーまたはEscで終了"],
+        "logsInstructions": [
+            "j/kキーまたは矢印キーでスクロール",
+            "cキーでログをクリア",
+            "gキーで最新エントリへ移動"
+        ],
         "activeServiceLabel": "アクティブなサービス",
         "footerShortcuts": {
             "vercel": "q:終了  s:サービス切替",
-            "turso": "q:終了  s:サービス切替"
+            "turso": "q:終了  s:サービス切替",
+            "logs": "q:終了  s:サービス切替  j/k:スクロール  c:クリア"
         },
         "footerVersionLabel": "v{version}",
         "services": {
             "vercel": "Vercel",
-            "turso": "Turso Cloud"
+            "turso": "Turso Cloud",
+            "logs": "ログ"
         },
         "placeholders": {
             "vercel": "Vercelダッシュボードのモックです。プロジェクト一覧、デプロイ、環境情報がここに表示されます。",
-            "turso": "Turso Cloudダッシュボードのモックです。データベース、ブランチ、利用状況がここに表示されます。"
+            "turso": "Turso Cloudダッシュボードのモックです。データベース、ブランチ、利用状況がここに表示されます。",
+            "logs": "ログはまだありません。操作するとここに表示されます。"
         },
         "nonInteractiveError": [
             "⚠️  このダッシュボードはインタラクティブな端末でのみ利用できます。",

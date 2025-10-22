@@ -4,6 +4,7 @@ import { Box, Text, useInput } from "ink";
 
 import { getMessages } from "../../../i18n.js";
 import { initializeTursoCloud } from "../../create/database-provisioning/index.js";
+import { useDashboard } from "../state/dashboard-store.js";
 import type { TursoLogEntry } from "../../create/database-provisioning/index.js";
 import { DatabaseSection } from "./turso/database.js";
 import { GroupSection } from "./turso/group.js";
@@ -41,6 +42,7 @@ const MENU_ITEMS: readonly MenuItem[] = [
 
 export function TursoService({ instructions, placeholder, defaultFooterLabel, onFooterChange }: ServiceProps): JSX.Element {
     const turso = useMemo(() => getMessages().create.turso, []);
+    const { appendLog } = useDashboard();
     const [activeIndex, setActiveIndex] = useState(0);
     const [initState, setInitState] = useState<InitState>("pending");
     const [initLogs, setInitLogs] = useState<string[]>([]);
@@ -64,8 +66,9 @@ export function TursoService({ instructions, placeholder, defaultFooterLabel, on
                 return;
             }
             setInitLogs((prev) => [...prev, entry.message]);
+            appendLog({ level: entry.level, message: entry.message });
         },
-        []
+        [appendLog]
     );
 
     const runInitialization = useCallback(async () => {
@@ -108,10 +111,11 @@ export function TursoService({ instructions, placeholder, defaultFooterLabel, on
             const detail = error instanceof Error ? error.message : String(error);
             setInitErrorDetail(detail);
             setInitState("error");
+            appendLog({ level: "error", message: detail ?? turso.initializationFailed });
         } finally {
             initInFlightRef.current = false;
         }
-    }, [handleLog]);
+    }, [appendLog, handleLog, turso.initializationFailed]);
 
     useEffect(() => {
         void runInitialization();
@@ -141,14 +145,20 @@ export function TursoService({ instructions, placeholder, defaultFooterLabel, on
 
     const lastLog = initLogs[initLogs.length - 1] ?? turso.initializing;
 
+    const [displayLine, setDisplayLine] = useState(lastLog);
+
+    useEffect(() => {
+        setDisplayLine(lastLog);
+    }, [lastLog]);
+
     useEffect(() => {
         if (initState === "ready") {
             onFooterChange(`${navigationFooter}  • ${activeItem.label}`);
             return;
         }
 
-        onFooterChange(`${defaultFooterLabel}  • ${lastLog}`);
-    }, [activeItem.label, defaultFooterLabel, initState, lastLog, navigationFooter, onFooterChange]);
+        onFooterChange(`${defaultFooterLabel}  • ${displayLine}`);
+    }, [activeItem.label, defaultFooterLabel, displayLine, initState, navigationFooter, onFooterChange]);
 
     const ActiveSection = activeItem.Component;
 
@@ -160,10 +170,8 @@ export function TursoService({ instructions, placeholder, defaultFooterLabel, on
             <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0} justifyContent="center" alignItems="center">
                 <Box borderStyle="round" borderColor={borderColor} flexDirection="column" paddingX={3} paddingY={2} minWidth={36}>
                     <Text color={titleColor}>Turso Cloud</Text>
-                    <Box marginTop={1} flexDirection="column">
-                        {initLogs.map((line, index) => (
-                            <Text key={`${index}-${line}`}>{line}</Text>
-                        ))}
+                    <Box marginTop={1} flexDirection="column" minHeight={1}>
+                        <Text>{displayLine}</Text>
                         {initState === "error" && initErrorDetail ? (
                             <Text color="red">{initErrorDetail}</Text>
                         ) : null}

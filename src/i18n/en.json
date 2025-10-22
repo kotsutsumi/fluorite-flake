@@ -21,19 +21,27 @@
         "commandDescription": "Launch interactive dashboard (beta)",
         "headerTitle": "Fluorite Flake Dashboard",
         "instructions": ["Press \"s\" to switch services", "Press \"q\" or Esc to exit"],
+        "logsInstructions": [
+            "Use j/k or arrow keys to scroll",
+            "Press c to clear logs",
+            "Press g to jump to the latest entry"
+        ],
         "activeServiceLabel": "Active service",
         "footerShortcuts": {
             "vercel": "q:Exit   s:Switch service",
-            "turso": "q:Exit   s:Switch service"
+            "turso": "q:Exit   s:Switch service",
+            "logs": "q:Exit   s:Switch service   j/k:Scroll   c:Clear"
         },
         "footerVersionLabel": "v{version}",
         "services": {
             "vercel": "Vercel",
-            "turso": "Turso Cloud"
+            "turso": "Turso Cloud",
+            "logs": "Logs"
         },
         "placeholders": {
             "vercel": "Vercel dashboard mock: projects, deployments, and environments will appear here.",
-            "turso": "Turso Cloud dashboard mock: databases, branches, and usage metrics will appear here."
+            "turso": "Turso Cloud dashboard mock: databases, branches, and usage metrics will appear here.",
+            "logs": "No logs recorded yet. Actions will appear here."
         },
         "nonInteractiveError": [
             "⚠️  The dashboard requires an interactive terminal.",

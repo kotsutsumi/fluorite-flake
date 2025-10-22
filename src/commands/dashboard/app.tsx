@@ -7,6 +7,7 @@ import { getMessages } from "../../i18n.js";
 import { Footer } from "./components/footer.js";
 import { FullscreenContainer } from "./components/fullscreen-container.js";
 import { Header } from "./components/header.js";
+import { LogsService } from "./components/logs-service.js";
 import { TursoService } from "./components/turso-service.js";
 import { VercelService } from "./components/vercel-service.js";
 import { useDashboard } from "./state/dashboard-store.js";
@@ -20,15 +21,22 @@ export function DashboardApp(): JSX.Element {
 
     useDashboardShortcuts();
 
-    const { vercel: vercelShortcuts, turso: tursoShortcuts } = dashboard.footerShortcuts;
+    const { vercel: vercelShortcuts, turso: tursoShortcuts, logs: logsShortcuts } = dashboard.footerShortcuts;
 
-    const [footerShortcutsLabel, setFooterShortcutsLabel] = useState(() =>
-        activeService === "vercel" ? vercelShortcuts : tursoShortcuts
+    const footerShortcutsMap = useMemo(
+        () => ({
+            vercel: vercelShortcuts,
+            turso: tursoShortcuts,
+            logs: logsShortcuts,
+        }),
+        [logsShortcuts, tursoShortcuts, vercelShortcuts]
     );
 
+    const [footerShortcutsLabel, setFooterShortcutsLabel] = useState(() => footerShortcutsMap[activeService]);
+
     useEffect(() => {
-        setFooterShortcutsLabel(activeService === "vercel" ? vercelShortcuts : tursoShortcuts);
-    }, [activeService, vercelShortcuts, tursoShortcuts]);
+        setFooterShortcutsLabel(footerShortcutsMap[activeService]);
+    }, [activeService, footerShortcutsMap]);
 
     const serviceLabel = useMemo(
         () => getServiceLabel(activeService, dashboard.services),
@@ -66,11 +74,18 @@ export function DashboardApp(): JSX.Element {
                             defaultFooterLabel={vercelShortcuts}
                             onFooterChange={setFooterShortcutsLabel}
                         />
-                    ) : (
+                    ) : activeService === "turso" ? (
                         <TursoService
                             instructions={dashboard.instructions}
                             placeholder={placeholder}
                             defaultFooterLabel={tursoShortcuts}
+                            onFooterChange={setFooterShortcutsLabel}
+                        />
+                    ) : (
+                        <LogsService
+                            instructions={dashboard.logsInstructions}
+                            placeholder={placeholder}
+                            defaultFooterLabel={logsShortcuts}
                             onFooterChange={setFooterShortcutsLabel}
                         />
                     )}
