@@ -198,6 +198,21 @@ type RawLocaleMessages = {
             logTokenValidationFailed: string;
             logTokenSaveFailed: string;
             logTokenInputCancelled: string;
+            projectSection: {
+                loading: string;
+                tokenMissing: string;
+                error: string;
+                empty: string;
+                showingCount: string;
+                totalCount: string;
+                logFetchStart: string;
+                logFetchSuccess: string;
+                logFetchFailure: string;
+                selectionHint: string;
+                selectionConfirmed: string;
+                logSelection: string;
+                footerToggle: string;
+            };
         };
         services: {
             vercel: string;
@@ -480,6 +495,21 @@ export type LocaleMessages = {
             logTokenValidationFailed: (error: string) => string;
             logTokenSaveFailed: (error: string) => string;
             logTokenInputCancelled: string;
+            projectSection: {
+                loading: string;
+                tokenMissing: string;
+                error: (error: string) => string;
+                empty: string;
+                showingCount: (count: number) => string;
+                totalCount: (count: number) => string;
+                logFetchStart: string;
+                logFetchSuccess: (count: number) => string;
+                logFetchFailure: (error: string) => string;
+                selectionHint: string;
+                selectionConfirmed: (name: string) => string;
+                logSelection: (name: string) => string;
+                footerToggle: string;
+            };
         };
         services: {
             vercel: string;
@@ -789,7 +819,35 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 logTokenSaveFailed: (error: string) =>
                     formatMessage(rawMessages.dashboard.vercel.logTokenSaveFailed, { error }),
                 logTokenInputCancelled: rawMessages.dashboard.vercel.logTokenInputCancelled,
+                projectSection: {
+                    loading: rawMessages.dashboard.vercel.projectSection.loading,
+                    tokenMissing: rawMessages.dashboard.vercel.projectSection.tokenMissing,
+                    error: (error: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.error, { error }),
+                    empty: rawMessages.dashboard.vercel.projectSection.empty,
+                    showingCount: (count: number) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.showingCount, {
+                            count: String(count),
+                        }),
+                    totalCount: (count: number) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.totalCount, {
+                            count: String(count),
+                        }),
+                logFetchStart: rawMessages.dashboard.vercel.projectSection.logFetchStart,
+                logFetchSuccess: (count: number) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchSuccess, {
+                        count: String(count),
+                    }),
+                logFetchFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
+                selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
+                selectionConfirmed: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
+                logSelection: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
+                footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
             },
+        },
             services: {
                 vercel: rawMessages.dashboard.services.vercel,
                 turso: rawMessages.dashboard.services.turso,

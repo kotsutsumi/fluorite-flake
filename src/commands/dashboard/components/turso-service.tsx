@@ -43,7 +43,7 @@ const MENU_ITEMS: readonly MenuItem[] = [
 
 // Turso 連携の状態確認や初期化を担うダッシュボードセクション。
 export function TursoService({
-    instructions,
+    instructions: _instructions,
     placeholder,
     defaultFooterLabel,
     onFooterChange,

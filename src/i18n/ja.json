@@ -60,7 +60,22 @@
             "logTokenSaved": "✅ Vercel トークンを受け付けました。",
             "logTokenValidationFailed": "⚠️ Vercel トークンの検証に失敗しました: {error}",
             "logTokenSaveFailed": "❌ Vercel トークンの保存に失敗しました: {error}",
-            "logTokenInputCancelled": "↩️ トークン入力をキャンセルしました。"
+            "logTokenInputCancelled": "↩️ トークン入力をキャンセルしました。",
+            "projectSection": {
+                "loading": "Vercel プロジェクト一覧を取得しています…",
+                "tokenMissing": "Vercel のアクセストークンを登録するとプロジェクト一覧を取得できます。",
+                "error": "プロジェクト一覧の取得に失敗しました: {error}",
+                "empty": "プロジェクトが見つかりませんでした。",
+                "showingCount": "{count} 件のプロジェクトを表示しています。",
+                "totalCount": "利用可能な総プロジェクト数: {count}",
+            "logFetchStart": "📡 Vercel からプロジェクト一覧を取得します。",
+            "logFetchSuccess": "✅ {count} 件の Vercel プロジェクトを取得しました。",
+            "logFetchFailure": "❌ Vercel プロジェクトの取得に失敗しました: {error}",
+            "selectionHint": "Tabで一覧に移動し、↑/↓で選択、Enterで決定できます。",
+            "selectionConfirmed": "選択中のプロジェクト: {name}",
+            "logSelection": "🔖 プロジェクト「{name}」を選択しました。",
+            "footerToggle": "Tab:フォーカス切替"
+        }
         },
         "services": {
             "vercel": "Vercel",

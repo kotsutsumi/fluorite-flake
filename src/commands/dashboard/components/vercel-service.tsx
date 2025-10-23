@@ -20,7 +20,7 @@ import { MiscSection } from "./vercel/misc.js";
 import { ProjectSection } from "./vercel/project.js";
 import { SecretsSection } from "./vercel/secrets.js";
 import { TeamSection } from "./vercel/team.js";
-import type { VercelSectionComponent } from "./vercel/types.js";
+import type { VercelSectionComponent, VercelSectionNavigation } from "./vercel/types.js";
 import { UserSection } from "./vercel/user.js";
 
 type ServiceProps = {
@@ -196,7 +196,7 @@ async function verifyVercelToken(token: string): Promise<TokenVerificationResult
 
 // Vercel 連携を行うダッシュボード画面の本体。トークン検証やメニュー切替を担う。
 export function VercelService({
-    instructions,
+    instructions: _instructions,
     placeholder,
     defaultFooterLabel,
     onFooterChange,
@@ -214,9 +214,17 @@ export function VercelService({
     const [inputError, setInputError] = useState<string | undefined>(undefined);
     const [selectedActionIndex, setSelectedActionIndex] = useState(0);
     const [isLaunchingBrowser, setIsLaunchingBrowser] = useState(false);
+    const [isSectionFocused, setSectionFocused] = useState(false);
 
     const isMountedRef = useRef(true);
     const hasAttemptedInitRef = useRef(false);
+    const sectionNavigationRef = useRef<VercelSectionNavigation | undefined>(undefined);
+    const handleRegisterNavigation = useCallback((navigation?: VercelSectionNavigation) => {
+        sectionNavigationRef.current = navigation;
+        if (!navigation) {
+            setSectionFocused(false);
+        }
+    }, []);
 
     // アンマウント時に入力モードを解除し、非同期処理の後続更新を防ぐ。
     useEffect(() => {
@@ -322,8 +330,6 @@ export function VercelService({
         [vercelMessages.enterToken, vercelMessages.openTokenPage]
     );
 
-    // フッターには標準ショートカットに加えて上下移動キーを追記する。
-    const navigationFooter = useMemo(() => `${defaultFooterLabel}  j:↓  k:↑`, [defaultFooterLabel]);
     const activeItem = MENU_ITEMS[activeIndex];
 
     // トークン入力中はカーソル風の文字を末尾に追加し、状況を視覚化する。
@@ -516,6 +522,22 @@ export function VercelService({
         [launchBrowser, vercelMessages.inputPromptEmpty]
     );
 
+    useEffect(() => {
+        const currentItem = MENU_ITEMS[activeIndex];
+        if (!currentItem || currentItem.id !== "project") {
+            sectionNavigationRef.current?.blur();
+            sectionNavigationRef.current = undefined;
+            setSectionFocused(false);
+        }
+    }, [activeIndex]);
+
+    useEffect(() => {
+        if (initState !== "ready") {
+            sectionNavigationRef.current?.blur();
+            setSectionFocused(false);
+        }
+    }, [initState]);
+
     // 初期化状況に応じたキー操作をまとめて処理する。
     useInput((input, key) => {
         if (isLaunchingBrowser) {
@@ -579,20 +601,61 @@ export function VercelService({
             return;
         }
 
+        const navigation = sectionNavigationRef.current;
+        const isProjectSection = MENU_ITEMS[activeIndex]?.id === "project";
+
+        if (isSectionFocused) {
+            if (key.tab || key.escape) {
+                navigation?.blur();
+                setSectionFocused(false);
+                return;
+            }
+
+            if (input?.toLowerCase() === "j" || key.downArrow) {
+                navigation?.move("next");
+                return;
+            }
+
+            if (input?.toLowerCase() === "k" || key.upArrow) {
+                navigation?.move("previous");
+                return;
+            }
+
+            if (key.return) {
+                navigation?.select();
+                return;
+            }
+
+            return;
+        }
+
+        if (key.tab) {
+            if (isProjectSection && navigation?.hasInteractiveContent()) {
+                navigation.focus();
+                setSectionFocused(true);
+            }
+            return;
+        }
+
         if (input?.toLowerCase() === "j" || key.downArrow) {
             setActiveIndex((current) => (current + 1) % MENU_ITEMS.length);
+            setSectionFocused(false);
             return;
         }
 
         if (input?.toLowerCase() === "k" || key.upArrow) {
             setActiveIndex((current) => (current - 1 + MENU_ITEMS.length) % MENU_ITEMS.length);
+            setSectionFocused(false);
         }
     });
 
     // 状態に応じたフッター文言を統一的に管理する。
     useEffect(() => {
         if (initState === "ready") {
-            onFooterChange(`${navigationFooter}  • ${vercelMessages.footerReady}  • ${activeItem.label}`);
+            const baseFooter = `${defaultFooterLabel}  j:↓  k:↑`;
+            const toggleHint =
+                activeItem.id === "project" ? `  ${vercelMessages.projectSection.footerToggle}` : "";
+            onFooterChange(`${baseFooter}${toggleHint}  • ${vercelMessages.footerReady}  • ${activeItem.label}`);
             return;
         }
 
@@ -607,15 +670,7 @@ export function VercelService({
         }
 
         onFooterChange(`${defaultFooterLabel}  • ${footerSuffix}`);
-    }, [
-        activeItem.label,
-        defaultFooterLabel,
-        initState,
-        isLaunchingBrowser,
-        navigationFooter,
-        onFooterChange,
-        vercelMessages,
-    ]);
+    }, [activeItem.id, activeItem.label, defaultFooterLabel, initState, isLaunchingBrowser, onFooterChange, vercelMessages]);
 
     // アクティブなメニュー項目に紐づくセクションを動的に差し替える。
     const ActiveSection = activeItem.Component;
@@ -692,11 +747,14 @@ export function VercelService({
         );
     }
 
+    const sidebarBorderColor = isSectionFocused ? "gray" : "blueBright";
+    const contentBorderColor = activeItem.id === "project" && isSectionFocused ? "blueBright" : "gray";
+
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
             <Box flexDirection="row" flexGrow={1}>
                 {/* 左側にメニュー一覧を表示し、現在のカーソルを強調する。 */}
-                <Box width={24} borderStyle="single" borderColor="gray" flexDirection="column" paddingX={1}>
+                <Box width={24} borderStyle="single" borderColor={sidebarBorderColor} flexDirection="column" paddingX={1}>
                     {MENU_ITEMS.map((item, index) => {
                         const isActive = index === activeIndex;
                         return (
@@ -712,7 +770,7 @@ export function VercelService({
                 <Box
                     marginLeft={1}
                     borderStyle="single"
-                    borderColor="gray"
+                    borderColor={contentBorderColor}
                     flexDirection="column"
                     paddingX={1}
                     flexGrow={1}
@@ -721,6 +779,10 @@ export function VercelService({
                         sectionLabel={activeItem.label}
                         placeholder={placeholder}
                         credentials={vercelCredentials}
+                        isFocused={activeItem.id === "project" ? isSectionFocused : false}
+                        onRegisterNavigation={
+                            activeItem.id === "project" ? handleRegisterNavigation : undefined
+                        }
                     />
                 </Box>
             </Box>

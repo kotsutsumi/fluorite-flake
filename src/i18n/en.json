@@ -63,7 +63,22 @@
             "logTokenSaved": "✅ Accepted Vercel token.",
             "logTokenValidationFailed": "⚠️ Vercel token validation failed: {error}",
             "logTokenSaveFailed": "❌ Failed to store Vercel token: {error}",
-            "logTokenInputCancelled": "↩️ Token input cancelled."
+            "logTokenInputCancelled": "↩️ Token input cancelled.",
+            "projectSection": {
+                "loading": "Fetching Vercel projects…",
+                "tokenMissing": "Add a Vercel access token to load your projects.",
+                "error": "Failed to retrieve projects: {error}",
+                "empty": "No projects found for this account.",
+                "showingCount": "Showing {count} projects.",
+                "totalCount": "Total projects available: {count}",
+            "logFetchStart": "📡 Fetching project list from Vercel…",
+            "logFetchSuccess": "✅ Retrieved {count} Vercel projects.",
+            "logFetchFailure": "❌ Failed to fetch Vercel projects: {error}",
+            "selectionHint": "Press Tab to focus projects, use ↑/↓, then Enter to select.",
+            "selectionConfirmed": "Selected project: {name}",
+            "logSelection": "🔖 Selected project \"{name}\".",
+            "footerToggle": "Tab:toggle focus"
+        }
         },
         "services": {
             "vercel": "Vercel",
