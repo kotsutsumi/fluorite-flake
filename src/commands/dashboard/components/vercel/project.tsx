@@ -3,7 +3,7 @@ import { Box, Text } from "ink";
 
 import { getMessages } from "../../../../i18n.js";
 import { useDashboard } from "../../state/dashboard-store.js";
-import type { VercelSectionComponent, VercelSectionNavigation } from "./types.js";
+import type { ProjectSummary, VercelSectionComponent, VercelSectionNavigation } from "./types.js";
 
 type FetchState = "idle" | "loading" | "success" | "error";
 
@@ -19,13 +19,6 @@ type VercelProjectsPayload = {
     pagination?: {
         total?: unknown;
     };
-};
-
-type ProjectSummary = {
-    id: string;
-    name: string;
-    framework?: string;
-    updatedAt?: number;
 };
 
 const PROJECTS_ENDPOINT = "https://api.vercel.com/v10/projects";
@@ -98,6 +91,7 @@ export const ProjectSection: VercelSectionComponent = ({
     credentials,
     isFocused = false,
     onRegisterNavigation,
+    onProjectSelected,
 }) => {
     const { appendLog } = useDashboard();
     const projectMessages = useMemo(() => getMessages().dashboard.vercel.projectSection, []);
@@ -227,8 +221,11 @@ export const ProjectSection: VercelSectionComponent = ({
 
             setLastSelected(project);
             appendLog({ level: "info", message: projectMessages.logSelection(project.name) });
+            if (onProjectSelected) {
+                onProjectSelected(project);
+            }
         };
-    }, [appendLog, hasInteractiveContent, projectMessages, projects]);
+    }, [appendLog, hasInteractiveContent, onProjectSelected, projectMessages, projects]);
 
     useEffect(() => {
         if (!onRegisterNavigation) {

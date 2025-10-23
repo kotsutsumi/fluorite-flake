@@ -17,10 +17,11 @@ import { DnsSection } from "./vercel/dns.js";
 import { DomainSection } from "./vercel/domain.js";
 import { EnvironmentSection } from "./vercel/environment.js";
 import { MiscSection } from "./vercel/misc.js";
+import { ProjectDetailView } from "./vercel/project-detail.js";
 import { ProjectSection } from "./vercel/project.js";
 import { SecretsSection } from "./vercel/secrets.js";
 import { TeamSection } from "./vercel/team.js";
-import type { VercelSectionComponent, VercelSectionNavigation } from "./vercel/types.js";
+import type { ProjectSummary, VercelSectionComponent, VercelSectionNavigation } from "./vercel/types.js";
 import { UserSection } from "./vercel/user.js";
 
 type ServiceProps = {
@@ -215,15 +216,30 @@ export function VercelService({
     const [selectedActionIndex, setSelectedActionIndex] = useState(0);
     const [isLaunchingBrowser, setIsLaunchingBrowser] = useState(false);
     const [isSectionFocused, setSectionFocused] = useState(false);
+    const [detailProject, setDetailProject] = useState<ProjectSummary | undefined>(undefined);
 
     const isMountedRef = useRef(true);
     const hasAttemptedInitRef = useRef(false);
     const sectionNavigationRef = useRef<VercelSectionNavigation | undefined>(undefined);
-    const handleRegisterNavigation = useCallback((navigation?: VercelSectionNavigation) => {
-        sectionNavigationRef.current = navigation;
-        if (!navigation) {
-            setSectionFocused(false);
-        }
+    const handleRegisterNavigation = useCallback(
+        (navigation?: VercelSectionNavigation) => {
+            if (detailProject) {
+                return;
+            }
+
+            sectionNavigationRef.current = navigation;
+            if (!navigation) {
+                setSectionFocused(false);
+            }
+        },
+        [detailProject]
+    );
+
+    const handleProjectSelected = useCallback((project: ProjectSummary) => {
+        sectionNavigationRef.current?.blur();
+        sectionNavigationRef.current = undefined;
+        setSectionFocused(false);
+        setDetailProject(project);
     }, []);
 
     // アンマウント時に入力モードを解除し、非同期処理の後続更新を防ぐ。
@@ -651,6 +667,11 @@ export function VercelService({
 
     // 状態に応じたフッター文言を統一的に管理する。
     useEffect(() => {
+        if (detailProject) {
+            onFooterChange(`${defaultFooterLabel}  ${vercelMessages.projectDetail.footerLabel}`);
+            return;
+        }
+
         if (initState === "ready") {
             const baseFooter = `${defaultFooterLabel}  j:↓  k:↑`;
             const toggleHint =
@@ -670,7 +691,15 @@ export function VercelService({
         }
 
         onFooterChange(`${defaultFooterLabel}  • ${footerSuffix}`);
-    }, [activeItem.id, activeItem.label, defaultFooterLabel, initState, isLaunchingBrowser, onFooterChange, vercelMessages]);
+    }, [activeItem.id, activeItem.label, defaultFooterLabel, detailProject, initState, isLaunchingBrowser, onFooterChange, vercelMessages]);
+
+    if (detailProject) {
+        return (
+            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
+                <ProjectDetailView project={detailProject} credentials={vercelCredentials} />
+            </Box>
+        );
+    }
 
     // アクティブなメニュー項目に紐づくセクションを動的に差し替える。
     const ActiveSection = activeItem.Component;
@@ -782,6 +811,9 @@ export function VercelService({
                         isFocused={activeItem.id === "project" ? isSectionFocused : false}
                         onRegisterNavigation={
                             activeItem.id === "project" ? handleRegisterNavigation : undefined
+                        }
+                        onProjectSelected={
+                            activeItem.id === "project" ? handleProjectSelected : undefined
                         }
                     />
                 </Box>

@@ -13,6 +13,13 @@ export type VercelSectionNavigation = {
     select: () => void;
 };
 
+export type ProjectSummary = {
+    id: string;
+    name: string;
+    framework?: string;
+    updatedAt?: number;
+};
+
 // 各セクションコンポーネントに渡される共通プロパティ。
 export type VercelSectionProps = {
     sectionLabel: string;
@@ -20,6 +27,7 @@ export type VercelSectionProps = {
     credentials?: VercelCredentials;
     isFocused?: boolean;
     onRegisterNavigation?: (navigation: VercelSectionNavigation | undefined) => void;
+    onProjectSelected?: (project: ProjectSummary) => void;
 };
 
 // Vercel セクションは全て JSX.Element を返す関数コンポーネントとして扱う。

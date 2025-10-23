@@ -213,6 +213,32 @@ type RawLocaleMessages = {
                 logSelection: string;
                 footerToggle: string;
             };
+            projectDetail: {
+                heading: string;
+                loading: string;
+                tokenMissing: string;
+                backHint: string;
+                footerLabel: string;
+                error: string;
+                genericError: string;
+                metadataHeading: string;
+                idLabel: string;
+                frameworkLabel: string;
+                unknown: string;
+                gitRepositoryLabel: string;
+                productionBranchLabel: string;
+                createdAtLabel: string;
+                updatedAtLabel: string;
+                domainsHeading: string;
+                noDomains: string;
+                domainStatusVerified: string;
+                domainStatusPending: string;
+                domainCreatedLabel: string;
+                domainRedirectLabel: string;
+                logFetchStart: string;
+                logFetchSuccess: string;
+                logFetchFailure: string;
+            };
         };
         services: {
             vercel: string;
@@ -509,6 +535,32 @@ export type LocaleMessages = {
                 selectionConfirmed: (name: string) => string;
                 logSelection: (name: string) => string;
                 footerToggle: string;
+            };
+            projectDetail: {
+                heading: (name: string) => string;
+                loading: string;
+                tokenMissing: string;
+                backHint: string;
+                footerLabel: string;
+                error: (error: string) => string;
+                genericError: string;
+                metadataHeading: string;
+                idLabel: string;
+                frameworkLabel: string;
+                unknown: string;
+                gitRepositoryLabel: string;
+                productionBranchLabel: string;
+                createdAtLabel: string;
+                updatedAtLabel: string;
+                domainsHeading: string;
+                noDomains: string;
+                domainStatusVerified: string;
+                domainStatusPending: string;
+                domainCreatedLabel: (timestamp: string) => string;
+                domainRedirectLabel: (target: string) => string;
+                logFetchStart: (name: string) => string;
+                logFetchSuccess: (name: string) => string;
+                logFetchFailure: (name: string, error: string) => string;
             };
         };
         services: {
@@ -833,21 +885,54 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                         formatMessage(rawMessages.dashboard.vercel.projectSection.totalCount, {
                             count: String(count),
                         }),
-                logFetchStart: rawMessages.dashboard.vercel.projectSection.logFetchStart,
-                logFetchSuccess: (count: number) =>
-                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchSuccess, {
-                        count: String(count),
-                    }),
-                logFetchFailure: (error: string) =>
-                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
-                selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
-                selectionConfirmed: (name: string) =>
-                    formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
-                logSelection: (name: string) =>
-                    formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
-                footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
+                    logFetchStart: rawMessages.dashboard.vercel.projectSection.logFetchStart,
+                    logFetchSuccess: (count: number) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchSuccess, {
+                            count: String(count),
+                        }),
+                    logFetchFailure: (error: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
+                    selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
+                    selectionConfirmed: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
+                    logSelection: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
+                    footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
+                },
+                projectDetail: {
+                    heading: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.heading, { name }),
+                    loading: rawMessages.dashboard.vercel.projectDetail.loading,
+                    tokenMissing: rawMessages.dashboard.vercel.projectDetail.tokenMissing,
+                    backHint: rawMessages.dashboard.vercel.projectDetail.backHint,
+                    footerLabel: rawMessages.dashboard.vercel.projectDetail.footerLabel,
+                    error: (error: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.error, { error }),
+                    genericError: rawMessages.dashboard.vercel.projectDetail.genericError,
+                    metadataHeading: rawMessages.dashboard.vercel.projectDetail.metadataHeading,
+                    idLabel: rawMessages.dashboard.vercel.projectDetail.idLabel,
+                    frameworkLabel: rawMessages.dashboard.vercel.projectDetail.frameworkLabel,
+                    unknown: rawMessages.dashboard.vercel.projectDetail.unknown,
+                    gitRepositoryLabel: rawMessages.dashboard.vercel.projectDetail.gitRepositoryLabel,
+                    productionBranchLabel: rawMessages.dashboard.vercel.projectDetail.productionBranchLabel,
+                    createdAtLabel: rawMessages.dashboard.vercel.projectDetail.createdAtLabel,
+                    updatedAtLabel: rawMessages.dashboard.vercel.projectDetail.updatedAtLabel,
+                    domainsHeading: rawMessages.dashboard.vercel.projectDetail.domainsHeading,
+                    noDomains: rawMessages.dashboard.vercel.projectDetail.noDomains,
+                    domainStatusVerified: rawMessages.dashboard.vercel.projectDetail.domainStatusVerified,
+                    domainStatusPending: rawMessages.dashboard.vercel.projectDetail.domainStatusPending,
+                    domainCreatedLabel: (timestamp: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.domainCreatedLabel, { timestamp }),
+                    domainRedirectLabel: (target: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.domainRedirectLabel, { target }),
+                    logFetchStart: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchStart, { name }),
+                    logFetchSuccess: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchSuccess, { name }),
+                    logFetchFailure: (name: string, error: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchFailure, { name, error }),
+                },
             },
-        },
             services: {
                 vercel: rawMessages.dashboard.services.vercel,
                 turso: rawMessages.dashboard.services.turso,
