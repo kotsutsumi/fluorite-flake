@@ -18,6 +18,7 @@ import { DomainSection } from "./vercel/domain.js";
 import { EnvironmentSection } from "./vercel/environment.js";
 import { MiscSection } from "./vercel/misc.js";
 import { ProjectDetailView } from "./vercel/project-detail.js";
+import { ProjectCreateView } from "./vercel/project-create.js";
 import { ProjectSection } from "./vercel/project.js";
 import { SecretsSection } from "./vercel/secrets.js";
 import { TeamSection } from "./vercel/team.js";
@@ -289,6 +290,8 @@ export function VercelService({
     const [isLaunchingBrowser, setIsLaunchingBrowser] = useState(false);
     const [isSectionFocused, setSectionFocused] = useState(false);
     const [detailProject, setDetailProject] = useState<ProjectSummary | undefined>(undefined);
+    const [isCreatingProject, setIsCreatingProject] = useState(false);
+    const [projectRefreshToken, setProjectRefreshToken] = useState(0);
     const initialTeamRef = useRef<TeamSummary | undefined>(undefined);
     const [activeTeam, setActiveTeam] = useState<TeamSummary | undefined>(undefined);
 
@@ -297,7 +300,7 @@ export function VercelService({
     const sectionNavigationRef = useRef<VercelSectionNavigation | undefined>(undefined);
     const handleRegisterNavigation = useCallback(
         (navigation?: VercelSectionNavigation) => {
-            if (detailProject) {
+            if (detailProject || isCreatingProject) {
                 return;
             }
 
@@ -306,7 +309,7 @@ export function VercelService({
                 setSectionFocused(false);
             }
         },
-        [detailProject]
+        [detailProject, isCreatingProject]
     );
 
     const handleProjectSelected = useCallback((project: ProjectSummary) => {
@@ -314,6 +317,31 @@ export function VercelService({
         sectionNavigationRef.current = undefined;
         setSectionFocused(false);
         setDetailProject(project);
+    }, []);
+
+    const handleCreateProjectRequest = useCallback(() => {
+        if (isCreatingProject) {
+            return;
+        }
+        sectionNavigationRef.current?.blur();
+        sectionNavigationRef.current = undefined;
+        setSectionFocused(false);
+        setDetailProject(undefined);
+        setIsCreatingProject(true);
+    }, [isCreatingProject]);
+
+    const handleCreateCancelled = useCallback(() => {
+        setIsCreatingProject(false);
+        sectionNavigationRef.current?.focus();
+        setSectionFocused(true);
+    }, []);
+
+    const handleProjectCreated = useCallback((_project: ProjectSummary) => {
+        setIsCreatingProject(false);
+        setProjectRefreshToken((current) => current + 1);
+        sectionNavigationRef.current?.focus();
+        setSectionFocused(true);
+        setDetailProject(undefined);
     }, []);
 
     const handleTeamSelected = useCallback(
@@ -667,6 +695,10 @@ export function VercelService({
             return;
         }
 
+        if (isCreatingProject) {
+            return;
+        }
+
         if (detailProject) {
             if (key.escape) {
                 setDetailProject(undefined);
@@ -738,7 +770,21 @@ export function VercelService({
         const isInteractiveSection = activeSectionId ? INTERACTIVE_SECTION_IDS.has(activeSectionId) : false;
 
         if (isSectionFocused) {
-            if (key.tab || key.escape) {
+            if (key.escape) {
+                navigation?.blur();
+                setSectionFocused(false);
+                return;
+            }
+
+            if (key.tab) {
+                let handled = false;
+                if (activeSectionId === "project" && typeof navigation?.cycleArea === "function") {
+                    handled = navigation.cycleArea(key.shift ? "previous" : "next");
+                }
+                if (handled) {
+                    return;
+                }
+
                 navigation?.blur();
                 setSectionFocused(false);
                 return;
@@ -784,6 +830,11 @@ export function VercelService({
 
     // 状態に応じたフッター文言を統一的に管理する。
     useEffect(() => {
+        if (isCreatingProject) {
+            onFooterChange(`${defaultFooterLabel}  ${vercelMessages.projectCreate.footerLabel}`);
+            return;
+        }
+
         if (detailProject) {
             onFooterChange(`${defaultFooterLabel}  ${vercelMessages.projectDetail.footerLabel}`);
             return;
@@ -813,7 +864,30 @@ export function VercelService({
         }
 
         onFooterChange(`${defaultFooterLabel}  • ${footerSuffix}`);
-    }, [activeItem.id, activeItem.label, defaultFooterLabel, detailProject, initState, isLaunchingBrowser, onFooterChange, vercelMessages]);
+    }, [
+        activeItem.id,
+        activeItem.label,
+        defaultFooterLabel,
+        detailProject,
+        initState,
+        isCreatingProject,
+        isLaunchingBrowser,
+        onFooterChange,
+        vercelMessages,
+    ]);
+
+    if (isCreatingProject) {
+        return (
+            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
+                <ProjectCreateView
+                    credentials={vercelCredentials}
+                    activeTeam={activeTeam}
+                    onCancel={handleCreateCancelled}
+                    onSuccess={handleProjectCreated}
+                />
+            </Box>
+        );
+    }
 
     if (detailProject) {
         return (
@@ -935,8 +1009,12 @@ export function VercelService({
                             INTERACTIVE_SECTION_IDS.has(activeItem.id) ? handleRegisterNavigation : undefined
                         }
                         onProjectSelected={activeItem.id === "project" ? handleProjectSelected : undefined}
+                        onCreateProjectRequested={
+                            activeItem.id === "project" ? handleCreateProjectRequest : undefined
+                        }
                         onTeamSelected={activeItem.id === "team" ? handleTeamSelected : undefined}
                         activeTeam={activeTeam}
+                        refreshToken={activeItem.id === "project" ? projectRefreshToken : undefined}
                     />
                 </Box>
             </Box>

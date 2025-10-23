@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text } from "ink";
 
 import { getMessages } from "../../../../i18n.js";
@@ -92,7 +92,9 @@ export const ProjectSection: VercelSectionComponent = ({
     isFocused = false,
     onRegisterNavigation,
     onProjectSelected,
+    onCreateProjectRequested,
     activeTeam,
+    refreshToken,
 }) => {
     const { appendLog } = useDashboard();
     const projectMessages = useMemo(() => getMessages().dashboard.vercel.projectSection, []);
@@ -105,6 +107,7 @@ export const ProjectSection: VercelSectionComponent = ({
     const [selectedIndex, setSelectedIndex] = useState(0);
     const selectedIndexRef = useRef(0);
     const [lastSelected, setLastSelected] = useState<ProjectSummary | undefined>(undefined);
+    const [focusedArea, setFocusedArea] = useState<"list" | "actions">("list");
 
     useEffect(() => {
         if (!token) {
@@ -114,6 +117,7 @@ export const ProjectSection: VercelSectionComponent = ({
             setErrorMessage(undefined);
             setSelectedIndex(0);
             setLastSelected(undefined);
+            setFocusedArea("list");
             return;
         }
 
@@ -183,60 +187,105 @@ export const ProjectSection: VercelSectionComponent = ({
             isCancelled = true;
             controller.abort();
         };
-    }, [appendLog, projectMessages, token, activeTeam?.id, activeTeam?.slug]);
+    }, [appendLog, projectMessages, token, activeTeam?.id, activeTeam?.slug, refreshToken]);
 
     useEffect(() => {
         setSelectedIndex(0);
         setLastSelected(undefined);
-    }, [projects, activeTeam?.id, activeTeam?.slug]);
+        if (projects.length === 0) {
+            setFocusedArea("actions");
+        } else {
+            setFocusedArea("list");
+        }
+    }, [projects, activeTeam?.id, activeTeam?.slug, refreshToken]);
 
     useEffect(() => {
         selectedIndexRef.current = selectedIndex;
     }, [selectedIndex]);
 
-    const hasInteractiveContent = state === "success" && projects.length > 0 && Boolean(token);
+    const hasInteractiveContent = state === "success" && Boolean(token);
 
-    const moveSelection = useMemo(
-        () => ({
-            next: () => {
-                if (!hasInteractiveContent) {
-                    return;
-                }
-                setSelectedIndex((current) => {
-                    const nextIndex = (current + 1) % projects.length;
-                    return nextIndex;
-                });
-            },
-            previous: () => {
-                if (!hasInteractiveContent) {
-                    return;
-                }
-                setSelectedIndex((current) => {
-                    const nextIndex = (current - 1 + projects.length) % projects.length;
-                    return nextIndex;
-                });
-            },
-        }),
-        [hasInteractiveContent, projects.length]
-    );
-
-    const confirmSelection = useMemo(() => {
-        return () => {
+    const moveSelection = useCallback(
+        (direction: "next" | "previous") => {
             if (!hasInteractiveContent) {
                 return;
             }
-            const project = projects[selectedIndexRef.current];
-            if (!project) {
+            if (focusedArea !== "list" || projects.length === 0) {
                 return;
             }
 
-            setLastSelected(project);
-            appendLog({ level: "info", message: projectMessages.logSelection(project.name) });
-            if (onProjectSelected) {
-                onProjectSelected(project);
+            setSelectedIndex((current) => {
+                if (projects.length === 0) {
+                    return 0;
+                }
+                if (direction === "next") {
+                    return (current + 1) % projects.length;
+                }
+                return (current - 1 + projects.length) % projects.length;
+            });
+        },
+        [focusedArea, hasInteractiveContent, projects.length]
+    );
+
+    const confirmSelection = useCallback(() => {
+        if (!hasInteractiveContent) {
+            return;
+        }
+
+        if (focusedArea === "actions") {
+            appendLog({ level: "info", message: projectMessages.logCreateRequested });
+            if (onCreateProjectRequested) {
+                onCreateProjectRequested();
             }
-        };
-    }, [appendLog, hasInteractiveContent, onProjectSelected, projectMessages, projects]);
+            return;
+        }
+
+        const project = projects[selectedIndexRef.current];
+        if (!project) {
+            return;
+        }
+
+        setLastSelected(project);
+        appendLog({ level: "info", message: projectMessages.logSelection(project.name) });
+        if (onProjectSelected) {
+            onProjectSelected(project);
+        }
+    }, [
+        appendLog,
+        focusedArea,
+        hasInteractiveContent,
+        onCreateProjectRequested,
+        onProjectSelected,
+        projectMessages,
+        projects,
+    ]);
+
+    const cycleArea = useCallback(
+        (direction: "next" | "previous") => {
+            if (!hasInteractiveContent) {
+                return false;
+            }
+
+            if (direction === "next") {
+                if (focusedArea === "list") {
+                    setFocusedArea("actions");
+                    return true;
+                }
+                return false;
+            }
+
+            if (focusedArea === "actions") {
+                if (projects.length > 0) {
+                    setFocusedArea("list");
+                    return true;
+                }
+                return false;
+            }
+
+            return false;
+        },
+        [focusedArea, hasInteractiveContent, projects.length]
+    );
 
     useEffect(() => {
         if (!onRegisterNavigation) {
@@ -252,8 +301,10 @@ export const ProjectSection: VercelSectionComponent = ({
             hasInteractiveContent: () => hasInteractiveContent,
             focus: () => {
                 if (projects.length === 0) {
+                    setFocusedArea("actions");
                     return;
                 }
+                setFocusedArea("list");
                 setSelectedIndex((current) => {
                     if (current < 0 || current >= projects.length) {
                         return 0;
@@ -265,15 +316,12 @@ export const ProjectSection: VercelSectionComponent = ({
                 // 何もしない。親がフォーカスを管理する。
             },
             move: (direction) => {
-                if (direction === "next") {
-                    moveSelection.next();
-                    return;
-                }
-                moveSelection.previous();
+                moveSelection(direction);
             },
             select: () => {
                 confirmSelection();
             },
+            cycleArea: (direction) => cycleArea(direction),
         };
 
         onRegisterNavigation(navigation);
@@ -281,7 +329,14 @@ export const ProjectSection: VercelSectionComponent = ({
         return () => {
             onRegisterNavigation(undefined);
         };
-    }, [confirmSelection, hasInteractiveContent, moveSelection, onRegisterNavigation, projects.length]);
+    }, [
+        confirmSelection,
+        cycleArea,
+        hasInteractiveContent,
+        moveSelection,
+        onRegisterNavigation,
+        projects.length,
+    ]);
 
     useEffect(() => {
         if (!isFocused) {
@@ -292,6 +347,7 @@ export const ProjectSection: VercelSectionComponent = ({
         }
 
         if (projects.length === 0) {
+            setFocusedArea("actions");
             return;
         }
 
@@ -303,6 +359,9 @@ export const ProjectSection: VercelSectionComponent = ({
         });
     }, [hasInteractiveContent, isFocused, projects.length]);
 
+    const isListFocused = isFocused && focusedArea === "list";
+    const isActionsFocused = isFocused && focusedArea === "actions";
+
     return (
         <Box flexDirection="column">
             <Text color="blueBright">{sectionLabel}</Text>
@@ -313,24 +372,26 @@ export const ProjectSection: VercelSectionComponent = ({
                 <Text>{projectMessages.loading}</Text>
             ) : state === "error" ? (
                 <Text>{projectMessages.error(errorMessage ?? "unknown error")}</Text>
-            ) : projects.length === 0 ? (
-                <Text>{projectMessages.empty}</Text>
-            ) : (
+            ) : state === "success" ? (
                 <>
                     {typeof totalCount === "number" ? <Text>{projectMessages.totalCount(totalCount)}</Text> : null}
                     <Box marginTop={1} flexDirection="column">
-                        {projects.map((project, index) => {
-                            const isSelected = index === selectedIndex;
-                            const bullet = isFocused && isSelected ? "▸" : " ";
-                            const updated = formatUpdatedAt(project.updatedAt);
-                            return (
-                                <Text key={project.id} color={isFocused && isSelected ? "greenBright" : undefined}>
-                                    {bullet} {project.name}
-                                    {project.framework ? ` – ${project.framework}` : ""}
-                                    {updated ? `  Updated: ${updated}` : ""}
-                                </Text>
-                            );
-                        })}
+                        {projects.length > 0 ? (
+                            projects.map((project, index) => {
+                                const isSelected = index === selectedIndex;
+                                const bullet = isListFocused && isSelected ? "▸" : " ";
+                                const updated = formatUpdatedAt(project.updatedAt);
+                                return (
+                                    <Text key={project.id} color={isListFocused && isSelected ? "greenBright" : undefined}>
+                                        {bullet} {project.name}
+                                        {project.framework ? ` – ${project.framework}` : ""}
+                                        {updated ? `  Updated: ${updated}` : ""}
+                                    </Text>
+                                );
+                            })
+                        ) : (
+                            <Text>{projectMessages.empty}</Text>
+                        )}
                     </Box>
                     <Box marginTop={1}>
                         {lastSelected ? (
@@ -339,13 +400,36 @@ export const ProjectSection: VercelSectionComponent = ({
                     </Box>
                     <Box>
                         {hasInteractiveContent ? (
-                            <Text dimColor>{projectMessages.selectionHint}</Text>
+                            isListFocused ? (
+                                <>
+                                    <Text dimColor>{projectMessages.selectionHint}</Text>
+                                    <Text dimColor>{projectMessages.createButtonHint}</Text>
+                                </>
+                            ) : null
+                        ) : null}
+                    </Box>
+                    <Box
+                        marginTop={1}
+                        borderStyle="single"
+                        borderColor={isActionsFocused ? "greenBright" : "gray"}
+                        flexDirection="column"
+                        paddingX={1}
+                        paddingY={0}
+                    >
+                        <Text color="blueBright">{projectMessages.actionsHeading}</Text>
+                        <Box marginTop={1} marginBottom={isActionsFocused ? 1 : 0}>
+                            <Text color={isActionsFocused ? "greenBright" : undefined}>
+                                {isActionsFocused ? "▸" : " "} {projectMessages.createButtonLabel}
+                            </Text>
+                        </Box>
+                        {isActionsFocused ? (
+                            <Box marginBottom={1}>
+                                <Text dimColor>{projectMessages.actionsHint}</Text>
+                            </Box>
                         ) : null}
                     </Box>
                 </>
-            )}
+            ) : null}
         </Box>
     );
 };
-
-// EOF

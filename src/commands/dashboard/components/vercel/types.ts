@@ -11,6 +11,7 @@ export type VercelSectionNavigation = {
     blur: () => void;
     move: (direction: "next" | "previous") => void;
     select: () => void;
+    cycleArea?: (direction: "next" | "previous") => boolean;
 };
 
 export type ProjectSummary = {
@@ -37,6 +38,8 @@ export type VercelSectionProps = {
     onProjectSelected?: (project: ProjectSummary) => void;
     onTeamSelected?: (team: TeamSummary) => void;
     activeTeam?: TeamSummary;
+    onCreateProjectRequested?: () => void;
+    refreshToken?: number;
 };
 
 // Vercel セクションは全て JSX.Element を返す関数コンポーネントとして扱う。

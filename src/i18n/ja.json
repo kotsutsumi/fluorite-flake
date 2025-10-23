@@ -71,10 +71,15 @@
     "logFetchStart": "📡 Vercel からプロジェクト一覧を取得します。",
     "logFetchSuccess": "✅ {count} 件の Vercel プロジェクトを取得しました。",
     "logFetchFailure": "❌ Vercel プロジェクトの取得に失敗しました: {error}",
-    "selectionHint": "Tabで一覧に移動し、↑/↓で選択、Enterで決定できます。",
+    "selectionHint": "Tabで一覧に移動し、↑/↓でプロジェクトや新規作成ボタンを選択、Enterで決定できます。",
+    "createButtonLabel": "新規作成",
+    "createButtonHint": "Tabで新規作成ボタンにフォーカスし、Enterで入力フォームを開きます。",
+    "actionsHeading": "操作",
+    "actionsHint": "Enter で新規プロジェクトを作成します。",
     "selectionConfirmed": "選択中のプロジェクト: {name}",
     "logSelection": "🔖 プロジェクト「{name}」を選択しました。",
-    "footerToggle": "Tab:フォーカス切替"
+    "logCreateRequested": "🆕 新規プロジェクト作成フォームを開きます。",
+    "footerToggle": "Esc:フォーカス解除"
   },
   "teamSection": {
     "loading": "Vercel のチーム一覧を取得しています…",
@@ -118,6 +123,33 @@
                 "logFetchStart": "プロジェクト「{name}」の詳細を取得します。",
                 "logFetchSuccess": "プロジェクト「{name}」の詳細を取得しました。",
                 "logFetchFailure": "プロジェクト「{name}」の詳細取得に失敗しました: {error}"
+            },
+            "projectCreate": {
+                "heading": "Vercel プロジェクトを新規作成",
+                "tokenMissing": "Vercel のアクセストークンがないとプロジェクトを作成できません。",
+                "navigationHint": "Tabで項目を移動し、Enterで編集／決定、Escでキャンセルできます。",
+                "nameLabel": "プロジェクト名",
+                "namePlaceholder": "例: fluorite-dashboard",
+                "frameworkLabel": "フレームワーク",
+                "frameworkPlaceholder": "任意（nextjs など）",
+                "gitProviderLabel": "Git プロバイダー",
+                "gitProviderPlaceholder": "任意（github / gitlab / bitbucket）",
+                "gitRepositoryLabel": "Git リポジトリ",
+                "gitRepositoryPlaceholder": "任意（owner/repo）",
+                "productionBranchLabel": "本番ブランチ",
+                "productionBranchPlaceholder": "任意（既定は main）",
+                "submitLabel": "プロジェクト作成",
+                "cancelLabel": "キャンセル",
+                "validationNameRequired": "プロジェクト名を入力してください。",
+                "validationGitProviderRequired": "リポジトリを設定する場合は Git プロバイダーも入力してください。",
+                "validationGitRepositoryRequired": "Git プロバイダーを設定する場合はリポジトリも入力してください。",
+                "requestInProgress": "プロジェクトを作成しています…",
+                "requestSuccess": "プロジェクト {name} を作成しました。",
+                "requestFailure": "プロジェクトの作成に失敗しました: {error}",
+                "footerLabel": "Esc:戻る",
+                "logCreateStart": "🚀 Vercel プロジェクトの作成を開始します。",
+                "logCreateSuccess": "✅ Vercel プロジェクト「{name}」を作成しました。",
+                "logCreateFailure": "❌ Vercel プロジェクト「{name}」の作成に失敗しました: {error}"
             }
         },
         "services": {

@@ -74,10 +74,15 @@
     "logFetchStart": "📡 Fetching project list from Vercel…",
     "logFetchSuccess": "✅ Retrieved {count} Vercel projects.",
     "logFetchFailure": "❌ Failed to fetch Vercel projects: {error}",
-    "selectionHint": "Press Tab to focus projects, use ↑/↓, then Enter to select.",
+    "selectionHint": "Press Tab to focus projects, use ↑/↓ to move between items, then Enter to open.",
+    "createButtonLabel": "New project",
+    "createButtonHint": "Press Tab to highlight the New project button, then Enter to start.",
+    "actionsHeading": "Actions",
+    "actionsHint": "Press Enter to create a new project.",
     "selectionConfirmed": "Selected project: {name}",
     "logSelection": "🔖 Selected project \"{name}\".",
-    "footerToggle": "Tab:toggle focus"
+    "logCreateRequested": "🆕 Opening the new project form.",
+    "footerToggle": "Esc:return"
   },
   "teamSection": {
     "loading": "Fetching Vercel teams…",
@@ -121,6 +126,33 @@
                 "logFetchStart": "Fetching project details for {name}...",
                 "logFetchSuccess": "Loaded project details for {name}.",
                 "logFetchFailure": "Failed to load project details for {name}: {error}"
+            },
+            "projectCreate": {
+                "heading": "Create a new Vercel project",
+                "tokenMissing": "A Vercel access token is required before creating a project.",
+                "navigationHint": "Tab to move between fields and buttons. Enter edits or confirms. Esc cancels.",
+                "nameLabel": "Project name",
+                "namePlaceholder": "e.g. fluorite-dashboard",
+                "frameworkLabel": "Framework",
+                "frameworkPlaceholder": "Optional (nextjs, remix, ...)",
+                "gitProviderLabel": "Git provider",
+                "gitProviderPlaceholder": "Optional (github, gitlab, bitbucket)",
+                "gitRepositoryLabel": "Git repository",
+                "gitRepositoryPlaceholder": "Optional owner/repo",
+                "productionBranchLabel": "Production branch",
+                "productionBranchPlaceholder": "Optional (defaults to main)",
+                "submitLabel": "Create project",
+                "cancelLabel": "Cancel",
+                "validationNameRequired": "Project name is required.",
+                "validationGitProviderRequired": "Git provider is required when repository is set.",
+                "validationGitRepositoryRequired": "Git repository is required when provider is set.",
+                "requestInProgress": "Creating project…",
+                "requestSuccess": "Project {name} created successfully.",
+                "requestFailure": "Failed to create project: {error}",
+                "footerLabel": "Esc:back",
+                "logCreateStart": "🚀 Creating a new Vercel project…",
+                "logCreateSuccess": "✅ Created Vercel project \"{name}\".",
+                "logCreateFailure": "❌ Failed to create project \"{name}\": {error}"
             }
         },
         "services": {

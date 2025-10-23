@@ -209,8 +209,13 @@ type RawLocaleMessages = {
                 logFetchSuccess: string;
                 logFetchFailure: string;
                 selectionHint: string;
+                createButtonLabel: string;
+                createButtonHint: string;
+                actionsHeading: string;
+                actionsHint: string;
                 selectionConfirmed: string;
                 logSelection: string;
+                logCreateRequested: string;
                 footerToggle: string;
             };
             teamSection: {
@@ -255,6 +260,33 @@ type RawLocaleMessages = {
                 logFetchStart: string;
                 logFetchSuccess: string;
                 logFetchFailure: string;
+            };
+            projectCreate: {
+                heading: string;
+                tokenMissing: string;
+                navigationHint: string;
+                nameLabel: string;
+                namePlaceholder: string;
+                frameworkLabel: string;
+                frameworkPlaceholder: string;
+                gitProviderLabel: string;
+                gitProviderPlaceholder: string;
+                gitRepositoryLabel: string;
+                gitRepositoryPlaceholder: string;
+                productionBranchLabel: string;
+                productionBranchPlaceholder: string;
+                submitLabel: string;
+                cancelLabel: string;
+                validationNameRequired: string;
+                validationGitProviderRequired: string;
+                validationGitRepositoryRequired: string;
+                requestInProgress: string;
+                requestSuccess: string;
+                requestFailure: string;
+                footerLabel: string;
+                logCreateStart: string;
+                logCreateSuccess: string;
+                logCreateFailure: string;
             };
         };
         services: {
@@ -549,8 +581,13 @@ export type LocaleMessages = {
                 logFetchSuccess: (count: number) => string;
                 logFetchFailure: (error: string) => string;
                 selectionHint: string;
+                createButtonLabel: string;
+                createButtonHint: string;
+                actionsHeading: string;
+                actionsHint: string;
                 selectionConfirmed: (name: string) => string;
                 logSelection: (name: string) => string;
+                logCreateRequested: string;
                 footerToggle: string;
             };
             teamSection: {
@@ -595,6 +632,33 @@ export type LocaleMessages = {
                 logFetchStart: (name: string) => string;
                 logFetchSuccess: (name: string) => string;
                 logFetchFailure: (name: string, error: string) => string;
+            };
+            projectCreate: {
+                heading: string;
+                tokenMissing: string;
+                navigationHint: string;
+                nameLabel: string;
+                namePlaceholder: string;
+                frameworkLabel: string;
+                frameworkPlaceholder: string;
+                gitProviderLabel: string;
+                gitProviderPlaceholder: string;
+                gitRepositoryLabel: string;
+                gitRepositoryPlaceholder: string;
+                productionBranchLabel: string;
+                productionBranchPlaceholder: string;
+                submitLabel: string;
+                cancelLabel: string;
+                validationNameRequired: string;
+                validationGitProviderRequired: string;
+                validationGitRepositoryRequired: string;
+                requestInProgress: string;
+                requestSuccess: (name: string) => string;
+                requestFailure: (error: string) => string;
+                footerLabel: string;
+                logCreateStart: string;
+                logCreateSuccess: (name: string) => string;
+                logCreateFailure: (name: string, error: string) => string;
             };
         };
         services: {
@@ -927,10 +991,15 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                 logFetchFailure: (error: string) =>
                     formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
                 selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
+                createButtonLabel: rawMessages.dashboard.vercel.projectSection.createButtonLabel,
+                createButtonHint: rawMessages.dashboard.vercel.projectSection.createButtonHint,
+                actionsHeading: rawMessages.dashboard.vercel.projectSection.actionsHeading,
+                actionsHint: rawMessages.dashboard.vercel.projectSection.actionsHint,
                 selectionConfirmed: (name: string) =>
                     formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
                 logSelection: (name: string) =>
                     formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
+                logCreateRequested: rawMessages.dashboard.vercel.projectSection.logCreateRequested,
                 footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
             },
             teamSection: {
@@ -988,12 +1057,46 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                         formatMessage(rawMessages.dashboard.vercel.projectDetail.domainRedirectLabel, { target }),
                     logFetchStart: (name: string) =>
                         formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchStart, { name }),
-                    logFetchSuccess: (name: string) =>
-                        formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchSuccess, { name }),
-                    logFetchFailure: (name: string, error: string) =>
-                        formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchFailure, { name, error }),
-                },
+                logFetchSuccess: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchSuccess, { name }),
+                logFetchFailure: (name: string, error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchFailure, { name, error }),
             },
+            projectCreate: {
+                heading: rawMessages.dashboard.vercel.projectCreate.heading,
+                tokenMissing: rawMessages.dashboard.vercel.projectCreate.tokenMissing,
+                navigationHint: rawMessages.dashboard.vercel.projectCreate.navigationHint,
+                nameLabel: rawMessages.dashboard.vercel.projectCreate.nameLabel,
+                namePlaceholder: rawMessages.dashboard.vercel.projectCreate.namePlaceholder,
+                frameworkLabel: rawMessages.dashboard.vercel.projectCreate.frameworkLabel,
+                frameworkPlaceholder: rawMessages.dashboard.vercel.projectCreate.frameworkPlaceholder,
+                gitProviderLabel: rawMessages.dashboard.vercel.projectCreate.gitProviderLabel,
+                gitProviderPlaceholder: rawMessages.dashboard.vercel.projectCreate.gitProviderPlaceholder,
+                gitRepositoryLabel: rawMessages.dashboard.vercel.projectCreate.gitRepositoryLabel,
+                gitRepositoryPlaceholder: rawMessages.dashboard.vercel.projectCreate.gitRepositoryPlaceholder,
+                productionBranchLabel: rawMessages.dashboard.vercel.projectCreate.productionBranchLabel,
+                productionBranchPlaceholder:
+                    rawMessages.dashboard.vercel.projectCreate.productionBranchPlaceholder,
+                submitLabel: rawMessages.dashboard.vercel.projectCreate.submitLabel,
+                cancelLabel: rawMessages.dashboard.vercel.projectCreate.cancelLabel,
+                validationNameRequired: rawMessages.dashboard.vercel.projectCreate.validationNameRequired,
+                validationGitProviderRequired:
+                    rawMessages.dashboard.vercel.projectCreate.validationGitProviderRequired,
+                validationGitRepositoryRequired:
+                    rawMessages.dashboard.vercel.projectCreate.validationGitRepositoryRequired,
+                requestInProgress: rawMessages.dashboard.vercel.projectCreate.requestInProgress,
+                requestSuccess: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.requestSuccess, { name }),
+                requestFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.requestFailure, { error }),
+                footerLabel: rawMessages.dashboard.vercel.projectCreate.footerLabel,
+                logCreateStart: rawMessages.dashboard.vercel.projectCreate.logCreateStart,
+                logCreateSuccess: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.logCreateSuccess, { name }),
+                logCreateFailure: (name: string, error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.logCreateFailure, { name, error }),
+            },
+        },
             services: {
                 vercel: rawMessages.dashboard.services.vercel,
                 turso: rawMessages.dashboard.services.turso,
