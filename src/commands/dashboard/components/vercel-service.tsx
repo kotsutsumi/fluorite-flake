@@ -240,6 +240,7 @@ export function VercelService({
         sectionNavigationRef.current = undefined;
         setSectionFocused(false);
         setDetailProject(project);
+        setSectionFocused(false);
     }, []);
 
     // アンマウント時に入力モードを解除し、非同期処理の後続更新を防ぐ。
@@ -557,6 +558,15 @@ export function VercelService({
     // 初期化状況に応じたキー操作をまとめて処理する。
     useInput((input, key) => {
         if (isLaunchingBrowser) {
+            return;
+        }
+
+        if (detailProject) {
+            if (key.escape) {
+                setDetailProject(undefined);
+                sectionNavigationRef.current?.focus();
+                setSectionFocused(true);
+            }
             return;
         }
 

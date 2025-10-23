@@ -70,8 +70,14 @@ function normalizeProjectDetail(raw: Record<string, unknown>, fallback: ProjectS
 
     const gitRepository = raw.gitRepository;
     if (gitRepository && typeof gitRepository === "object" && gitRepository !== null) {
-        const provider = typeof (gitRepository as { type?: unknown }).type === "string" ? (gitRepository as { type: string }).type : undefined;
-        const repo = typeof (gitRepository as { repo?: unknown }).repo === "string" ? (gitRepository as { repo: string }).repo : undefined;
+        const provider =
+            typeof (gitRepository as { type?: unknown }).type === "string"
+                ? (gitRepository as { type: string }).type
+                : undefined;
+        const repo =
+            typeof (gitRepository as { repo?: unknown }).repo === "string"
+                ? (gitRepository as { repo: string }).repo
+                : undefined;
         if (repo) {
             project.gitRepository = provider ? `${provider}:${repo}` : repo;
         }
@@ -92,7 +98,10 @@ function normalizeDomainEntry(raw: Record<string, unknown>): DomainInfo | undefi
     }
 
     const verified = Boolean((raw as { verified?: unknown }).verified);
-    const redirect = typeof (raw as { redirect?: unknown }).redirect === "string" ? (raw as { redirect: string }).redirect : undefined;
+    const redirect =
+        typeof (raw as { redirect?: unknown }).redirect === "string"
+            ? (raw as { redirect: string }).redirect
+            : undefined;
     const createdAt = typeof raw.createdAt === "number" ? raw.createdAt : undefined;
 
     return {
@@ -110,7 +119,10 @@ function mergeDomainDetail(base: DomainInfo, detail?: Record<string, unknown>): 
 
     const verifiedValue = (detail as { verified?: unknown }).verified;
     const verified = typeof verifiedValue === "boolean" ? verifiedValue : base.verified;
-    const redirect = typeof (detail as { redirect?: unknown }).redirect === "string" ? (detail as { redirect: string }).redirect : base.redirect;
+    const redirect =
+        typeof (detail as { redirect?: unknown }).redirect === "string"
+            ? (detail as { redirect: string }).redirect
+            : base.redirect;
     const createdAt = typeof detail.createdAt === "number" ? detail.createdAt : base.createdAt;
 
     return {
@@ -193,10 +205,13 @@ export function ProjectDetailView({ project, credentials }: ProjectDetailViewPro
 
                 const detailRequests = normalizedDomains.slice(0, MAX_DOMAIN_DETAIL_REQUESTS).map(async (domain) => {
                     try {
-                        const detailResponse = await fetch(PROJECT_DOMAIN_DETAIL_ENDPOINT(projectIdOrName, domain.name), {
-                            headers,
-                            signal: controller.signal,
-                        });
+                        const detailResponse = await fetch(
+                            PROJECT_DOMAIN_DETAIL_ENDPOINT(projectIdOrName, domain.name),
+                            {
+                                headers,
+                                signal: controller.signal,
+                            }
+                        );
 
                         if (!detailResponse.ok) {
                             return domain;
@@ -229,7 +244,8 @@ export function ProjectDetailView({ project, credentials }: ProjectDetailViewPro
                     return;
                 }
 
-                const message = error instanceof Error && error.message ? error.message : String(error ?? "unknown error");
+                const message =
+                    error instanceof Error && error.message ? error.message : String(error ?? "unknown error");
                 setState("error");
                 setErrorMessage(detailMessages.error(message));
                 appendLog({ level: "error", message: detailMessages.logFetchFailure(project.name, message) });
@@ -248,106 +264,157 @@ export function ProjectDetailView({ project, credentials }: ProjectDetailViewPro
 
     if (state === "loading" || state === "idle") {
         return (
-            <Box flexDirection="column" paddingX={2} paddingY={1}>
-                <Text color="blueBright">{heading}</Text>
-                <Text>{detailMessages.loading}</Text>
-                <Text dimColor>{detailMessages.backHint}</Text>
+            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
+                <Box
+                    borderStyle="single"
+                    borderColor="blueBright"
+                    flexDirection="column"
+                    paddingX={2}
+                    paddingY={1}
+                    flexGrow={1}
+                >
+                    <Text color="blueBright">{heading}</Text>
+                    <Text>{detailMessages.loading}</Text>
+                    <Text dimColor>{detailMessages.backHint}</Text>
+                </Box>
             </Box>
         );
     }
 
     if (state === "error") {
         return (
-            <Box flexDirection="column" paddingX={2} paddingY={1}>
-                <Text color="blueBright">{heading}</Text>
-                <Text color="redBright">{errorMessage ?? detailMessages.genericError}</Text>
-                <Text dimColor>{detailMessages.backHint}</Text>
+            <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
+                <Box
+                    borderStyle="single"
+                    borderColor="blueBright"
+                    flexDirection="column"
+                    paddingX={2}
+                    paddingY={1}
+                    flexGrow={1}
+                >
+                    <Text color="blueBright">{heading}</Text>
+                    <Text color="redBright">{errorMessage ?? detailMessages.genericError}</Text>
+                    <Text dimColor>{detailMessages.backHint}</Text>
+                </Box>
             </Box>
         );
     }
 
-    const detailData = detail ?? {
-        project: {
-            id: project.id,
-            name: project.name,
-            framework: project.framework,
-            createdAt: undefined,
-            updatedAt: project.updatedAt,
-        },
-        domains: [],
-    } satisfies ProjectDetailState;
+    const detailData =
+        detail ??
+        ({
+            project: {
+                id: project.id,
+                name: project.name,
+                framework: project.framework,
+                createdAt: undefined,
+                updatedAt: project.updatedAt,
+            },
+            domains: [],
+        } satisfies ProjectDetailState);
 
     const createdAt = formatTimestamp(detailData.project.createdAt);
     const updatedAt = formatTimestamp(detailData.project.updatedAt);
 
+    const ensureLabel = (raw: string): string => {
+        const trimmed = raw.trimEnd();
+        if (trimmed.endsWith(":")) {
+            return trimmed;
+        }
+        return `${trimmed}:`;
+    };
+
+    type MetadataRow = {
+        label: string;
+        values: string[];
+    };
+
+    const metadataRows: MetadataRow[] = [];
+
+    metadataRows.push({ label: ensureLabel(detailMessages.idLabel), values: [detailData.project.id] });
+    metadataRows.push({
+        label: ensureLabel(detailMessages.frameworkLabel),
+        values: [detailData.project.framework ?? detailMessages.unknown],
+    });
+
+    if (detailData.project.gitRepository) {
+        metadataRows.push({
+            label: ensureLabel(detailMessages.gitRepositoryLabel),
+            values: [detailData.project.gitRepository],
+        });
+    }
+
+    if (detailData.project.productionBranch) {
+        metadataRows.push({
+            label: ensureLabel(detailMessages.productionBranchLabel),
+            values: [detailData.project.productionBranch],
+        });
+    }
+
+    if (createdAt) {
+        metadataRows.push({ label: ensureLabel(detailMessages.createdAtLabel), values: [createdAt] });
+    }
+
+    if (updatedAt) {
+        metadataRows.push({ label: ensureLabel(detailMessages.updatedAtLabel), values: [updatedAt] });
+    }
+
+    const domainLabelBase = ensureLabel(detailMessages.domainsHeading);
+
+    if (detailData.domains.length === 0) {
+        metadataRows.push({ label: domainLabelBase, values: [detailMessages.noDomains] });
+    } else {
+        detailData.domains.forEach((domain, index) => {
+            const domainCreatedAt = formatTimestamp(domain.createdAt);
+            const status = domain.verified ? detailMessages.domainStatusVerified : detailMessages.domainStatusPending;
+            const combined = `${domain.name} — ${status}`;
+
+            metadataRows.push({
+                label: index === 0 ? domainLabelBase : "",
+                values: [combined],
+            });
+
+            if (domainCreatedAt) {
+                metadataRows.push({
+                    label: "",
+                    values: [detailMessages.domainCreatedLabel(domainCreatedAt)],
+                });
+            }
+
+            if (domain.redirect) {
+                metadataRows.push({
+                    label: "",
+                    values: [detailMessages.domainRedirectLabel(domain.redirect)],
+                });
+            }
+        });
+    }
+
     return (
-        <Box flexDirection="column" paddingX={2} paddingY={1}>
-            <Text color="blueBright">{heading}</Text>
-            <Box borderStyle="round" borderColor="blueBright" flexDirection="column" paddingX={2} paddingY={1} marginTop={1}>
-                <Text>{detailMessages.metadataHeading}</Text>
-                <Text>
-                    {detailMessages.idLabel}
-                    {detailData.project.id}
-                </Text>
-                <Text>
-                    {detailMessages.frameworkLabel}
-                    {detailData.project.framework ?? detailMessages.unknown}
-                </Text>
-                {detailData.project.gitRepository ? (
-                    <Text>
-                        {detailMessages.gitRepositoryLabel}
-                        {detailData.project.gitRepository}
-                    </Text>
-                ) : null}
-                {detailData.project.productionBranch ? (
-                    <Text>
-                        {detailMessages.productionBranchLabel}
-                        {detailData.project.productionBranch}
-                    </Text>
-                ) : null}
-                {createdAt ? (
-                    <Text>
-                        {detailMessages.createdAtLabel}
-                        {createdAt}
-                    </Text>
-                ) : null}
-                {updatedAt ? (
-                    <Text>
-                        {detailMessages.updatedAtLabel}
-                        {updatedAt}
-                    </Text>
-                ) : null}
-            </Box>
+        <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
+            <Box
+                borderStyle="single"
+                borderColor="blueBright"
+                flexDirection="column"
+                paddingX={2}
+                paddingY={1}
+                flexGrow={1}
+            >
+                <Text color="blueBright">{heading}</Text>
+                <Box flexDirection="column" marginTop={1}>
+                    {metadataRows.map((row, index) => (
+                        <Box key={`${row.label}-${index}`} flexDirection="column" marginBottom={1}>
+                            {row.label ? <Text color="cyan">{row.label}</Text> : null}
+                            {row.values.map((value, valueIndex) => (
+                                <Text key={`${row.label}-${index}-${valueIndex}`}>{value}</Text>
+                            ))}
+                        </Box>
+                    ))}
+                </Box>
 
-            <Box borderStyle="round" borderColor="gray" flexDirection="column" paddingX={2} paddingY={1} marginTop={1}>
-                <Text>{detailMessages.domainsHeading}</Text>
-                {detailData.domains.length === 0 ? (
-                    <Text dimColor>{detailMessages.noDomains}</Text>
-                ) : (
-                    detailData.domains.map((domain) => {
-                        const domainCreatedAt = formatTimestamp(domain.createdAt);
-                        const status = domain.verified
-                            ? detailMessages.domainStatusVerified
-                            : detailMessages.domainStatusPending;
-                        return (
-                            <Box key={domain.name} flexDirection="column" marginTop={1}>
-                                <Text>
-                                    {domain.name} — {status}
-                                </Text>
-                                {domainCreatedAt ? (
-                                    <Text dimColor>{detailMessages.domainCreatedLabel(domainCreatedAt)}</Text>
-                                ) : null}
-                                {domain.redirect ? (
-                                    <Text dimColor>{detailMessages.domainRedirectLabel(domain.redirect)}</Text>
-                                ) : null}
-                            </Box>
-                        );
-                    })
-                )}
-            </Box>
-
-            <Box marginTop={1}>
-                <Text dimColor>{detailMessages.backHint}</Text>
+                <Box marginTop={1}>
+                    <Text dimColor>{detailMessages.backHint}</Text>
+                </Box>
             </Box>
         </Box>
     );
