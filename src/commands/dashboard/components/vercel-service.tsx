@@ -289,6 +289,7 @@ export function VercelService({
     const [isLaunchingBrowser, setIsLaunchingBrowser] = useState(false);
     const [isSectionFocused, setSectionFocused] = useState(false);
     const [detailProject, setDetailProject] = useState<ProjectSummary | undefined>(undefined);
+    const initialTeamRef = useRef<TeamSummary | undefined>(undefined);
     const [activeTeam, setActiveTeam] = useState<TeamSummary | undefined>(undefined);
 
     const isMountedRef = useRef(true);
@@ -411,6 +412,7 @@ export function VercelService({
                     return;
                 }
 
+                initialTeamRef.current = storedTeam;
                 setActiveTeam(storedTeam);
             } catch (error) {
                 const message = extractErrorMessage(error);
@@ -816,7 +818,7 @@ export function VercelService({
     if (detailProject) {
         return (
             <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
-                <ProjectDetailView project={detailProject} credentials={vercelCredentials} />
+                <ProjectDetailView project={detailProject} credentials={vercelCredentials} activeTeam={activeTeam} />
             </Box>
         );
     }

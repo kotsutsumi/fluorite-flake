@@ -4,7 +4,7 @@ import { Box, Text } from "ink";
 
 import { getMessages } from "../../../../i18n.js";
 import { useDashboard } from "../../state/dashboard-store.js";
-import type { ProjectSummary, VercelCredentials } from "./types.js";
+import type { ProjectSummary, TeamSummary, VercelCredentials } from "./types.js";
 
 type FetchState = "idle" | "loading" | "ready" | "error";
 
@@ -33,6 +33,7 @@ type ProjectDetailState = {
 type ProjectDetailViewProps = {
     project: ProjectSummary;
     credentials?: VercelCredentials;
+    activeTeam?: TeamSummary;
 };
 
 const PROJECT_DETAIL_ENDPOINT = (projectIdOrName: string): string =>
@@ -133,7 +134,7 @@ function mergeDomainDetail(base: DomainInfo, detail?: Record<string, unknown>): 
     } satisfies DomainInfo;
 }
 
-export function ProjectDetailView({ project, credentials }: ProjectDetailViewProps): JSX.Element {
+export function ProjectDetailView({ project, credentials, activeTeam }: ProjectDetailViewProps): JSX.Element {
     const { dashboard } = useMemo(() => getMessages(), []);
     const detailMessages = dashboard.vercel.projectDetail;
     const { appendLog } = useDashboard();
@@ -161,16 +162,29 @@ export function ProjectDetailView({ project, credentials }: ProjectDetailViewPro
                 appendLog({ level: "info", message: detailMessages.logFetchStart(project.name) });
 
                 const projectIdOrName = project.id || project.name;
-                const headers = {
+                const detailUrl = new URL(PROJECT_DETAIL_ENDPOINT(projectIdOrName));
+                const domainsUrl = new URL(PROJECT_DOMAINS_ENDPOINT(projectIdOrName));
+
+                const headers: Record<string, string> = {
                     Authorization: `Bearer ${token}`,
-                } as const;
+                };
+
+                if (activeTeam?.id && activeTeam.id.trim().length > 0) {
+                    detailUrl.searchParams.set("teamId", activeTeam.id);
+                    domainsUrl.searchParams.set("teamId", activeTeam.id);
+                    headers["x-vercel-team-id"] = activeTeam.id;
+                } else if (activeTeam?.slug && activeTeam.slug.trim().length > 0) {
+                    detailUrl.searchParams.set("teamSlug", activeTeam.slug);
+                    domainsUrl.searchParams.set("teamSlug", activeTeam.slug);
+                    headers["x-vercel-team-id"] = activeTeam.slug;
+                }
 
                 const [projectResponse, domainsResponse] = await Promise.all([
-                    fetch(PROJECT_DETAIL_ENDPOINT(projectIdOrName), {
+                    fetch(detailUrl, {
                         headers,
                         signal: controller.signal,
                     }),
-                    fetch(PROJECT_DOMAINS_ENDPOINT(projectIdOrName), {
+                    fetch(domainsUrl, {
                         headers,
                         signal: controller.signal,
                     }),
@@ -205,13 +219,20 @@ export function ProjectDetailView({ project, credentials }: ProjectDetailViewPro
 
                 const detailRequests = normalizedDomains.slice(0, MAX_DOMAIN_DETAIL_REQUESTS).map(async (domain) => {
                     try {
-                        const detailResponse = await fetch(
-                            PROJECT_DOMAIN_DETAIL_ENDPOINT(projectIdOrName, domain.name),
-                            {
-                                headers,
-                                signal: controller.signal,
-                            }
+                        const domainDetailUrl = new URL(
+                            PROJECT_DOMAIN_DETAIL_ENDPOINT(projectIdOrName, domain.name)
                         );
+
+                        if (activeTeam?.id && activeTeam.id.trim().length > 0) {
+                            domainDetailUrl.searchParams.set("teamId", activeTeam.id);
+                        } else if (activeTeam?.slug && activeTeam.slug.trim().length > 0) {
+                            domainDetailUrl.searchParams.set("teamSlug", activeTeam.slug);
+                        }
+
+                        const detailResponse = await fetch(domainDetailUrl, {
+                            headers,
+                            signal: controller.signal,
+                        });
 
                         if (!detailResponse.ok) {
                             return domain;
