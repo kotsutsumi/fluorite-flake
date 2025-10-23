@@ -213,6 +213,23 @@ type RawLocaleMessages = {
                 logSelection: string;
                 footerToggle: string;
             };
+            teamSection: {
+                loading: string;
+                tokenMissing: string;
+                error: string;
+                empty: string;
+                activeTag: string;
+                selectionHint: string;
+                footerToggle: string;
+                createdLabel: string;
+                lastActivatedFeedback: string;
+                logFetchStart: string;
+                logFetchSuccess: string;
+                logFetchFailure: string;
+                logActivating: string;
+                logActivated: string;
+                logActivationFailed: string;
+            };
             projectDetail: {
                 heading: string;
                 loading: string;
@@ -535,6 +552,23 @@ export type LocaleMessages = {
                 selectionConfirmed: (name: string) => string;
                 logSelection: (name: string) => string;
                 footerToggle: string;
+            };
+            teamSection: {
+                loading: string;
+                tokenMissing: string;
+                error: (error: string) => string;
+                empty: string;
+                activeTag: string;
+                selectionHint: string;
+                footerToggle: string;
+                createdLabel: (timestamp: string) => string;
+                lastActivatedFeedback: (name: string) => string;
+                logFetchStart: string;
+                logFetchSuccess: (count: number) => string;
+                logFetchFailure: (error: string) => string;
+                logActivating: (name: string) => string;
+                logActivated: (name: string) => string;
+                logActivationFailed: (name: string, error: string) => string;
             };
             projectDetail: {
                 heading: (name: string) => string;
@@ -885,20 +919,47 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
                         formatMessage(rawMessages.dashboard.vercel.projectSection.totalCount, {
                             count: String(count),
                         }),
-                    logFetchStart: rawMessages.dashboard.vercel.projectSection.logFetchStart,
-                    logFetchSuccess: (count: number) =>
-                        formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchSuccess, {
-                            count: String(count),
-                        }),
-                    logFetchFailure: (error: string) =>
-                        formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
-                    selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
-                    selectionConfirmed: (name: string) =>
-                        formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
-                    logSelection: (name: string) =>
-                        formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
-                    footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
-                },
+                logFetchStart: rawMessages.dashboard.vercel.projectSection.logFetchStart,
+                logFetchSuccess: (count: number) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchSuccess, {
+                        count: String(count),
+                    }),
+                logFetchFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
+                selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
+                selectionConfirmed: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
+                logSelection: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
+                footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
+            },
+            teamSection: {
+                loading: rawMessages.dashboard.vercel.teamSection.loading,
+                tokenMissing: rawMessages.dashboard.vercel.teamSection.tokenMissing,
+                error: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.error, { error }),
+                empty: rawMessages.dashboard.vercel.teamSection.empty,
+                activeTag: rawMessages.dashboard.vercel.teamSection.activeTag,
+                selectionHint: rawMessages.dashboard.vercel.teamSection.selectionHint,
+                footerToggle: rawMessages.dashboard.vercel.teamSection.footerToggle,
+                createdLabel: (timestamp: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.createdLabel, { timestamp }),
+                lastActivatedFeedback: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.lastActivatedFeedback, { name }),
+                logFetchStart: rawMessages.dashboard.vercel.teamSection.logFetchStart,
+                logFetchSuccess: (count: number) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logFetchSuccess, {
+                        count: String(count),
+                    }),
+                logFetchFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logFetchFailure, { error }),
+                logActivating: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logActivating, { name }),
+                logActivated: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logActivated, { name }),
+                logActivationFailed: (name: string, error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logActivationFailed, { name, error }),
+            },
                 projectDetail: {
                     heading: (name: string) =>
                         formatMessage(rawMessages.dashboard.vercel.projectDetail.heading, { name }),

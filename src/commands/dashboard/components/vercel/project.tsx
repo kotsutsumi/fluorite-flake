@@ -92,6 +92,7 @@ export const ProjectSection: VercelSectionComponent = ({
     isFocused = false,
     onRegisterNavigation,
     onProjectSelected,
+    activeTeam,
 }) => {
     const { appendLog } = useDashboard();
     const projectMessages = useMemo(() => getMessages().dashboard.vercel.projectSection, []);
@@ -128,10 +129,20 @@ export const ProjectSection: VercelSectionComponent = ({
                 const endpoint = new URL(PROJECTS_ENDPOINT);
                 endpoint.searchParams.set("limit", String(PROJECTS_LIMIT));
 
+                const headers: Record<string, string> = {
+                    Authorization: `Bearer ${token}`,
+                };
+
+                if (activeTeam?.id && activeTeam.id.trim().length > 0) {
+                    endpoint.searchParams.set("teamId", activeTeam.id);
+                    headers["x-vercel-team-id"] = activeTeam.id;
+                } else if (activeTeam?.slug && activeTeam.slug.trim().length > 0) {
+                    endpoint.searchParams.set("teamSlug", activeTeam.slug);
+                    headers["x-vercel-team-id"] = activeTeam.slug;
+                }
+
                 const response = await fetch(endpoint, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers,
                     signal: controller.signal,
                 });
 
@@ -172,12 +183,12 @@ export const ProjectSection: VercelSectionComponent = ({
             isCancelled = true;
             controller.abort();
         };
-    }, [appendLog, projectMessages, token]);
+    }, [appendLog, projectMessages, token, activeTeam?.id, activeTeam?.slug]);
 
     useEffect(() => {
         setSelectedIndex(0);
         setLastSelected(undefined);
-    }, [projects]);
+    }, [projects, activeTeam?.id, activeTeam?.slug]);
 
     useEffect(() => {
         selectedIndexRef.current = selectedIndex;

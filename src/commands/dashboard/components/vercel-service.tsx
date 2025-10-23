@@ -21,7 +21,7 @@ import { ProjectDetailView } from "./vercel/project-detail.js";
 import { ProjectSection } from "./vercel/project.js";
 import { SecretsSection } from "./vercel/secrets.js";
 import { TeamSection } from "./vercel/team.js";
-import type { ProjectSummary, VercelSectionComponent, VercelSectionNavigation } from "./vercel/types.js";
+import type { ProjectSummary, TeamSummary, VercelSectionComponent, VercelSectionNavigation } from "./vercel/types.js";
 import { UserSection } from "./vercel/user.js";
 
 type ServiceProps = {
@@ -71,11 +71,19 @@ const MENU_ITEMS: readonly MenuItem[] = [
     { id: "misc", label: "その他", Component: MiscSection },
 ];
 
+const INTERACTIVE_SECTION_IDS = new Set(["project", "team"]);
+
 type FluoriteConfig = {
     [key: string]: unknown;
     vercel?: {
         [key: string]: unknown;
         access_key?: string;
+        team?: {
+            id?: string;
+            slug?: string;
+            name?: string;
+        };
+        team_id?: string;
     };
 };
 
@@ -166,6 +174,70 @@ async function loadStoredVercelAccessKey(): Promise<string | undefined> {
     return typeof candidate === "string" && candidate.trim().length > 0 ? candidate : undefined;
 }
 
+async function persistVercelTeam(team: TeamSummary | undefined): Promise<void> {
+    const { path: configPath, data } = await loadConfig();
+
+    const nextData: FluoriteConfig = {
+        ...data,
+    };
+    const existingVercel = isRecord(nextData.vercel) ? { ...nextData.vercel } : {};
+
+    if (team) {
+        existingVercel.team = {
+            ...(team.id ? { id: team.id } : {}),
+            ...(team.slug ? { slug: team.slug } : {}),
+            ...(team.name ? { name: team.name } : {}),
+        };
+        delete existingVercel.team_id;
+        nextData.vercel = existingVercel;
+    } else if (isRecord(nextData.vercel)) {
+        delete existingVercel.team;
+        delete existingVercel.team_id;
+        if (Object.keys(existingVercel).length === 0) {
+            delete nextData.vercel;
+        } else {
+            nextData.vercel = existingVercel;
+        }
+    } else {
+        delete nextData.vercel;
+    }
+
+    await writeJsonAtomic(configPath, nextData);
+}
+
+async function loadStoredVercelTeam(): Promise<TeamSummary | undefined> {
+    const { data } = await loadConfig();
+    const vercelSection = isRecord(data.vercel) ? data.vercel : undefined;
+    if (!vercelSection) {
+        return undefined;
+    }
+
+    const storedTeam = vercelSection.team;
+    if (isRecord(storedTeam)) {
+        const id = typeof storedTeam.id === "string" ? storedTeam.id : undefined;
+        const slug = typeof storedTeam.slug === "string" ? storedTeam.slug : undefined;
+        const name = typeof storedTeam.name === "string" ? storedTeam.name : undefined;
+
+        if (id || slug) {
+            return {
+                id: id ?? slug ?? "",
+                slug,
+                name: name ?? id ?? slug ?? "",
+            };
+        }
+    }
+
+    const legacyTeamId = vercelSection.team_id;
+    if (typeof legacyTeamId === "string" && legacyTeamId.trim().length > 0) {
+        return {
+            id: legacyTeamId.trim(),
+            name: legacyTeamId.trim(),
+        };
+    }
+
+    return undefined;
+}
+
 // 例外オブジェクトからユーザーに提示できるメッセージを抽出する。
 function extractErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message) {
@@ -217,6 +289,7 @@ export function VercelService({
     const [isLaunchingBrowser, setIsLaunchingBrowser] = useState(false);
     const [isSectionFocused, setSectionFocused] = useState(false);
     const [detailProject, setDetailProject] = useState<ProjectSummary | undefined>(undefined);
+    const [activeTeam, setActiveTeam] = useState<TeamSummary | undefined>(undefined);
 
     const isMountedRef = useRef(true);
     const hasAttemptedInitRef = useRef(false);
@@ -240,8 +313,26 @@ export function VercelService({
         sectionNavigationRef.current = undefined;
         setSectionFocused(false);
         setDetailProject(project);
-        setSectionFocused(false);
     }, []);
+
+    const handleTeamSelected = useCallback(
+        async (team: TeamSummary) => {
+            appendLog({ level: "info", message: vercelMessages.teamSection.logActivating(team.name) });
+
+            try {
+                await persistVercelTeam(team);
+                setActiveTeam(team);
+                appendLog({ level: "success", message: vercelMessages.teamSection.logActivated(team.name) });
+            } catch (error) {
+                const message = extractErrorMessage(error);
+                appendLog({
+                    level: "error",
+                    message: vercelMessages.teamSection.logActivationFailed(team.name, message),
+                });
+            }
+        },
+        [appendLog, vercelMessages.teamSection]
+    );
 
     // アンマウント時に入力モードを解除し、非同期処理の後続更新を防ぐ。
     useEffect(() => {
@@ -270,6 +361,8 @@ export function VercelService({
                 if (!storedToken) {
                     setStatusMessage(vercelMessages.needsToken);
                     setDetailMessage(undefined);
+                    setActiveTeam(undefined);
+                    await persistVercelTeam(undefined);
                     setInitState("needs-token");
                     return;
                 }
@@ -290,6 +383,7 @@ export function VercelService({
 
                     try {
                         await persistVercelAccessKey(undefined);
+                        await persistVercelTeam(undefined);
                     } catch (clearError) {
                         const clearMessage = extractErrorMessage(clearError);
                         appendLog({ level: "error", message: vercelMessages.logTokenSaveFailed(clearMessage) });
@@ -301,6 +395,7 @@ export function VercelService({
 
                     setStatusMessage(vercelMessages.tokenValidationError);
                     setDetailMessage(vercelMessages.tokenValidateFailed(message));
+                    setActiveTeam(undefined);
                     setInitState("needs-token");
                     return;
                 }
@@ -310,6 +405,13 @@ export function VercelService({
                 setDetailMessage(undefined);
                 setInitState("ready");
                 appendLog({ level: "success", message: vercelMessages.logTokenLoaded });
+
+                const storedTeam = await loadStoredVercelTeam();
+                if (!isMountedRef.current) {
+                    return;
+                }
+
+                setActiveTeam(storedTeam);
             } catch (error) {
                 const message = extractErrorMessage(error);
                 appendLog({ level: "error", message: vercelMessages.logTokenLoadFailed(message) });
@@ -320,6 +422,8 @@ export function VercelService({
 
                 setStatusMessage(vercelMessages.tokenLoadFailed(message));
                 setDetailMessage(undefined);
+                setActiveTeam(undefined);
+                await persistVercelTeam(undefined);
                 setInitState("needs-token");
             }
         };
@@ -541,7 +645,7 @@ export function VercelService({
 
     useEffect(() => {
         const currentItem = MENU_ITEMS[activeIndex];
-        if (!currentItem || currentItem.id !== "project") {
+        if (!currentItem || !INTERACTIVE_SECTION_IDS.has(currentItem.id)) {
             sectionNavigationRef.current?.blur();
             sectionNavigationRef.current = undefined;
             setSectionFocused(false);
@@ -628,7 +732,8 @@ export function VercelService({
         }
 
         const navigation = sectionNavigationRef.current;
-        const isProjectSection = MENU_ITEMS[activeIndex]?.id === "project";
+        const activeSectionId = MENU_ITEMS[activeIndex]?.id;
+        const isInteractiveSection = activeSectionId ? INTERACTIVE_SECTION_IDS.has(activeSectionId) : false;
 
         if (isSectionFocused) {
             if (key.tab || key.escape) {
@@ -656,7 +761,7 @@ export function VercelService({
         }
 
         if (key.tab) {
-            if (isProjectSection && navigation?.hasInteractiveContent()) {
+            if (isInteractiveSection && navigation?.hasInteractiveContent()) {
                 navigation.focus();
                 setSectionFocused(true);
             }
@@ -684,8 +789,13 @@ export function VercelService({
 
         if (initState === "ready") {
             const baseFooter = `${defaultFooterLabel}  j:↓  k:↑`;
-            const toggleHint =
-                activeItem.id === "project" ? `  ${vercelMessages.projectSection.footerToggle}` : "";
+            let toggleHint = "";
+            if (activeItem.id === "project") {
+                toggleHint = `  ${vercelMessages.projectSection.footerToggle}`;
+            } else if (activeItem.id === "team") {
+                toggleHint = `  ${vercelMessages.teamSection.footerToggle}`;
+            }
+
             onFooterChange(`${baseFooter}${toggleHint}  • ${vercelMessages.footerReady}  • ${activeItem.label}`);
             return;
         }
@@ -787,7 +897,7 @@ export function VercelService({
     }
 
     const sidebarBorderColor = isSectionFocused ? "gray" : "blueBright";
-    const contentBorderColor = activeItem.id === "project" && isSectionFocused ? "blueBright" : "gray";
+    const contentBorderColor = INTERACTIVE_SECTION_IDS.has(activeItem.id) && isSectionFocused ? "blueBright" : "gray";
 
     return (
         <Box flexDirection="column" flexGrow={1} paddingX={0} paddingY={0}>
@@ -818,13 +928,13 @@ export function VercelService({
                         sectionLabel={activeItem.label}
                         placeholder={placeholder}
                         credentials={vercelCredentials}
-                        isFocused={activeItem.id === "project" ? isSectionFocused : false}
+                        isFocused={INTERACTIVE_SECTION_IDS.has(activeItem.id) ? isSectionFocused : false}
                         onRegisterNavigation={
-                            activeItem.id === "project" ? handleRegisterNavigation : undefined
+                            INTERACTIVE_SECTION_IDS.has(activeItem.id) ? handleRegisterNavigation : undefined
                         }
-                        onProjectSelected={
-                            activeItem.id === "project" ? handleProjectSelected : undefined
-                        }
+                        onProjectSelected={activeItem.id === "project" ? handleProjectSelected : undefined}
+                        onTeamSelected={activeItem.id === "team" ? handleTeamSelected : undefined}
+                        activeTeam={activeTeam}
                     />
                 </Box>
             </Box>
