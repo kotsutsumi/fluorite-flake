@@ -9,17 +9,17 @@ import { defineConfig } from "prisma/config";
 config({ path: path.join(__dirname, ".env.local") });
 
 export default defineConfig({
-  // Prismaスキーマファイルの場所を指定
-  schema: path.join("prisma", "schema.prisma"),
-  // マイグレーション関連の設定
-  migrations: {
-    // マイグレーションファイルの保存場所
-    path: path.join("prisma", "migrations"),
-    // データベースの初期データ投入用のシードスクリプト
-    seed: "tsx prisma/seed.ts",
-  },
+    // Prismaスキーマファイルの場所を指定
+    schema: path.join("prisma", "schema.prisma"),
+    // マイグレーション関連の設定
+    migrations: {
+        // マイグレーションファイルの保存場所
+        path: path.join("prisma", "migrations"),
+        // データベースの初期データ投入用のシードスクリプト
+        seed: "tsx prisma/seed.ts",
+    },
 });
 
-// ファイル終端
+// EOF
 
 // EOF

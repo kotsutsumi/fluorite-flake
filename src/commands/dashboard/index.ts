@@ -1,9 +1,4 @@
-/**
- * TUIダッシュボード統合 - メインエクスポート
- */
-
-export { DashboardApp } from "./components/layout/main-layout.js";
-export { dashboardCommand } from "./dashboard-command.js";
-export { dashboardStore } from "./state/dashboard-store.js";
+export { dashboardCommand, launchDashboard } from "./dashboard-command.js";
+export type { ServiceType } from "./types/common.js";
 
 // EOF

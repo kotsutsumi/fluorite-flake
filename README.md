@@ -60,6 +60,8 @@ fluorite-flake new my-app
 fluorite-flake dashboard
 ```
 
+Press `s` to toggle between Vercel and Turso views, and `q` (or `Esc`) to exit.
+
 > ℹ️ **Locale**: CLI output follows your OS locale (Japanese or English). Override it with `-L, --locale <en|ja>` or set `FLUORITE_LOCALE` when testing.
 
 The CLI will guide you through:

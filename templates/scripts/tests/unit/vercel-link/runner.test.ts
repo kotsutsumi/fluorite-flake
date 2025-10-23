@@ -12,6 +12,13 @@ vi.mock("@clack/prompts", () => ({
 
 vi.mock("node:fs/promises", () => ({
   readdir: vi.fn(),
+  readFile: vi.fn().mockResolvedValue(JSON.stringify({ projectId: "prj_test", orgId: "team_test" })),
+  writeFile: vi.fn(),
+  mkdir: vi.fn(),
+}));
+
+vi.mock("../../../libs/vercel-link/root-directory-updater.js", () => ({
+  setRootDirectory: vi.fn().mockResolvedValue(undefined),
 }));
 
 const createMockDeps = (overrides?: Partial<VercelLinkDeps>): VercelLinkDeps => ({
@@ -566,7 +573,7 @@ describe("UT-SCRIPTS-VERCEL-LINK-08: runner", () => {
 
       await expect(runVercelLink(deps)).rejects.toThrow("Logger error in first phase");
       expect(deps.logger.error).toHaveBeenCalledWith(
-        expect.stringContaining("環境変数ファイルの更新に失敗しました")
+        expect.stringContaining("backend の処理中にエラーが発生しました")
       );
     });
 

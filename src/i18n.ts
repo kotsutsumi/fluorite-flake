@@ -155,6 +155,152 @@ type RawLocaleMessages = {
         helpHint: string;
         devNoSubcommand: string;
     };
+    dashboard: {
+        commandDescription: string;
+        headerTitle: string;
+        instructions: string[];
+        logsInstructions: string[];
+        activeServiceLabel: string;
+        footerShortcuts: {
+            vercel: string;
+            turso: string;
+            logs: string;
+        };
+        footerVersionLabel: string;
+        vercel: {
+            initializing: string;
+            needsToken: string;
+            openTokenPage: string;
+            enterToken: string;
+            inputPromptEmpty: string;
+            inputPromptValue: string;
+            inputHint: string;
+            browserOpening: string;
+            browserOpenFailed: string;
+            tokenValidationError: string;
+            tokenValidateFailed: string;
+            tokenMissingError: string;
+            tokenLoadFailed: string;
+            tokenSaveFailed: string;
+            tokenSaved: string;
+            tokenInputCancelled: string;
+            footerInitializing: string;
+            footerNeedsToken: string;
+            footerInput: string;
+            footerReady: string;
+            footerError: string;
+            ready: string;
+            logBrowserOpenStart: string;
+            logBrowserOpenFailed: string;
+            logTokenLoaded: string;
+            logTokenLoadFailed: string;
+            logTokenSaved: string;
+            logTokenValidationFailed: string;
+            logTokenSaveFailed: string;
+            logTokenInputCancelled: string;
+            projectSection: {
+                loading: string;
+                tokenMissing: string;
+                error: string;
+                empty: string;
+                showingCount: string;
+                totalCount: string;
+                logFetchStart: string;
+                logFetchSuccess: string;
+                logFetchFailure: string;
+                selectionHint: string;
+                createButtonLabel: string;
+                createButtonHint: string;
+                actionsHeading: string;
+                actionsHint: string;
+                selectionConfirmed: string;
+                logSelection: string;
+                logCreateRequested: string;
+                footerToggle: string;
+            };
+            teamSection: {
+                loading: string;
+                tokenMissing: string;
+                error: string;
+                empty: string;
+                activeTag: string;
+                selectionHint: string;
+                footerToggle: string;
+                createdLabel: string;
+                lastActivatedFeedback: string;
+                logFetchStart: string;
+                logFetchSuccess: string;
+                logFetchFailure: string;
+                logActivating: string;
+                logActivated: string;
+                logActivationFailed: string;
+            };
+            projectDetail: {
+                heading: string;
+                loading: string;
+                tokenMissing: string;
+                backHint: string;
+                footerLabel: string;
+                error: string;
+                genericError: string;
+                metadataHeading: string;
+                idLabel: string;
+                frameworkLabel: string;
+                unknown: string;
+                gitRepositoryLabel: string;
+                productionBranchLabel: string;
+                createdAtLabel: string;
+                updatedAtLabel: string;
+                domainsHeading: string;
+                noDomains: string;
+                domainStatusVerified: string;
+                domainStatusPending: string;
+                domainCreatedLabel: string;
+                domainRedirectLabel: string;
+                logFetchStart: string;
+                logFetchSuccess: string;
+                logFetchFailure: string;
+            };
+            projectCreate: {
+                heading: string;
+                tokenMissing: string;
+                navigationHint: string;
+                nameLabel: string;
+                namePlaceholder: string;
+                frameworkLabel: string;
+                frameworkPlaceholder: string;
+                gitProviderLabel: string;
+                gitProviderPlaceholder: string;
+                gitRepositoryLabel: string;
+                gitRepositoryPlaceholder: string;
+                productionBranchLabel: string;
+                productionBranchPlaceholder: string;
+                submitLabel: string;
+                cancelLabel: string;
+                validationNameRequired: string;
+                validationGitProviderRequired: string;
+                validationGitRepositoryRequired: string;
+                requestInProgress: string;
+                requestSuccess: string;
+                requestFailure: string;
+                footerLabel: string;
+                logCreateStart: string;
+                logCreateSuccess: string;
+                logCreateFailure: string;
+            };
+        };
+        services: {
+            vercel: string;
+            turso: string;
+            logs: string;
+        };
+        placeholders: {
+            vercel: string;
+            turso: string;
+            logs: string;
+        };
+        nonInteractiveError: string[];
+    };
     create: {
         commandDescription: string;
         newCommandDescription: string;
@@ -236,6 +382,29 @@ type RawLocaleMessages = {
         vercelLinkOrgIdError: string;
         vercelLinkCancelled: string;
         vercelLinkSuccess: string;
+        turso: {
+            validTokenReused: string;
+            invalidTokenDetected: string;
+            noExistingToken: string;
+            promptLoginTitle: string;
+            promptLogin: string;
+            cliNotFound: string;
+            cliTokenFailed: string;
+            cliTokenEmpty: string;
+            cliLoginConfirmed: string;
+            initializing: string;
+            ready: string;
+            initializationFailed: string;
+            footerInitializing: string;
+            footerLoginRequired: string;
+            footerError: string;
+            retryHint: string;
+            apiError: string;
+            tokenRevoked: string;
+            tokenRegenerated: string;
+            tokenCreateEmpty: string;
+            tokenStored: string;
+        };
         blob: {
             setupPrompt: string;
             modeNew: string;
@@ -358,6 +527,152 @@ export type LocaleMessages = {
         helpHint: string;
         devNoSubcommand: string;
     };
+    dashboard: {
+        commandDescription: string;
+        headerTitle: string;
+        instructions: string[];
+        logsInstructions: string[];
+        activeServiceLabel: string;
+        footerShortcuts: {
+            vercel: string;
+            turso: string;
+            logs: string;
+        };
+        footerVersionLabel: (version: string) => string;
+        vercel: {
+            initializing: string;
+            needsToken: string;
+            openTokenPage: string;
+            enterToken: string;
+            inputPromptEmpty: string;
+            inputPromptValue: (value: string) => string;
+            inputHint: string;
+            browserOpening: string;
+            browserOpenFailed: (error: string) => string;
+            tokenValidationError: string;
+            tokenValidateFailed: (error: string) => string;
+            tokenMissingError: string;
+            tokenLoadFailed: (error: string) => string;
+            tokenSaveFailed: (error: string) => string;
+            tokenSaved: string;
+            tokenInputCancelled: string;
+            footerInitializing: string;
+            footerNeedsToken: string;
+            footerInput: string;
+            footerReady: string;
+            footerError: string;
+            ready: string;
+            logBrowserOpenStart: string;
+            logBrowserOpenFailed: (error: string) => string;
+            logTokenLoaded: string;
+            logTokenLoadFailed: (error: string) => string;
+            logTokenSaved: string;
+            logTokenValidationFailed: (error: string) => string;
+            logTokenSaveFailed: (error: string) => string;
+            logTokenInputCancelled: string;
+            projectSection: {
+                loading: string;
+                tokenMissing: string;
+                error: (error: string) => string;
+                empty: string;
+                showingCount: (count: number) => string;
+                totalCount: (count: number) => string;
+                logFetchStart: string;
+                logFetchSuccess: (count: number) => string;
+                logFetchFailure: (error: string) => string;
+                selectionHint: string;
+                createButtonLabel: string;
+                createButtonHint: string;
+                actionsHeading: string;
+                actionsHint: string;
+                selectionConfirmed: (name: string) => string;
+                logSelection: (name: string) => string;
+                logCreateRequested: string;
+                footerToggle: string;
+            };
+            teamSection: {
+                loading: string;
+                tokenMissing: string;
+                error: (error: string) => string;
+                empty: string;
+                activeTag: string;
+                selectionHint: string;
+                footerToggle: string;
+                createdLabel: (timestamp: string) => string;
+                lastActivatedFeedback: (name: string) => string;
+                logFetchStart: string;
+                logFetchSuccess: (count: number) => string;
+                logFetchFailure: (error: string) => string;
+                logActivating: (name: string) => string;
+                logActivated: (name: string) => string;
+                logActivationFailed: (name: string, error: string) => string;
+            };
+            projectDetail: {
+                heading: (name: string) => string;
+                loading: string;
+                tokenMissing: string;
+                backHint: string;
+                footerLabel: string;
+                error: (error: string) => string;
+                genericError: string;
+                metadataHeading: string;
+                idLabel: string;
+                frameworkLabel: string;
+                unknown: string;
+                gitRepositoryLabel: string;
+                productionBranchLabel: string;
+                createdAtLabel: string;
+                updatedAtLabel: string;
+                domainsHeading: string;
+                noDomains: string;
+                domainStatusVerified: string;
+                domainStatusPending: string;
+                domainCreatedLabel: (timestamp: string) => string;
+                domainRedirectLabel: (target: string) => string;
+                logFetchStart: (name: string) => string;
+                logFetchSuccess: (name: string) => string;
+                logFetchFailure: (name: string, error: string) => string;
+            };
+            projectCreate: {
+                heading: string;
+                tokenMissing: string;
+                navigationHint: string;
+                nameLabel: string;
+                namePlaceholder: string;
+                frameworkLabel: string;
+                frameworkPlaceholder: string;
+                gitProviderLabel: string;
+                gitProviderPlaceholder: string;
+                gitRepositoryLabel: string;
+                gitRepositoryPlaceholder: string;
+                productionBranchLabel: string;
+                productionBranchPlaceholder: string;
+                submitLabel: string;
+                cancelLabel: string;
+                validationNameRequired: string;
+                validationGitProviderRequired: string;
+                validationGitRepositoryRequired: string;
+                requestInProgress: string;
+                requestSuccess: (name: string) => string;
+                requestFailure: (error: string) => string;
+                footerLabel: string;
+                logCreateStart: string;
+                logCreateSuccess: (name: string) => string;
+                logCreateFailure: (name: string, error: string) => string;
+            };
+        };
+        services: {
+            vercel: string;
+            turso: string;
+            logs: string;
+        };
+        placeholders: {
+            vercel: string;
+            turso: string;
+            logs: string;
+        };
+        nonInteractiveError: string[];
+    };
     create: {
         commandDescription: string;
         newCommandDescription: string;
@@ -434,6 +749,29 @@ export type LocaleMessages = {
         vercelLinkOrgIdError: string;
         vercelLinkCancelled: string;
         vercelLinkSuccess: (projectName: string) => string;
+        turso: {
+            validTokenReused: string;
+            invalidTokenDetected: string;
+            noExistingToken: string;
+            promptLoginTitle: string;
+            promptLogin: string;
+            cliNotFound: string;
+            cliTokenFailed: string;
+            cliTokenEmpty: string;
+            cliLoginConfirmed: string;
+            initializing: string;
+            ready: string;
+            initializationFailed: string;
+            footerInitializing: string;
+            footerLoginRequired: string;
+            footerError: string;
+            retryHint: string;
+            apiError: (status: string) => string;
+            tokenRevoked: (tokenName: string) => string;
+            tokenRegenerated: (tokenName: string) => string;
+            tokenCreateEmpty: string;
+            tokenStored: (configPath: string) => string;
+        };
         blob: {
             setupPrompt: string;
             modeNew: string;
@@ -578,6 +916,199 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             helpHint: rawMessages.cli.helpHint,
             devNoSubcommand: rawMessages.cli.devNoSubcommand,
         },
+        dashboard: {
+            commandDescription: rawMessages.dashboard.commandDescription,
+            headerTitle: rawMessages.dashboard.headerTitle,
+            instructions: rawMessages.dashboard.instructions,
+            logsInstructions: rawMessages.dashboard.logsInstructions,
+            activeServiceLabel: rawMessages.dashboard.activeServiceLabel,
+            footerShortcuts: {
+                vercel: rawMessages.dashboard.footerShortcuts.vercel,
+                turso: rawMessages.dashboard.footerShortcuts.turso,
+                logs: rawMessages.dashboard.footerShortcuts.logs,
+            },
+            footerVersionLabel: (version: string) =>
+                formatMessage(rawMessages.dashboard.footerVersionLabel, { version }),
+            vercel: {
+                initializing: rawMessages.dashboard.vercel.initializing,
+                needsToken: rawMessages.dashboard.vercel.needsToken,
+                openTokenPage: rawMessages.dashboard.vercel.openTokenPage,
+                enterToken: rawMessages.dashboard.vercel.enterToken,
+                inputPromptEmpty: rawMessages.dashboard.vercel.inputPromptEmpty,
+                inputPromptValue: (value: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.inputPromptValue, { value }),
+                inputHint: rawMessages.dashboard.vercel.inputHint,
+                browserOpening: rawMessages.dashboard.vercel.browserOpening,
+                browserOpenFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.browserOpenFailed, { error }),
+                tokenValidationError: rawMessages.dashboard.vercel.tokenValidationError,
+                tokenValidateFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.tokenValidateFailed, { error }),
+                tokenMissingError: rawMessages.dashboard.vercel.tokenMissingError,
+                tokenLoadFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.tokenLoadFailed, { error }),
+                tokenSaveFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.tokenSaveFailed, { error }),
+                tokenSaved: rawMessages.dashboard.vercel.tokenSaved,
+                tokenInputCancelled: rawMessages.dashboard.vercel.tokenInputCancelled,
+                footerInitializing: rawMessages.dashboard.vercel.footerInitializing,
+                footerNeedsToken: rawMessages.dashboard.vercel.footerNeedsToken,
+                footerInput: rawMessages.dashboard.vercel.footerInput,
+                footerReady: rawMessages.dashboard.vercel.footerReady,
+                footerError: rawMessages.dashboard.vercel.footerError,
+                ready: rawMessages.dashboard.vercel.ready,
+                logBrowserOpenStart: rawMessages.dashboard.vercel.logBrowserOpenStart,
+                logBrowserOpenFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logBrowserOpenFailed, { error }),
+                logTokenLoaded: rawMessages.dashboard.vercel.logTokenLoaded,
+                logTokenLoadFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logTokenLoadFailed, { error }),
+                logTokenSaved: rawMessages.dashboard.vercel.logTokenSaved,
+                logTokenValidationFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logTokenValidationFailed, { error }),
+                logTokenSaveFailed: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.logTokenSaveFailed, { error }),
+                logTokenInputCancelled: rawMessages.dashboard.vercel.logTokenInputCancelled,
+                projectSection: {
+                    loading: rawMessages.dashboard.vercel.projectSection.loading,
+                    tokenMissing: rawMessages.dashboard.vercel.projectSection.tokenMissing,
+                    error: (error: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.error, { error }),
+                    empty: rawMessages.dashboard.vercel.projectSection.empty,
+                    showingCount: (count: number) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.showingCount, {
+                            count: String(count),
+                        }),
+                    totalCount: (count: number) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectSection.totalCount, {
+                            count: String(count),
+                        }),
+                logFetchStart: rawMessages.dashboard.vercel.projectSection.logFetchStart,
+                logFetchSuccess: (count: number) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchSuccess, {
+                        count: String(count),
+                    }),
+                logFetchFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logFetchFailure, { error }),
+                selectionHint: rawMessages.dashboard.vercel.projectSection.selectionHint,
+                createButtonLabel: rawMessages.dashboard.vercel.projectSection.createButtonLabel,
+                createButtonHint: rawMessages.dashboard.vercel.projectSection.createButtonHint,
+                actionsHeading: rawMessages.dashboard.vercel.projectSection.actionsHeading,
+                actionsHint: rawMessages.dashboard.vercel.projectSection.actionsHint,
+                selectionConfirmed: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.selectionConfirmed, { name }),
+                logSelection: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectSection.logSelection, { name }),
+                logCreateRequested: rawMessages.dashboard.vercel.projectSection.logCreateRequested,
+                footerToggle: rawMessages.dashboard.vercel.projectSection.footerToggle,
+            },
+            teamSection: {
+                loading: rawMessages.dashboard.vercel.teamSection.loading,
+                tokenMissing: rawMessages.dashboard.vercel.teamSection.tokenMissing,
+                error: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.error, { error }),
+                empty: rawMessages.dashboard.vercel.teamSection.empty,
+                activeTag: rawMessages.dashboard.vercel.teamSection.activeTag,
+                selectionHint: rawMessages.dashboard.vercel.teamSection.selectionHint,
+                footerToggle: rawMessages.dashboard.vercel.teamSection.footerToggle,
+                createdLabel: (timestamp: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.createdLabel, { timestamp }),
+                lastActivatedFeedback: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.lastActivatedFeedback, { name }),
+                logFetchStart: rawMessages.dashboard.vercel.teamSection.logFetchStart,
+                logFetchSuccess: (count: number) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logFetchSuccess, {
+                        count: String(count),
+                    }),
+                logFetchFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logFetchFailure, { error }),
+                logActivating: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logActivating, { name }),
+                logActivated: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logActivated, { name }),
+                logActivationFailed: (name: string, error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.teamSection.logActivationFailed, { name, error }),
+            },
+                projectDetail: {
+                    heading: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.heading, { name }),
+                    loading: rawMessages.dashboard.vercel.projectDetail.loading,
+                    tokenMissing: rawMessages.dashboard.vercel.projectDetail.tokenMissing,
+                    backHint: rawMessages.dashboard.vercel.projectDetail.backHint,
+                    footerLabel: rawMessages.dashboard.vercel.projectDetail.footerLabel,
+                    error: (error: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.error, { error }),
+                    genericError: rawMessages.dashboard.vercel.projectDetail.genericError,
+                    metadataHeading: rawMessages.dashboard.vercel.projectDetail.metadataHeading,
+                    idLabel: rawMessages.dashboard.vercel.projectDetail.idLabel,
+                    frameworkLabel: rawMessages.dashboard.vercel.projectDetail.frameworkLabel,
+                    unknown: rawMessages.dashboard.vercel.projectDetail.unknown,
+                    gitRepositoryLabel: rawMessages.dashboard.vercel.projectDetail.gitRepositoryLabel,
+                    productionBranchLabel: rawMessages.dashboard.vercel.projectDetail.productionBranchLabel,
+                    createdAtLabel: rawMessages.dashboard.vercel.projectDetail.createdAtLabel,
+                    updatedAtLabel: rawMessages.dashboard.vercel.projectDetail.updatedAtLabel,
+                    domainsHeading: rawMessages.dashboard.vercel.projectDetail.domainsHeading,
+                    noDomains: rawMessages.dashboard.vercel.projectDetail.noDomains,
+                    domainStatusVerified: rawMessages.dashboard.vercel.projectDetail.domainStatusVerified,
+                    domainStatusPending: rawMessages.dashboard.vercel.projectDetail.domainStatusPending,
+                    domainCreatedLabel: (timestamp: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.domainCreatedLabel, { timestamp }),
+                    domainRedirectLabel: (target: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.domainRedirectLabel, { target }),
+                    logFetchStart: (name: string) =>
+                        formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchStart, { name }),
+                logFetchSuccess: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchSuccess, { name }),
+                logFetchFailure: (name: string, error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectDetail.logFetchFailure, { name, error }),
+            },
+            projectCreate: {
+                heading: rawMessages.dashboard.vercel.projectCreate.heading,
+                tokenMissing: rawMessages.dashboard.vercel.projectCreate.tokenMissing,
+                navigationHint: rawMessages.dashboard.vercel.projectCreate.navigationHint,
+                nameLabel: rawMessages.dashboard.vercel.projectCreate.nameLabel,
+                namePlaceholder: rawMessages.dashboard.vercel.projectCreate.namePlaceholder,
+                frameworkLabel: rawMessages.dashboard.vercel.projectCreate.frameworkLabel,
+                frameworkPlaceholder: rawMessages.dashboard.vercel.projectCreate.frameworkPlaceholder,
+                gitProviderLabel: rawMessages.dashboard.vercel.projectCreate.gitProviderLabel,
+                gitProviderPlaceholder: rawMessages.dashboard.vercel.projectCreate.gitProviderPlaceholder,
+                gitRepositoryLabel: rawMessages.dashboard.vercel.projectCreate.gitRepositoryLabel,
+                gitRepositoryPlaceholder: rawMessages.dashboard.vercel.projectCreate.gitRepositoryPlaceholder,
+                productionBranchLabel: rawMessages.dashboard.vercel.projectCreate.productionBranchLabel,
+                productionBranchPlaceholder:
+                    rawMessages.dashboard.vercel.projectCreate.productionBranchPlaceholder,
+                submitLabel: rawMessages.dashboard.vercel.projectCreate.submitLabel,
+                cancelLabel: rawMessages.dashboard.vercel.projectCreate.cancelLabel,
+                validationNameRequired: rawMessages.dashboard.vercel.projectCreate.validationNameRequired,
+                validationGitProviderRequired:
+                    rawMessages.dashboard.vercel.projectCreate.validationGitProviderRequired,
+                validationGitRepositoryRequired:
+                    rawMessages.dashboard.vercel.projectCreate.validationGitRepositoryRequired,
+                requestInProgress: rawMessages.dashboard.vercel.projectCreate.requestInProgress,
+                requestSuccess: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.requestSuccess, { name }),
+                requestFailure: (error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.requestFailure, { error }),
+                footerLabel: rawMessages.dashboard.vercel.projectCreate.footerLabel,
+                logCreateStart: rawMessages.dashboard.vercel.projectCreate.logCreateStart,
+                logCreateSuccess: (name: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.logCreateSuccess, { name }),
+                logCreateFailure: (name: string, error: string) =>
+                    formatMessage(rawMessages.dashboard.vercel.projectCreate.logCreateFailure, { name, error }),
+            },
+        },
+            services: {
+                vercel: rawMessages.dashboard.services.vercel,
+                turso: rawMessages.dashboard.services.turso,
+                logs: rawMessages.dashboard.services.logs,
+            },
+            placeholders: {
+                vercel: rawMessages.dashboard.placeholders.vercel,
+                turso: rawMessages.dashboard.placeholders.turso,
+                logs: rawMessages.dashboard.placeholders.logs,
+            },
+            nonInteractiveError: rawMessages.dashboard.nonInteractiveError,
+        },
         create: {
             commandDescription: rawMessages.create.commandDescription,
             newCommandDescription: rawMessages.create.newCommandDescription,
@@ -692,6 +1223,32 @@ function transformMessages(rawMessages: RawLocaleMessages): LocaleMessages {
             vercelLinkCancelled: rawMessages.create.vercelLinkCancelled,
             vercelLinkSuccess: (projectName: string) =>
                 formatMessage(rawMessages.create.vercelLinkSuccess, { projectName }),
+            turso: {
+                validTokenReused: rawMessages.create.turso.validTokenReused,
+                invalidTokenDetected: rawMessages.create.turso.invalidTokenDetected,
+                noExistingToken: rawMessages.create.turso.noExistingToken,
+                promptLoginTitle: rawMessages.create.turso.promptLoginTitle,
+                promptLogin: rawMessages.create.turso.promptLogin,
+                cliNotFound: rawMessages.create.turso.cliNotFound,
+                cliTokenFailed: rawMessages.create.turso.cliTokenFailed,
+                cliTokenEmpty: rawMessages.create.turso.cliTokenEmpty,
+                cliLoginConfirmed: rawMessages.create.turso.cliLoginConfirmed,
+                initializing: rawMessages.create.turso.initializing,
+                ready: rawMessages.create.turso.ready,
+                initializationFailed: rawMessages.create.turso.initializationFailed,
+                footerInitializing: rawMessages.create.turso.footerInitializing,
+                footerLoginRequired: rawMessages.create.turso.footerLoginRequired,
+                footerError: rawMessages.create.turso.footerError,
+                retryHint: rawMessages.create.turso.retryHint,
+                apiError: (status: string) => formatMessage(rawMessages.create.turso.apiError, { status }),
+                tokenRevoked: (tokenName: string) =>
+                    formatMessage(rawMessages.create.turso.tokenRevoked, { tokenName }),
+                tokenRegenerated: (tokenName: string) =>
+                    formatMessage(rawMessages.create.turso.tokenRegenerated, { tokenName }),
+                tokenCreateEmpty: rawMessages.create.turso.tokenCreateEmpty,
+                tokenStored: (configPath: string) =>
+                    formatMessage(rawMessages.create.turso.tokenStored, { configPath }),
+            },
             blob: {
                 setupPrompt: "Vercel Blobの設定方法を選択してください:",
                 modeNew: "新規Blobストアを作成",

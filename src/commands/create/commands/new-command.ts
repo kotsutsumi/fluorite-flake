@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getMessages } from "../../../i18n.js";
+import { initializeTursoCloud } from "../database-provisioning/index.js";
 import { generateProject } from "../../../utils/project-generator/index.js";
 
 // プロジェクト名の検証に利用する正規表現
@@ -154,10 +155,16 @@ export const newCommand = defineCommand({
             fs.rmSync(targetDir, { recursive: true, force: true });
         }
 
-        // 4. templates/ ディレクトリのパスを取得
+        // 4. Turso Cloud トークンの初期化
+        const tursoInitialization = await initializeTursoCloud();
+        if (tursoInitialization.status === "login-required") {
+            return;
+        }
+
+        // 5. templates/ ディレクトリのパスを取得
         const templatesDir = getTemplatesDirectory();
 
-        // 5. プロジェクトを生成
+        // 6. プロジェクトを生成
         const result = await generateProject({
             projectName,
             templatesDir,
@@ -165,7 +172,7 @@ export const newCommand = defineCommand({
             runSetup: true,
         });
 
-        // 6. 結果の表示
+        // 7. 結果の表示
         if (result.success) {
             console.log("");
             console.log(messages.setupComplete.replace("{projectName}", projectName));

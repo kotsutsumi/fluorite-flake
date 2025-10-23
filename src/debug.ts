@@ -1,10 +1,9 @@
 /**
  * Development mode debug utilities
  */
-
+import chalk from "chalk";
 import fs from "node:fs";
 import path from "node:path";
-import chalk from "chalk";
 
 import { getMessages } from "./i18n.js";
 
@@ -68,8 +67,6 @@ export function debugLog(message: string, data?: unknown): void {
     // デバッグメッセージを表示
     console.log(chalk.gray(debug.debugMessage(message)), data ? chalk.gray(JSON.stringify(data, null, 2)) : "");
 }
-
-// EOF
 
 /**
  * 開発モードかどうかを判定

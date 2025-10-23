@@ -1,10 +1,14 @@
+import { relative } from "node:path";
+
 import { cancel, isCancel, select, text } from "@clack/prompts";
 
 import { discoverApps, selectAppsInteractive } from "./app-selector.js";
 import { updateAllEnvFiles } from "./env-updater.js";
 import { fetchVercelProjects, selectProjectInteractive } from "./project-selector.js";
+import { updateRepoJson } from "./repo-json-manager.js";
+import { setRootDirectory } from "./root-directory-updater.js";
 import { fetchVercelTeams, selectTeamInteractive, switchToTeam } from "./team-selector.js";
-import type { VercelLinkDeps, VercelProject } from "./types.js";
+import type { VercelLinkDeps, VercelProject, VercelProjectInfo } from "./types.js";
 
 /**
  * Vercel CLI ログインチェック
@@ -19,6 +23,26 @@ async function checkVercelLogin(deps: VercelLinkDeps): Promise<void> {
     deps.logger.info("  vercel login");
     throw new Error("Vercel CLI にログインが必要です");
   }
+}
+
+/**
+ * .vercel/project.json からプロジェクト情報を読み取る
+ */
+async function readProjectInfo(appPath: string, deps: VercelLinkDeps): Promise<VercelProjectInfo> {
+  const projectJsonPath = `${appPath}/.vercel/project.json`;
+
+  if (!deps.exists(projectJsonPath)) {
+    throw new Error(`プロジェクト情報ファイルが見つかりません: ${projectJsonPath}`);
+  }
+
+  const content = await deps.readFile(projectJsonPath);
+  const projectInfo = JSON.parse(content) as VercelProjectInfo;
+
+  if (!projectInfo.projectId || !projectInfo.orgId) {
+    throw new Error(`プロジェクト情報が不正です: ${projectJsonPath}`);
+  }
+
+  return projectInfo;
 }
 
 /**
@@ -100,22 +124,55 @@ async function processAppLink(
     }
   }
 
-  // vercel link を実行
+  // vercel link を実行（各アプリディレクトリに .vercel を作成）
   deps.logger.info(`\n🔗 プロジェクト "${projectName}" にリンク中...`);
   deps.logger.info(
-    `   実行コマンド: vercel link --repo --project ${projectName} --scope ${selectedTeam.slug} --yes`
+    `   実行コマンド: vercel link --project ${projectName} --scope ${selectedTeam.slug} --yes`
   );
   deps.logger.info(`   作業ディレクトリ: ${app.path}`);
   try {
     await deps.runCommand(
       "vercel",
-      ["link", "--repo", "--project", projectName, "--scope", selectedTeam.slug, "--yes"],
+      ["link", "--project", projectName, "--scope", selectedTeam.slug, "--yes"],
       { cwd: app.path }
     );
     deps.logger.success(`プロジェクト "${projectName}" にリンクしました`);
+    deps.logger.info(`   .vercel ディレクトリが作成されました: ${app.path}/.vercel`);
   } catch (error) {
     deps.logger.error(`リンクに失敗しました: ${error}`);
     throw error;
+  }
+
+  // Root Directory を設定（モノレポ対応）
+  try {
+    await setRootDirectory(deps.projectRoot, app.path, deps.logger);
+  } catch (error) {
+    deps.logger.warn(`Root Directory の設定をスキップしました: ${error}`);
+    deps.logger.info("   Vercel ダッシュボードで手動設定してください");
+  }
+
+  // .vercel/repo.json を作成/更新
+  deps.logger.info("\n📋 repo.json を更新中...");
+  try {
+    // .vercel/project.json からプロジェクト情報を読み取る
+    const projectInfo = await readProjectInfo(app.path, deps);
+
+    // プロジェクトルートからの相対パスに変換（例: "apps/backend"）
+    const relativeProjectPath = relative(deps.projectRoot, app.path);
+
+    // repo.json を更新
+    await updateRepoJson({
+      projectDirectory: relativeProjectPath,
+      vercelProjectId: projectInfo.projectId,
+      vercelProjectName: projectName,
+      orgId: projectInfo.orgId,
+      logger: deps.logger,
+    });
+
+    deps.logger.success("  ✅ repo.json の更新が完了しました");
+  } catch (error) {
+    deps.logger.warn(`repo.json の更新をスキップしました: ${error}`);
+    deps.logger.info("   手動で .vercel/repo.json を編集してください");
   }
 
   // 環境変数ファイルを更新（第1段階：自身の URL のみ）

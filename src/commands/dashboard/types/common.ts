@@ -1,73 +1,46 @@
 /**
- * ダッシュボード共通型定義
+ * ダッシュボードで扱うサービス識別子と関連ユーティリティをまとめたモジュール。
  */
 
-// サービスタイプ
-export type ServiceType = "vercel" | "turso" | "supabase" | "github";
+export const PRIMARY_SERVICES = ["vercel", "turso"] as const;
 
-// タブタイプ
-export type TabType = "overview" | "operations" | "logs" | "metrics";
+export type PrimaryService = (typeof PRIMARY_SERVICES)[number];
 
-// フォーカス領域タイプ
-export type FocusArea = "services" | "tabs" | "shortcuts";
+export type ServiceType = PrimaryService | "logs";
 
-// 認証ステータス
-export type AuthStatus = "unknown" | "authenticated" | "unauthenticated" | "error";
+export const SERVICE_ORDER: readonly PrimaryService[] = PRIMARY_SERVICES;
 
-// ダッシュボード状態
-export type DashboardState = {
-    // UI状態
-    activeService: ServiceType;
-    activeTab: TabType;
-    activeFocus: FocusArea;
-    isLoading: boolean;
-    errorMessage?: string;
+/**
+ * 文字列から既知のサービス名に正規化して返す。
+ */
+export function parseService(value: string | undefined): ServiceType | undefined {
+    if (!value) {
+        return;
+    }
 
-    // 認証状態
-    authStatus: Record<ServiceType, AuthStatus>;
+    const normalized = value.trim().toLowerCase();
+    return isServiceType(normalized) ? normalized : undefined;
+}
 
-    // データキャッシュ
-    dataCache: Map<string, unknown>;
-    lastRefresh: Date;
-};
+/**
+ * ダッシュボードで許可しているサービス名かどうかを判定する。
+ */
+export function isServiceType(value: unknown): value is ServiceType {
+    return typeof value === "string" && (value === "logs" || (PRIMARY_SERVICES as readonly string[]).includes(value));
+}
 
-// サービス情報
-export type ServiceInfo = {
-    name: string;
-    description: string;
-    isAvailable: boolean;
-    authRequired: boolean;
-};
+// メインサービス（logs を除く）かどうかを判定するガード。
+export function isPrimaryService(value: unknown): value is PrimaryService {
+    return typeof value === "string" && (PRIMARY_SERVICES as readonly string[]).includes(value);
+}
 
-// メトリクスデータ
-export type MetricsData = {
-    timestamp: Date;
-    value: number;
-    label: string;
-};
-
-// チャートプロパティ
-export type ChartProps = {
-    data: number[];
-    title: string;
-    height?: number;
-    width?: number;
-    color?: string;
-};
-
-// エラー情報
-export type DashboardError = {
-    service: ServiceType;
-    code: string;
-    message: string;
-    timestamp: Date;
-};
-
-// キーバインディング
-export type KeyBinding = {
-    key: string;
-    description: string;
-    action: () => void;
-};
+/**
+ * サービスの巡回順序に沿って次のサービス識別子を返す。
+ */
+export function getNextService(current: PrimaryService): PrimaryService {
+    const currentIndex = SERVICE_ORDER.indexOf(current);
+    const nextIndex = (currentIndex + 1) % SERVICE_ORDER.length;
+    return SERVICE_ORDER[nextIndex];
+}
 
 // EOF
