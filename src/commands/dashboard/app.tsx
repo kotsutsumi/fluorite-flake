@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react";
 import { Box } from "ink";
 
-import packageJson from "../../../package.json";
+import packageJson from "../../../package.json" with { type: "json" };
 import { getMessages } from "../../i18n.js";
 import { Footer } from "./components/footer.js";
 import { FullscreenContainer } from "./components/fullscreen-container.js";
