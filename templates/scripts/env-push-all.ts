@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 // 全アプリの環境変数を一括で Vercel にプッシュするラッパースクリプト。
-// apps/ 配下の各ディレクトリを自動検出し、env-push.ts を実行する。
+// .vercel/repo.json に定義されたプロジェクトのみを対象とし、env-push.ts を実行する。
 // どのディレクトリから実行しても動作するようにプロジェクトルートを自動検出。
 
-import { readdir, stat } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -11,10 +11,24 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Regex patterns for directory normalization
+const BACKSLASH_REGEX = /\\/g;
+const LEADING_DOT_SLASH_REGEX = /^\.\//;
+const TRAILING_SLASH_REGEX = /\/$/;
+
 type EnvPushResult = {
   readonly app: string;
   readonly success: boolean;
   readonly error?: string;
+};
+
+type RepoJson = {
+  readonly orgId?: string;
+  readonly projects?: ReadonlyArray<{
+    readonly id?: string;
+    readonly name?: string;
+    readonly directory?: string;
+  }>;
 };
 
 /**
@@ -23,6 +37,56 @@ type EnvPushResult = {
  */
 function getProjectRoot(): string {
   return resolve(__dirname, "..");
+}
+
+/**
+ * ディレクトリパスを正規化（resolve-project-config.ts と同じロジック）
+ */
+function normalizeDirectory(value: string | undefined): string {
+  if (!value) {
+    return ".";
+  }
+
+  const normalized = value
+    .replace(BACKSLASH_REGEX, "/")
+    .replace(LEADING_DOT_SLASH_REGEX, "")
+    .replace(TRAILING_SLASH_REGEX, "");
+  return normalized || ".";
+}
+
+/**
+ * .vercel/repo.json を読み込み、設定されたプロジェクトディレクトリの一覧を取得
+ */
+async function getConfiguredProjects(projectRoot: string): Promise<Set<string>> {
+  const repoJsonPath = join(projectRoot, ".vercel", "repo.json");
+
+  try {
+    const json = await readFile(repoJsonPath, "utf8");
+    const data = JSON.parse(json) as RepoJson;
+
+    if (!Array.isArray(data.projects)) {
+      console.warn("⚠️  .vercel/repo.json に projects 配列が定義されていません");
+      return new Set();
+    }
+
+    const configuredDirs = new Set<string>();
+    for (const project of data.projects) {
+      if (project.directory) {
+        // プロジェクトルートからの相対パスを正規化
+        const normalized = normalizeDirectory(project.directory);
+        const absolutePath = resolve(projectRoot, normalized);
+        configuredDirs.add(absolutePath);
+      }
+    }
+
+    return configuredDirs;
+  } catch (error) {
+    console.warn(
+      `⚠️  .vercel/repo.json の読み込みに失敗しました: ${error instanceof Error ? error.message : String(error)}`
+    );
+    console.warn("⚠️  全てのアプリをスキップします");
+    return new Set();
+  }
 }
 
 /**
@@ -132,10 +196,20 @@ async function main(): Promise<void> {
     return;
   }
 
-  console.log(`🚀 全アプリの環境変数を Vercel にプッシュします (${selection})`);
+  console.log(`🚀 設定されたアプリの環境変数を Vercel にプッシュします (${selection})`);
 
   const projectRoot = getProjectRoot();
   console.log(`📁 プロジェクトルート: ${projectRoot}`);
+
+  // .vercel/repo.json から設定されたプロジェクト一覧を取得
+  const configuredProjects = await getConfiguredProjects(projectRoot);
+
+  if (configuredProjects.size === 0) {
+    console.warn("⚠️  .vercel/repo.json に設定されたプロジェクトが見つかりませんでした");
+    return;
+  }
+
+  console.log(`🔧 設定されたプロジェクト: ${configuredProjects.size}個`);
 
   // apps/ 配下のディレクトリを取得
   const appDirs = await getAppDirectories(projectRoot);
@@ -151,10 +225,17 @@ async function main(): Promise<void> {
   const results: EnvPushResult[] = [];
 
   for (const appDir of appDirs) {
+    const appName = appDir.split("/").pop() || "unknown";
+
+    // .vercel/repo.json に定義されているかチェック
+    if (!configuredProjects.has(appDir)) {
+      console.log(`⏭️  ${appName} をスキップ（.vercel/repo.json に未定義）`);
+      continue;
+    }
+
     // .env ファイルの存在チェック
     const hasEnv = await hasEnvFiles(appDir);
     if (!hasEnv) {
-      const appName = appDir.split("/").pop() || "unknown";
       console.log(`⏭️  ${appName} をスキップ（必要な .env ファイルが存在しません）`);
       continue;
     }
